@@ -47,6 +47,9 @@ object Constant {
     const val TIM = "com.tencent.tim" // TIM
     const val ZFB = "com.eg.android.AlipayGphone" // 支付宝
 
+    // 目标APP
+    const val TARGET_APP = DING_DING
+
     const val FOREGROUND_RUNNING_SERVICE_TITLE = "为保证程序正常运行，请勿移除此通知"
     const val DEFAULT_RESET_HOUR = 0
     const val DEFAULT_OVER_TIME = "30s"

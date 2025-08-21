@@ -53,7 +53,7 @@ class NotificationMonitorService : NotificationListenerService() {
         SettingsFragment.weakReferenceHandler?.sendEmptyMessage(Constant.NOTICE_LISTENER_CONNECTED_CODE)
 
         // 保存指定包名的通知，其他的一律不保存
-        if (pkg == Constant.DING_DING || pkg == Constant.WECHAT || pkg == Constant.WEWORK || pkg == Constant.QQ || pkg == Constant.TIM || pkg == Constant.ZFB) {
+        if (pkg == Constant.TARGET_APP || pkg == Constant.WECHAT || pkg == Constant.WEWORK || pkg == Constant.QQ || pkg == Constant.TIM || pkg == Constant.ZFB) {
             NotificationBean().apply {
                 packageName = pkg
                 notificationTitle = title
@@ -65,7 +65,7 @@ class NotificationMonitorService : NotificationListenerService() {
         }
 
         // 钉钉打卡通知
-        if (pkg == Constant.DING_DING && notice.contains("成功")) {
+        if (pkg == Constant.TARGET_APP && notice.contains("成功")) {
             backToMainActivity()
             "即将发送通知邮件，请注意查收".show(this)
             notice.sendEmail(this, null, false)

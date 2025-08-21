@@ -30,9 +30,9 @@ fun Context.openApplication(needEmail: Boolean) {
     val pm = this.packageManager
     val isContains = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.getPackageInfo(Constant.DING_DING, PackageManager.PackageInfoFlags.of(0))
+            pm.getPackageInfo(Constant.TARGET_APP, PackageManager.PackageInfoFlags.of(0))
         } else {
-            pm.getPackageInfo(Constant.DING_DING, 0)
+            pm.getPackageInfo(Constant.TARGET_APP, 0)
         }
         true
     } catch (e: PackageManager.NameNotFoundException) {
@@ -58,7 +58,7 @@ fun Context.openApplication(needEmail: Boolean) {
     /**跳转钉钉开始*****************************************/
     val resolveIntent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
-        setPackage(Constant.DING_DING)
+        setPackage(Constant.TARGET_APP)
     }
     val apps = pm.queryIntentActivities(resolveIntent, 0)
     //前面已经判断过钉钉是否安装，所以此处一定有值
