@@ -3,6 +3,7 @@ package com.pengxh.daily.app.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Bundle
+import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.initImmersionBar
@@ -29,7 +30,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     override fun initEvent() {
         binding.resetTimeLayout.setOnClickListener {
-            BottomActionSheet.Builder().setContext(this).setActionItemTitle(hourArray)
+            BottomActionSheet.Builder()
+                .setContext(this)
+                .setActionItemTitle(hourArray)
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
@@ -39,7 +42,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.timeoutLayout.setOnClickListener {
-            BottomActionSheet.Builder().setContext(this).setActionItemTitle(timeArray)
+            BottomActionSheet.Builder()
+                .setContext(this)
+                .setActionItemTitle(timeArray)
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
@@ -49,8 +54,11 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.keyLayout.setOnClickListener {
-            AlertInputDialog.Builder().setContext(this).setTitle("设置打卡口令")
-                .setHintMessage("请输入打卡口令，如：打卡").setNegativeButton("取消")
+            AlertInputDialog.Builder()
+                .setContext(this)
+                .setTitle("设置打卡口令")
+                .setHintMessage("请输入打卡口令，如：打卡")
+                .setNegativeButton("取消")
                 .setPositiveButton("确定").setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
@@ -64,6 +72,32 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.randomTimeSwitch.setOnCheckedChangeListener { _, isChecked ->
             SaveKeyValues.putValue(Constant.RANDOM_TIME_KEY, isChecked)
+            if (isChecked) {
+                binding.minuteRangeLayout.visibility = View.VISIBLE
+            } else {
+                binding.minuteRangeLayout.visibility = View.GONE
+            }
+        }
+
+        binding.minuteRangeLayout.setOnClickListener {
+            AlertInputDialog.Builder()
+                .setContext(this)
+                .setTitle("设置随机时间范围")
+                .setHintMessage("请输入整数，如：30")
+                .setNegativeButton("取消")
+                .setPositiveButton("确定").setOnDialogButtonClickListener(object :
+                    AlertInputDialog.OnDialogButtonClickListener {
+                    override fun onConfirmClick(value: String) {
+                        if (value.isNumber()) {
+                            binding.minuteRangeView.text = "${value}分钟"
+                            SaveKeyValues.putValue(Constant.RANDOM_MINUTE_RANGE_KEY, value.toInt())
+                        } else {
+                            "直接输入整数时间即可".show(context)
+                        }
+                    }
+
+                    override fun onCancelClick() {}
+                }).build().show()
         }
 
         binding.outputLayout.setOnClickListener {
@@ -88,8 +122,11 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun setHourByPosition(position: Int) {
         if (position == hourArray.size - 1) {
-            AlertInputDialog.Builder().setContext(this).setTitle("设置重置时间")
-                .setHintMessage("直接输入整数时间即可，如：6").setNegativeButton("取消")
+            AlertInputDialog.Builder()
+                .setContext(this)
+                .setTitle("设置重置时间")
+                .setHintMessage("直接输入整数时间即可，如：6")
+                .setNegativeButton("取消")
                 .setPositiveButton("确定").setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
@@ -158,6 +195,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         binding.keyTextView.text = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
         val needRandom = SaveKeyValues.getValue(Constant.RANDOM_TIME_KEY, true) as Boolean
         binding.randomTimeSwitch.isChecked = needRandom
+        if (needRandom) {
+            val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+            binding.minuteRangeView.text = "${value}分钟"
+        }
     }
 
     override fun initViewBinding(): ActivityTaskConfigBinding {

@@ -20,33 +20,26 @@ fun DailyTaskBean.diffCurrent(): Pair<String, Int> {
 
     //18:00:59
     val array = this.time.split(":")
+    var totalSeconds = array[0].toInt() * 3600 + array[1].toInt() * 60 + array[2].toInt()
 
-    //随机[0,5]分钟内随机
-    val minute = if (needRandom) {
-        val seedMinute = (0 until 5).random()
-        val tempMinute = array[1].toInt() + seedMinute
-        if (tempMinute >= 60) {
-            array[1]
-        } else {
-            tempMinute.appendZero()
-        }
-    } else {
-        array[1]
+    // 随机时间
+    if (needRandom) {
+        val minuteRange = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+
+        val seedMinute = (0 until minuteRange).random() // [0,minuteRange)
+        val seedSeconds = (0 until 60).random() // [0,60)
+        totalSeconds += seedMinute * 60 + seedSeconds
+
+        // 确保不超过当天23:59:59（86399秒）
+        totalSeconds = minOf(totalSeconds, 86399)
     }
 
-    //随机[0,60]秒内随机
-    val seconds = if (needRandom) {
-        val seedSeconds = (0 until 60).random()
-        val tempSeconds = array[1].toInt() + seedSeconds
-        if (tempSeconds >= 60) {
-            array[2]
-        } else {
-            tempSeconds.appendZero()
-        }
-    } else {
-        array[2]
-    }
-    val newTime = "${array[0]}:${minute}:${seconds}"
+    // 转换回 时:分:秒 格式
+    val hour = totalSeconds / 3600
+    val minute = (totalSeconds % 3600) / 60
+    val second = totalSeconds % 60
+
+    val newTime = "${hour.appendZero()}:${minute.appendZero()}:${second.appendZero()}"
 
     //获取当前日期，计算时间差
     val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)

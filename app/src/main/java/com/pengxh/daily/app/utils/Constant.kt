@@ -16,6 +16,7 @@ object Constant {
     const val BACK_TO_HOME_KEY = "BACK_TO_HOME_KEY"
     const val TASK_NAME_KEY = "TASK_KEY"
     const val RANDOM_TIME_KEY = "RANDOM_TIME_KEY"
+    const val RANDOM_MINUTE_RANGE_KEY = "RANDOM_MINUTE_RANGE_KEY"
     const val RESET_TIME_KEY = "RESET_TIME_KEY"
 
     const val TICK_TIME_CODE = 2024071701
