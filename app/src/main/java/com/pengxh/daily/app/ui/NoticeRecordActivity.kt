@@ -18,7 +18,7 @@ import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
 class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
 
-    private lateinit var noticeAdapter: NormalRecyclerAdapter<NotificationBean>
+    private var noticeAdapter: NormalRecyclerAdapter<NotificationBean>? = null
     private var isRefresh = false
     private var isLoadMore = false
     private var offset = 1
@@ -91,7 +91,7 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
                 override fun onFinish() {
                     it.finishRefresh()
                     isRefresh = false
-                    noticeAdapter.refresh(getNotificationRecord())
+                    noticeAdapter?.refresh(getNotificationRecord())
                 }
             }.start()
         }
@@ -104,7 +104,7 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
                 override fun onFinish() {
                     it.finishLoadMore()
                     isLoadMore = false
-                    noticeAdapter.loadMore(getNotificationRecord())
+                    noticeAdapter?.loadMore(getNotificationRecord())
                 }
             }.start()
         }

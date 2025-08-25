@@ -20,8 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class DailyTaskAdapter(
-    private val context: Context,
-    private val dataBeans: MutableList<DailyTaskBean>
+    private val context: Context, private val dataBeans: MutableList<DailyTaskBean>
 ) : RecyclerView.Adapter<ViewHolder>() {
 
     private val kTag = "DailyTaskAdapter"
