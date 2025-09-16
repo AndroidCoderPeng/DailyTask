@@ -74,6 +74,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             SaveKeyValues.putValue(Constant.RANDOM_TIME_KEY, isChecked)
             if (isChecked) {
                 binding.minuteRangeLayout.visibility = View.VISIBLE
+                val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+                binding.minuteRangeView.text = "${value}分钟"
             } else {
                 binding.minuteRangeLayout.visibility = View.GONE
             }
@@ -196,8 +198,11 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         val needRandom = SaveKeyValues.getValue(Constant.RANDOM_TIME_KEY, true) as Boolean
         binding.randomTimeSwitch.isChecked = needRandom
         if (needRandom) {
+            binding.minuteRangeLayout.visibility = View.VISIBLE
             val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
             binding.minuteRangeView.text = "${value}分钟"
+        } else {
+            binding.minuteRangeLayout.visibility = View.GONE
         }
     }
 
