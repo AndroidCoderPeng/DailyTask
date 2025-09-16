@@ -10,12 +10,12 @@ import android.os.Message
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.WindowManager
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.utils.WeakReferenceHandler
-
 
 class FloatingWindowService : Service(), Handler.Callback {
 
@@ -25,10 +25,10 @@ class FloatingWindowService : Service(), Handler.Callback {
 
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private val floatView by lazy {
-        LayoutInflater.from(this).inflate(R.layout.window_floating, null)
+        val tempContainer = LinearLayout(this) // 创建一个临时的父布局
+        LayoutInflater.from(this).inflate(R.layout.window_floating, tempContainer)
     }
     private val textView by lazy { floatView.findViewById<TextView>(R.id.timeView) }
-    private lateinit var floatLayoutParams: WindowManager.LayoutParams
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -38,38 +38,37 @@ class FloatingWindowService : Service(), Handler.Callback {
     override fun onCreate() {
         super.onCreate()
         weakReferenceHandler = WeakReferenceHandler(this)
-        floatLayoutParams = WindowManager.LayoutParams(
+        val floatLayoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
             PixelFormat.TRANSLUCENT
-        )
-
+        ).also {
+            windowManager.addView(floatView, it)
+        }
         try {
-            windowManager.addView(floatView, floatLayoutParams)
-
-            var lastX = 0
-            var lastY = 0
-            var paramX = 0
-            var paramY = 0
-
+            var initialX = 0
+            var initialY = 0
+            var initialTouchX = 0f
+            var initialTouchY = 0f
             floatView.setOnTouchListener { _, event ->
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
-                        lastX = event.rawX.toInt()
-                        lastY = event.rawY.toInt()
-                        paramX = floatLayoutParams.x
-                        paramY = floatLayoutParams.y
+                        floatLayoutParams.run {
+                            initialX = x
+                            initialY = y
+                            initialTouchX = event.rawX
+                            initialTouchY = event.rawY
+                        }
                     }
 
                     MotionEvent.ACTION_MOVE -> {
-                        val dx = event.rawX.toInt() - lastX
-                        val dy = event.rawY.toInt() - lastY
-                        floatLayoutParams.x = paramX + dx
-                        floatLayoutParams.y = paramY + dy
-                        // 更新悬浮窗位置
-                        windowManager.updateViewLayout(floatView, floatLayoutParams)
+                        floatLayoutParams.run {
+                            x = initialX + (event.rawX - initialTouchX).toInt()
+                            y = initialY + (event.rawY - initialTouchY).toInt()
+                            windowManager.updateViewLayout(floatView, this)
+                        }
                     }
                 }
                 false
@@ -83,7 +82,7 @@ class FloatingWindowService : Service(), Handler.Callback {
 
     override fun onDestroy() {
         super.onDestroy()
-        windowManager.removeView(floatView)
+        windowManager.removeViewImmediate(floatView)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
