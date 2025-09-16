@@ -485,12 +485,10 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
                     override fun onTick(millisUntilFinished: Long) {
                         val tick = millisUntilFinished / 1000
-                        FloatingWindowService.weakReferenceHandler?.let {
-                            val message = it.obtainMessage()
-                            message.what = Constant.TICK_TIME_CODE
-                            message.obj = tick
-                            it.sendMessage(message)
+                        val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
+                            putExtra("data", "$tick")
                         }
+                        requireContext().sendBroadcast(intent)
                     }
 
                     override fun onFinish() {

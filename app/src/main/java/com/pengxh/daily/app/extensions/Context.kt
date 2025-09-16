@@ -9,7 +9,6 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.fragment.DailyTaskFragment
-import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -54,7 +53,7 @@ fun Context.openApplication(needEmail: Boolean) {
         return
     }
 
-    FloatingWindowService.weakReferenceHandler?.sendEmptyMessage(Constant.SHOW_FLOATING_WINDOW_CODE)
+    sendBroadcast(Intent(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION))
     /**跳转钉钉开始*****************************************/
     val resolveIntent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
@@ -98,4 +97,5 @@ private fun Context.launchMainActivity() {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
     startActivity(intent)
+    sendBroadcast(Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION))
 }

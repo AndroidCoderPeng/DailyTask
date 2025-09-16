@@ -2,12 +2,12 @@ package com.pengxh.daily.app.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.initImmersionBar
-import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DatabaseWrapper
 import com.pengxh.daily.app.widgets.TaskMessageDialog
@@ -149,21 +149,23 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun setTimeByPosition(position: Int) {
         if (position == timeArray.size - 1) {
-            AlertInputDialog.Builder().setContext(this).setTitle("设置超时时间")
-                .setHintMessage("直接输入整数时间即可，如：60").setNegativeButton("取消")
-                .setPositiveButton("确定").setOnDialogButtonClickListener(object :
+            AlertInputDialog.Builder()
+                .setContext(this)
+                .setTitle("设置超时时间")
+                .setHintMessage("直接输入整数时间即可，如：60")
+                .setNegativeButton("取消")
+                .setPositiveButton("确定")
+                .setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
                             val time = "${value}s"
                             binding.timeoutTextView.text = time
                             SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
-                            FloatingWindowService.weakReferenceHandler?.let {
-                                val message = it.obtainMessage()
-                                message.what = Constant.UPDATE_TICK_TIME_CODE
-                                message.obj = time
-                                it.sendMessage(message)
+                            val intent = Intent(Constant.BROADCAST_UPDATE_TICK_TIME_ACTION).apply {
+                                putExtra("data", time)
                             }
+                            sendBroadcast(intent)
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -175,12 +177,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val time = timeArray[position]
             binding.timeoutTextView.text = time
             SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
-            FloatingWindowService.weakReferenceHandler?.let {
-                val message = it.obtainMessage()
-                message.what = Constant.UPDATE_TICK_TIME_CODE
-                message.obj = time
-                it.sendMessage(message)
+            val intent = Intent(Constant.BROADCAST_UPDATE_TICK_TIME_ACTION).apply {
+                putExtra("data", time)
             }
+            sendBroadcast(intent)
         }
     }
 

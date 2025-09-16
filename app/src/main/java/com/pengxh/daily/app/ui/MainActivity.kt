@@ -1,6 +1,11 @@
 package com.pengxh.daily.app.ui
 
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -26,7 +31,6 @@ import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.fragment.DailyTaskFragment
 import com.pengxh.daily.app.fragment.SettingsFragment
-import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -42,6 +46,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val clockAnimationHandler = Handler(Looper.getMainLooper())
     private var menuItem: MenuItem? = null
     private lateinit var insetsController: WindowInsetsControllerCompat
+    private var broadcastReceiver: BroadcastReceiver? = null
 
     init {
         fragmentPages.add(DailyTaskFragment())
@@ -57,7 +62,24 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.initImmersionBar(this, true, R.color.back_ground_color)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
+        broadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION) {
+                    showMaskView()
+                }
+            }
+        }
+        val intentFilter = IntentFilter().apply {
+            addAction(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(broadcastReceiver, intentFilter)
+        }
+
         Intent(this, ForegroundRunningService::class.java).apply {
             startService(this)
         }
@@ -65,9 +87,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.viewPager.adapter = fragmentAdapter
         val isFirst = SaveKeyValues.getValue("isFirst", true) as Boolean
         if (isFirst) {
-            AlertMessageDialog.Builder().setContext(this).setTitle("温馨提醒")
+            AlertMessageDialog.Builder()
+                .setContext(this)
+                .setTitle("温馨提醒")
                 .setMessage("本软件仅供内部使用，严禁商用或者用作其他非法用途")
-                .setPositiveButton("知道了").setOnDialogButtonClickListener(object :
+                .setPositiveButton("知道了")
+                .setOnDialogButtonClickListener(object :
                     AlertMessageDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick() {
                         SaveKeyValues.putValue("isFirst", false)
@@ -189,7 +214,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.visibility = View.GONE
 
         //隐藏悬浮窗显示
-        FloatingWindowService.weakReferenceHandler?.sendEmptyMessage(Constant.HIDE_FLOATING_WINDOW_CODE)
+        sendBroadcast(Intent(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION))
 
         //启动时钟位置变换动画
         clockAnimationHandler.postDelayed(clockAnimationRunnable, 30000)
@@ -216,6 +241,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.visibility = View.VISIBLE
 
         //恢复悬浮窗显示
-        FloatingWindowService.weakReferenceHandler?.sendEmptyMessage(Constant.SHOW_FLOATING_WINDOW_CODE)
+        sendBroadcast(Intent(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION))
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(broadcastReceiver)
     }
 }

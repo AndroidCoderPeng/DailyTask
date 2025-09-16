@@ -19,14 +19,8 @@ object Constant {
     const val RANDOM_MINUTE_RANGE_KEY = "RANDOM_MINUTE_RANGE_KEY"
     const val RESET_TIME_KEY = "RESET_TIME_KEY"
 
-    const val TICK_TIME_CODE = 2024071701
-    const val UPDATE_TICK_TIME_CODE = 2024071702
-
     const val NOTICE_LISTENER_CONNECTED_CODE = 2024090801
     const val NOTICE_LISTENER_DISCONNECTED_CODE = 2024090802
-
-    const val HIDE_FLOATING_WINDOW_CODE = 2024112501
-    const val SHOW_FLOATING_WINDOW_CODE = 2024112502
 
     const val START_TASK_CODE = 2024120801
     const val EXECUTE_NEXT_TASK_CODE = 2024120802
@@ -40,6 +34,12 @@ object Constant {
 
     const val START_DAILY_TASK_CODE = 2025030701
     const val STOP_DAILY_TASK_CODE = 2025030702
+
+    const val BROADCAST_TICK_TIME_ACTION = "com.pengxh.daily.app.BROADCAST_TICK_TIME_ACTION"
+    const val BROADCAST_UPDATE_TICK_TIME_ACTION = "com.pengxh.daily.app.BROADCAST_UPDATE_TICK_TIME_ACTION"
+    const val BROADCAST_SHOW_FLOATING_WINDOW_ACTION = "com.pengxh.daily.app.BROADCAST_SHOW_FLOATING_WINDOW_ACTION"
+    const val BROADCAST_HIDE_FLOATING_WINDOW_ACTION = "com.pengxh.daily.app.BROADCAST_HIDE_FLOATING_WINDOW_ACTION"
+    const val BROADCAST_SHOW_MASK_VIEW_ACTION = "com.pengxh.daily.app.BROADCAST_SHOW_MASK_VIEW_ACTION"
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
     const val WECHAT = "com.tencent.mm" // 微信
