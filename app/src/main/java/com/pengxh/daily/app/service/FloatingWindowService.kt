@@ -129,7 +129,14 @@ class FloatingWindowService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(broadcastReceiver)
+        broadcastReceiver?.let {
+            try {
+                unregisterReceiver(it)
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
+        }
+        broadcastReceiver = null
         windowManager.removeViewImmediate(floatView)
     }
 

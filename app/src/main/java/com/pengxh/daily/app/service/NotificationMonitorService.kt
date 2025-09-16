@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.service
 
 import android.app.Notification
+import android.content.Intent
 import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -10,7 +11,6 @@ import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.sendEmail
 import com.pengxh.daily.app.fragment.DailyTaskFragment
-import com.pengxh.daily.app.fragment.SettingsFragment
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DatabaseWrapper
 import com.pengxh.kt.lite.extensions.show
@@ -33,7 +33,7 @@ class NotificationMonitorService : NotificationListenerService() {
      */
     override fun onListenerConnected() {
         Log.d(kTag, "onListenerConnected: 通知监听服务运行中")
-        SettingsFragment.weakReferenceHandler?.sendEmptyMessage(Constant.NOTICE_LISTENER_CONNECTED_CODE)
+        sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION))
     }
 
     /**
@@ -50,7 +50,7 @@ class NotificationMonitorService : NotificationListenerService() {
         if (notice.isNullOrBlank()) {
             return
         }
-        SettingsFragment.weakReferenceHandler?.sendEmptyMessage(Constant.NOTICE_LISTENER_CONNECTED_CODE)
+        sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION))
 
         // 保存指定包名的通知，其他的一律不保存
         if (pkg == Constant.TARGET_APP || pkg == Constant.WECHAT || pkg == Constant.WEWORK || pkg == Constant.QQ || pkg == Constant.TIM || pkg == Constant.ZFB) {
@@ -98,6 +98,6 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         Log.d(kTag, "onListenerDisconnected: 通知监听服务已关闭")
-        SettingsFragment.weakReferenceHandler?.sendEmptyMessage(Constant.NOTICE_LISTENER_DISCONNECTED_CODE)
+        sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION))
     }
 }

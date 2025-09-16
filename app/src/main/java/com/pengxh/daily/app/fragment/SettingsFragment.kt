@@ -1,17 +1,22 @@
 package com.pengxh.daily.app.fragment
 
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.ComponentName
+import android.content.Context
+import android.content.Context.RECEIVER_NOT_EXPORTED
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
@@ -30,16 +35,13 @@ import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import com.pengxh.kt.lite.utils.WeakReferenceHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.Callback {
+class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
-    companion object {
-        var weakReferenceHandler: WeakReferenceHandler? = null
-    }
+    private var broadcastReceiver: BroadcastReceiver? = null
 
     override fun setupTopBarLayout() {
 
@@ -55,8 +57,35 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.
         return FragmentSettingsBinding.inflate(inflater, container, false)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        weakReferenceHandler = WeakReferenceHandler(this)
+        broadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
+                        binding.noticeSwitch.isChecked = true
+                        binding.tipsView.visibility = View.GONE
+                    }
+
+                    Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
+                        binding.noticeSwitch.isChecked = false
+                        binding.tipsView.visibility = View.VISIBLE
+                    }
+                }
+            }
+        }
+        val intentFilter = IntentFilter().apply {
+            addAction(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION)
+            addAction(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(
+                broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED
+            )
+        } else {
+            requireContext().registerReceiver(broadcastReceiver, intentFilter)
+        }
+
         binding.appVersion.text = BuildConfig.VERSION_NAME
         if (requireContext().notificationEnable()) {
             turnOnNotificationMonitorService()
@@ -73,7 +102,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.
         }
 
         binding.noticeSwitch.setOnClickListener {
-            startActivityForResult(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS), 100)
+            notificationSettingLauncher.launch(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
         binding.openTestLayout.setOnClickListener {
@@ -103,25 +132,12 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 100) {
+    private val notificationSettingLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (requireContext().notificationEnable()) {
                 turnOnNotificationMonitorService()
             }
         }
-    }
-
-    override fun handleMessage(msg: Message): Boolean {
-        if (msg.what == Constant.NOTICE_LISTENER_CONNECTED_CODE) {
-            binding.noticeSwitch.isChecked = true
-            binding.tipsView.visibility = View.GONE
-        } else if (msg.what == Constant.NOTICE_LISTENER_DISCONNECTED_CODE) {
-            binding.noticeSwitch.isChecked = false
-            binding.tipsView.visibility = View.VISIBLE
-        }
-        return true
-    }
 
     override fun onResume() {
         super.onResume()
@@ -153,5 +169,17 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP
             )
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        broadcastReceiver?.let {
+            try {
+                requireContext().unregisterReceiver(it)
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
+        }
+        broadcastReceiver = null
     }
 }
