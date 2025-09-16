@@ -1,9 +1,14 @@
 package com.pengxh.daily.app.fragment
 
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
+import android.content.Context.RECEIVER_NOT_EXPORTED
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
@@ -80,6 +85,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private var isRefresh = false
     private var isRemoteTask = false
     private var serviceIntent: Intent? = null
+    private var broadcastReceiver: BroadcastReceiver? = null
 
     override fun setupTopBarLayout() {
 
@@ -109,8 +115,60 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         return FragmentDailyTaskBinding.inflate(inflater, container, false)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
+        broadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
+                        Log.d(kTag, "开始超时倒计时")
+                        val time = SaveKeyValues.getValue(
+                            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                        ) as String
+                        //去掉时间的s
+                        val timeValue = time.dropLast(1).toInt()
+                        timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
+                            override fun onTick(millisUntilFinished: Long) {
+                                val tick = millisUntilFinished / 1000
+                                val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
+                                    putExtra("data", "$tick")
+                                }
+                                requireContext().sendBroadcast(intent)
+                            }
+
+                            override fun onFinish() {
+                                //如果倒计时结束，那么表明没有收到打卡成功的通知
+                                requireContext().backToMainActivity()
+                                "未监听到打卡通知，发送异常日志邮件，请注意查收".show(requireContext())
+                                "".sendEmail(requireContext(), null, false)
+                            }
+                        }
+                        timeoutTimer?.start()
+                    }
+
+                    Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION -> {
+                        timeoutTimer?.cancel()
+                        timeoutTimer = null
+                        Log.d(kTag, "取消超时定时器，执行下一个任务")
+                        weakReferenceHandler?.sendEmptyMessage(Constant.EXECUTE_NEXT_TASK_CODE)
+                    }
+                }
+            }
+        }
+        val intentFilter = IntentFilter().apply {
+            addAction(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION)
+            addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requireContext().registerReceiver(
+                broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED
+            )
+        } else {
+            requireContext().registerReceiver(broadcastReceiver, intentFilter)
+        }
+
         weakReferenceHandler = WeakReferenceHandler(this)
+
         taskBeans = DatabaseWrapper.loadAllTask()
         if (taskBeans.isEmpty()) {
             binding.recyclerView.visibility = View.GONE
@@ -475,39 +533,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 dailyTaskHandler.post(dailyTaskRunnable)
             }
 
-            Constant.START_COUNT_DOWN_TIMER_CODE -> {
-                Log.d(kTag, "开始超时倒计时")
-                val time = SaveKeyValues.getValue(
-                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                ) as String
-                //去掉时间的s
-                val timeValue = time.dropLast(1).toInt()
-                timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
-                    override fun onTick(millisUntilFinished: Long) {
-                        val tick = millisUntilFinished / 1000
-                        val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
-                            putExtra("data", "$tick")
-                        }
-                        requireContext().sendBroadcast(intent)
-                    }
-
-                    override fun onFinish() {
-                        //如果倒计时结束，那么表明没有收到打卡成功的通知
-                        requireContext().backToMainActivity()
-                        "未监听到打卡通知，发送异常日志邮件，请注意查收".show(requireContext())
-                        "".sendEmail(requireContext(), null, false)
-                    }
-                }
-                timeoutTimer?.start()
-            }
-
-            Constant.CANCEL_COUNT_DOWN_TIMER_CODE -> {
-                timeoutTimer?.cancel()
-                timeoutTimer = null
-                Log.d(kTag, "取消超时定时器，执行下一个任务")
-                weakReferenceHandler?.sendEmptyMessage(Constant.EXECUTE_NEXT_TASK_CODE)
-            }
-
             Constant.COMPLETED_ALL_TASK_CODE -> {
                 binding.tipsView.text = "当天所有任务已执行完毕"
                 binding.tipsView.setTextColor(R.color.ios_green.convertColor(requireContext()))
@@ -519,5 +544,17 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             Constant.STOP_DAILY_TASK_CODE -> stopExecuteTask(true)
         }
         return true
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        broadcastReceiver?.let {
+            try {
+                requireContext().unregisterReceiver(it)
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+            }
+        }
+        broadcastReceiver = null
     }
 }

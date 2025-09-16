@@ -1,9 +1,9 @@
 package com.pengxh.daily.app.extensions
 
 import android.content.Context
+import android.content.Intent
 import android.os.BatteryManager
 import com.pengxh.daily.app.BuildConfig
-import com.pengxh.daily.app.ui.EmailConfigActivity
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailAuthenticator
 import com.pengxh.daily.app.utils.EmailConfigKit
@@ -85,17 +85,15 @@ fun String.sendEmail(context: Context, title: String?, isTest: Boolean) {
         try {
             Transport.send(mime)
             if (isTest) {
-                EmailConfigActivity.weakReferenceHandler?.sendEmptyMessage(Constant.SEND_EMAIL_SUCCESS_CODE)
+                context.sendBroadcast(Intent(Constant.BROADCAST_SEND_EMAIL_SUCCESS_ACTION))
             }
         } catch (e: Exception) {
             e.printStackTrace()
             if (isTest) {
-                EmailConfigActivity.weakReferenceHandler?.let {
-                    val message = it.obtainMessage()
-                    message.what = Constant.SEND_EMAIL_FAILED_CODE
-                    message.obj = e.message
-                    it.sendMessage(message)
+                val intent = Intent(Constant.BROADCAST_SEND_EMAIL_FAILED_ACTION).apply {
+                    putExtra("message", e.message)
                 }
+                context.sendBroadcast(intent)
             }
         }
     }.start()

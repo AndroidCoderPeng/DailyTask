@@ -23,12 +23,6 @@ object Constant {
     const val EXECUTE_NEXT_TASK_CODE = 2024120802
     const val COMPLETED_ALL_TASK_CODE = 2024120803
 
-    const val START_COUNT_DOWN_TIMER_CODE = 2024121801
-    const val CANCEL_COUNT_DOWN_TIMER_CODE = 2024121802
-
-    const val SEND_EMAIL_SUCCESS_CODE = 2024122501
-    const val SEND_EMAIL_FAILED_CODE = 2024122502
-
     const val START_DAILY_TASK_CODE = 2025030701
     const val STOP_DAILY_TASK_CODE = 2025030702
 
@@ -46,6 +40,14 @@ object Constant {
         "com.pengxh.daily.app.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION"
     const val BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION =
         "com.pengxh.daily.app.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION"
+    const val BROADCAST_START_COUNT_DOWN_TIMER_ACTION =
+        "com.pengxh.daily.app.BROADCAST_START_COUNT_DOWN_TIMER_ACTION"
+    const val BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION =
+        "com.pengxh.daily.app.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION"
+    const val BROADCAST_SEND_EMAIL_SUCCESS_ACTION =
+        "com.pengxh.daily.app.BROADCAST_SEND_EMAIL_SUCCESS_ACTION"
+    const val BROADCAST_SEND_EMAIL_FAILED_ACTION =
+        "com.pengxh.daily.app.BROADCAST_SEND_EMAIL_FAILED_ACTION"
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
     const val WECHAT = "com.tencent.mm" // 微信

@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.app.NotificationManagerCompat
-import com.pengxh.daily.app.fragment.DailyTaskFragment
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -70,12 +69,12 @@ fun Context.openApplication(needEmail: Boolean) {
     this.startActivity(intent)
     /**跳转钉钉结束*****************************************/
     if (needEmail) {
-        DailyTaskFragment.weakReferenceHandler?.sendEmptyMessage(Constant.START_COUNT_DOWN_TIMER_CODE)
+        sendBroadcast(Intent(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION))
     }
 }
 
 fun Context.backToMainActivity() {
-    DailyTaskFragment.weakReferenceHandler?.sendEmptyMessage(Constant.CANCEL_COUNT_DOWN_TIMER_CODE)
+    sendBroadcast(Intent(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION))
     val backToHome = SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
     if (backToHome) {
         //模拟点击Home键

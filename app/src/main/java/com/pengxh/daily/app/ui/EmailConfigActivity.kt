@@ -1,9 +1,12 @@
 package com.pengxh.daily.app.ui
 
 import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Message
 import android.text.Editable
 import android.text.TextWatcher
 import com.pengxh.daily.app.R
@@ -17,20 +20,41 @@ import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import com.pengxh.kt.lite.utils.WeakReferenceHandler
 import com.pengxh.kt.lite.widget.TitleBarView
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
-class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>(), Handler.Callback {
-
-    companion object {
-        var weakReferenceHandler: WeakReferenceHandler? = null
-    }
+class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
 
     private val context = this
+    private var broadcastReceiver: BroadcastReceiver? = null
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        weakReferenceHandler = WeakReferenceHandler(this)
+        broadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                LoadingDialog.dismiss()
+                when (intent?.action) {
+                    Constant.BROADCAST_SEND_EMAIL_SUCCESS_ACTION -> {
+                        "发送成功，请注意查收".show(this@EmailConfigActivity)
+                    }
+
+                    Constant.BROADCAST_SEND_EMAIL_FAILED_ACTION -> {
+                        val message = intent.getStringExtra("message")
+                        "发送失败：${message}".show(this@EmailConfigActivity)
+                    }
+                }
+            }
+        }
+        val intentFilter = IntentFilter().apply {
+            addAction(Constant.BROADCAST_SEND_EMAIL_SUCCESS_ACTION)
+            addAction(Constant.BROADCAST_SEND_EMAIL_FAILED_ACTION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(broadcastReceiver, intentFilter)
+        }
+
         val config = EmailConfigKit.getConfig()
         binding.emailSendAddressView.setText(config.emailSender)
         binding.emailSendCodeView.setText(config.authCode)
@@ -161,17 +185,15 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>(), Ha
         })
     }
 
-    override fun handleMessage(msg: Message): Boolean {
-        LoadingDialog.dismiss()
-        when (msg.what) {
-            Constant.SEND_EMAIL_SUCCESS_CODE -> {
-                "发送成功，请注意查收".show(this)
-            }
-
-            Constant.SEND_EMAIL_FAILED_CODE -> {
-                "发送失败：${msg.obj}".show(this)
+    override fun onDestroy() {
+        super.onDestroy()
+        broadcastReceiver?.let {
+            try {
+                unregisterReceiver(it)
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
             }
         }
-        return true
+        broadcastReceiver = null
     }
 }
