@@ -66,12 +66,11 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 
 class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handler.Callback {
-
-    companion object {
-        var weakReferenceHandler: WeakReferenceHandler? = null
-    }
-
     private val kTag = "DailyTaskFragment"
+    private val weakReferenceHandler by lazy { WeakReferenceHandler(this) }
+    private val startTaskCode = 2024120801
+    private val executeNextTaskCode = 2024120802
+    private val completedAllTaskCode = 2024120803
     private val marginOffset by lazy { 16.dp2px(requireContext()) }
     private val gson by lazy { Gson() }
     private val repeatTaskHandler = Handler(Looper.getMainLooper())
@@ -120,6 +119,14 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
+                    Constant.BROADCAST_START_DAILY_TASK_ACTION -> {
+                        startExecuteTask(true)
+                    }
+
+                    Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> {
+                        stopExecuteTask(true)
+                    }
+
                     Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
                         Log.d(kTag, "开始超时倒计时")
                         val time = SaveKeyValues.getValue(
@@ -150,12 +157,14 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                         timeoutTimer?.cancel()
                         timeoutTimer = null
                         Log.d(kTag, "取消超时定时器，执行下一个任务")
-                        weakReferenceHandler?.sendEmptyMessage(Constant.EXECUTE_NEXT_TASK_CODE)
+                        weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
                     }
                 }
             }
         }
         val intentFilter = IntentFilter().apply {
+            addAction(Constant.BROADCAST_START_DAILY_TASK_ACTION)
+            addAction(Constant.BROADCAST_STOP_DAILY_TASK_ACTION)
             addAction(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION)
             addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION)
         }
@@ -166,8 +175,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         } else {
             requireContext().registerReceiver(broadcastReceiver, intentFilter)
         }
-
-        weakReferenceHandler = WeakReferenceHandler(this)
 
         taskBeans = DatabaseWrapper.loadAllTask()
         if (taskBeans.isEmpty()) {
@@ -496,22 +503,20 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         val taskIndex = taskBeans.getTaskIndex()
         Log.d(kTag, "任务index是: $taskIndex")
         if (taskIndex == -1) {
-            weakReferenceHandler?.sendEmptyMessage(Constant.COMPLETED_ALL_TASK_CODE)
+            weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
         } else {
-            weakReferenceHandler?.let {
-                val message = it.obtainMessage()
-                message.what = Constant.START_TASK_CODE
+            weakReferenceHandler.run {
+                val message = obtainMessage()
+                message.what = startTaskCode
                 message.obj = taskIndex
-                it.sendMessage(message)
+                sendMessage(message)
             }
         }
     }
 
     override fun handleMessage(msg: Message): Boolean {
         when (msg.what) {
-            Constant.START_DAILY_TASK_CODE -> startExecuteTask(true)
-
-            Constant.START_TASK_CODE -> {
+            startTaskCode -> {
                 val index = msg.obj as Int
                 val task = taskBeans[index]
                 binding.tipsView.text = String.format(
@@ -529,19 +534,17 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 countDownTimerService?.startCountDown(index + 1, diff)
             }
 
-            Constant.EXECUTE_NEXT_TASK_CODE -> {
+            executeNextTaskCode -> {
                 dailyTaskHandler.post(dailyTaskRunnable)
             }
 
-            Constant.COMPLETED_ALL_TASK_CODE -> {
+            completedAllTaskCode -> {
                 binding.tipsView.text = "当天所有任务已执行完毕"
                 binding.tipsView.setTextColor(R.color.ios_green.convertColor(requireContext()))
                 dailyTaskAdapter.updateCurrentTaskState(-1)
                 dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
                 countDownTimerService?.updateDailyTaskState()
             }
-
-            Constant.STOP_DAILY_TASK_CODE -> stopExecuteTask(true)
         }
         return true
     }

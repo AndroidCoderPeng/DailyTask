@@ -10,7 +10,6 @@ import com.pengxh.daily.app.bean.NotificationBean
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.sendEmail
-import com.pengxh.daily.app.fragment.DailyTaskFragment
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DatabaseWrapper
 import com.pengxh.kt.lite.extensions.show
@@ -79,9 +78,9 @@ class NotificationMonitorService : NotificationListenerService() {
                 )
                 "当前手机剩余电量为：${capacity}%".sendEmail(this, "查询手机电量通知", false)
             } else if (notice.contains("启动")) {
-                DailyTaskFragment.weakReferenceHandler?.sendEmptyMessage(Constant.START_DAILY_TASK_CODE)
+                sendBroadcast(Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION))
             } else if (notice.contains("停止")) {
-                DailyTaskFragment.weakReferenceHandler?.sendEmptyMessage(Constant.STOP_DAILY_TASK_CODE)
+                sendBroadcast(Intent(Constant.BROADCAST_STOP_DAILY_TASK_ACTION))
             } else {
                 val key = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
                 if (notice.contains(key)) {
