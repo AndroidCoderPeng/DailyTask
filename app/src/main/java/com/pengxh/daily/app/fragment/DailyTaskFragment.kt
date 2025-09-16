@@ -10,10 +10,12 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Message
+import android.provider.Settings
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -76,6 +78,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private var timeoutTimer: CountDownTimer? = null
     private var countDownTimerService: CountDownTimerService? = null
     private var isRefresh = false
+    private var isRemoteTask = false
+    private var serviceIntent: Intent? = null
 
     override fun setupTopBarLayout() {
 
@@ -270,6 +274,27 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     }
 
     private fun startExecuteTask(isRemote: Boolean) {
+        isRemoteTask = isRemote
+        if (Settings.canDrawOverlays(requireContext())) {
+            startFloatingWindowService()
+        } else {
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+            overlayPermissionLauncher.launch(intent)
+        }
+    }
+
+    private val overlayPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (Settings.canDrawOverlays(requireContext())) {
+                startFloatingWindowService()
+            }
+        }
+
+    private fun startFloatingWindowService() {
+        if (serviceIntent == null) {
+            serviceIntent = Intent(requireContext(), FloatingWindowService::class.java)
+        }
+        requireContext().startService(serviceIntent)
         if (DatabaseWrapper.loadAllTask().isEmpty()) {
             "循环任务启动失败，请先添加任务时间点".sendEmail(
                 requireContext(), "启动循环任务通知", false
@@ -284,7 +309,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
-        if (isRemote) {
+        if (isRemoteTask) {
             "循环任务启动成功，请注意下次打卡时间".sendEmail(
                 requireContext(), "启动循环任务通知", false
             )

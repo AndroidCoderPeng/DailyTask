@@ -18,7 +18,6 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.FragmentSettingsBinding
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
-import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.ui.EmailConfigActivity
 import com.pengxh.daily.app.ui.NoticeRecordActivity
@@ -73,11 +72,6 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.
             requireContext().navigatePageTo<TaskConfigActivity>()
         }
 
-        binding.floatSwitch.setOnClickListener {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-            startActivityForResult(intent, 101)
-        }
-
         binding.noticeSwitch.setOnClickListener {
             startActivityForResult(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS), 100)
         }
@@ -115,8 +109,6 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.
             if (requireContext().notificationEnable()) {
                 turnOnNotificationMonitorService()
             }
-        } else if (requestCode == 101) {
-            binding.floatSwitch.isChecked = Settings.canDrawOverlays(requireContext())
         }
     }
 
@@ -134,15 +126,6 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>(), Handler.
     override fun onResume() {
         super.onResume()
         binding.emailSwitch.isChecked = EmailConfigKit.isEmailConfigured()
-
-        binding.floatSwitch.isChecked = Settings.canDrawOverlays(requireContext())
-        val serviceIntent = Intent(requireContext(), FloatingWindowService::class.java)
-        if (binding.floatSwitch.isChecked) {
-            requireContext().startService(serviceIntent)
-        } else {
-            requireContext().stopService(serviceIntent)
-        }
-
         binding.backToHomeSwitch.isChecked = SaveKeyValues.getValue(
             Constant.BACK_TO_HOME_KEY, false
         ) as Boolean

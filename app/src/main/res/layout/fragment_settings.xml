@@ -71,32 +71,10 @@
             </RelativeLayout>
         </LinearLayout>
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
-            android:layout_marginVertical="@dimen/dp_16"
-            android:background="@drawable/bg_solid_layout_white_16"
-            android:paddingHorizontal="@dimen/dp_16">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="悬浮图标"
-                android:textColor="@color/text_default_color"
-                android:textSize="@dimen/sp_16" />
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/floatSwitch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true" />
-        </RelativeLayout>
-
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/dp_16"
             android:background="@drawable/bg_solid_layout_white_16"
             android:orientation="vertical">
 
@@ -213,7 +191,6 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/dp_16"
             android:background="@drawable/bg_solid_layout_white_16"
             android:orientation="vertical">
 

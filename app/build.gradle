@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace 'com.pengxh.daily.app'
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId 'com.pengxh.daily.app'
@@ -36,12 +36,12 @@ android {
         }
     }
 
-    GString id = "com.alibaba.android.${createRandomCode()}"
-    productFlavors {
-        daily {
-            applicationId = id
-        }
-    }
+//    GString id = "com.alibaba.android.${createRandomCode()}"
+//    productFlavors {
+//        daily {
+//            applicationId = id
+//        }
+//    }
 
     packagingOptions {
         exclude 'META-INF/NOTICE.md'
@@ -102,5 +102,5 @@ dependencies {
     implementation 'com.sun.mail:android-activation:1.6.8'
     //日期、时间选择器
     implementation 'com.github.gzu-liyujiang.AndroidPicker:WheelPicker:4.1.14'
-    implementation 'com.google.code.gson:gson:2.13.1'
+    implementation 'com.google.code.gson:gson:2.13.2'
 }
