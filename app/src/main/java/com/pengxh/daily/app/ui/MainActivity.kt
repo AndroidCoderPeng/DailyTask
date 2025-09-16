@@ -42,16 +42,14 @@ import java.util.Random
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private val kTag = "MainActivity"
-    private val fragmentPages = ArrayList<Fragment>()
+    private val fragmentPages = mutableListOf<Fragment>().apply {
+        add(DailyTaskFragment())
+        add(SettingsFragment())
+    }
     private val clockAnimationHandler = Handler(Looper.getMainLooper())
     private var menuItem: MenuItem? = null
     private lateinit var insetsController: WindowInsetsControllerCompat
     private var broadcastReceiver: BroadcastReceiver? = null
-
-    init {
-        fragmentPages.add(DailyTaskFragment())
-        fragmentPages.add(SettingsFragment())
-    }
 
     override fun initViewBinding(): ActivityMainBinding {
         return ActivityMainBinding.inflate(layoutInflater)
