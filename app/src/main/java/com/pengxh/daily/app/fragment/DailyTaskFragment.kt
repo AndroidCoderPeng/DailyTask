@@ -361,9 +361,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         }
         requireContext().startService(serviceIntent)
         if (DatabaseWrapper.loadAllTask().isEmpty()) {
-            "循环任务启动失败，请先添加任务时间点".sendEmail(
-                requireContext(), "启动循环任务通知", false
-            )
+            "循环任务启动失败，请先添加任务时间点".show(requireContext())
             return
         }
         diffSeconds.set(TimeKit.getResetTaskSeconds())
