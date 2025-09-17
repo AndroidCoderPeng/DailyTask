@@ -76,7 +76,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private val repeatTaskHandler = Handler(Looper.getMainLooper())
     private val dailyTaskHandler = Handler(Looper.getMainLooper())
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
-    private var taskBeans: MutableList<DailyTaskBean> = ArrayList()
+    private var taskBeans = mutableListOf<DailyTaskBean>()
     private var diffSeconds = AtomicInteger(0)
     private var isTaskStarted = false
     private var timeoutTimer: CountDownTimer? = null
@@ -119,13 +119,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
-                    Constant.BROADCAST_START_DAILY_TASK_ACTION -> {
-                        startExecuteTask(true)
-                    }
+                    Constant.BROADCAST_START_DAILY_TASK_ACTION -> startExecuteTask(true)
 
-                    Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> {
-                        stopExecuteTask(true)
-                    }
+                    Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask(true)
 
                     Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
                         Log.d(kTag, "开始超时倒计时")

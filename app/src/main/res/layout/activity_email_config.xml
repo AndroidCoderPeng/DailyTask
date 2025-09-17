@@ -187,7 +187,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="36dp"
                     android:gravity="end|center_vertical"
-                    android:hint="如：587"
+                    android:hint="如：465"
                     android:inputType="number"
                     android:maxLength="5"
                     android:padding="0dp"
