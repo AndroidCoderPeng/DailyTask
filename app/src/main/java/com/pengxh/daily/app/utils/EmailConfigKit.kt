@@ -17,16 +17,11 @@ object EmailConfigKit {
     }
 
     fun isEmailConfigured(): Boolean {
-        return try {
-            val config = getConfig()
-            !config.emailSender.isNullOrBlank() &&
-                    !config.authCode.isNullOrBlank() &&
-                    !config.senderServer.isNullOrBlank() &&
-                    !config.emailPort.isNullOrBlank() &&
-                    !config.inboxEmail.isNullOrBlank()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            false
-        }
+        val config = getConfig()
+        return config.emailSender.isNotEmpty() &&
+                config.authCode.isNotEmpty() &&
+                config.senderServer.isNotEmpty() &&
+                config.emailPort.isNotEmpty() &&
+                config.inboxEmail.isNotEmpty()
     }
 }

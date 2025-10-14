@@ -89,9 +89,14 @@ fun String.sendEmail(context: Context, title: String?, isTest: Boolean) {
             }
         } catch (e: Exception) {
             e.printStackTrace()
+            val errorMessage = when {
+                e.message?.contains("535") == true -> "邮箱认证失败，请检查邮箱账号和授权码是否正确"
+                e.message?.contains("authentication failed") == true -> "邮箱认证失败，请确认使用的是授权码而非登录密码"
+                else -> "邮件发送失败: ${e.message}"
+            }
             if (isTest) {
                 val intent = Intent(Constant.BROADCAST_SEND_EMAIL_FAILED_ACTION).apply {
-                    putExtra("message", e.message)
+                    putExtra("message", errorMessage)
                 }
                 context.sendBroadcast(intent)
             }
