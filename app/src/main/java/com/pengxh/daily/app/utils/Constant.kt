@@ -14,6 +14,8 @@ object Constant {
     const val RANDOM_MINUTE_RANGE_KEY = "RANDOM_MINUTE_RANGE_KEY"
     const val RESET_TIME_KEY = "RESET_TIME_KEY"
 
+    const val BROADCAST_RESET_TASK_ACTION =
+        "com.pengxh.daily.app.BROADCAST_RESET_TASK_ACTION"
     const val BROADCAST_TICK_TIME_ACTION =
         "com.pengxh.daily.app.BROADCAST_TICK_TIME_ACTION"
     const val BROADCAST_UPDATE_TICK_TIME_ACTION =

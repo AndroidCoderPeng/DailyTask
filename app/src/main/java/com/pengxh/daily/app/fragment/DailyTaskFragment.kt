@@ -63,7 +63,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
-import java.util.concurrent.atomic.AtomicInteger
 
 class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handler.Callback {
     private val kTag = "DailyTaskFragment"
@@ -73,52 +72,22 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private val completedAllTaskCode = 2024120803
     private val marginOffset by lazy { 16.dp2px(requireContext()) }
     private val gson by lazy { Gson() }
-    private val repeatTaskHandler = Handler(Looper.getMainLooper())
     private val dailyTaskHandler = Handler(Looper.getMainLooper())
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
     private var taskBeans = mutableListOf<DailyTaskBean>()
-    private var diffSeconds = AtomicInteger(0)
     private var isTaskStarted = false
     private var timeoutTimer: CountDownTimer? = null
+    private var resetTaskTimer: CountDownTimer? = null
     private var countDownTimerService: CountDownTimerService? = null
     private var isRefresh = false
     private var isRemoteTask = false
     private var serviceIntent: Intent? = null
-    private var broadcastReceiver: BroadcastReceiver? = null
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.action?.let {
+                when (it) {
+                    Constant.BROADCAST_RESET_TASK_ACTION -> startExecuteTask(false)
 
-    override fun setupTopBarLayout() {
-
-    }
-
-    override fun observeRequestState() {
-
-    }
-
-    /**
-     * 服务绑定
-     * */
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as CountDownTimerService.LocaleBinder
-            countDownTimerService = binder.getService()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-
-        }
-    }
-
-    override fun initViewBinding(
-        inflater: LayoutInflater, container: ViewGroup?
-    ): FragmentDailyTaskBinding {
-        return FragmentDailyTaskBinding.inflate(inflater, container, false)
-    }
-
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
-    override fun initOnCreate(savedInstanceState: Bundle?) {
-        broadcastReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
                     Constant.BROADCAST_START_DAILY_TASK_ACTION -> startExecuteTask(true)
 
                     Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask(true)
@@ -160,11 +129,44 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 }
             }
         }
+    }
+
+    override fun setupTopBarLayout() {
+
+    }
+
+    override fun observeRequestState() {
+
+    }
+
+    /**
+     * 服务绑定
+     * */
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as CountDownTimerService.LocaleBinder
+            countDownTimerService = binder.getService()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+
+        }
+    }
+
+    override fun initViewBinding(
+        inflater: LayoutInflater, container: ViewGroup?
+    ): FragmentDailyTaskBinding {
+        return FragmentDailyTaskBinding.inflate(inflater, container, false)
+    }
+
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    override fun initOnCreate(savedInstanceState: Bundle?) {
         val intentFilter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_START_DAILY_TASK_ACTION)
-            addAction(Constant.BROADCAST_STOP_DAILY_TASK_ACTION)
-            addAction(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION)
-            addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION)
+            addAction(Constant.BROADCAST_RESET_TASK_ACTION) // 重置任务
+            addAction(Constant.BROADCAST_START_DAILY_TASK_ACTION) // 开始执行每日任务
+            addAction(Constant.BROADCAST_STOP_DAILY_TASK_ACTION) // 取消执行每日任务
+            addAction(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION) // 开始超时定时器
+            addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION) // 取消超时定时器
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requireContext().registerReceiver(
@@ -362,10 +364,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             "循环任务启动失败，请先添加任务时间点".show(requireContext())
             return
         }
-        diffSeconds.set(TimeKit.getResetTaskSeconds())
-        repeatTaskHandler.post(repeatTaskRunnable)
-        Log.d(kTag, "startExecuteTask: 开启周期任务Runnable")
-        executeDailyTask()
+        Log.d(kTag, "开始执行每日任务")
+        dailyTaskHandler.post(dailyTaskRunnable)
+        startResetTaskTimer()
         isTaskStarted = true
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
@@ -377,11 +378,48 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         }
     }
 
+    /**
+     * 当日串行任务Runnable
+     * */
+    private val dailyTaskRunnable = Runnable {
+        val taskIndex = taskBeans.getTaskIndex()
+        Log.d(kTag, "执行周期任务，任务index是: $taskIndex")
+        if (taskIndex == -1) {
+            weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
+        } else {
+            weakReferenceHandler.run {
+                val message = obtainMessage()
+                message.what = startTaskCode
+                message.obj = taskIndex
+                sendMessage(message)
+            }
+        }
+    }
+
+    private fun startResetTaskTimer() {
+        resetTaskTimer?.cancel()
+        val currentDiffSeconds = TimeKit.getResetTaskSeconds()
+        resetTaskTimer = object : CountDownTimer(currentDiffSeconds * 1000L, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val seconds = (millisUntilFinished / 1000).toInt()
+                binding.repeatTimeView.text = String.format(
+                    Locale.getDefault(), "%s后刷新每日任务", seconds.formatTime()
+                )
+            }
+
+            override fun onFinish() {
+
+            }
+        }
+        resetTaskTimer?.start()
+    }
+
     private fun stopExecuteTask(isRemote: Boolean) {
-        repeatTaskHandler.removeCallbacks(repeatTaskRunnable)
-        Log.d(kTag, "stopExecuteTask: 取消周期任务Runnable")
+        Log.d(kTag, "停止执行每日任务")
+        dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
         isTaskStarted = false
+        resetTaskTimer?.cancel()
         binding.repeatTimeView.text = "--秒后刷新每日任务"
         binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
         binding.executeTaskButton.setIconTintResource(R.color.ios_green)
@@ -462,54 +500,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             }).build().show()
     }
 
-    /**
-     * 循环任务Runnable
-     * */
-    private val repeatTaskRunnable = object : Runnable {
-        override fun run() {
-            val currentDiffSeconds = diffSeconds.decrementAndGet()
-            if (currentDiffSeconds > 0) {
-                viewLifecycleOwner.lifecycleScope.launch {
-                    binding.repeatTimeView.text = String.format(
-                        Locale.getDefault(), "%s后刷新每日任务", currentDiffSeconds.formatTime()
-                    )
-                }
-                repeatTaskHandler.postDelayed(this, 1000)
-            } else {
-                // 刷新任务，并重启repeatTaskRunnable
-                diffSeconds.set(TimeKit.getResetTaskSeconds())
-                // 确保移除旧的回调
-                repeatTaskHandler.removeCallbacks(this)
-                repeatTaskHandler.post(this)
-                Log.d(kTag, "run: 零点，刷新任务，并重新执行repeatTaskRunnable")
-                executeDailyTask()
-            }
-        }
-    }
-
-    private fun executeDailyTask() {
-        Log.d(kTag, "executeDailyTask: 执行周期任务")
-        dailyTaskHandler.post(dailyTaskRunnable)
-    }
-
-    /**
-     * 当日串行任务Runnable
-     * */
-    private val dailyTaskRunnable = Runnable {
-        val taskIndex = taskBeans.getTaskIndex()
-        Log.d(kTag, "任务index是: $taskIndex")
-        if (taskIndex == -1) {
-            weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
-        } else {
-            weakReferenceHandler.run {
-                val message = obtainMessage()
-                message.what = startTaskCode
-                message.obj = taskIndex
-                sendMessage(message)
-            }
-        }
-    }
-
     override fun handleMessage(msg: Message): Boolean {
         when (msg.what) {
             startTaskCode -> {
@@ -552,13 +542,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
 
     override fun onDestroy() {
         super.onDestroy()
-        broadcastReceiver?.let {
-            try {
-                requireContext().unregisterReceiver(it)
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
-        }
-        broadcastReceiver = null
+        resetTaskTimer?.cancel()
+        resetTaskTimer = null
+        requireContext().unregisterReceiver(broadcastReceiver)
     }
 }
