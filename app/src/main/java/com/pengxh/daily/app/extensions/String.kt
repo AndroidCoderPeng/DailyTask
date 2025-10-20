@@ -8,7 +8,6 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailAuthenticator
 import com.pengxh.daily.app.utils.EmailConfigKit
 import com.pengxh.kt.lite.extensions.getSystemService
-import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToDate
 import java.util.Date
 import java.util.Properties
@@ -20,11 +19,6 @@ import javax.mail.internet.MimeMessage
 
 fun String.sendEmail(context: Context, title: String?, isTest: Boolean) {
     val config = EmailConfigKit.getConfig()
-    if (config.inboxEmail.isEmpty()) {
-        "邮箱地址为空".show(context)
-        return
-    }
-
     /*****************************************************************************************/
     /*********************************发送邮件*************************************************/
     /*****************************************************************************************/

@@ -12,6 +12,7 @@ import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.sendEmail
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DatabaseWrapper
+import com.pengxh.daily.app.utils.EmailConfigKit
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -66,8 +67,10 @@ class NotificationMonitorService : NotificationListenerService() {
         // 钉钉打卡通知
         if (pkg == Constant.TARGET_APP && notice.contains("成功")) {
             backToMainActivity()
-            "即将发送通知邮件，请注意查收".show(this)
-            notice.sendEmail(this, null, false)
+            if (EmailConfigKit.isEmailConfigured()) {
+                "即将发送通知邮件，请注意查收".show(this)
+                notice.sendEmail(this, null, false)
+            }
         }
 
         // 其他消息指令
@@ -76,7 +79,9 @@ class NotificationMonitorService : NotificationListenerService() {
                 val capacity = batteryManager.getIntProperty(
                     BatteryManager.BATTERY_PROPERTY_CAPACITY
                 )
-                "当前手机剩余电量为：${capacity}%".sendEmail(this, "查询手机电量通知", false)
+                if (EmailConfigKit.isEmailConfigured()) {
+                    "当前手机剩余电量为：${capacity}%".sendEmail(this, "查询手机电量通知", false)
+                }
             } else if (notice.contains("启动")) {
                 sendBroadcast(Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION))
             } else if (notice.contains("停止")) {
