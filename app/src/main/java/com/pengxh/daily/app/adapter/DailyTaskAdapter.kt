@@ -2,7 +2,6 @@ package com.pengxh.daily.app.adapter
 
 import android.content.Context
 import android.graphics.Color
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -76,7 +75,6 @@ class DailyTaskAdapter(
         newRows: MutableList<DailyTaskBean>, itemComparator: ItemComparator<DailyTaskBean>? = null
     ) {
         if (newRows.isEmpty()) {
-            Log.d(kTag, "refresh: newRows isEmpty")
             return
         }
 

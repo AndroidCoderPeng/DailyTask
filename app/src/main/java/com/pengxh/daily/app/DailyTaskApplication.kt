@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room.databaseBuilder
 import com.pengxh.daily.app.utils.DailyTaskDataBase
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.vm.SharedDataViewModel
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlin.properties.Delegates
@@ -32,6 +33,7 @@ class DailyTaskApplication : Application() {
         super.onCreate()
         application = this
         SaveKeyValues.initSharedPreferences(this)
+        LogFileManager.initLogFile(this)
         dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db")
             .allowMainThreadQueries()
             .build()

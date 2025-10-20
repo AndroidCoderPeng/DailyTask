@@ -7,18 +7,16 @@ import android.content.Intent
 import android.os.Binder
 import android.os.CountDownTimer
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
+import com.pengxh.daily.app.utils.LogFileManager
 
 /**
  * APP倒计时服务，解决手机灭屏后倒计时会出现延迟的问题
  * */
 class CountDownTimerService : Service() {
-
-    private val kTag = "CountDownTimerService"
     private val binder by lazy { LocaleBinder() }
     private val notificationManager by lazy { getSystemService(NOTIFICATION_SERVICE) as NotificationManager }
     private val notificationBuilder by lazy {
@@ -68,7 +66,7 @@ class CountDownTimerService : Service() {
             countDownTimer = null
             isTimerRunning = false
         }
-        Log.d(kTag, "startCountDown: 倒计时任务开始，执行第${index}个任务")
+        LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${index}个任务")
         countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
                 val seconds = (millisUntilFinished / 1000).toInt()
@@ -106,7 +104,7 @@ class CountDownTimerService : Service() {
             notificationManager.notify(notificationId, notification)
             isTimerRunning = false
         }
-        Log.d(kTag, "cancelCountDown: 倒计时任务取消")
+        LogFileManager.writeLog("cancelCountDown: 倒计时任务取消")
     }
 
     override fun onDestroy() {

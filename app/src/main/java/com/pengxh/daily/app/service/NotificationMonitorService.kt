@@ -5,7 +5,6 @@ import android.content.Intent
 import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import android.util.Log
 import com.pengxh.daily.app.bean.NotificationBean
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
@@ -31,7 +30,6 @@ class NotificationMonitorService : NotificationListenerService() {
      * 有可用的并且和通知管理器连接成功时回调
      */
     override fun onListenerConnected() {
-        Log.d(kTag, "onListenerConnected: 通知监听服务运行中")
         sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION))
     }
 
@@ -105,7 +103,6 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification) {}
 
     override fun onListenerDisconnected() {
-        Log.d(kTag, "onListenerDisconnected: 通知监听服务已关闭")
         sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION))
     }
 }

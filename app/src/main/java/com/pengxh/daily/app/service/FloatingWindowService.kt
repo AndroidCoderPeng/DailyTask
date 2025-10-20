@@ -9,7 +9,6 @@ import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.WindowManager
@@ -20,8 +19,6 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 
 class FloatingWindowService : Service() {
-
-    private val kTag = "FloatingWindowService"
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private val floatView by lazy {
         val tempContainer = LinearLayout(this) // 创建一个临时的父布局
@@ -88,7 +85,6 @@ class FloatingWindowService : Service() {
     private fun initBroadcastReceiver() {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                Log.d(kTag, "onReceive: ${intent?.action}")
                 when (intent?.action) {
                     Constant.BROADCAST_TICK_TIME_ACTION -> {
                         val time = intent.getStringExtra("data")

@@ -8,10 +8,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import java.util.Calendar
 
@@ -19,8 +19,6 @@ import java.util.Calendar
  * APP前台服务，降低APP被系统杀死的可能性
  * */
 class ForegroundRunningService : Service() {
-
-    private val kTag = "ForegroundService"
     private val notificationId = Int.MAX_VALUE
     private val notificationManager by lazy { getSystemService(NOTIFICATION_SERVICE) as NotificationManager }
     private val notificationBuilder by lazy {
@@ -65,15 +63,17 @@ class ForegroundRunningService : Service() {
                     val hour = SaveKeyValues.getValue(
                         Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
                     ) as Int
-
                     val calendar = Calendar.getInstance()
                     val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-                    Log.d(kTag, "当前时间: $currentHour, 计划时间: $hour")
-
-                    if (currentHour >= hour) {
-                        sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
-                    } else {
-                        Log.d(kTag, "onReceive: 设定时间未到，继续执行当天任务")
+                    if (currentHour == hour) {
+                        val currentMinute = calendar.get(Calendar.MINUTE)
+                        // 只在整点执行
+                        if (currentMinute == 0) {
+                            sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
+                            LogFileManager.writeLog("onReceive: 达到计划时间，重置每日任务")
+                        } else {
+                            LogFileManager.writeLog("onReceive: 任务已重置，无需处理")
+                        }
                     }
                 }
             }

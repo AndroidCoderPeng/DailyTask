@@ -16,7 +16,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.provider.Settings
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -44,6 +43,7 @@ import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DatabaseWrapper
 import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.TimeKit
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseFragment
@@ -93,7 +93,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                     Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask(true)
 
                     Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
-                        Log.d(kTag, "开始超时倒计时")
                         val time = SaveKeyValues.getValue(
                             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
                         ) as String
@@ -123,7 +122,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                     Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION -> {
                         timeoutTimer?.cancel()
                         timeoutTimer = null
-                        Log.d(kTag, "取消超时定时器，执行下一个任务")
+                        LogFileManager.writeLog("取消超时定时器，执行下一个任务")
                         weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
                     }
                 }
@@ -364,7 +363,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             "循环任务启动失败，请先添加任务时间点".show(requireContext())
             return
         }
-        Log.d(kTag, "开始执行每日任务")
+        LogFileManager.writeLog("开始执行每日任务")
         dailyTaskHandler.post(dailyTaskRunnable)
         startResetTaskTimer()
         isTaskStarted = true
@@ -383,7 +382,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
      * */
     private val dailyTaskRunnable = Runnable {
         val taskIndex = taskBeans.getTaskIndex()
-        Log.d(kTag, "执行周期任务，任务index是: $taskIndex")
+        LogFileManager.writeLog("执行周期任务，任务index是: $taskIndex")
         if (taskIndex == -1) {
             weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
         } else {
@@ -415,7 +414,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     }
 
     private fun stopExecuteTask(isRemote: Boolean) {
-        Log.d(kTag, "停止执行每日任务")
+        LogFileManager.writeLog("停止执行每日任务")
         dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
         isTaskStarted = false
@@ -513,7 +512,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 val pair = task.diffCurrent()
                 dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
                 val diff = pair.second
-                Log.d(kTag, "任务时间差是: $diff 秒")
                 if (EmailManager.isEmailConfigured()) {
                     EmailManager.sendEmail(
                         requireContext(),
