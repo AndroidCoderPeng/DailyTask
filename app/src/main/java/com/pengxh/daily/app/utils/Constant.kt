@@ -6,12 +6,7 @@ package com.pengxh.daily.app.utils
  * @date: 2019/12/29 12:42
  */
 object Constant {
-    const val EMAIL_SEND_ADDRESS_KEY = "EMAIL_SEND_ADDRESS_KEY"
-    const val EMAIL_SEND_CODE_KEY = "EMAIL_SEND_CODE_KEY"
-    const val EMAIL_SEND_SERVER_KEY = "EMAIL_SEND_SERVER_KEY"
-    const val EMAIL_SEND_PORT_KEY = "EMAIL_SEND_PORT_KEY"
-    const val EMAIL_IN_BOX_KEY = "EMAIL_IN_BOX_KEY"
-    const val EMAIL_TITLE_KEY = "EMAIL_TITLE_KEY"
+    const val EMAIL_CONFIG_KEY = "EMAIL_CONFIG_KEY"
     const val STAY_DD_TIMEOUT_KEY = "STAY_DD_TIMEOUT_KEY"
     const val BACK_TO_HOME_KEY = "BACK_TO_HOME_KEY"
     const val TASK_NAME_KEY = "TASK_KEY"

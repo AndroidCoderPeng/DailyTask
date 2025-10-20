@@ -39,12 +39,11 @@ import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.getTaskIndex
-import com.pengxh.daily.app.extensions.sendEmail
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DatabaseWrapper
-import com.pengxh.daily.app.utils.EmailConfigKit
+import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.TimeKit
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseFragment
@@ -144,8 +143,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                                 //如果倒计时结束，那么表明没有收到打卡成功的通知
                                 requireContext().backToMainActivity()
                                 "未监听到打卡通知，发送异常日志邮件，请注意查收".show(requireContext())
-                                if (EmailConfigKit.isEmailConfigured()) {
-                                    "".sendEmail(requireContext(), null, false)
+                                if (EmailManager.isEmailConfigured()) {
+                                    EmailManager.sendEmail(requireContext(), null, "", false)
                                 }
                             }
                         }
@@ -371,9 +370,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
-        if (isRemoteTask && EmailConfigKit.isEmailConfigured()) {
-            "循环任务启动成功，请注意下次打卡时间".sendEmail(
-                requireContext(), "启动循环任务通知", false
+        if (isRemoteTask && EmailManager.isEmailConfigured()) {
+            EmailManager.sendEmail(
+                requireContext(), "启动循环任务通知", "循环任务启动成功，请注意下次打卡时间", false
             )
         }
     }
@@ -389,9 +388,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.text = "启动"
         binding.tipsView.text = ""
         dailyTaskAdapter.updateCurrentTaskState(-1)
-        if (isRemote && EmailConfigKit.isEmailConfigured()) {
-            "循环任务停止成功，请及时打开下次任务".sendEmail(
-                requireContext(), "暂停循环任务通知", false
+        if (isRemote && EmailManager.isEmailConfigured()) {
+            EmailManager.sendEmail(
+                requireContext(), "暂停循环任务通知", "循环任务停止成功，请及时打开下次任务", false
             )
         }
     }
@@ -525,9 +524,12 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
                 val diff = pair.second
                 Log.d(kTag, "任务时间差是: $diff 秒")
-                if (EmailConfigKit.isEmailConfigured()) {
-                    "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}".sendEmail(
-                        requireContext(), "任务执行通知", false
+                if (EmailManager.isEmailConfigured()) {
+                    EmailManager.sendEmail(
+                        requireContext(),
+                        "任务执行通知",
+                        "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
+                        false
                     )
                 }
                 countDownTimerService?.startCountDown(index + 1, diff)

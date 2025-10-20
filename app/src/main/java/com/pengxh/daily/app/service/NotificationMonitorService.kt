@@ -9,10 +9,9 @@ import android.util.Log
 import com.pengxh.daily.app.bean.NotificationBean
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
-import com.pengxh.daily.app.extensions.sendEmail
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DatabaseWrapper
-import com.pengxh.daily.app.utils.EmailConfigKit
+import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -67,9 +66,9 @@ class NotificationMonitorService : NotificationListenerService() {
         // 钉钉打卡通知
         if (pkg == Constant.TARGET_APP && notice.contains("成功")) {
             backToMainActivity()
-            if (EmailConfigKit.isEmailConfigured()) {
+            if (EmailManager.isEmailConfigured()) {
                 "即将发送通知邮件，请注意查收".show(this)
-                notice.sendEmail(this, null, false)
+                EmailManager.sendEmail(this, null, notice, false)
             }
         }
 
@@ -79,8 +78,13 @@ class NotificationMonitorService : NotificationListenerService() {
                 val capacity = batteryManager.getIntProperty(
                     BatteryManager.BATTERY_PROPERTY_CAPACITY
                 )
-                if (EmailConfigKit.isEmailConfigured()) {
-                    "当前手机剩余电量为：${capacity}%".sendEmail(this, "查询手机电量通知", false)
+                if (EmailManager.isEmailConfigured()) {
+                    EmailManager.sendEmail(
+                        this,
+                        "查询手机电量通知",
+                        "当前手机剩余电量为：${capacity}%",
+                        false
+                    )
                 }
             } else if (notice.contains("启动")) {
                 sendBroadcast(Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION))

@@ -29,7 +29,7 @@ import com.pengxh.daily.app.ui.NoticeRecordActivity
 import com.pengxh.daily.app.ui.QuestionAndAnswerActivity
 import com.pengxh.daily.app.ui.TaskConfigActivity
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailConfigKit
+import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.base.KotlinBaseFragment
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
@@ -141,7 +141,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     override fun onResume() {
         super.onResume()
-        binding.emailSwitch.isChecked = EmailConfigKit.isEmailConfigured()
+        binding.emailSwitch.isChecked = EmailManager.isEmailConfigured()
         binding.backToHomeSwitch.isChecked = SaveKeyValues.getValue(
             Constant.BACK_TO_HOME_KEY, false
         ) as Boolean
