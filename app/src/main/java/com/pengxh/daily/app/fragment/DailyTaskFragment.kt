@@ -111,6 +111,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                                 //如果倒计时结束，那么表明没有收到打卡成功的通知
                                 requireContext().backToMainActivity()
                                 "未监听到打卡通知，发送异常日志邮件，请注意查收".show(requireContext())
+                                LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
                                 if (EmailManager.isEmailConfigured()) {
                                     EmailManager.sendEmail(requireContext(), null, "", false)
                                 }
@@ -207,8 +208,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 if (taskBeans.isNotEmpty()) {
                     addTask()
                 } else {
-                    BottomActionSheet.Builder()
-                        .setContext(requireContext())
+                    BottomActionSheet.Builder().setContext(requireContext())
                         .setActionItemTitle(arrayListOf("添加任务", "导入任务"))
                         .setItemTextColor(R.color.theme_color.convertColor(requireContext()))
                         .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
@@ -382,10 +382,11 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
      * */
     private val dailyTaskRunnable = Runnable {
         val taskIndex = taskBeans.getTaskIndex()
-        LogFileManager.writeLog("执行周期任务，任务index是: $taskIndex")
         if (taskIndex == -1) {
+            LogFileManager.writeLog("今日周期任务已全部执行完毕")
             weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
         } else {
+            LogFileManager.writeLog("执行周期任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
             weakReferenceHandler.run {
                 val message = obtainMessage()
                 message.what = startTaskCode
