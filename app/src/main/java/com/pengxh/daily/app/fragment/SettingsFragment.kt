@@ -42,6 +42,7 @@ import kotlinx.coroutines.launch
 class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     private var broadcastReceiver: BroadcastReceiver? = null
+    private val emailManager by lazy { EmailManager(requireContext()) }
 
     override fun setupTopBarLayout() {
 
@@ -141,7 +142,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     override fun onResume() {
         super.onResume()
-        binding.emailSwitch.isChecked = EmailManager.isEmailConfigured()
+        binding.emailSwitch.isChecked = emailManager.isEmailConfigured()
         binding.backToHomeSwitch.isChecked = SaveKeyValues.getValue(
             Constant.BACK_TO_HOME_KEY, false
         ) as Boolean

@@ -49,7 +49,6 @@
                 android:layout_weight="2"
                 app:boxBackgroundMode="none"
                 app:boxStrokeWidthFocused="0dp"
-                app:endIconMode="clear_text"
                 app:hintEnabled="false">
 
                 <com.google.android.material.textfield.TextInputEditText
@@ -57,12 +56,21 @@
                     android:layout_width="match_parent"
                     android:layout_height="36dp"
                     android:gravity="end|center_vertical"
-                    android:hint="如：xxxxx@qq.com"
-                    android:inputType="textEmailAddress"
+                    android:hint="如：123456789"
+                    android:inputType="number"
+                    android:maxLength="15"
                     android:padding="0dp"
                     android:singleLine="true"
                     android:textSize="@dimen/sp_16" />
             </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textview.MaterialTextView
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:gravity="center_vertical"
+                android:text="\@qq.com"
+                android:textColor="@color/text_default_color"
+                android:textSize="@dimen/sp_16" />
         </LinearLayout>
 
         <View
@@ -115,53 +123,11 @@
             android:background="#CCC" />
 
         <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
-            android:background="@color/white"
-            android:orientation="horizontal"
-            android:paddingHorizontal="16dp">
-
-            <com.google.android.material.textview.MaterialTextView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:gravity="center_vertical"
-                android:text="服务器"
-                android:textColor="@color/text_default_color"
-                android:textSize="@dimen/sp_16" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="2"
-                app:boxBackgroundMode="none"
-                app:boxStrokeWidthFocused="0dp"
-                app:endIconMode="clear_text"
-                app:hintEnabled="false">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/emailSendServerView"
-                    android:layout_width="match_parent"
-                    android:layout_height="36dp"
-                    android:gravity="end|center_vertical"
-                    android:hint="如：smtp.qq.com"
-                    android:padding="0dp"
-                    android:singleLine="true"
-                    android:textSize="@dimen/sp_16" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:layout_marginHorizontal="@dimen/dp_16"
-            android:background="#CCC" />
-
-        <LinearLayout
+            android:id="@+id/emailLayout"
             android:layout_width="match_parent"
             android:layout_height="@dimen/itemLayoutHeight"
             android:background="@drawable/bg_solid_layout_white_16"
-            android:orientation="horizontal"
+            android:gravity="center_vertical"
             android:paddingHorizontal="16dp">
 
             <com.google.android.material.textview.MaterialTextView
@@ -169,7 +135,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:gravity="center_vertical"
-                android:text="端口号"
+                android:text="收件箱"
                 android:textColor="@color/text_default_color"
                 android:textSize="@dimen/sp_16" />
 
@@ -183,65 +149,24 @@
                 app:hintEnabled="false">
 
                 <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/emailSendPortView"
+                    android:id="@+id/emailInboxView"
                     android:layout_width="match_parent"
                     android:layout_height="36dp"
                     android:gravity="end|center_vertical"
-                    android:hint="如：465"
-                    android:inputType="number"
-                    android:maxLength="5"
+                    android:hint="如：xxxxx@qq.com"
+                    android:inputType="textEmailAddress"
                     android:padding="0dp"
                     android:singleLine="true"
                     android:textSize="@dimen/sp_16" />
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/emailLayout"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/itemLayoutHeight"
-        android:layout_marginHorizontal="@dimen/dp_16"
-        android:background="@drawable/bg_solid_layout_white_16"
-        android:gravity="center_vertical"
-        android:paddingHorizontal="16dp">
-
-        <com.google.android.material.textview.MaterialTextView
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center_vertical"
-            android:text="收件箱"
-            android:textColor="@color/text_default_color"
-            android:textSize="@dimen/sp_16" />
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            app:boxBackgroundMode="none"
-            app:boxStrokeWidthFocused="0dp"
-            app:endIconMode="clear_text"
-            app:hintEnabled="false">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/emailInboxView"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                android:gravity="end|center_vertical"
-                android:hint="如：xxxxx@qq.com"
-                android:inputType="textEmailAddress"
-                android:padding="0dp"
-                android:singleLine="true"
-                android:textSize="@dimen/sp_16" />
-        </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/emailTitleLayout"
         android:layout_width="match_parent"
         android:layout_height="@dimen/itemLayoutHeight"
-        android:layout_margin="@dimen/dp_16"
+        android:layout_marginHorizontal="@dimen/dp_16"
         android:background="@drawable/bg_solid_layout_white_16"
         android:gravity="center_vertical"
         android:paddingHorizontal="16dp">

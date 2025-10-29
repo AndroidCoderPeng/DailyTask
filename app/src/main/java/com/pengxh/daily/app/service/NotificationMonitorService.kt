@@ -24,7 +24,8 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 class NotificationMonitorService : NotificationListenerService() {
 
     private val kTag = "MonitorService"
-    private val batteryManager by lazy { getSystemService(BATTERY_SERVICE) as BatteryManager }
+    private val emailManager by lazy { EmailManager(this) }
+    private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
 
     /**
      * 有可用的并且和通知管理器连接成功时回调
@@ -64,9 +65,9 @@ class NotificationMonitorService : NotificationListenerService() {
         // 钉钉打卡通知
         if (pkg == Constant.TARGET_APP && notice.contains("成功")) {
             backToMainActivity()
-            if (EmailManager.isEmailConfigured()) {
+            if (emailManager.isEmailConfigured()) {
                 "即将发送通知邮件，请注意查收".show(this)
-                EmailManager.sendEmail(this, null, notice, false)
+                emailManager.sendEmail(null, notice, false)
             }
         }
 
@@ -76,12 +77,9 @@ class NotificationMonitorService : NotificationListenerService() {
                 val capacity = batteryManager.getIntProperty(
                     BatteryManager.BATTERY_PROPERTY_CAPACITY
                 )
-                if (EmailManager.isEmailConfigured()) {
-                    EmailManager.sendEmail(
-                        this,
-                        "查询手机电量通知",
-                        "当前手机剩余电量为：${capacity}%",
-                        false
+                if (emailManager.isEmailConfigured()) {
+                    emailManager.sendEmail(
+                        "查询手机电量通知", "当前手机剩余电量为：${capacity}%", false
                     )
                 }
             } else if (notice.contains("启动")) {

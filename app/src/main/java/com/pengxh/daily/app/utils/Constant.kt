@@ -38,10 +38,6 @@ object Constant {
         "com.pengxh.daily.app.BROADCAST_START_COUNT_DOWN_TIMER_ACTION"
     const val BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION =
         "com.pengxh.daily.app.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION"
-    const val BROADCAST_SEND_EMAIL_SUCCESS_ACTION =
-        "com.pengxh.daily.app.BROADCAST_SEND_EMAIL_SUCCESS_ACTION"
-    const val BROADCAST_SEND_EMAIL_FAILED_ACTION =
-        "com.pengxh.daily.app.BROADCAST_SEND_EMAIL_FAILED_ACTION"
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
     const val WECHAT = "com.tencent.mm" // 微信

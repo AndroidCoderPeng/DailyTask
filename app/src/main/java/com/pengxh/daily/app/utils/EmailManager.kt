@@ -1,7 +1,6 @@
 package com.pengxh.daily.app.utils
 
 import android.content.Context
-import android.content.Intent
 import android.os.BatteryManager
 import com.google.gson.Gson
 import com.pengxh.daily.app.BuildConfig
@@ -12,6 +11,7 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Date
 import java.util.Properties
 import javax.mail.Message
@@ -20,7 +20,7 @@ import javax.mail.Transport
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
-object EmailManager {
+class EmailManager(private val context: Context) {
     private val gson by lazy { Gson() }
 
     fun setEmailConfig(emailConfig: EmailConfig) {
@@ -38,52 +38,23 @@ object EmailManager {
 
     fun isEmailConfigured(): Boolean {
         val config = getEmailConfig()
-        return config.emailSender.isNotEmpty() &&
-                config.authCode.isNotEmpty() &&
-                config.senderServer.isNotEmpty() &&
-                config.emailPort.isNotEmpty() &&
-                config.inboxEmail.isNotEmpty()
+        return config.emailSender.isNotEmpty() && config.authCode.isNotEmpty() && config.inboxEmail.isNotEmpty()
     }
 
-    private fun createSmtpProperties(config: EmailConfig): Properties {
+    private fun createSmtpProperties(): Properties {
         val props = Properties().apply {
-            put("mail.smtp.host", config.senderServer)
-            put("mail.smtp.port", config.emailPort)
-            put("mail.smtp.auth", "true")
+            put("mail.smtp.host", "smtp.qq.com") // 邮箱SMTP服务器地址
+            put("mail.smtp.port", "465") // 邮箱SMTP服务器端口
+            put("mail.smtp.auth", "true") // 邮箱SMTP服务器是否需要用户验证
             put("mail.smtp.ssl.checkserveridentity", "true")
+            put("mail.smtp.ssl.enable", "true") // 启用SSL加密
             put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
-        }
-
-        when {
-            config.emailSender.endsWith("@qq.com") -> {
-                props["mail.smtp.ssl.enable"] = "true"
-                props["mail.smtp.socketFactory.port"] = "465"
-            }
-
-            config.emailSender.endsWith("@163.com") -> {
-                setupStartTls(props, "smtp.163.com")
-            }
-
-            config.emailSender.endsWith("@126.com") -> {
-                setupStartTls(props, "smtp.126.com")
-            }
-
-            config.emailSender.endsWith("@yeah.net") -> {
-                setupStartTls(props, "smtp.yeah.net")
-            }
+            put("mail.smtp.socketFactory.port", "465") //Socket工厂端口
         }
         return props
     }
 
-    private fun setupStartTls(props: Properties, trustHost: String) {
-        props.apply {
-            put("mail.smtp.starttls.enable", true)
-            put("mail.smtp.starttls.required", true)
-            put("mail.smtp.ssl.trust", trustHost)
-        }
-    }
-
-    private fun buildMailContent(content: String, context: Context): String {
+    private fun buildMailContent(content: String): String {
         val baseContent = if (content.isBlank()) {
             "未监听到打卡成功的通知，请手动登录检查 ${System.currentTimeMillis().timestampToDate()}"
         } else {
@@ -91,36 +62,22 @@ object EmailManager {
         }
 
         val batteryCapacity = context.getSystemService<BatteryManager>()
-            ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            ?: -1
+            ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
 
         return "$baseContent，当前手机剩余电量为：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}"
     }
 
-    private fun handleSendFailure(e: Exception, context: Context, isTest: Boolean) {
-        if (!isTest) return
-
-        val errorMessage = when {
-            e.message?.contains("535", ignoreCase = true) == true ->
-                "邮箱认证失败，请检查邮箱账号和授权码是否正确"
-
-            e.message?.contains("authentication failed", ignoreCase = true) == true ->
-                "邮箱认证失败，请确认使用的是授权码而非登录密码"
-
-            else -> "邮件发送失败: ${e.javaClass.simpleName} - ${e.message}"
-        }
-
-        val intent = Intent(Constant.BROADCAST_SEND_EMAIL_FAILED_ACTION).apply {
-            putExtra("message", errorMessage)
-        }
-        context.sendBroadcast(intent)
-    }
-
-    fun sendEmail(context: Context, title: String?, content: String, isTest: Boolean) {
+    fun sendEmail(
+        title: String?,
+        content: String,
+        isTest: Boolean,
+        onSuccess: (() -> Unit)? = null,
+        onFailure: ((String) -> Unit)? = null
+    ) {
         val config = getEmailConfig()
 
         val authenticator = EmailAuthenticator(config.emailSender, config.authCode)
-        val props = createSmtpProperties(config)
+        val props = createSmtpProperties()
 
         val session = Session.getDefaultInstance(props, authenticator)
         val message = MimeMessage(session).apply {
@@ -128,16 +85,32 @@ object EmailManager {
             setRecipient(Message.RecipientType.TO, InternetAddress(config.inboxEmail))
             subject = title ?: config.emailTitle
             sentDate = Date()
-            setText(buildMailContent(content, context))
+            setText(buildMailContent(content))
         }
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Transport.send(message)
                 if (isTest) {
-                    context.sendBroadcast(Intent(Constant.BROADCAST_SEND_EMAIL_SUCCESS_ACTION))
+                    withContext(Dispatchers.Main) {
+                        onSuccess?.invoke()
+                    }
                 }
             } catch (e: Exception) {
-                handleSendFailure(e, context, isTest)
+                if (isTest) {
+                    val errorMessage = when {
+                        e.message?.contains("535", ignoreCase = true) == true ->
+                            "邮箱认证失败，请检查邮箱账号和授权码是否正确"
+
+                        e.message?.contains("authentication failed", ignoreCase = true) == true ->
+                            "邮箱认证失败，请确认使用的是授权码而非登录密码"
+
+                        else -> "邮件发送失败: ${e.javaClass.simpleName} - ${e.message}"
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        onFailure?.invoke(errorMessage)
+                    }
+                }
             }
         }
     }

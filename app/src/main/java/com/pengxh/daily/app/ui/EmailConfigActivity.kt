@@ -1,18 +1,9 @@
 package com.pengxh.daily.app.ui
 
-import android.annotation.SuppressLint
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.os.Build
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityEmailConfigBinding
 import com.pengxh.daily.app.extensions.initImmersionBar
-import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailConfig
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -24,41 +15,19 @@ import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
 class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
 
+    private val kTag = "EmailConfigActivity"
     private val context = this
-    private var broadcastReceiver: BroadcastReceiver? = null
+    private val emailManager by lazy { EmailManager(this) }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        broadcastReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                LoadingDialog.dismiss()
-                when (intent?.action) {
-                    Constant.BROADCAST_SEND_EMAIL_SUCCESS_ACTION -> {
-                        "发送成功，请注意查收".show(this@EmailConfigActivity)
-                    }
-
-                    Constant.BROADCAST_SEND_EMAIL_FAILED_ACTION -> {
-                        val message = intent.getStringExtra("message")
-                        "发送失败：${message}".show(this@EmailConfigActivity)
-                    }
-                }
-            }
-        }
-        val intentFilter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_SEND_EMAIL_SUCCESS_ACTION)
-            addAction(Constant.BROADCAST_SEND_EMAIL_FAILED_ACTION)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
+        val config = emailManager.getEmailConfig()
+        val emailSender = if (config.emailSender.contains("@qq.com")) {
+            config.emailSender.dropLast(7)
         } else {
-            registerReceiver(broadcastReceiver, intentFilter)
+            config.emailSender
         }
-
-        val config = EmailManager.getEmailConfig()
-        binding.emailSendAddressView.setText(config.emailSender)
+        binding.emailSendAddressView.setText(emailSender)
         binding.emailSendCodeView.setText(config.authCode)
-        binding.emailSendServerView.setText(config.senderServer)
-        binding.emailSendPortView.setText(config.emailPort)
         binding.emailInboxView.setText(config.inboxEmail)
         binding.emailTitleView.setText(config.emailTitle)
     }
@@ -79,7 +48,12 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
             }
 
             override fun onRightClick() {
-                val emailSendAddress = binding.emailSendAddressView.text.toString()
+                val address = binding.emailSendAddressView.text.toString()
+                val emailSendAddress = if (address.contains("@qq.com")) {
+                    address
+                } else {
+                    "${address}@qq.com"
+                }
                 if (emailSendAddress.isBlank()) {
                     "发件箱地址为空".show(context)
                     return
@@ -92,18 +66,6 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
                 val emailSendCode = binding.emailSendCodeView.text.toString()
                 if (emailSendCode.isBlank()) {
                     "发件箱授权码为空".show(context)
-                    return
-                }
-
-                val emailSendServer = binding.emailSendServerView.text.toString()
-                if (emailSendServer.isBlank()) {
-                    "发件箱服务器为空".show(context)
-                    return
-                }
-
-                val emailSendPort = binding.emailSendPortView.text.toString()
-                if (emailSendPort.isBlank()) {
-                    "发件箱服务器端口为空".show(context)
                     return
                 }
 
@@ -120,12 +82,10 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
                 val emailConfig = EmailConfig(
                     emailSendAddress,
                     emailSendCode,
-                    emailSendServer,
-                    emailSendPort,
                     emailInboxAddress,
                     binding.emailTitleView.text.toString()
                 )
-                EmailManager.setEmailConfig(emailConfig)
+                emailManager.setEmailConfig(emailConfig)
 
                 AlertControlDialog.Builder()
                     .setContext(context)
@@ -139,10 +99,20 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
                         }
 
                         override fun onConfirmClick() {
-                            if (EmailManager.isEmailConfigured()) {
+                            if (emailManager.isEmailConfigured()) {
                                 LoadingDialog.show(context, "邮件发送中，请稍后....")
-                                EmailManager.sendEmail(
-                                    context, "邮箱测试", "这是一封测试邮件，不必关注", true
+                                emailManager.sendEmail(
+                                    "邮箱测试",
+                                    "这是一封测试邮件，不必关注",
+                                    true,
+                                    onSuccess = {
+                                        LoadingDialog.dismiss()
+                                        "发送成功，请注意查收".show(context)
+                                    },
+                                    onFailure = {
+                                        LoadingDialog.dismiss()
+                                        "发送失败：${it}".show(context)
+                                    }
                                 )
                             }
                         }
@@ -152,52 +122,6 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
     }
 
     override fun initEvent() {
-        binding.emailSendAddressView.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
 
-            }
-
-            override fun onTextChanged(p0: CharSequence?, p1: Int, p2: Int, p3: Int) {
-
-            }
-
-            @SuppressLint("SetTextI18n")
-            override fun afterTextChanged(p0: Editable?) {
-                val emailAddress = p0.toString()
-                if (emailAddress == "") {
-                    binding.emailSendServerView.setText("")
-                    binding.emailSendPortView.setText("")
-                    return
-                }
-                if (emailAddress.endsWith("@qq.com")) {
-                    binding.emailSendServerView.setText("smtp.qq.com")
-                    binding.emailSendPortView.setText("465")
-                } else if (emailAddress.endsWith("@163.com")) {
-                    binding.emailSendServerView.setText("smtp.163.com")
-                    binding.emailSendPortView.setText("587")
-                } else if (emailAddress.endsWith("@126.com")) {
-                    binding.emailSendServerView.setText("smtp.126.com")
-                    binding.emailSendPortView.setText("587")
-                } else if (emailAddress.endsWith("@yeah.net")) {
-                    binding.emailSendServerView.setText("smtp.yeah.net")
-                    binding.emailSendPortView.setText("587")
-                } else {
-                    binding.emailSendServerView.setText("")
-                    binding.emailSendPortView.setText("")
-                }
-            }
-        })
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        broadcastReceiver?.let {
-            try {
-                unregisterReceiver(it)
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
-        }
-        broadcastReceiver = null
     }
 }

@@ -72,6 +72,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private val completedAllTaskCode = 2024120803
     private val marginOffset by lazy { 16.dp2px(requireContext()) }
     private val gson by lazy { Gson() }
+    private val emailManager by lazy { EmailManager(requireContext()) }
     private val dailyTaskHandler = Handler(Looper.getMainLooper())
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
     private var taskBeans = mutableListOf<DailyTaskBean>()
@@ -112,8 +113,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                                 requireContext().backToMainActivity()
                                 "未监听到打卡通知，发送异常日志邮件，请注意查收".show(requireContext())
                                 LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                                if (EmailManager.isEmailConfigured()) {
-                                    EmailManager.sendEmail(requireContext(), null, "", false)
+                                if (emailManager.isEmailConfigured()) {
+                                    emailManager.sendEmail(null, "", false)
                                 }
                             }
                         }
@@ -370,10 +371,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
-        if (isRemoteTask && EmailManager.isEmailConfigured()) {
-            EmailManager.sendEmail(
-                requireContext(), "启动循环任务通知", "循环任务启动成功，请注意下次打卡时间", false
-            )
+        if (isRemoteTask && emailManager.isEmailConfigured()) {
+            emailManager.sendEmail("启动循环任务通知", "循环任务启动成功，请注意下次打卡时间", false)
         }
     }
 
@@ -426,10 +425,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.text = "启动"
         binding.tipsView.text = ""
         dailyTaskAdapter.updateCurrentTaskState(-1)
-        if (isRemote && EmailManager.isEmailConfigured()) {
-            EmailManager.sendEmail(
-                requireContext(), "暂停循环任务通知", "循环任务停止成功，请及时打开下次任务", false
-            )
+        if (isRemote && emailManager.isEmailConfigured()) {
+            emailManager.sendEmail("暂停循环任务通知", "循环任务停止成功，请及时打开下次任务", false)
         }
     }
 
@@ -513,9 +510,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 val pair = task.diffCurrent()
                 dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
                 val diff = pair.second
-                if (EmailManager.isEmailConfigured()) {
-                    EmailManager.sendEmail(
-                        requireContext(),
+                if (emailManager.isEmailConfigured()) {
+                    emailManager.sendEmail(
                         "任务执行通知",
                         "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
                         false
