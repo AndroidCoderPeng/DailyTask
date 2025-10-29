@@ -13,8 +13,8 @@ android {
         applicationId 'com.pengxh.daily.app'
         minSdk 26
         targetSdk 36
-        versionCode 2220
-        versionName '2.2.2.0'
+        versionCode 2221
+        versionName '2.2.2.1'
     }
 
     flavorDimensions += 'versionCode'
