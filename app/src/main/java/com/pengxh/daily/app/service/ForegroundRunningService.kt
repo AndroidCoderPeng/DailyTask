@@ -11,6 +11,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import java.util.Calendar
@@ -35,6 +36,7 @@ class ForegroundRunningService : Service() {
             setVibrate(null) // 禁用振动
         }
     }
+    private val emailManager by lazy { EmailManager(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -58,24 +60,35 @@ class ForegroundRunningService : Service() {
 
     private val timeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.action?.let {
-                if (it == Intent.ACTION_TIME_TICK) {
-                    val hour = SaveKeyValues.getValue(
-                        Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-                    ) as Int
-                    val calendar = Calendar.getInstance()
-                    val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-                    if (currentHour == hour) {
-                        val currentMinute = calendar.get(Calendar.MINUTE)
-                        // 只在整点执行
-                        if (currentMinute == 0) {
-                            sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
-                            LogFileManager.writeLog("onReceive: 达到计划时间，重置每日任务")
-                        } else {
-                            LogFileManager.writeLog("onReceive: 任务已重置，无需处理")
+            val needAutoStart = SaveKeyValues.getValue(
+                Constant.TASK_NEED_AUTO_START_KEY, true
+            ) as Boolean
+            if (needAutoStart) {
+                intent?.action?.let {
+                    if (it == Intent.ACTION_TIME_TICK) {
+                        val hour = SaveKeyValues.getValue(
+                            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+                        ) as Int
+                        val calendar = Calendar.getInstance()
+                        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+                        if (currentHour == hour) {
+                            val currentMinute = calendar.get(Calendar.MINUTE)
+                            // 只在整点执行
+                            if (currentMinute == 0) {
+                                sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
+                                LogFileManager.writeLog("onReceive: 达到计划时间，重置每日任务")
+                            } else {
+                                LogFileManager.writeLog("onReceive: 任务已重置，无需处理")
+                            }
                         }
                     }
                 }
+            } else {
+                emailManager.sendEmail(
+                    "循环任务状态通知",
+                    "循环任务已手动停止，将不再自动重置每日任务！如需开启循环任务，通过远程消息发送【启动】指令即可。",
+                    false
+                )
             }
         }
     }

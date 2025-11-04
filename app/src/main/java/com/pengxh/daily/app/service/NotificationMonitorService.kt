@@ -83,8 +83,10 @@ class NotificationMonitorService : NotificationListenerService() {
                     )
                 }
             } else if (notice.contains("启动")) {
+                SaveKeyValues.putValue(Constant.TASK_NEED_AUTO_START_KEY, true)
                 sendBroadcast(Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION))
             } else if (notice.contains("停止")) {
+                SaveKeyValues.putValue(Constant.TASK_NEED_AUTO_START_KEY, false)
                 sendBroadcast(Intent(Constant.BROADCAST_STOP_DAILY_TASK_ACTION))
             } else {
                 val key = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
