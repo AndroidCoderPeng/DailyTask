@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.Constant
@@ -18,19 +19,20 @@ import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
  * */
 fun Context.notificationEnable(): Boolean {
     val packages = NotificationManagerCompat.getEnabledListenerPackages(this)
-    return packages.contains(this.packageName)
+    return packages.contains(packageName)
 }
 
 /**
  * 打开指定包名的apk
  */
-fun Context.openApplication(needEmail: Boolean) {
-    val pm = this.packageManager
+fun Context.openApplication(needCountDown: Boolean) {
     val isContains = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.getPackageInfo(Constant.TARGET_APP, PackageManager.PackageInfoFlags.of(0))
+            packageManager.getPackageInfo(
+                Constant.TARGET_APP, PackageManager.PackageInfoFlags.of(0)
+            )
         } else {
-            pm.getPackageInfo(Constant.TARGET_APP, 0)
+            packageManager.getPackageInfo(Constant.TARGET_APP, 0)
         }
         true
     } catch (e: PackageManager.NameNotFoundException) {
@@ -54,21 +56,21 @@ fun Context.openApplication(needEmail: Boolean) {
 
     sendBroadcast(Intent(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION))
     /**跳转钉钉开始*****************************************/
-    val resolveIntent = Intent(Intent.ACTION_MAIN, null).apply {
-        addCategory(Intent.CATEGORY_LAUNCHER)
-        setPackage(Constant.TARGET_APP)
-    }
-    val apps = pm.queryIntentActivities(resolveIntent, 0)
-    //前面已经判断过钉钉是否安装，所以此处一定有值
-    val info = apps.first()
-    val intent = Intent(Intent.ACTION_MAIN).apply {
+    val intent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        component = ComponentName(info.activityInfo.packageName, info.activityInfo.name)
+        setPackage(Constant.TARGET_APP)
     }
-    this.startActivity(intent)
+    val activities = packageManager.queryIntentActivities(intent, 0)
+    if (activities.isNotEmpty()) {
+        val info = activities.first()
+        intent.component = ComponentName(info.activityInfo.packageName, info.activityInfo.name)
+        startActivity(intent)
+    } else {
+        Log.e("openApplication", "No launcher activity found for target app.", NullPointerException())
+    }
     /**跳转钉钉结束*****************************************/
-    if (needEmail) {
+    if (needCountDown) {
         sendBroadcast(Intent(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION))
     }
 }
