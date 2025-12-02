@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import java.util.Calendar
 
@@ -84,8 +85,9 @@ class ForegroundRunningService : Service() {
                                 sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
                             } else {
                                 message =
-                                    "循环任务已手动停止，将不再自动重置每日任务！如需开启循环任务，通过远程消息发送【启动】指令即可。"
+                                    "循环任务已手动停止，将不再自动重置每日任务！如需恢复，可通过远程消息发送【启动】指令。"
                             }
+                            LogFileManager.writeLog(message)
                             emailManager.sendEmail("循环任务状态通知", message, false)
                         }
                     }
