@@ -26,6 +26,9 @@ class NotificationMonitorService : NotificationListenerService() {
     private val kTag = "MonitorService"
     private val emailManager by lazy { EmailManager(this) }
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
+    private val auxiliaryApp = arrayOf(
+        Constant.WECHAT, Constant.WEWORK, Constant.QQ, Constant.TIM, Constant.ZFB
+    )
 
     /**
      * 有可用的并且和通知管理器连接成功时回调
@@ -51,7 +54,7 @@ class NotificationMonitorService : NotificationListenerService() {
         sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION))
 
         // 保存指定包名的通知，其他的一律不保存
-        if (pkg == Constant.TARGET_APP || pkg == Constant.WECHAT || pkg == Constant.WEWORK || pkg == Constant.QQ || pkg == Constant.TIM || pkg == Constant.ZFB) {
+        if (pkg == Constant.TARGET_APP || pkg in auxiliaryApp) {
             NotificationBean().apply {
                 packageName = pkg
                 notificationTitle = title
@@ -72,7 +75,7 @@ class NotificationMonitorService : NotificationListenerService() {
         }
 
         // 其他消息指令
-        if (pkg == Constant.WECHAT || pkg == Constant.WEWORK || pkg == Constant.QQ || pkg == Constant.TIM || pkg == Constant.ZFB) {
+        if (pkg in auxiliaryApp) {
             if (notice.contains("电量")) {
                 val capacity = batteryManager.getIntProperty(
                     BatteryManager.BATTERY_PROPERTY_CAPACITY
@@ -83,10 +86,10 @@ class NotificationMonitorService : NotificationListenerService() {
                     )
                 }
             } else if (notice.contains("启动")) {
-                SaveKeyValues.putValue(Constant.TASK_NEED_AUTO_START_KEY, true)
+                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
                 sendBroadcast(Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION))
             } else if (notice.contains("停止")) {
-                SaveKeyValues.putValue(Constant.TASK_NEED_AUTO_START_KEY, false)
+                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
                 sendBroadcast(Intent(Constant.BROADCAST_STOP_DAILY_TASK_ACTION))
             } else if (notice.contains("息屏")) {
                 sendBroadcast(Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION))
