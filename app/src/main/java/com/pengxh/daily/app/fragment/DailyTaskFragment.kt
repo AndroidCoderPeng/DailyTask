@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.fragment
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -81,17 +80,16 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private var resetTaskTimer: CountDownTimer? = null
     private var countDownTimerService: CountDownTimerService? = null
     private var isRefresh = false
-    private var isRemoteTask = false
     private var serviceIntent: Intent? = null
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
                 when (it) {
-                    Constant.BROADCAST_RESET_TASK_ACTION -> startExecuteTask(false)
+                    Constant.BROADCAST_RESET_TASK_ACTION, Constant.BROADCAST_START_DAILY_TASK_ACTION -> {
+                        startExecuteTask()
+                    }
 
-                    Constant.BROADCAST_START_DAILY_TASK_ACTION -> startExecuteTask(true)
-
-                    Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask(true)
+                    Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask()
 
                     Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
                         val time = SaveKeyValues.getValue(
@@ -111,7 +109,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                             override fun onFinish() {
                                 //如果倒计时结束，那么表明没有收到打卡成功的通知
                                 requireContext().backToMainActivity()
-                                "未监听到打卡通知，发送异常日志邮件，请注意查收".show(requireContext())
                                 LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
                                 if (emailManager.isEmailConfigured()) {
                                     emailManager.sendEmail(null, "", false)
@@ -160,9 +157,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         return FragmentDailyTaskBinding.inflate(inflater, container, false)
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    @SuppressWarnings("all")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val intentFilter = IntentFilter().apply {
+        val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_RESET_TASK_ACTION) // 重置任务
             addAction(Constant.BROADCAST_START_DAILY_TASK_ACTION) // 开始执行每日任务
             addAction(Constant.BROADCAST_STOP_DAILY_TASK_ACTION) // 取消执行每日任务
@@ -170,11 +167,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION) // 取消超时定时器
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(
-                broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED
-            )
+            requireContext().registerReceiver(broadcastReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
-            requireContext().registerReceiver(broadcastReceiver, intentFilter)
+            requireContext().registerReceiver(broadcastReceiver, filter)
         }
 
         taskBeans = DatabaseWrapper.loadAllTask()
@@ -199,7 +194,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             requireContext().bindService(this, connection, Context.BIND_AUTO_CREATE)
         }
 
-        DailyTaskApplication.get().sharedViewModel.addTaskCode.observe(viewLifecycleOwner) {
+        DailyTaskApplication.get().sharedViewModel.addTaskCode.observe(this) {
             if (it == 1) {
                 if (isTaskStarted) {
                     "任务进行中，无法添加".show(requireContext())
@@ -209,7 +204,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 if (taskBeans.isNotEmpty()) {
                     addTask()
                 } else {
-                    BottomActionSheet.Builder().setContext(requireContext())
+                    BottomActionSheet.Builder()
+                        .setContext(requireContext())
                         .setActionItemTitle(arrayListOf("添加任务", "导入任务"))
                         .setItemTextColor(R.color.theme_color.convertColor(requireContext()))
                         .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
@@ -316,9 +312,18 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     override fun initEvent() {
         binding.executeTaskButton.setOnClickListener {
             if (!isTaskStarted) {
-                startExecuteTask(false)
+                if (Settings.canDrawOverlays(requireContext())) {
+                    if (serviceIntent == null) {
+                        serviceIntent = Intent(requireContext(), FloatingWindowService::class.java)
+                    }
+                    requireContext().startService(serviceIntent)
+                    startExecuteTask()
+                } else {
+                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                    overlayPermissionLauncher.launch(intent)
+                }
             } else {
-                stopExecuteTask(false)
+                stopExecuteTask()
             }
         }
 
@@ -338,28 +343,18 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.refreshView.setEnableLoadMore(false)
     }
 
-    private fun startExecuteTask(isRemote: Boolean) {
-        isRemoteTask = isRemote
-        if (Settings.canDrawOverlays(requireContext())) {
-            startFloatingWindowService()
-        } else {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-            overlayPermissionLauncher.launch(intent)
-        }
-    }
-
     private val overlayPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (Settings.canDrawOverlays(requireContext())) {
-                startFloatingWindowService()
+                if (serviceIntent == null) {
+                    serviceIntent = Intent(requireContext(), FloatingWindowService::class.java)
+                }
+                requireContext().startService(serviceIntent)
+                startExecuteTask()
             }
         }
 
-    private fun startFloatingWindowService() {
-        if (serviceIntent == null) {
-            serviceIntent = Intent(requireContext(), FloatingWindowService::class.java)
-        }
-        requireContext().startService(serviceIntent)
+    private fun startExecuteTask() {
         if (DatabaseWrapper.loadAllTask().isEmpty()) {
             "循环任务启动失败，请先添加任务时间点".show(requireContext())
             return
@@ -371,7 +366,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
-        if (isRemoteTask && emailManager.isEmailConfigured()) {
+        if (emailManager.isEmailConfigured()) {
             emailManager.sendEmail("启动循环任务通知", "循环任务启动成功，请注意下次打卡时间", false)
         }
     }
@@ -384,6 +379,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         if (taskIndex == -1) {
             LogFileManager.writeLog("今日周期任务已全部执行完毕")
             weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
+            if (emailManager.isEmailConfigured()) {
+                emailManager.sendEmail("循环任务状态通知", "今日周期任务已全部执行完毕", false)
+            }
         } else {
             LogFileManager.writeLog("执行周期任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
             weakReferenceHandler.run {
@@ -413,7 +411,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         resetTaskTimer?.start()
     }
 
-    private fun stopExecuteTask(isRemote: Boolean) {
+    private fun stopExecuteTask() {
         LogFileManager.writeLog("停止执行每日任务")
         dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
@@ -425,7 +423,10 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.text = "启动"
         binding.tipsView.text = ""
         dailyTaskAdapter.updateCurrentTaskState(-1)
-        if (isRemote && emailManager.isEmailConfigured()) {
+        serviceIntent?.let {
+            requireContext().stopService(it)
+        }
+        if (emailManager.isEmailConfigured()) {
             emailManager.sendEmail("暂停循环任务通知", "循环任务停止成功，请及时打开下次任务", false)
         }
     }
