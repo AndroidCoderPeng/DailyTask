@@ -99,22 +99,19 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
                         }
 
                         override fun onConfirmClick() {
-                            if (emailManager.isEmailConfigured()) {
-                                LoadingDialog.show(context, "邮件发送中，请稍后....")
-                                emailManager.sendEmail(
-                                    "邮箱测试",
-                                    "这是一封测试邮件，不必关注",
-                                    true,
-                                    onSuccess = {
-                                        LoadingDialog.dismiss()
-                                        "发送成功，请注意查收".show(context)
-                                    },
-                                    onFailure = {
-                                        LoadingDialog.dismiss()
-                                        "发送失败：${it}".show(context)
-                                    }
-                                )
-                            }
+                            LoadingDialog.show(context, "邮件发送中，请稍后....")
+                            emailManager.sendEmail(
+                                "邮箱测试", "这是一封测试邮件，不必关注",
+                                true,
+                                onSuccess = {
+                                    LoadingDialog.dismiss()
+                                    "发送成功，请注意查收".show(context)
+                                },
+                                onFailure = {
+                                    LoadingDialog.dismiss()
+                                    "发送失败：${it}".show(context)
+                                }
+                            )
                         }
                     }).build().show()
             }

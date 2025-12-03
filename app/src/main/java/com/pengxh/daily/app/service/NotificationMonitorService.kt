@@ -68,10 +68,8 @@ class NotificationMonitorService : NotificationListenerService() {
         // 钉钉打卡通知
         if (pkg == Constant.TARGET_APP && notice.contains("成功")) {
             backToMainActivity()
-            if (emailManager.isEmailConfigured()) {
-                "即将发送通知邮件，请注意查收".show(this)
-                emailManager.sendEmail(null, notice, false)
-            }
+            "即将发送通知邮件，请注意查收".show(this)
+            emailManager.sendEmail(null, notice, false)
         }
 
         // 其他消息指令
@@ -80,11 +78,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 val capacity = batteryManager.getIntProperty(
                     BatteryManager.BATTERY_PROPERTY_CAPACITY
                 )
-                if (emailManager.isEmailConfigured()) {
-                    emailManager.sendEmail(
-                        "查询手机电量通知", "当前手机剩余电量为：${capacity}%", false
-                    )
-                }
+                emailManager.sendEmail("查询手机电量通知", "当前手机剩余电量为：${capacity}%", false)
             } else if (notice.contains("启动")) {
                 SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
                 sendBroadcast(Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION))

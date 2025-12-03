@@ -110,9 +110,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                                 //如果倒计时结束，那么表明没有收到打卡成功的通知
                                 requireContext().backToMainActivity()
                                 LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                                if (emailManager.isEmailConfigured()) {
-                                    emailManager.sendEmail(null, "", false)
-                                }
+                                emailManager.sendEmail(null, "", false)
                             }
                         }
                         timeoutTimer?.start()
@@ -366,9 +364,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
-        if (emailManager.isEmailConfigured()) {
-            emailManager.sendEmail("启动循环任务通知", "循环任务启动成功，请注意下次打卡时间", false)
-        }
+        emailManager.sendEmail("启动循环任务通知", "循环任务启动成功，请注意下次打卡时间", false)
     }
 
     /**
@@ -379,9 +375,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         if (taskIndex == -1) {
             LogFileManager.writeLog("今日周期任务已全部执行完毕")
             weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
-            if (emailManager.isEmailConfigured()) {
-                emailManager.sendEmail("循环任务状态通知", "今日周期任务已全部执行完毕", false)
-            }
+            emailManager.sendEmail("循环任务状态通知", "今日周期任务已全部执行完毕", false)
         } else {
             LogFileManager.writeLog("执行周期任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
             weakReferenceHandler.run {
@@ -426,9 +420,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         serviceIntent?.let {
             requireContext().stopService(it)
         }
-        if (emailManager.isEmailConfigured()) {
-            emailManager.sendEmail("暂停循环任务通知", "循环任务停止成功，请及时打开下次任务", false)
-        }
+        emailManager.sendEmail("暂停循环任务通知", "循环任务停止成功，请及时打开下次任务", false)
     }
 
     private fun addTask() {
@@ -511,13 +503,11 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 val pair = task.diffCurrent()
                 dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
                 val diff = pair.second
-                if (emailManager.isEmailConfigured()) {
-                    emailManager.sendEmail(
-                        "任务执行通知",
-                        "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
-                        false
-                    )
-                }
+                emailManager.sendEmail(
+                    "任务执行通知",
+                    "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
+                    false
+                )
                 countDownTimerService?.startCountDown(index + 1, diff)
             }
 

@@ -88,9 +88,7 @@ class ForegroundRunningService : Service() {
                                     "循环任务已手动停止，将不再自动重置每日任务！如需恢复，可通过远程消息发送【启动】指令。"
                             }
                             LogFileManager.writeLog(message)
-                            if (emailManager.isEmailConfigured()) {
-                                emailManager.sendEmail("循环任务状态通知", message, false)
-                            }
+                            emailManager.sendEmail("循环任务状态通知", message, false)
                         }
                     }
                 }

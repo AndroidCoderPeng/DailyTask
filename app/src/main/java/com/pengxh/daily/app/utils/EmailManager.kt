@@ -2,6 +2,7 @@ package com.pengxh.daily.app.utils
 
 import android.content.Context
 import android.os.BatteryManager
+import android.util.Log
 import com.google.gson.Gson
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.kt.lite.extensions.getSystemService
@@ -21,6 +22,7 @@ import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
 class EmailManager(private val context: Context) {
+    private val kTag = "EmailManager"
     private val gson by lazy { Gson() }
 
     fun setEmailConfig(emailConfig: EmailConfig) {
@@ -43,13 +45,13 @@ class EmailManager(private val context: Context) {
 
     private fun createSmtpProperties(): Properties {
         val props = Properties().apply {
-            put("mail.smtp.host", "smtp.qq.com") // 邮箱SMTP服务器地址
-            put("mail.smtp.port", "465") // 邮箱SMTP服务器端口
-            put("mail.smtp.auth", "true") // 邮箱SMTP服务器是否需要用户验证
+            put("mail.smtp.host", "smtp.qq.com")
+            put("mail.smtp.port", "465")
+            put("mail.smtp.auth", "true")
             put("mail.smtp.ssl.checkserveridentity", "true")
-            put("mail.smtp.ssl.enable", "true") // 启用SSL加密
+            put("mail.smtp.ssl.enable", "true")
             put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory")
-            put("mail.smtp.socketFactory.port", "465") //Socket工厂端口
+            put("mail.smtp.socketFactory.port", "465")
         }
         return props
     }
@@ -68,12 +70,16 @@ class EmailManager(private val context: Context) {
     }
 
     fun sendEmail(
-        title: String?,
-        content: String,
+        title: String?, content: String,
         isTest: Boolean,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
+        if (!isEmailConfigured()) {
+            Log.d(kTag, "sendEmail: 邮箱未配置，无法发送邮件")
+            return
+        }
+
         val config = getEmailConfig()
 
         val authenticator = EmailAuthenticator(config.emailSender, config.authCode)
