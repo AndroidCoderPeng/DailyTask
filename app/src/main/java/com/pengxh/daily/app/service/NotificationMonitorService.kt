@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import com.pengxh.daily.app.bean.NotificationBean
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
@@ -13,6 +14,7 @@ import com.pengxh.daily.app.utils.DatabaseWrapper
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
+import com.pengxh.kt.lite.extensions.toJson
 import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
@@ -87,6 +89,11 @@ class NotificationMonitorService : NotificationListenerService() {
                 sendBroadcast(Intent(Constant.BROADCAST_STOP_DAILY_TASK_ACTION))
             } else if (notice.contains("息屏")) {
                 sendBroadcast(Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION))
+            } else if (notice.contains("打卡记录")) {
+                DatabaseWrapper.loadCurrentDayNotice().forEach {
+                    Log.d(kTag, it.toJson())
+                }
+//                emailManager.sendEmail("当天打卡记录通知", content, false)
             } else {
                 val key = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
                 if (notice.contains(key)) {

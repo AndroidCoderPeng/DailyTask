@@ -38,6 +38,10 @@ object DatabaseWrapper {
         return noticeDao.loadNoticeByTime(pageSize, offset)
     }
 
+    fun loadCurrentDayNotice(): MutableList<NotificationBean> {
+        return noticeDao.loadCurrentDayNotice(TimeKit.getTodayDate())
+    }
+
     fun insertNotice(bean: NotificationBean) {
         noticeDao.insert(bean)
     }

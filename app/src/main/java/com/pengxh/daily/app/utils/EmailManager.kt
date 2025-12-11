@@ -70,7 +70,8 @@ class EmailManager(private val context: Context) {
     }
 
     fun sendEmail(
-        title: String?, content: String,
+        title: String?,
+        content: String,
         isTest: Boolean,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
