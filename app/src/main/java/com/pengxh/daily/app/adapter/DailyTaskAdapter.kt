@@ -9,7 +9,7 @@ import androidx.appcompat.widget.AppCompatImageView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.bean.DailyTaskBean
+import com.pengxh.daily.app.sqlite.DailyTaskBean
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter.ItemComparator
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.extensions.convertColor

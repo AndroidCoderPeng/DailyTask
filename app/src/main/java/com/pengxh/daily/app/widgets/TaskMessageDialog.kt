@@ -4,8 +4,8 @@ import android.app.Dialog
 import android.content.Context
 import android.os.Bundle
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.bean.DailyTaskBean
 import com.pengxh.daily.app.databinding.DialogTaskMessageBinding
+import com.pengxh.daily.app.sqlite.DailyTaskBean
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets

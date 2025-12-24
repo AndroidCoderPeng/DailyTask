@@ -29,7 +29,6 @@ import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
-import com.pengxh.daily.app.bean.DailyTaskBean
 import com.pengxh.daily.app.databinding.FragmentDailyTaskBinding
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.convertToTimeEntity
@@ -38,8 +37,9 @@ import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
+import com.pengxh.daily.app.sqlite.DailyTaskBean
+import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.DatabaseWrapper
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.TimeKit

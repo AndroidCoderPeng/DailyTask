@@ -5,11 +5,11 @@ import android.content.Intent
 import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import com.pengxh.daily.app.bean.NotificationBean
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
+import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.sqlite.NotificationBean
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.DatabaseWrapper
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate

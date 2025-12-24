@@ -1,8 +1,7 @@
-package com.pengxh.daily.app.utils
+package com.pengxh.daily.app.sqlite
 
 import com.pengxh.daily.app.DailyTaskApplication
-import com.pengxh.daily.app.bean.DailyTaskBean
-import com.pengxh.daily.app.bean.NotificationBean
+import com.pengxh.daily.app.utils.TimeKit
 
 object DatabaseWrapper {
     private val dailyTaskDao by lazy { DailyTaskApplication.get().dataBase.dailyTaskDao() }

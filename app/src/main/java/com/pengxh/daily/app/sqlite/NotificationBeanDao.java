@@ -1,10 +1,8 @@
-package com.pengxh.daily.app.dao;
+package com.pengxh.daily.app.sqlite;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
-
-import com.pengxh.daily.app.bean.NotificationBean;
 
 import java.util.List;
 

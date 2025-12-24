@@ -5,10 +5,10 @@ import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.bean.NotificationBean
 import com.pengxh.daily.app.databinding.ActivityNoticeBinding
 import com.pengxh.daily.app.extensions.initImmersionBar
-import com.pengxh.daily.app.utils.DatabaseWrapper
+import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.sqlite.NotificationBean
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity

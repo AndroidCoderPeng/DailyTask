@@ -3,11 +3,10 @@ package com.pengxh.daily.app
 import android.app.Application
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room.databaseBuilder
-import com.pengxh.daily.app.utils.DailyTaskDataBase
+import com.pengxh.daily.app.sqlite.DailyTaskDataBase
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.vm.SharedDataViewModel
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import kotlin.properties.Delegates
 
 
 /**
@@ -18,9 +17,13 @@ import kotlin.properties.Delegates
 class DailyTaskApplication : Application() {
 
     companion object {
-        private var application: DailyTaskApplication by Delegates.notNull()
+        private lateinit var application: DailyTaskApplication
 
-        fun get() = application
+        fun get(): DailyTaskApplication = application
+
+        internal fun initApplication(app: DailyTaskApplication) {
+            application = app
+        }
     }
 
     lateinit var dataBase: DailyTaskDataBase
@@ -31,7 +34,7 @@ class DailyTaskApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        application = this
+        initApplication(this)
         SaveKeyValues.initSharedPreferences(this)
         LogFileManager.initLogFile(this)
         dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db")
