@@ -22,6 +22,10 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 
 class FloatingWindowService : Service() {
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
+    private var initialX = 0
+    private var initialY = 0
+    private var initialTouchX = 0f
+    private var initialTouchY = 0f
     private val floatView by lazy {
         val tempContainer = LinearLayout(this) // 创建一个临时的父布局
         LayoutInflater.from(this).inflate(R.layout.window_floating, tempContainer)
@@ -96,10 +100,6 @@ class FloatingWindowService : Service() {
         ) as String
         textView.text = time
         try {
-            var initialX = 0
-            var initialY = 0
-            var initialTouchX = 0f
-            var initialTouchY = 0f
             floatView.setOnTouchListener { _, event ->
                 when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
@@ -118,12 +118,21 @@ class FloatingWindowService : Service() {
                             windowManager.updateViewLayout(floatView, this)
                         }
                     }
+
+                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                        initialX = 0
+                        initialY = 0
+                        initialTouchX = 0f
+                        initialTouchY = 0f
+                    }
                 }
-                false
+                true
             }
         } catch (e: IllegalStateException) {
             e.printStackTrace()
         } catch (e: WindowManager.BadTokenException) {
+            e.printStackTrace()
+        } catch (e: Exception) {
             e.printStackTrace()
         }
     }
