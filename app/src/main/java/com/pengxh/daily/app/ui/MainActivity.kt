@@ -9,8 +9,11 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
+import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MenuItem
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -38,6 +41,7 @@ import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
 import java.util.Random
+import kotlin.math.abs
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
@@ -50,6 +54,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private var menuItem: MenuItem? = null
     private lateinit var insetsController: WindowInsetsControllerCompat
     private var broadcastReceiver: BroadcastReceiver? = null
+    private lateinit var gestureDetector: GestureDetector
 
     override fun initViewBinding(): ActivityMainBinding {
         return ActivityMainBinding.inflate(layoutInflater)
@@ -97,6 +102,38 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     }
                 }).build().show()
         }
+
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(
+                e1: MotionEvent?,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                val deltaY = abs(e2.y - (e1?.y ?: e2.y))
+                Log.d(kTag, "onFling: $deltaY")
+
+                // 从上向下滑动手势
+                if (deltaY > 500 && (e2.y - (e1?.y ?: e2.y)) > 0) {
+                    showMaskView()
+                    return true
+                }
+
+                // 从下向上滑动手势
+                if (deltaY > 500 && (e2.y - (e1?.y ?: e2.y)) < 0) {
+                    hideMaskView()
+                    return true
+                }
+                return super.onFling(e1, e2, velocityX, velocityY)
+            }
+        })
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        ev?.let {
+            gestureDetector.onTouchEvent(it)
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     override fun initEvent() {
