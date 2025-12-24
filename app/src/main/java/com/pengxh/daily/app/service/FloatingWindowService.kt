@@ -25,7 +25,35 @@ class FloatingWindowService : Service() {
         LayoutInflater.from(this).inflate(R.layout.window_floating, tempContainer)
     }
     private val textView by lazy { floatView.findViewById<TextView>(R.id.timeView) }
-    private var broadcastReceiver: BroadcastReceiver? = null
+    private val broadcastReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Constant.BROADCAST_TICK_TIME_ACTION -> {
+                        val time = intent.getStringExtra("data")
+                        textView.text = "${time}s"
+                    }
+
+                    Constant.BROADCAST_UPDATE_TICK_TIME_ACTION -> {
+                        val time = intent.getStringExtra("data")
+                        textView.text = time
+                    }
+
+                    Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION -> {
+                        floatView.alpha = 1.0f
+                        val time = SaveKeyValues.getValue(
+                            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                        ) as String
+                        textView.text = time
+                    }
+
+                    Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> {
+                        floatView.alpha = 0.0f
+                    }
+                }
+            }
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -82,33 +110,6 @@ class FloatingWindowService : Service() {
     }
 
     private fun initBroadcastReceiver() {
-        broadcastReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    Constant.BROADCAST_TICK_TIME_ACTION -> {
-                        val time = intent.getStringExtra("data")
-                        textView.text = "${time}s"
-                    }
-
-                    Constant.BROADCAST_UPDATE_TICK_TIME_ACTION -> {
-                        val time = intent.getStringExtra("data")
-                        textView.text = time
-                    }
-
-                    Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION -> {
-                        floatView.alpha = 1.0f
-                        val time = SaveKeyValues.getValue(
-                            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                        ) as String
-                        textView.text = time
-                    }
-
-                    Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> {
-                        floatView.alpha = 0.0f
-                    }
-                }
-            }
-        }
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_TICK_TIME_ACTION)
             addAction(Constant.BROADCAST_UPDATE_TICK_TIME_ACTION)
@@ -124,14 +125,7 @@ class FloatingWindowService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        broadcastReceiver?.let {
-            try {
-                unregisterReceiver(it)
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
-        }
-        broadcastReceiver = null
+        unregisterReceiver(broadcastReceiver)
         windowManager.removeViewImmediate(floatView)
     }
 

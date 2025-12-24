@@ -40,17 +40,19 @@ import kotlinx.coroutines.launch
 class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     private val kTag = "SettingsFragment"
-    private val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            when (intent?.action) {
-                Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
-                    binding.noticeSwitch.isChecked = true
-                    binding.tipsView.visibility = View.GONE
-                }
+    private val broadcastReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                when (intent?.action) {
+                    Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
+                        binding.noticeSwitch.isChecked = true
+                        binding.tipsView.visibility = View.GONE
+                    }
 
-                Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
-                    binding.noticeSwitch.isChecked = false
-                    binding.tipsView.visibility = View.VISIBLE
+                    Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
+                        binding.noticeSwitch.isChecked = false
+                        binding.tipsView.visibility = View.VISIBLE
+                    }
                 }
             }
         }
@@ -155,14 +157,16 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         lifecycleScope.launch(Dispatchers.IO) {
             requireContext().packageManager.setComponentEnabledSetting(
                 ComponentName(requireContext(), NotificationMonitorService::class.java),
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                PackageManager.DONT_KILL_APP
             )
 
             delay(1000)
 
             requireContext().packageManager.setComponentEnabledSetting(
                 ComponentName(requireContext(), NotificationMonitorService::class.java),
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                PackageManager.DONT_KILL_APP
             )
         }
     }

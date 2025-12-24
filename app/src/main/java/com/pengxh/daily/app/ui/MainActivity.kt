@@ -52,7 +52,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val clockAnimationHandler = Handler(Looper.getMainLooper())
     private var menuItem: MenuItem? = null
     private lateinit var insetsController: WindowInsetsControllerCompat
-    private var broadcastReceiver: BroadcastReceiver? = null
+    private val broadcastReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent?.action == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION) {
+                    showMaskView()
+                }
+            }
+        }
+    }
     private lateinit var gestureDetector: GestureDetector
 
     override fun initViewBinding(): ActivityMainBinding {
@@ -65,13 +73,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        broadcastReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION) {
-                    showMaskView()
-                }
-            }
-        }
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION)
         }
@@ -279,13 +280,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
-        broadcastReceiver?.let {
-            try {
-                unregisterReceiver(it)
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
-        }
-        broadcastReceiver = null
+        unregisterReceiver(broadcastReceiver)
     }
 }

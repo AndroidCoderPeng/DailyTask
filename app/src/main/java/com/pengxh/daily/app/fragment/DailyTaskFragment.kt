@@ -80,46 +80,48 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private var countDownTimerService: CountDownTimerService? = null
     private var isRefresh = false
     private var serviceIntent: Intent? = null
-    private val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.action?.let {
-                when (it) {
-                    Constant.BROADCAST_RESET_TASK_ACTION, Constant.BROADCAST_START_DAILY_TASK_ACTION -> {
-                        startExecuteTask()
-                    }
-
-                    Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask()
-
-                    Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
-                        val time = SaveKeyValues.getValue(
-                            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                        ) as String
-                        //去掉时间的s
-                        val timeValue = time.dropLast(1).toInt()
-                        timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
-                            override fun onTick(millisUntilFinished: Long) {
-                                val tick = millisUntilFinished / 1000
-                                val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
-                                    putExtra("data", "$tick")
-                                }
-                                requireContext().sendBroadcast(intent)
-                            }
-
-                            override fun onFinish() {
-                                //如果倒计时结束，那么表明没有收到打卡成功的通知
-                                requireContext().backToMainActivity()
-                                LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                                emailManager.sendEmail(null, "", false)
-                            }
+    private val broadcastReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                intent?.action?.let {
+                    when (it) {
+                        Constant.BROADCAST_RESET_TASK_ACTION, Constant.BROADCAST_START_DAILY_TASK_ACTION -> {
+                            startExecuteTask()
                         }
-                        timeoutTimer?.start()
-                    }
 
-                    Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION -> {
-                        timeoutTimer?.cancel()
-                        timeoutTimer = null
-                        LogFileManager.writeLog("取消超时定时器，执行下一个任务")
-                        weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
+                        Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask()
+
+                        Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
+                            val time = SaveKeyValues.getValue(
+                                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                            ) as String
+                            //去掉时间的s
+                            val timeValue = time.dropLast(1).toInt()
+                            timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
+                                override fun onTick(millisUntilFinished: Long) {
+                                    val tick = millisUntilFinished / 1000
+                                    val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
+                                        putExtra("data", "$tick")
+                                    }
+                                    requireContext().sendBroadcast(intent)
+                                }
+
+                                override fun onFinish() {
+                                    //如果倒计时结束，那么表明没有收到打卡成功的通知
+                                    requireContext().backToMainActivity()
+                                    LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+                                    emailManager.sendEmail(null, "", false)
+                                }
+                            }
+                            timeoutTimer?.start()
+                        }
+
+                        Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION -> {
+                            timeoutTimer?.cancel()
+                            timeoutTimer = null
+                            LogFileManager.writeLog("取消超时定时器，执行下一个任务")
+                            weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
+                        }
                     }
                 }
             }

@@ -63,32 +63,34 @@ class ForegroundRunningService : Service() {
         }
     }
 
-    private val timeReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.action?.let {
-                if (it == Intent.ACTION_TIME_TICK) {
-                    val hour = SaveKeyValues.getValue(
-                        Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-                    ) as Int
-                    val calendar = Calendar.getInstance()
-                    val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-                    if (currentHour == hour) {
-                        val autoStart = SaveKeyValues.getValue(
-                            Constant.TASK_AUTO_START_KEY, true
-                        ) as Boolean
-                        val currentMinute = calendar.get(Calendar.MINUTE)
-                        // 只在整点执行
-                        if (currentMinute == 0) {
-                            var message = ""
-                            if (autoStart) {
-                                message = "达到任务计划时间，重置每日任务。"
-                                sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
-                            } else {
-                                message =
-                                    "循环任务已手动停止，将不再自动重置每日任务！如需恢复，可通过远程消息发送【启动】指令。"
+    private val timeReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                intent?.action?.let {
+                    if (it == Intent.ACTION_TIME_TICK) {
+                        val hour = SaveKeyValues.getValue(
+                            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+                        ) as Int
+                        val calendar = Calendar.getInstance()
+                        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+                        if (currentHour == hour) {
+                            val autoStart = SaveKeyValues.getValue(
+                                Constant.TASK_AUTO_START_KEY, true
+                            ) as Boolean
+                            val currentMinute = calendar.get(Calendar.MINUTE)
+                            // 只在整点执行
+                            if (currentMinute == 0) {
+                                var message = ""
+                                if (autoStart) {
+                                    message = "达到任务计划时间，重置每日任务。"
+                                    sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
+                                } else {
+                                    message =
+                                        "循环任务已手动停止，将不再自动重置每日任务！如需恢复，可通过远程消息发送【启动】指令。"
+                                }
+                                LogFileManager.writeLog(message)
+                                emailManager.sendEmail("循环任务状态通知", message, false)
                             }
-                            LogFileManager.writeLog(message)
-                            emailManager.sendEmail("循环任务状态通知", message, false)
                         }
                     }
                 }
