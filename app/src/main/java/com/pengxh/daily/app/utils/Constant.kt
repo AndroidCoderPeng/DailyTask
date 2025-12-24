@@ -6,7 +6,6 @@ package com.pengxh.daily.app.utils
  * @date: 2019/12/29 12:42
  */
 object Constant {
-    const val EMAIL_CONFIG_KEY = "EMAIL_CONFIG_KEY"
     const val STAY_DD_TIMEOUT_KEY = "STAY_DD_TIMEOUT_KEY"
     const val BACK_TO_HOME_KEY = "BACK_TO_HOME_KEY"
     const val TASK_NAME_KEY = "TASK_KEY"

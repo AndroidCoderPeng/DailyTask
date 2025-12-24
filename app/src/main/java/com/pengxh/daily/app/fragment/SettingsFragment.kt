@@ -22,12 +22,12 @@ import com.pengxh.daily.app.databinding.FragmentSettingsBinding
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.NotificationMonitorService
+import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.ui.EmailConfigActivity
 import com.pengxh.daily.app.ui.NoticeRecordActivity
 import com.pengxh.daily.app.ui.QuestionAndAnswerActivity
 import com.pengxh.daily.app.ui.TaskConfigActivity
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.base.KotlinBaseFragment
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
@@ -57,7 +57,6 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
             }
         }
     }
-    private val emailManager by lazy { EmailManager(requireContext()) }
 
     override fun setupTopBarLayout() {
 
@@ -139,7 +138,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     override fun onResume() {
         super.onResume()
-        binding.emailSwitch.isChecked = emailManager.isEmailConfigured()
+        binding.emailSwitch.isChecked = DatabaseWrapper.loadEmailConfig() != null
         binding.backToHomeSwitch.isChecked = SaveKeyValues.getValue(
             Constant.BACK_TO_HOME_KEY, false
         ) as Boolean

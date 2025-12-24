@@ -3,12 +3,11 @@ package com.pengxh.daily.app.utils
 import android.content.Context
 import android.os.BatteryManager
 import android.util.Log
-import com.google.gson.Gson
 import com.pengxh.daily.app.BuildConfig
+import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.kt.lite.extensions.getSystemService
 import com.pengxh.kt.lite.extensions.timestampToDate
 import com.pengxh.kt.lite.extensions.toJson
-import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -23,25 +22,6 @@ import javax.mail.internet.MimeMessage
 
 class EmailManager(private val context: Context) {
     private val kTag = "EmailManager"
-    private val gson by lazy { Gson() }
-
-    fun setEmailConfig(emailConfig: EmailConfig) {
-        // 数据持久化
-        SaveKeyValues.putValue(Constant.EMAIL_CONFIG_KEY, emailConfig.toJson())
-    }
-
-    fun getEmailConfig(): EmailConfig {
-        val config = SaveKeyValues.getValue(Constant.EMAIL_CONFIG_KEY, "") as String
-        if (config.isNotEmpty()) {
-            return gson.fromJson(config, EmailConfig::class.java)
-        }
-        return EmailConfig()
-    }
-
-    fun isEmailConfigured(): Boolean {
-        val config = getEmailConfig()
-        return config.emailSender.isNotEmpty() && config.authCode.isNotEmpty() && config.inboxEmail.isNotEmpty()
-    }
 
     private fun createSmtpProperties(): Properties {
         val props = Properties().apply {
@@ -76,21 +56,22 @@ class EmailManager(private val context: Context) {
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
-        if (!isEmailConfigured()) {
-            Log.d(kTag, "sendEmail: 邮箱未配置，无法发送邮件")
+        val config = DatabaseWrapper.loadEmailConfig()
+        if (config == null) {
+            onFailure?.invoke("邮箱未配置，无法发送邮件")
             return
         }
 
-        val config = getEmailConfig()
+        Log.d(kTag, "邮箱配置: ${config.toJson()}")
 
-        val authenticator = EmailAuthenticator(config.emailSender, config.authCode)
+        val authenticator = EmailAuthenticator(config.outbox, config.authCode)
         val props = createSmtpProperties()
 
-        val session = Session.getDefaultInstance(props, authenticator)
+        val session = Session.getInstance(props, authenticator)
         val message = MimeMessage(session).apply {
-            setFrom(InternetAddress(config.emailSender))
-            setRecipient(Message.RecipientType.TO, InternetAddress(config.inboxEmail))
-            subject = title ?: config.emailTitle
+            setFrom(InternetAddress(config.outbox))
+            setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
+            subject = title ?: config.title
             sentDate = Date()
             setText(buildMailContent(content))
         }
