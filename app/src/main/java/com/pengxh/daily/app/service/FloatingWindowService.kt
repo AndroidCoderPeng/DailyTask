@@ -8,7 +8,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.WindowManager
@@ -25,32 +27,49 @@ class FloatingWindowService : Service() {
         LayoutInflater.from(this).inflate(R.layout.window_floating, tempContainer)
     }
     private val textView by lazy { floatView.findViewById<TextView>(R.id.timeView) }
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val broadcastReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    Constant.BROADCAST_TICK_TIME_ACTION -> {
-                        val time = intent.getStringExtra("data")
-                        textView.text = "${time}s"
-                    }
-
-                    Constant.BROADCAST_UPDATE_TICK_TIME_ACTION -> {
-                        val time = intent.getStringExtra("data")
-                        textView.text = time
-                    }
-
-                    Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION -> {
-                        floatView.alpha = 1.0f
-                        val time = SaveKeyValues.getValue(
-                            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                        ) as String
-                        textView.text = time
-                    }
-
-                    Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> {
-                        floatView.alpha = 0.0f
+                if (Looper.myLooper() == Looper.getMainLooper()) {
+                    handleIntent(intent)
+                } else {
+                    mainHandler.post {
+                        handleIntent(intent)
                     }
                 }
+            }
+        }
+    }
+
+    private fun handleIntent(intent: Intent?) {
+        when (intent?.action) {
+            Constant.BROADCAST_TICK_TIME_ACTION -> {
+                val time = intent.getStringExtra("data")
+                if (!time.isNullOrEmpty()) {
+                    textView.text = "${time}s"
+                }
+            }
+
+            Constant.BROADCAST_UPDATE_TICK_TIME_ACTION -> {
+                val time = intent.getStringExtra("data")
+                if (!time.isNullOrEmpty()) {
+                    textView.text = time
+                }
+            }
+
+            Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION -> {
+                floatView.alpha = 1.0f
+                val timeValue = SaveKeyValues.getValue(
+                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                )
+                val time =
+                    if (timeValue is String) timeValue else Constant.DEFAULT_OVER_TIME.toString()
+                textView.text = time
+            }
+
+            Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> {
+                floatView.alpha = 0.0f
             }
         }
     }

@@ -26,6 +26,7 @@ import androidx.core.view.get
 import androidx.core.view.isVisible
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager.widget.ViewPager
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
@@ -40,6 +41,8 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.Random
 import kotlin.math.abs
 
@@ -57,7 +60,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION) {
-                    showMaskView()
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        showMaskView()
+                    }
                 }
             }
         }

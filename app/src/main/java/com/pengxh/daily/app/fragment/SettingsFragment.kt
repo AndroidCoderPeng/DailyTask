@@ -46,13 +46,23 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
                     Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
-                        binding.noticeSwitch.isChecked = true
-                        binding.tipsView.visibility = View.GONE
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            binding.tipsView.text = "通知监听服务状态查询中，请稍后"
+                            binding.tipsView.setTextColor(
+                                R.color.theme_color.convertColor(requireContext())
+                            )
+                            binding.noticeSwitch.isChecked = true
+                            binding.tipsView.visibility = View.GONE
+                        }
                     }
 
                     Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
-                        binding.noticeSwitch.isChecked = false
-                        binding.tipsView.visibility = View.VISIBLE
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
+                            binding.tipsView.setTextColor(Color.RED)
+                            binding.noticeSwitch.isChecked = false
+                            binding.tipsView.visibility = View.VISIBLE
+                        }
                     }
                 }
             }
@@ -153,27 +163,48 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         if (requireContext().notificationEnable()) {
             binding.tipsView.text = "通知监听服务状态查询中，请稍后"
             binding.tipsView.setTextColor(R.color.theme_color.convertColor(requireContext()))
+            lifecycleScope.launch(Dispatchers.Main) {
+                delay(500)
+                if (requireContext().notificationEnable()) {
+                    binding.noticeSwitch.isChecked = true
+                    binding.tipsView.visibility = View.GONE
+                }
+            }
         } else {
             binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
             binding.tipsView.setTextColor(Color.RED)
+            binding.noticeSwitch.isChecked = false
+            binding.tipsView.visibility = View.VISIBLE
         }
     }
 
     private fun turnOnNotificationMonitorService() {
         lifecycleScope.launch(Dispatchers.IO) {
-            requireContext().packageManager.setComponentEnabledSetting(
-                ComponentName(requireContext(), NotificationMonitorService::class.java),
-                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-                PackageManager.DONT_KILL_APP
-            )
+            try {
+                val context = requireContext()
+                val componentName = ComponentName(context, NotificationMonitorService::class.java)
 
-            delay(1000)
+                // 检查当前组件状态
+                val currentState = context.packageManager.getComponentEnabledSetting(componentName)
+                if (currentState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                    // 如果已经启用，先禁用
+                    context.packageManager.setComponentEnabledSetting(
+                        componentName,
+                        PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
+                        PackageManager.DONT_KILL_APP
+                    )
+                    delay(500) // 短暂延迟
+                }
 
-            requireContext().packageManager.setComponentEnabledSetting(
-                ComponentName(requireContext(), NotificationMonitorService::class.java),
-                PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
-                PackageManager.DONT_KILL_APP
-            )
+                // 重新启用
+                context.packageManager.setComponentEnabledSetting(
+                    componentName,
+                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                    PackageManager.DONT_KILL_APP
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
