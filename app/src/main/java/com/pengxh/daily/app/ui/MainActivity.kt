@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.ui
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -65,7 +64,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.initImmersionBar(this, true, R.color.back_ground_color)
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -140,7 +138,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.bottomNavigation.setOnItemSelectedListener { item ->
             val itemId = item.itemId
             val menuItems = binding.bottomNavigation.menu
-            menuItems.forEachIndexed { index, menuItem ->
+            menuItems.forEachIndexed { index, _ ->
                 if (menuItems[index].itemId == itemId) {
                     binding.viewPager.currentItem = index
                     return@forEachIndexed

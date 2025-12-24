@@ -81,7 +81,6 @@ class FloatingWindowService : Service() {
         }
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun initBroadcastReceiver() {
         broadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {

@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.fragment
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -40,7 +39,22 @@ import kotlinx.coroutines.launch
 
 class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
-    private var broadcastReceiver: BroadcastReceiver? = null
+    private val kTag = "SettingsFragment"
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
+                    binding.noticeSwitch.isChecked = true
+                    binding.tipsView.visibility = View.GONE
+                }
+
+                Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
+                    binding.noticeSwitch.isChecked = false
+                    binding.tipsView.visibility = View.VISIBLE
+                }
+            }
+        }
+    }
     private val emailManager by lazy { EmailManager(requireContext()) }
 
     override fun setupTopBarLayout() {
@@ -57,23 +71,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         return FragmentSettingsBinding.inflate(inflater, container, false)
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        broadcastReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
-                        binding.noticeSwitch.isChecked = true
-                        binding.tipsView.visibility = View.GONE
-                    }
-
-                    Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
-                        binding.noticeSwitch.isChecked = false
-                        binding.tipsView.visibility = View.VISIBLE
-                    }
-                }
-            }
-        }
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION)
             addAction(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION)
@@ -171,13 +169,6 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
-        broadcastReceiver?.let {
-            try {
-                requireContext().unregisterReceiver(it)
-            } catch (e: IllegalArgumentException) {
-                e.printStackTrace()
-            }
-        }
-        broadcastReceiver = null
+        requireContext().unregisterReceiver(broadcastReceiver)
     }
 }
