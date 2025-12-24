@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.fragment
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -72,6 +73,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         return FragmentSettingsBinding.inflate(inflater, container, false)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION)

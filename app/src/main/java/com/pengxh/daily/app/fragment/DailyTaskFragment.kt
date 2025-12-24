@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.fragment
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
@@ -156,7 +157,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         return FragmentDailyTaskBinding.inflate(inflater, container, false)
     }
 
-    @SuppressWarnings("all")
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_RESET_TASK_ACTION) // 重置任务

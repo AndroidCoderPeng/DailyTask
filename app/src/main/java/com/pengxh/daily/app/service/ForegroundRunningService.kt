@@ -7,7 +7,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
@@ -52,18 +51,11 @@ class ForegroundRunningService : Service() {
             notificationManager.notify(notificationId, this)
         }
 
-        // 监听时间，系统级广播，每分钟触发一次
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_TIME_TICK)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(timeReceiver, filter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(timeReceiver, filter)
-        }
+        // 监听时间，系统级广播，每分钟触发一次。系统广播接收器不需要 RECEIVER_EXPORTED 或 RECEIVER_NOT_EXPORTED 标志
+        registerReceiver(broadcastReceiver, IntentFilter(Intent.ACTION_TIME_TICK))
     }
 
-    private val timeReceiver by lazy {
+    private val broadcastReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent?.action?.let {
@@ -100,8 +92,8 @@ class ForegroundRunningService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        unregisterReceiver(broadcastReceiver)
         stopForeground(STOP_FOREGROUND_REMOVE)
-        unregisterReceiver(timeReceiver)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

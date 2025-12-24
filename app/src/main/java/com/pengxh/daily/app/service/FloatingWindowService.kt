@@ -109,6 +109,7 @@ class FloatingWindowService : Service() {
         }
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun initBroadcastReceiver() {
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_TICK_TIME_ACTION)

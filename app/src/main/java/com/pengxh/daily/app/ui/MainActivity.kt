@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.ui
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -72,6 +73,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.initImmersionBar(this, true, R.color.back_ground_color)
     }
 
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION)
