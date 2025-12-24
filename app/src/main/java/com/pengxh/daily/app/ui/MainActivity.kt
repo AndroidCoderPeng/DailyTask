@@ -111,19 +111,23 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
-                val deltaY = abs(e2.y - (e1?.y ?: e2.y))
-                Log.d(kTag, "onFling: $deltaY")
+                val isGestureDetector =
+                    SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean
+                if (isGestureDetector) {
+                    val deltaY = abs(e2.y - (e1?.y ?: e2.y))
+                    Log.d(kTag, "onFling: $deltaY")
 
-                // 从上向下滑动手势
-                if (deltaY > 1000 && (e2.y - (e1?.y ?: e2.y)) > 0) {
-                    showMaskView()
-                    return true
-                }
+                    // 从上向下滑动手势
+                    if (deltaY > 1000 && (e2.y - (e1?.y ?: e2.y)) > 0) {
+                        showMaskView()
+                        return true
+                    }
 
-                // 从下向上滑动手势
-                if (deltaY > 1000 && (e2.y - (e1?.y ?: e2.y)) < 0) {
-                    hideMaskView()
-                    return true
+                    // 从下向上滑动手势
+                    if (deltaY > 1000 && (e2.y - (e1?.y ?: e2.y)) < 0) {
+                        hideMaskView()
+                        return true
+                    }
                 }
                 return super.onFling(e1, e2, velocityX, velocityY)
             }

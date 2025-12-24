@@ -7,6 +7,7 @@ package com.pengxh.daily.app.utils
  */
 object Constant {
     const val STAY_DD_TIMEOUT_KEY = "STAY_DD_TIMEOUT_KEY"
+    const val GESTURE_DETECTOR_KEY = "GESTURE_DETECTOR_KEY"
     const val BACK_TO_HOME_KEY = "BACK_TO_HOME_KEY"
     const val TASK_NAME_KEY = "TASK_KEY"
     const val RANDOM_TIME_KEY = "RANDOM_TIME_KEY"

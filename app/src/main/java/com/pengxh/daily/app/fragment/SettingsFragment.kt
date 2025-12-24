@@ -118,6 +118,10 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
             }
         }
 
+        binding.gestureDetectorSwitch.setOnCheckedChangeListener { _, isChecked ->
+            SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, isChecked)
+        }
+
         binding.backToHomeSwitch.setOnCheckedChangeListener { _, isChecked ->
             SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, isChecked)
         }
@@ -141,9 +145,10 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
     override fun onResume() {
         super.onResume()
         binding.emailSwitch.isChecked = DatabaseWrapper.loadEmailConfig() != null
-        binding.backToHomeSwitch.isChecked = SaveKeyValues.getValue(
-            Constant.BACK_TO_HOME_KEY, false
-        ) as Boolean
+        binding.gestureDetectorSwitch.isChecked =
+            SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean
+        binding.backToHomeSwitch.isChecked =
+            SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
 
         if (requireContext().notificationEnable()) {
             binding.tipsView.text = "通知监听服务状态查询中，请稍后"
