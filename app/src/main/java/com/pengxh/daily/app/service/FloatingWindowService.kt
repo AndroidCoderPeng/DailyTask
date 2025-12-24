@@ -110,16 +110,16 @@ class FloatingWindowService : Service() {
                 }
             }
         }
-        val intentFilter = IntentFilter().apply {
+        val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_TICK_TIME_ACTION)
             addAction(Constant.BROADCAST_UPDATE_TICK_TIME_ACTION)
             addAction(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION)
             addAction(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
+            registerReceiver(broadcastReceiver, filter, RECEIVER_EXPORTED)
         } else {
-            registerReceiver(broadcastReceiver, intentFilter)
+            registerReceiver(broadcastReceiver, filter)
         }
     }
 

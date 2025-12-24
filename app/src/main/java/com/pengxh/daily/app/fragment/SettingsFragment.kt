@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.RECEIVER_NOT_EXPORTED
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
@@ -75,16 +74,14 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
                 }
             }
         }
-        val intentFilter = IntentFilter().apply {
+        val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION)
             addAction(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(
-                broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED
-            )
+            requireContext().registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
         } else {
-            requireContext().registerReceiver(broadcastReceiver, intentFilter)
+            requireContext().registerReceiver(broadcastReceiver, filter)
         }
 
         binding.appVersion.text = BuildConfig.VERSION_NAME

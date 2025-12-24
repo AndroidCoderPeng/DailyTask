@@ -74,13 +74,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 }
             }
         }
-        val intentFilter = IntentFilter().apply {
+        val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(broadcastReceiver, intentFilter, RECEIVER_NOT_EXPORTED)
+            registerReceiver(broadcastReceiver, filter, RECEIVER_EXPORTED)
         } else {
-            registerReceiver(broadcastReceiver, intentFilter)
+            registerReceiver(broadcastReceiver, filter)
         }
 
         Intent(this, ForegroundRunningService::class.java).apply {

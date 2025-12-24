@@ -3,7 +3,6 @@ package com.pengxh.daily.app.fragment
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
-import android.content.Context.RECEIVER_NOT_EXPORTED
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.ServiceConnection
@@ -165,7 +164,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION) // 取消超时定时器
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(broadcastReceiver, filter, RECEIVER_NOT_EXPORTED)
+            requireContext().registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
         } else {
             requireContext().registerReceiver(broadcastReceiver, filter)
         }

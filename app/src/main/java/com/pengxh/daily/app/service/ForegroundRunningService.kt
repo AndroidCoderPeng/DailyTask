@@ -57,7 +57,7 @@ class ForegroundRunningService : Service() {
             addAction(Intent.ACTION_TIME_TICK)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(timeReceiver, filter, RECEIVER_NOT_EXPORTED)
+            registerReceiver(timeReceiver, filter, RECEIVER_EXPORTED)
         } else {
             registerReceiver(timeReceiver, filter)
         }
