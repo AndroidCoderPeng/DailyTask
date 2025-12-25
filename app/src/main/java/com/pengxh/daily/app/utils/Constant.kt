@@ -27,6 +27,8 @@ object Constant {
         "com.pengxh.daily.app.BROADCAST_HIDE_FLOATING_WINDOW_ACTION"
     const val BROADCAST_SHOW_MASK_VIEW_ACTION =
         "com.pengxh.daily.app.BROADCAST_SHOW_MASK_VIEW_ACTION"
+    const val BROADCAST_HIDE_MASK_VIEW_ACTION =
+        "com.pengxh.daily.app.BROADCAST_HIDE_MASK_VIEW_ACTION"
     const val BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION =
         "com.pengxh.daily.app.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION"
     const val BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION =

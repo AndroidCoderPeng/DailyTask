@@ -66,15 +66,11 @@ class FloatingWindowService : Service() {
                 floatView.alpha = 1.0f
                 val timeValue = SaveKeyValues.getValue(
                     Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                )
-                val time =
-                    if (timeValue is String) timeValue else Constant.DEFAULT_OVER_TIME.toString()
-                textView.text = time
+                ) as String
+                textView.text = timeValue.ifEmpty { Constant.DEFAULT_OVER_TIME }
             }
 
-            Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> {
-                floatView.alpha = 0.0f
-            }
+            Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> floatView.alpha = 0.0f
         }
     }
 
@@ -95,10 +91,10 @@ class FloatingWindowService : Service() {
         ).also {
             windowManager.addView(floatView, it)
         }
-        val time = SaveKeyValues.getValue(
+        val timeValue = SaveKeyValues.getValue(
             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
         ) as String
-        textView.text = time
+        textView.text = timeValue.ifEmpty { Constant.DEFAULT_OVER_TIME }
         try {
             floatView.setOnTouchListener { _, event ->
                 when (event.action) {

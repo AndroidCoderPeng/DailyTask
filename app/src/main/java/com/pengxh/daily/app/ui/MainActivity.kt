@@ -59,9 +59,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val broadcastReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (intent?.action == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION) {
-                    lifecycleScope.launch(Dispatchers.Main) {
-                        showMaskView()
+                lifecycleScope.launch(Dispatchers.Main) {
+                    intent?.action?.let {
+                        when (it) {
+                            Constant.BROADCAST_SHOW_MASK_VIEW_ACTION -> showMaskView()
+                            Constant.BROADCAST_HIDE_MASK_VIEW_ACTION -> hideMaskView()
+                        }
                     }
                 }
             }
@@ -82,6 +85,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     override fun initOnCreate(savedInstanceState: Bundle?) {
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION)
+            addAction(Constant.BROADCAST_HIDE_MASK_VIEW_ACTION)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(broadcastReceiver, filter, RECEIVER_EXPORTED)

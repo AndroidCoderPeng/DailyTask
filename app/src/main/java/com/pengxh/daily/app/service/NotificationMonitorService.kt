@@ -87,6 +87,8 @@ class NotificationMonitorService : NotificationListenerService() {
                 sendBroadcast(Intent(Constant.BROADCAST_STOP_DAILY_TASK_ACTION))
             } else if (notice.contains("息屏")) {
                 sendBroadcast(Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION))
+            } else if (notice.contains("亮屏")) {
+                sendBroadcast(Intent(Constant.BROADCAST_HIDE_MASK_VIEW_ACTION))
             } else if (notice.contains("打卡记录")) {
                 var record = ""
                 DatabaseWrapper.loadCurrentDayNotice().forEachIndexed { index, item ->
