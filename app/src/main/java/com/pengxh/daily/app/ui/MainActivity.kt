@@ -61,9 +61,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 lifecycleScope.launch(Dispatchers.Main) {
                     intent?.action?.let {
-                        when (it) {
-                            Constant.BROADCAST_SHOW_MASK_VIEW_ACTION -> showMaskView()
-                            Constant.BROADCAST_HIDE_MASK_VIEW_ACTION -> hideMaskView()
+                        if (it == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION && !binding.maskView.isVisible) {
+                            showMaskView()
+                        } else if (it == Constant.BROADCAST_HIDE_MASK_VIEW_ACTION && binding.maskView.isVisible) {
+                            hideMaskView()
                         }
                     }
                 }
@@ -127,13 +128,19 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     Log.d(kTag, "onFling: $deltaY")
 
                     // 从上向下滑动手势
-                    if (deltaY > 1000 && (e2.y - (e1?.y ?: e2.y)) > 0) {
+                    if (deltaY > 1000
+                        && (e2.y - (e1?.y ?: e2.y)) > 0
+                        && !binding.maskView.isVisible
+                    ) {
                         showMaskView()
                         return true
                     }
 
                     // 从下向上滑动手势
-                    if (deltaY > 1000 && (e2.y - (e1?.y ?: e2.y)) < 0) {
+                    if (deltaY > 1000
+                        && (e2.y - (e1?.y ?: e2.y)) < 0
+                        && binding.maskView.isVisible
+                    ) {
                         hideMaskView()
                         return true
                     }
