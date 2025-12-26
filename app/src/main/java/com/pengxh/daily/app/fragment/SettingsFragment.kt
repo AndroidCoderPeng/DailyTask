@@ -46,23 +46,19 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 when (intent?.action) {
                     Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
-                        lifecycleScope.launch(Dispatchers.Main) {
-                            binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-                            binding.tipsView.setTextColor(
-                                R.color.theme_color.convertColor(requireContext())
-                            )
-                            binding.noticeSwitch.isChecked = true
-                            binding.tipsView.visibility = View.GONE
-                        }
+                        binding.tipsView.text = "通知监听服务状态查询中，请稍后"
+                        binding.tipsView.setTextColor(
+                            R.color.theme_color.convertColor(requireContext())
+                        )
+                        binding.noticeSwitch.isChecked = true
+                        binding.tipsView.visibility = View.GONE
                     }
 
                     Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
-                        lifecycleScope.launch(Dispatchers.Main) {
-                            binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
-                            binding.tipsView.setTextColor(Color.RED)
-                            binding.noticeSwitch.isChecked = false
-                            binding.tipsView.visibility = View.VISIBLE
-                        }
+                        binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
+                        binding.tipsView.setTextColor(Color.RED)
+                        binding.noticeSwitch.isChecked = false
+                        binding.tipsView.visibility = View.VISIBLE
                     }
                 }
             }

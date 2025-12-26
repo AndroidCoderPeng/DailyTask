@@ -26,7 +26,6 @@ import androidx.core.view.get
 import androidx.core.view.isVisible
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.viewpager.widget.ViewPager
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
@@ -41,8 +40,6 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import java.util.Random
 import kotlin.math.abs
 
@@ -59,13 +56,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val broadcastReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                lifecycleScope.launch(Dispatchers.Main) {
-                    intent?.action?.let {
-                        if (it == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION && !binding.maskView.isVisible) {
-                            showMaskView()
-                        } else if (it == Constant.BROADCAST_HIDE_MASK_VIEW_ACTION && binding.maskView.isVisible) {
-                            hideMaskView()
-                        }
+                intent?.action?.let {
+                    if (it == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION && !binding.maskView.isVisible) {
+                        showMaskView()
+                    } else if (it == Constant.BROADCAST_HIDE_MASK_VIEW_ACTION && binding.maskView.isVisible) {
+                        hideMaskView()
                     }
                 }
             }

@@ -34,7 +34,7 @@
         android:marqueeRepeatLimit="-1"
         android:padding="@dimen/dp_16"
         android:singleLine="true"
-        android:text="Tips：由于本人单位不再使用钉钉，测试不尽仔细，如有问题请加QQ群：560354109。"
+        android:text="Tips：由于本人单位不再使用钉钉，测试不尽仔细，如有问题请加QQ群：560354109（1群）、643595483（2群）。"
         android:textColor="@color/lib_hint_color"
         android:textSize="@dimen/sp_12" />
 </LinearLayout>

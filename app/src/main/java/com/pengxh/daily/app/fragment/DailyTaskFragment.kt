@@ -67,8 +67,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private val kTag = "DailyTaskFragment"
     private val weakReferenceHandler by lazy { WeakReferenceHandler(this) }
     private val startTaskCode = 2024120801
-    private val executeNextTaskCode = 2024120802
-    private val completedAllTaskCode = 2024120803
+    private val startCountDownTimerCode = 2024120802
+    private val executeNextTaskCode = 2024120803
+    private val completedAllTaskCode = 2024120804
     private val marginOffset by lazy { 16.dp2px(requireContext()) }
     private val gson by lazy { Gson() }
     private val emailManager by lazy { EmailManager(requireContext()) }
@@ -93,28 +94,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                         Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask()
 
                         Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
-                            val time = SaveKeyValues.getValue(
-                                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                            ) as String
-                            //去掉时间的s
-                            val timeValue = time.dropLast(1).toInt()
-                            timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
-                                override fun onTick(millisUntilFinished: Long) {
-                                    val tick = millisUntilFinished / 1000
-                                    val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
-                                        putExtra("data", "$tick")
-                                    }
-                                    requireContext().sendBroadcast(intent)
-                                }
-
-                                override fun onFinish() {
-                                    //如果倒计时结束，那么表明没有收到打卡成功的通知
-                                    requireContext().backToMainActivity()
-                                    LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                                    emailManager.sendEmail(null, "", false)
-                                }
-                            }
-                            timeoutTimer?.start()
+                            // BroadcastReceiver不适合处理耗时操作，使用Handler处理
+                            weakReferenceHandler.sendEmptyMessage(startCountDownTimerCode)
                         }
 
                         Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION -> {
@@ -411,6 +392,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         LogFileManager.writeLog("停止执行每日任务")
         dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
+        dailyTaskAdapter.updateCurrentTaskState(-1)
         isTaskStarted = false
         resetTaskTimer?.cancel()
         binding.repeatTimeView.text = "--秒后刷新每日任务"
@@ -418,7 +400,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconTintResource(R.color.ios_green)
         binding.executeTaskButton.text = "启动"
         binding.tipsView.text = ""
-        dailyTaskAdapter.updateCurrentTaskState(-1)
         serviceIntent?.let {
             requireContext().stopService(it)
         }
@@ -511,6 +492,31 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                     false
                 )
                 countDownTimerService?.startCountDown(index + 1, diff)
+            }
+
+            startCountDownTimerCode -> {
+                val time = SaveKeyValues.getValue(
+                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                ) as String
+                //去掉时间的s
+                val timeValue = time.dropLast(1).toInt()
+                timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        val tick = millisUntilFinished / 1000
+                        val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
+                            putExtra("data", "$tick")
+                        }
+                        requireContext().sendBroadcast(intent)
+                    }
+
+                    override fun onFinish() {
+                        //如果倒计时结束，那么表明没有收到打卡成功的通知
+                        requireContext().backToMainActivity()
+                        LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+                        emailManager.sendEmail(null, "", false)
+                    }
+                }
+                timeoutTimer?.start()
             }
 
             executeNextTaskCode -> {
