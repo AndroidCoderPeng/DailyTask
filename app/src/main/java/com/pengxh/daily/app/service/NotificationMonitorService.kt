@@ -93,7 +93,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 var record = ""
                 var index = 1
                 DatabaseWrapper.loadCurrentDayNotice().forEach {
-                    if (it.notificationMsg.contains("考勤")) {
+                    if (it.notificationMsg.contains("考勤打卡")) {
                         record += "【第${index}次】${it.notificationMsg}，时间：${it.postTime}\r\n"
                         index++
                     }
