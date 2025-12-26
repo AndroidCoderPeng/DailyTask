@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.view.GestureDetector
 import android.view.KeyEvent
@@ -18,6 +19,7 @@ import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.ScaleAnimation
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -34,6 +36,7 @@ import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.fragment.DailyTaskFragment
 import com.pengxh.daily.app.fragment.SettingsFragment
+import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -105,8 +108,18 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     AlertMessageDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick() {
                         SaveKeyValues.putValue("isFirst", false)
+                        // 悬浮窗权限并显示悬浮窗
+                        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+                        overlayPermissionLauncher.launch(intent)
                     }
                 }).build().show()
+        }
+
+        // 显示悬浮窗
+        if (Settings.canDrawOverlays(this)) {
+            Intent(this, FloatingWindowService::class.java).apply {
+                startService(this)
+            }
         }
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -144,6 +157,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
         })
     }
+
+    private val overlayPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (Settings.canDrawOverlays(this)) {
+                Intent(this, FloatingWindowService::class.java).apply {
+                    startService(this)
+                }
+            }
+        }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ev?.let {

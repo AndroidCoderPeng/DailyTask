@@ -14,11 +14,9 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Message
-import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -37,7 +35,6 @@ import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
-import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.sqlite.DailyTaskBean
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.Constant
@@ -81,7 +78,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private var resetTaskTimer: CountDownTimer? = null
     private var countDownTimerService: CountDownTimerService? = null
     private var isRefresh = false
-    private var serviceIntent: Intent? = null
+
     private val broadcastReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -108,6 +105,65 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 }
             }
         }
+    }
+
+    override fun handleMessage(msg: Message): Boolean {
+        when (msg.what) {
+            startTaskCode -> {
+                val index = msg.obj as Int
+                val task = taskBeans[index]
+                binding.tipsView.text = String.format(
+                    Locale.getDefault(), "准备执行第 %d 个任务", index + 1
+                )
+                binding.tipsView.setTextColor(R.color.theme_color.convertColor(requireContext()))
+
+                val pair = task.diffCurrent()
+                dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
+                val diff = pair.second
+                emailManager.sendEmail(
+                    "任务执行通知",
+                    "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
+                    false
+                )
+                countDownTimerService?.startCountDown(index + 1, diff)
+            }
+
+            startCountDownTimerCode -> {
+                val time = SaveKeyValues.getValue(
+                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                ) as String
+                //去掉时间的s
+                val timeValue = time.dropLast(1).toInt()
+                timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        val tick = millisUntilFinished / 1000
+                        val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
+                            putExtra("data", "$tick")
+                        }
+                        requireContext().sendBroadcast(intent)
+                    }
+
+                    override fun onFinish() {
+                        //如果倒计时结束，那么表明没有收到打卡成功的通知
+                        requireContext().backToMainActivity()
+                        LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+                        emailManager.sendEmail(null, "", false)
+                    }
+                }
+                timeoutTimer?.start()
+            }
+
+            executeNextTaskCode -> dailyTaskHandler.post(dailyTaskRunnable)
+
+            completedAllTaskCode -> {
+                binding.tipsView.text = "当天所有任务已执行完毕"
+                binding.tipsView.setTextColor(R.color.ios_green.convertColor(requireContext()))
+                dailyTaskAdapter.updateCurrentTaskState(-1)
+                dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
+                countDownTimerService?.updateDailyTaskState()
+            }
+        }
+        return true
     }
 
     override fun setupTopBarLayout() {
@@ -293,16 +349,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     override fun initEvent() {
         binding.executeTaskButton.setOnClickListener {
             if (!isTaskStarted) {
-                if (Settings.canDrawOverlays(requireContext())) {
-                    if (serviceIntent == null) {
-                        serviceIntent = Intent(requireContext(), FloatingWindowService::class.java)
-                    }
-                    requireContext().startService(serviceIntent)
-                    startExecuteTask()
-                } else {
-                    val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-                    overlayPermissionLauncher.launch(intent)
-                }
+                startExecuteTask()
             } else {
                 stopExecuteTask()
             }
@@ -324,18 +371,19 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.refreshView.setEnableLoadMore(false)
     }
 
-    private val overlayPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (Settings.canDrawOverlays(requireContext())) {
-                if (serviceIntent == null) {
-                    serviceIntent = Intent(requireContext(), FloatingWindowService::class.java)
-                }
-                requireContext().startService(serviceIntent)
-                startExecuteTask()
-            }
+    /**
+     * 启动任务
+     * */
+    private fun startExecuteTask() {
+        if (isTaskStarted) {
+            emailManager.sendEmail(
+                "启动任务通知",
+                "任务启动失败，任务已在运行中，请勿重复启动",
+                false
+            )
+            return
         }
 
-    private fun startExecuteTask() {
         if (DatabaseWrapper.loadAllTask().isEmpty()) {
             "循环任务启动失败，请先添加任务时间点".show(requireContext())
             return
@@ -347,7 +395,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
-        emailManager.sendEmail("启动循环任务通知", "循环任务启动成功，请注意下次打卡时间", false)
+        emailManager.sendEmail("启动任务通知", "任务启动成功，请注意下次打卡时间", false)
     }
 
     /**
@@ -356,11 +404,11 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private val dailyTaskRunnable = Runnable {
         val taskIndex = taskBeans.getTaskIndex()
         if (taskIndex == -1) {
-            LogFileManager.writeLog("今日周期任务已全部执行完毕")
+            LogFileManager.writeLog("今日任务已全部执行完毕")
             weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
-            emailManager.sendEmail("循环任务状态通知", "今日周期任务已全部执行完毕", false)
+            emailManager.sendEmail("任务状态通知", "今日任务已全部执行完毕", false)
         } else {
-            LogFileManager.writeLog("执行周期任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
+            LogFileManager.writeLog("执行任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
             weakReferenceHandler.run {
                 val message = obtainMessage()
                 message.what = startTaskCode
@@ -389,6 +437,10 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     }
 
     private fun stopExecuteTask() {
+        if (!isTaskStarted) {
+            emailManager.sendEmail("停止任务通知", "任务停止失败，任务已经停止，请勿重复停止", false)
+            return
+        }
         LogFileManager.writeLog("停止执行每日任务")
         dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
@@ -400,10 +452,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         binding.executeTaskButton.setIconTintResource(R.color.ios_green)
         binding.executeTaskButton.text = "启动"
         binding.tipsView.text = ""
-        serviceIntent?.let {
-            requireContext().stopService(it)
-        }
-        emailManager.sendEmail("暂停循环任务通知", "循环任务停止成功，请及时打开下次任务", false)
+        emailManager.sendEmail("停止任务通知", "任务停止成功，请及时打开下次任务", false)
     }
 
     private fun addTask() {
@@ -471,67 +520,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
 
                 override fun onCancelClick() {}
             }).build().show()
-    }
-
-    override fun handleMessage(msg: Message): Boolean {
-        when (msg.what) {
-            startTaskCode -> {
-                val index = msg.obj as Int
-                val task = taskBeans[index]
-                binding.tipsView.text = String.format(
-                    Locale.getDefault(), "准备执行第 %d 个任务", index + 1
-                )
-                binding.tipsView.setTextColor(R.color.theme_color.convertColor(requireContext()))
-
-                val pair = task.diffCurrent()
-                dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
-                val diff = pair.second
-                emailManager.sendEmail(
-                    "任务执行通知",
-                    "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
-                    false
-                )
-                countDownTimerService?.startCountDown(index + 1, diff)
-            }
-
-            startCountDownTimerCode -> {
-                val time = SaveKeyValues.getValue(
-                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                ) as String
-                //去掉时间的s
-                val timeValue = time.dropLast(1).toInt()
-                timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
-                    override fun onTick(millisUntilFinished: Long) {
-                        val tick = millisUntilFinished / 1000
-                        val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
-                            putExtra("data", "$tick")
-                        }
-                        requireContext().sendBroadcast(intent)
-                    }
-
-                    override fun onFinish() {
-                        //如果倒计时结束，那么表明没有收到打卡成功的通知
-                        requireContext().backToMainActivity()
-                        LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                        emailManager.sendEmail(null, "", false)
-                    }
-                }
-                timeoutTimer?.start()
-            }
-
-            executeNextTaskCode -> {
-                dailyTaskHandler.post(dailyTaskRunnable)
-            }
-
-            completedAllTaskCode -> {
-                binding.tipsView.text = "当天所有任务已执行完毕"
-                binding.tipsView.setTextColor(R.color.ios_green.convertColor(requireContext()))
-                dailyTaskAdapter.updateCurrentTaskState(-1)
-                dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
-                countDownTimerService?.updateDailyTaskState()
-            }
-        }
-        return true
     }
 
     override fun onDestroy() {
