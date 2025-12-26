@@ -111,7 +111,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         }
 
         binding.openTestLayout.setOnClickListener {
-            requireContext().openApplication(false)
+            requireContext().openApplication(needCountDown = false, isRemoteCommand = false)
         }
 
         binding.turnoffLightSwitch.setOnCheckedChangeListener { _, isChecked ->

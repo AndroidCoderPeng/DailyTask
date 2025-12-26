@@ -78,7 +78,7 @@ class CountDownTimerService : Service() {
 
             override fun onFinish() {
                 isTimerRunning = false
-                openApplication(true)
+                openApplication(needCountDown = true, isRemoteCommand = false)
             }
         }.apply {
             start()

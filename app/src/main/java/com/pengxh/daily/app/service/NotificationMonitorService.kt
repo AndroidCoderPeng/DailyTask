@@ -102,7 +102,7 @@ class NotificationMonitorService : NotificationListenerService() {
             } else {
                 val key = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
                 if (notice.contains(key)) {
-                    openApplication(true)
+                    openApplication(needCountDown = true, isRemoteCommand = true)
                 }
             }
         }

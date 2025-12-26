@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.Constant
@@ -25,7 +24,7 @@ fun Context.notificationEnable(): Boolean {
 /**
  * 打开指定包名的apk
  */
-fun Context.openApplication(needCountDown: Boolean) {
+fun Context.openApplication(needCountDown: Boolean, isRemoteCommand: Boolean) {
     val isContains = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManager.getPackageInfo(
@@ -66,17 +65,21 @@ fun Context.openApplication(needCountDown: Boolean) {
         val info = activities.first()
         intent.component = ComponentName(info.activityInfo.packageName, info.activityInfo.name)
         startActivity(intent)
-    } else {
-        Log.e("openApplication", "No launcher activity found for target app.", NullPointerException())
     }
     /**跳转钉钉结束*****************************************/
     if (needCountDown) {
         sendBroadcast(Intent(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION))
+    } else {
+        // 如果是远程指令启动钉钉，那么就不必启动循环任务，单次任务，直接打开钉钉即可
+        SaveKeyValues.putValue(Constant.NEED_START_TASK_KEY, !isRemoteCommand)
     }
 }
 
 fun Context.backToMainActivity() {
-    sendBroadcast(Intent(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION))
+    val needNext = SaveKeyValues.getValue(Constant.NEED_START_TASK_KEY, false) as Boolean
+    if (needNext) {
+        sendBroadcast(Intent(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION))
+    }
     val backToHome = SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
     if (backToHome) {
         //模拟点击Home键
