@@ -89,12 +89,16 @@ class NotificationMonitorService : NotificationListenerService() {
                 sendBroadcast(Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION))
             } else if (notice.contains("亮屏")) {
                 sendBroadcast(Intent(Constant.BROADCAST_HIDE_MASK_VIEW_ACTION))
-            } else if (notice.contains("打卡记录")) {
+            } else if (notice.contains("考勤记录")) {
                 var record = ""
-                DatabaseWrapper.loadCurrentDayNotice().forEachIndexed { index, item ->
-                    record += "【第${index + 1}次】打卡，结果：${item.notificationMsg}，时间：${item.postTime}\r\n"
+                var index = 1
+                DatabaseWrapper.loadCurrentDayNotice().forEach {
+                    if (it.notificationMsg.contains("考勤")) {
+                        record += "【第${index}次】${it.notificationMsg}，时间：${it.postTime}\r\n"
+                        index++
+                    }
                 }
-                emailManager.sendEmail("当天打卡记录通知", record, false)
+                emailManager.sendEmail("当天考勤记录通知", record, false)
             } else {
                 val key = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
                 if (notice.contains(key)) {
