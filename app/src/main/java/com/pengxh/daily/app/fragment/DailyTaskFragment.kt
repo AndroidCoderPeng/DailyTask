@@ -32,7 +32,6 @@ import com.pengxh.daily.app.databinding.FragmentDailyTaskBinding
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
-import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.sqlite.DailyTaskBean
@@ -40,13 +39,13 @@ import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
-import com.pengxh.daily.app.utils.TimeKit
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseFragment
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.show
+import com.pengxh.kt.lite.utils.LiteKitConstant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.utils.WeakReferenceHandler
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
@@ -75,7 +74,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private var isTaskStarted = false
     private var timeoutTimer: CountDownTimer? = null
-    private var resetTaskTimer: CountDownTimer? = null
     private var countDownTimerService: CountDownTimerService? = null
     private var isRefresh = false
 
@@ -90,7 +88,12 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
 
                         Constant.BROADCAST_RESET_TASK_ACTION -> {
                             dailyTaskHandler.post(dailyTaskRunnable)
-                            startResetTaskTimer()
+                        }
+
+                        Constant.BROADCAST_UPDATE_RESET_TICK_TIME_ACTION -> {
+                            binding.repeatTimeView.text = intent.getStringExtra(
+                                LiteKitConstant.BROADCAST_MESSAGE_KEY
+                            )
                         }
 
                         Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
@@ -140,10 +143,10 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
                     override fun onTick(millisUntilFinished: Long) {
                         val tick = millisUntilFinished / 1000
-                        val intent = Intent(Constant.BROADCAST_TICK_TIME_ACTION).apply {
-                            putExtra("data", "$tick")
+                        Intent(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION).apply {
+                            putExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY, "$tick")
+                            requireContext().sendBroadcast(this)
                         }
-                        requireContext().sendBroadcast(intent)
                     }
 
                     override fun onFinish() {
@@ -203,6 +206,7 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             addAction(Constant.BROADCAST_START_DAILY_TASK_ACTION) // 开始执行每日任务
             addAction(Constant.BROADCAST_STOP_DAILY_TASK_ACTION) // 取消执行每日任务
             addAction(Constant.BROADCAST_RESET_TASK_ACTION) // 重置任务
+            addAction(Constant.BROADCAST_UPDATE_RESET_TICK_TIME_ACTION) // 更新任务倒计时
             addAction(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION) // 开始超时定时器
             addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION) // 取消超时定时器
         }
@@ -393,7 +397,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         }
         LogFileManager.writeLog("开始执行每日任务")
         dailyTaskHandler.post(dailyTaskRunnable)
-        startResetTaskTimer()
         isTaskStarted = true
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
@@ -421,24 +424,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         }
     }
 
-    private fun startResetTaskTimer() {
-        resetTaskTimer?.cancel()
-        val currentDiffSeconds = TimeKit.getResetTaskSeconds()
-        resetTaskTimer = object : CountDownTimer(currentDiffSeconds * 1000L, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val seconds = (millisUntilFinished / 1000).toInt()
-                binding.repeatTimeView.text = String.format(
-                    Locale.getDefault(), "%s后刷新每日任务", seconds.formatTime()
-                )
-            }
-
-            override fun onFinish() {
-
-            }
-        }
-        resetTaskTimer?.start()
-    }
-
     private fun stopExecuteTask() {
         if (!isTaskStarted) {
             emailManager.sendEmail("停止任务通知", "任务停止失败，任务已经停止，请勿重复停止", false)
@@ -448,7 +433,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
         dailyTaskAdapter.updateCurrentTaskState(-1)
-        resetTaskTimer?.cancel()
         isTaskStarted = false
         binding.repeatTimeView.text = "--秒后刷新每日任务"
         binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
@@ -527,8 +511,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
 
     override fun onDestroy() {
         super.onDestroy()
-        resetTaskTimer?.cancel()
-        resetTaskTimer = null
         requireContext().unregisterReceiver(broadcastReceiver)
     }
 }

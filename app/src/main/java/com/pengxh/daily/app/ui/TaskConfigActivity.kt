@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
+import com.pengxh.daily.app.event.UpdateTaskResetTimeEvent
 import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.Constant
@@ -20,6 +21,7 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.TitleBarView
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
+import org.greenrobot.eventbus.EventBus
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -124,6 +126,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     private fun setHourByPosition(position: Int) {
+        var hour = 0
         if (position == hourArray.size - 1) {
             AlertInputDialog.Builder()
                 .setContext(this)
@@ -135,14 +138,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
                             binding.resetTimeView.text = "每天${value}点"
-                            val hour = value.toInt()
+                            hour = value.toInt()
                             SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
-
-                            // 重新开始重置每日任务计时
-//                            Intent(Constant.BROADCAST_SET_RESET_TICK_TIME_ACTION).apply {
-//                                putExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY, hour)
-//                                sendBroadcast(this)
-//                            }
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -151,10 +148,13 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     override fun onCancelClick() {}
                 }).build().show()
         } else {
-            val hour = hourArray[position]
+            hour = hourArray[position].toInt()
             binding.resetTimeView.text = "每天${hour}点"
-            SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour.toInt())
+            SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
         }
+
+        // 重新开始重置每日任务计时
+        EventBus.getDefault().post(UpdateTaskResetTimeEvent(hour))
     }
 
     private fun setTimeByPosition(position: Int) {

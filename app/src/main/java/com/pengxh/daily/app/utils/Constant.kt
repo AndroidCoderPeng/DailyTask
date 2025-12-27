@@ -18,8 +18,6 @@ object Constant {
 
     const val BROADCAST_RESET_TASK_ACTION =
         "com.pengxh.daily.app.BROADCAST_RESET_TASK_ACTION" // 重置任务
-    const val BROADCAST_SET_RESET_TICK_TIME_ACTION =
-        "com.pengxh.daily.app.BROADCAST_SET_RESET_TICK_TIME_ACTION" // 重置每日任务计时器
     const val BROADCAST_UPDATE_RESET_TICK_TIME_ACTION =
         "com.pengxh.daily.app.BROADCAST_UPDATE_RESET_TICK_TIME_ACTION" // 更新重置任务计时器
     const val BROADCAST_SET_FLOATING_WINDOW_TICK_TIME_ACTION =
