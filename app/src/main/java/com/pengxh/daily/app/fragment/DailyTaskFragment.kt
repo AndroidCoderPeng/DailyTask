@@ -137,10 +137,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             startCountDownTimerCode -> {
                 val time = SaveKeyValues.getValue(
                     Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                ) as String
-                //去掉时间的s
-                val timeValue = time.dropLast(1).toInt()
-                timeoutTimer = object : CountDownTimer(timeValue * 1000L, 1000) {
+                ) as Int
+                timeoutTimer = object : CountDownTimer(time * 1000L, 1000) {
                     override fun onTick(millisUntilFinished: Long) {
                         val tick = millisUntilFinished / 1000
                         Intent(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION).apply {

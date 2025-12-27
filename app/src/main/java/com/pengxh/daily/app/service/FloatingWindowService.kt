@@ -17,9 +17,12 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.event.UpdateDingDingTimeoutEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.utils.LiteKitConstant
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
 
 class FloatingWindowService : Service() {
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
@@ -49,13 +52,6 @@ class FloatingWindowService : Service() {
 
     private fun handleIntent(intent: Intent?) {
         when (intent?.action) {
-            Constant.BROADCAST_SET_FLOATING_WINDOW_TICK_TIME_ACTION -> {
-                val time = intent.getStringExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY)
-                if (!time.isNullOrEmpty()) {
-                    textView.text = "${time}s"
-                }
-            }
-
             Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION -> {
                 val time = intent.getStringExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY)
                 if (!time.isNullOrEmpty()) {
@@ -65,10 +61,10 @@ class FloatingWindowService : Service() {
 
             Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION -> {
                 floatView.alpha = 1.0f
-                val timeValue = SaveKeyValues.getValue(
+                val time = SaveKeyValues.getValue(
                     Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                ) as String
-                textView.text = timeValue.ifEmpty { Constant.DEFAULT_OVER_TIME }
+                ) as Int
+                textView.text = "$time"
             }
 
             Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> floatView.alpha = 0.0f
@@ -82,7 +78,10 @@ class FloatingWindowService : Service() {
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate() {
         super.onCreate()
+        EventBus.getDefault().register(this)
+
         initBroadcastReceiver()
+
         val floatLayoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -92,10 +91,10 @@ class FloatingWindowService : Service() {
         ).also {
             windowManager.addView(floatView, it)
         }
-        val timeValue = SaveKeyValues.getValue(
+        val time = SaveKeyValues.getValue(
             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-        ) as String
-        textView.text = timeValue.ifEmpty { Constant.DEFAULT_OVER_TIME }
+        ) as Int
+        textView.text = "${time}s"
         try {
             floatView.setOnTouchListener { _, event ->
                 when (event.action) {
@@ -134,10 +133,15 @@ class FloatingWindowService : Service() {
         }
     }
 
+    @Subscribe
+    fun updateDingDingTimeout(event: UpdateDingDingTimeoutEvent) {
+        // 更新钉钉任务超时时间
+        textView.text = "${event.time}s"
+    }
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun initBroadcastReceiver() {
         val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_SET_FLOATING_WINDOW_TICK_TIME_ACTION)
             addAction(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION)
             addAction(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION)
             addAction(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION)
@@ -151,6 +155,7 @@ class FloatingWindowService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        EventBus.getDefault().unregister(this)
         unregisterReceiver(broadcastReceiver)
         windowManager.removeViewImmediate(floatView)
     }
