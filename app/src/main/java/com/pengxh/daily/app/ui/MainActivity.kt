@@ -287,7 +287,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.visibility = View.GONE
 
         //隐藏悬浮窗显示
-        sendBroadcast(Intent(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION))
+        Intent(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION).apply {
+            sendBroadcast(this)
+        }
 
         //启动时钟位置变换动画
         clockAnimationHandler.postDelayed(clockAnimationRunnable, 30000)
@@ -314,7 +316,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.visibility = View.VISIBLE
 
         //恢复悬浮窗显示
-        sendBroadcast(Intent(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION))
+        Intent(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION).apply {
+            sendBroadcast(this)
+        }
     }
 
     override fun onDestroy() {

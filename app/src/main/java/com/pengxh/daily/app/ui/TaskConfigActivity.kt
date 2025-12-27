@@ -15,6 +15,7 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.isNumber
 import com.pengxh.kt.lite.extensions.show
+import com.pengxh.kt.lite.utils.LiteKitConstant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.TitleBarView
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
@@ -134,7 +135,14 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
                             binding.resetTimeView.text = "每天${value}点"
-                            SaveKeyValues.putValue(Constant.RESET_TIME_KEY, value.toInt())
+                            val hour = value.toInt()
+                            SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
+
+                            // 重新开始重置每日任务计时
+//                            Intent(Constant.BROADCAST_SET_RESET_TICK_TIME_ACTION).apply {
+//                                putExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY, hour)
+//                                sendBroadcast(this)
+//                            }
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -164,10 +172,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                             val time = "${value}s"
                             binding.timeoutTextView.text = time
                             SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
-                            val intent = Intent(Constant.BROADCAST_UPDATE_TICK_TIME_ACTION).apply {
-                                putExtra("data", time)
+                            Intent(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION).apply {
+                                putExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY, time)
+                                sendBroadcast(this)
                             }
-                            sendBroadcast(intent)
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -179,10 +187,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val time = timeArray[position]
             binding.timeoutTextView.text = time
             SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
-            val intent = Intent(Constant.BROADCAST_UPDATE_TICK_TIME_ACTION).apply {
-                putExtra("data", time)
+            Intent(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION).apply {
+                putExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY, time)
+                sendBroadcast(this)
             }
-            sendBroadcast(intent)
         }
     }
 

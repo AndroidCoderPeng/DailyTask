@@ -18,6 +18,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.kt.lite.utils.LiteKitConstant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 
 class FloatingWindowService : Service() {
@@ -48,15 +49,15 @@ class FloatingWindowService : Service() {
 
     private fun handleIntent(intent: Intent?) {
         when (intent?.action) {
-            Constant.BROADCAST_TICK_TIME_ACTION -> {
-                val time = intent.getStringExtra("data")
+            Constant.BROADCAST_SET_FLOATING_WINDOW_TICK_TIME_ACTION -> {
+                val time = intent.getStringExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY)
                 if (!time.isNullOrEmpty()) {
                     textView.text = "${time}s"
                 }
             }
 
-            Constant.BROADCAST_UPDATE_TICK_TIME_ACTION -> {
-                val time = intent.getStringExtra("data")
+            Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION -> {
+                val time = intent.getStringExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY)
                 if (!time.isNullOrEmpty()) {
                     textView.text = time
                 }
@@ -136,8 +137,8 @@ class FloatingWindowService : Service() {
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun initBroadcastReceiver() {
         val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_TICK_TIME_ACTION)
-            addAction(Constant.BROADCAST_UPDATE_TICK_TIME_ACTION)
+            addAction(Constant.BROADCAST_SET_FLOATING_WINDOW_TICK_TIME_ACTION)
+            addAction(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION)
             addAction(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION)
             addAction(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION)
         }

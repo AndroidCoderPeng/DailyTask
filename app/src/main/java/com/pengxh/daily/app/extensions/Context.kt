@@ -68,7 +68,9 @@ fun Context.openApplication(needCountDown: Boolean, isRemoteCommand: Boolean) {
     }
     /**跳转钉钉结束*****************************************/
     if (needCountDown) {
-        sendBroadcast(Intent(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION))
+        Intent(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION).apply {
+            sendBroadcast(this)
+        }
     } else {
         // 如果是远程指令启动钉钉，那么就不必启动循环任务，单次任务，直接打开钉钉即可
         SaveKeyValues.putValue(Constant.NEED_START_TASK_KEY, !isRemoteCommand)
@@ -78,7 +80,9 @@ fun Context.openApplication(needCountDown: Boolean, isRemoteCommand: Boolean) {
 fun Context.backToMainActivity() {
     val needNext = SaveKeyValues.getValue(Constant.NEED_START_TASK_KEY, false) as Boolean
     if (needNext) {
-        sendBroadcast(Intent(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION))
+        Intent(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION).apply {
+            sendBroadcast(this)
+        }
     }
     val backToHome = SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
     if (backToHome) {
@@ -101,5 +105,7 @@ private fun Context.launchMainActivity() {
         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
     }
     startActivity(intent)
-    sendBroadcast(Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION))
+    Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION).apply {
+        sendBroadcast(this)
+    }
 }

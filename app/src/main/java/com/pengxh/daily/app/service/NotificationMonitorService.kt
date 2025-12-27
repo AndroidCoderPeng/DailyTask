@@ -34,7 +34,9 @@ class NotificationMonitorService : NotificationListenerService() {
      * 有可用的并且和通知管理器连接成功时回调
      */
     override fun onListenerConnected() {
-        sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION))
+        Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION).apply {
+            sendBroadcast(this)
+        }
     }
 
     /**
@@ -51,7 +53,9 @@ class NotificationMonitorService : NotificationListenerService() {
         if (notice.isNullOrBlank()) {
             return
         }
-        sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION))
+        Intent(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION).apply {
+            sendBroadcast(this)
+        }
 
         // 保存指定包名的通知，其他的一律不保存
         if (pkg == Constant.TARGET_APP || pkg in auxiliaryApp) {
@@ -81,14 +85,22 @@ class NotificationMonitorService : NotificationListenerService() {
                 emailManager.sendEmail("查询手机电量通知", "当前手机剩余电量为：${capacity}%", false)
             } else if (notice.contains("启动")) {
                 SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
-                sendBroadcast(Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION))
+                Intent(Constant.BROADCAST_START_DAILY_TASK_ACTION).apply {
+                    sendBroadcast(this)
+                }
             } else if (notice.contains("停止")) {
                 SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
-                sendBroadcast(Intent(Constant.BROADCAST_STOP_DAILY_TASK_ACTION))
+                Intent(Constant.BROADCAST_STOP_DAILY_TASK_ACTION).apply {
+                    sendBroadcast(this)
+                }
             } else if (notice.contains("息屏")) {
-                sendBroadcast(Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION))
+                Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION).apply {
+                    sendBroadcast(this)
+                }
             } else if (notice.contains("亮屏")) {
-                sendBroadcast(Intent(Constant.BROADCAST_HIDE_MASK_VIEW_ACTION))
+                Intent(Constant.BROADCAST_HIDE_MASK_VIEW_ACTION).apply {
+                    sendBroadcast(this)
+                }
             } else if (notice.contains("考勤记录")) {
                 var record = ""
                 var index = 1
@@ -114,6 +126,8 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification) {}
 
     override fun onListenerDisconnected() {
-        sendBroadcast(Intent(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION))
+        Intent(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION).apply {
+            sendBroadcast(this)
+        }
     }
 }
