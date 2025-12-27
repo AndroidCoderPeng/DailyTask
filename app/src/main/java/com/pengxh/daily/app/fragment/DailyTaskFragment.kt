@@ -29,6 +29,7 @@ import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.FragmentDailyTaskBinding
+import com.pengxh.daily.app.event.UpdateFloatingWindowTimeEvent
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
@@ -57,6 +58,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.greenrobot.eventbus.EventBus
 import java.util.Locale
 
 class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handler.Callback {
@@ -141,10 +143,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                 timeoutTimer = object : CountDownTimer(time * 1000L, 1000) {
                     override fun onTick(millisUntilFinished: Long) {
                         val tick = millisUntilFinished / 1000
-                        Intent(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION).apply {
-                            putExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY, "$tick")
-                            requireContext().sendBroadcast(this)
-                        }
+                        // 更新悬浮窗倒计时
+                        EventBus.getDefault().post(UpdateFloatingWindowTimeEvent(tick))
                     }
 
                     override fun onFinish() {

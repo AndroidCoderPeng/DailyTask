@@ -18,8 +18,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.event.UpdateDingDingTimeoutEvent
+import com.pengxh.daily.app.event.UpdateFloatingWindowTimeEvent
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.kt.lite.utils.LiteKitConstant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -52,13 +52,6 @@ class FloatingWindowService : Service() {
 
     private fun handleIntent(intent: Intent?) {
         when (intent?.action) {
-            Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION -> {
-                val time = intent.getStringExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY)
-                if (!time.isNullOrEmpty()) {
-                    textView.text = time
-                }
-            }
-
             Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION -> {
                 floatView.alpha = 1.0f
                 val time = SaveKeyValues.getValue(
@@ -139,10 +132,15 @@ class FloatingWindowService : Service() {
         textView.text = "${event.time}s"
     }
 
+    @Subscribe
+    fun updateFloatingWindowTime(event: UpdateFloatingWindowTimeEvent) {
+        // 更新悬浮窗倒计时
+        textView.text = "${event.seconds}s"
+    }
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun initBroadcastReceiver() {
         val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_UPDATE_FLOATING_WINDOW_TICK_TIME_ACTION)
             addAction(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION)
             addAction(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION)
         }
