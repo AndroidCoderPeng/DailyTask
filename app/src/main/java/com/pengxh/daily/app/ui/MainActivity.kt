@@ -33,6 +33,7 @@ import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.BaseFragmentAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
+import com.pengxh.daily.app.event.HideFloatingWindowEvent
 import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.fragment.DailyTaskFragment
 import com.pengxh.daily.app.fragment.SettingsFragment
@@ -288,7 +289,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.visibility = View.GONE
 
         //隐藏悬浮窗显示
-        EventBus.getDefault().post(Any())
+        EventBus.getDefault().post(HideFloatingWindowEvent())
 
         //启动时钟位置变换动画
         clockAnimationHandler.postDelayed(clockAnimationRunnable, 30000)

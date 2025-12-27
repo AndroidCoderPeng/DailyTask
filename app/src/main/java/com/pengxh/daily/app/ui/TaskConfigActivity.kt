@@ -30,11 +30,51 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private val timeArray = arrayListOf("15", "30", "45", "自定义（单位：秒）")
     private val clipboard by lazy { getSystemService(CLIPBOARD_SERVICE) as ClipboardManager }
 
+    override fun initViewBinding(): ActivityTaskConfigBinding {
+        return ActivityTaskConfigBinding.inflate(layoutInflater)
+    }
+
+    override fun observeRequestState() {
+
+    }
+
+    override fun setupTopBarLayout() {
+        binding.rootView.initImmersionBar(this, true, R.color.white)
+        binding.titleView.setOnClickListener(object : TitleBarView.OnClickListener {
+            override fun onLeftClick() {
+                finish()
+            }
+
+            override fun onRightClick() {
+
+            }
+        })
+    }
+
+    override fun initOnCreate(savedInstanceState: Bundle?) {
+        val hour = SaveKeyValues.getValue(
+            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+        ) as Int
+        binding.resetTimeView.text = "每天${hour}点"
+        val time = SaveKeyValues.getValue(
+            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+        ) as Int
+        binding.timeoutTextView.text = "${time}s"
+        binding.keyTextView.text = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
+        val needRandom = SaveKeyValues.getValue(Constant.RANDOM_TIME_KEY, true) as Boolean
+        binding.randomTimeSwitch.isChecked = needRandom
+        if (needRandom) {
+            binding.minuteRangeLayout.visibility = View.VISIBLE
+            val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+            binding.minuteRangeView.text = "${value}分钟"
+        } else {
+            binding.minuteRangeLayout.visibility = View.GONE
+        }
+    }
+
     override fun initEvent() {
         binding.resetTimeLayout.setOnClickListener {
-            BottomActionSheet.Builder()
-                .setContext(this)
-                .setActionItemTitle(hourArray)
+            BottomActionSheet.Builder().setContext(this).setActionItemTitle(hourArray)
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
@@ -44,9 +84,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.timeoutLayout.setOnClickListener {
-            BottomActionSheet.Builder()
-                .setContext(this)
-                .setActionItemTitle(timeArray)
+            BottomActionSheet.Builder().setContext(this).setActionItemTitle(timeArray)
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
@@ -56,11 +94,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.keyLayout.setOnClickListener {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置打卡口令")
-                .setHintMessage("请输入打卡口令，如：打卡")
-                .setNegativeButton("取消")
+            AlertInputDialog.Builder().setContext(this).setTitle("设置打卡口令")
+                .setHintMessage("请输入打卡口令，如：打卡").setNegativeButton("取消")
                 .setPositiveButton("确定").setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
@@ -84,11 +119,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.minuteRangeLayout.setOnClickListener {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置随机时间范围")
-                .setHintMessage("请输入整数，如：30")
-                .setNegativeButton("取消")
+            AlertInputDialog.Builder().setContext(this).setTitle("设置随机时间范围")
+                .setHintMessage("请输入整数，如：30").setNegativeButton("取消")
                 .setPositiveButton("确定").setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
@@ -127,17 +159,15 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private fun setHourByPosition(position: Int) {
         var hour = 0
         if (position == hourArray.size - 1) {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置重置时间")
-                .setHintMessage("直接输入整数时间即可，如：6")
-                .setNegativeButton("取消")
+            AlertInputDialog.Builder().setContext(this).setTitle("设置重置时间")
+                .setHintMessage("直接输入整数时间即可，如：6").setNegativeButton("取消")
                 .setPositiveButton("确定").setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
                             hour = value.toInt()
                             binding.resetTimeView.text = "每天${hour}点"
+                            updateTimeout(hour)
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -148,28 +178,28 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         } else {
             hour = hourArray[position].toInt()
             binding.resetTimeView.text = "每天${hour}点"
+            updateTimeout(hour)
         }
+    }
 
+    private fun updateTimeout(hour: Int) {
         SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
         // 重新开始重置每日任务计时
         EventBus.getDefault().post(UpdateTaskResetTimeEvent(hour))
     }
 
     private fun setTimeByPosition(position: Int) {
-        var time = 15
+        var time = 30
         if (position == timeArray.size - 1) {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置超时时间")
-                .setHintMessage("直接输入整数时间即可，如：60")
-                .setNegativeButton("取消")
-                .setPositiveButton("确定")
-                .setOnDialogButtonClickListener(object :
+            AlertInputDialog.Builder().setContext(this).setTitle("设置超时时间")
+                .setHintMessage("直接输入整数时间即可，如：60").setNegativeButton("取消")
+                .setPositiveButton("确定").setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
                             time = value.toInt()
                             binding.timeoutTextView.text = "${time}s"
+                            updateDingDingTimeout(time)
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -180,52 +210,13 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         } else {
             time = timeArray[position].toInt()
             binding.timeoutTextView.text = "${time}s"
+            updateDingDingTimeout(time)
         }
+    }
 
+    private fun updateDingDingTimeout(time: Int) {
         SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
         // 更新钉钉任务超时时间
         EventBus.getDefault().post(UpdateDingDingTimeoutEvent(time))
-    }
-
-    override fun initOnCreate(savedInstanceState: Bundle?) {
-        val hour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
-        binding.resetTimeView.text = "每天${hour}点"
-        val time = SaveKeyValues.getValue(
-            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-        ) as Int
-        binding.timeoutTextView.text = "${time}s"
-        binding.keyTextView.text = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
-        val needRandom = SaveKeyValues.getValue(Constant.RANDOM_TIME_KEY, true) as Boolean
-        binding.randomTimeSwitch.isChecked = needRandom
-        if (needRandom) {
-            binding.minuteRangeLayout.visibility = View.VISIBLE
-            val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
-            binding.minuteRangeView.text = "${value}分钟"
-        } else {
-            binding.minuteRangeLayout.visibility = View.GONE
-        }
-    }
-
-    override fun initViewBinding(): ActivityTaskConfigBinding {
-        return ActivityTaskConfigBinding.inflate(layoutInflater)
-    }
-
-    override fun observeRequestState() {
-
-    }
-
-    override fun setupTopBarLayout() {
-        binding.rootView.initImmersionBar(this, true, R.color.white)
-        binding.titleView.setOnClickListener(object : TitleBarView.OnClickListener {
-            override fun onLeftClick() {
-                finish()
-            }
-
-            override fun onRightClick() {
-
-            }
-        })
     }
 }

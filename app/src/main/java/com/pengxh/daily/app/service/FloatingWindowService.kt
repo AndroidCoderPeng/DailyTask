@@ -17,6 +17,7 @@ import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.event.HideFloatingWindowEvent
 import com.pengxh.daily.app.event.UpdateDingDingTimeoutEvent
 import com.pengxh.daily.app.event.UpdateFloatingWindowTimeEvent
 import com.pengxh.daily.app.utils.Constant
@@ -137,7 +138,7 @@ class FloatingWindowService : Service() {
     }
 
     @Subscribe
-    fun hideFloatingWindowTime(event: Any) {
+    fun hideFloatingWindow(event: HideFloatingWindowEvent) {
         // 隐藏悬浮窗
         floatView.alpha = 0.0f
     }
