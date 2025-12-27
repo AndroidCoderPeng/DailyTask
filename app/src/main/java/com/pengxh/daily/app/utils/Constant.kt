@@ -22,8 +22,6 @@ object Constant {
         "com.pengxh.daily.app.BROADCAST_UPDATE_RESET_TICK_TIME_ACTION" // 更新重置任务计时器
     const val BROADCAST_SHOW_FLOATING_WINDOW_ACTION =
         "com.pengxh.daily.app.BROADCAST_SHOW_FLOATING_WINDOW_ACTION" // 显示悬浮窗
-    const val BROADCAST_HIDE_FLOATING_WINDOW_ACTION =
-        "com.pengxh.daily.app.BROADCAST_HIDE_FLOATING_WINDOW_ACTION" // 隐藏悬浮窗
     const val BROADCAST_SHOW_MASK_VIEW_ACTION =
         "com.pengxh.daily.app.BROADCAST_SHOW_MASK_VIEW_ACTION" // 显示蒙版
     const val BROADCAST_HIDE_MASK_VIEW_ACTION =

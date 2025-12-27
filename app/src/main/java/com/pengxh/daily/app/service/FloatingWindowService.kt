@@ -59,8 +59,6 @@ class FloatingWindowService : Service() {
                 ) as Int
                 textView.text = "$time"
             }
-
-            Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION -> floatView.alpha = 0.0f
         }
     }
 
@@ -138,11 +136,16 @@ class FloatingWindowService : Service() {
         textView.text = "${event.seconds}s"
     }
 
+    @Subscribe
+    fun hideFloatingWindowTime(event: Any) {
+        // 隐藏悬浮窗
+        floatView.alpha = 0.0f
+    }
+
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     private fun initBroadcastReceiver() {
         val filter = IntentFilter().apply {
             addAction(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION)
-            addAction(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             registerReceiver(broadcastReceiver, filter, RECEIVER_EXPORTED)

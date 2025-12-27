@@ -43,6 +43,7 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
+import org.greenrobot.eventbus.EventBus
 import java.util.Random
 import kotlin.math.abs
 
@@ -287,9 +288,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.visibility = View.GONE
 
         //隐藏悬浮窗显示
-        Intent(Constant.BROADCAST_HIDE_FLOATING_WINDOW_ACTION).apply {
-            sendBroadcast(this)
-        }
+        EventBus.getDefault().post(Any())
 
         //启动时钟位置变换动画
         clockAnimationHandler.postDelayed(clockAnimationRunnable, 30000)
