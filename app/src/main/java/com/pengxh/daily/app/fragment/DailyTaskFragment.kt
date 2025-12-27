@@ -84,11 +84,14 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent?.action?.let {
                     when (it) {
-                        Constant.BROADCAST_RESET_TASK_ACTION, Constant.BROADCAST_START_DAILY_TASK_ACTION -> {
-                            startExecuteTask()
-                        }
+                        Constant.BROADCAST_START_DAILY_TASK_ACTION -> startExecuteTask()
 
                         Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask()
+
+                        Constant.BROADCAST_RESET_TASK_ACTION -> {
+                            dailyTaskHandler.post(dailyTaskRunnable)
+                            startResetTaskTimer()
+                        }
 
                         Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
                             // BroadcastReceiver不适合处理耗时操作，使用Handler处理
@@ -197,9 +200,9 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
         val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_RESET_TASK_ACTION) // 重置任务
             addAction(Constant.BROADCAST_START_DAILY_TASK_ACTION) // 开始执行每日任务
             addAction(Constant.BROADCAST_STOP_DAILY_TASK_ACTION) // 取消执行每日任务
+            addAction(Constant.BROADCAST_RESET_TASK_ACTION) // 重置任务
             addAction(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION) // 开始超时定时器
             addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION) // 取消超时定时器
         }
@@ -348,10 +351,10 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
 
     override fun initEvent() {
         binding.executeTaskButton.setOnClickListener {
-            if (!isTaskStarted) {
-                startExecuteTask()
-            } else {
+            if (isTaskStarted) {
                 stopExecuteTask()
+            } else {
+                startExecuteTask()
             }
         }
 
@@ -445,8 +448,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
         dailyTaskAdapter.updateCurrentTaskState(-1)
-        isTaskStarted = false
         resetTaskTimer?.cancel()
+        isTaskStarted = false
         binding.repeatTimeView.text = "--秒后刷新每日任务"
         binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
         binding.executeTaskButton.setIconTintResource(R.color.ios_green)

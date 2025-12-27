@@ -33,7 +33,7 @@ class CountDownTimerService : Service() {
             setVibrate(null)
         }
     }
-    private val notificationId = 1
+    private val notificationId = 1001
     private var countDownTimer: CountDownTimer? = null
     private var isTimerRunning = false
 
