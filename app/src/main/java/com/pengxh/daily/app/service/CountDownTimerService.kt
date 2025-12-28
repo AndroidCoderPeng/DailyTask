@@ -65,6 +65,7 @@ class CountDownTimerService : Service() {
             countDownTimer?.cancel()
             countDownTimer = null
             isTimerRunning = false
+            LogFileManager.writeLog("startCountDown: 第${index}个任务重复执行，取消之前的任务")
         }
         LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${index}个任务")
         countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
@@ -78,7 +79,7 @@ class CountDownTimerService : Service() {
 
             override fun onFinish() {
                 isTimerRunning = false
-                openApplication(needCountDown = true, isRemoteCommand = false)
+                openApplication(true)
             }
         }.apply {
             start()

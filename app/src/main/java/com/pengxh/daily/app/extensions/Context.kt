@@ -9,7 +9,9 @@ import android.os.Handler
 import android.os.Looper
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.ui.MainActivity
+import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
 
@@ -23,8 +25,9 @@ fun Context.notificationEnable(): Boolean {
 
 /**
  * 打开指定包名的apk
+ * @param needCountDown 是否需要倒计时
  */
-fun Context.openApplication(needCountDown: Boolean, isRemoteCommand: Boolean) {
+fun Context.openApplication(needCountDown: Boolean) {
     val isContains = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             packageManager.getPackageInfo(
@@ -53,8 +56,7 @@ fun Context.openApplication(needCountDown: Boolean, isRemoteCommand: Boolean) {
         return
     }
 
-    sendBroadcast(Intent(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION))
-    /**跳转钉钉开始*****************************************/
+    // 跳转钉钉
     val intent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -66,29 +68,24 @@ fun Context.openApplication(needCountDown: Boolean, isRemoteCommand: Boolean) {
         intent.component = ComponentName(info.activityInfo.packageName, info.activityInfo.name)
         startActivity(intent)
     }
-    /**跳转钉钉结束*****************************************/
+
+    // 在钉钉界面更新悬浮窗倒计时
     if (needCountDown) {
-        Intent(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION).apply {
-            sendBroadcast(this)
-        }
-    } else {
-        // 如果是远程指令启动钉钉，那么就不必启动循环任务，单次任务，直接打开钉钉即可
-        SaveKeyValues.putValue(Constant.NEED_START_TASK_KEY, !isRemoteCommand)
+        BroadcastManager.getDefault().sendBroadcast(
+            this, MessageType.START_COUNT_DOWN_TIMER.action
+        )
     }
 }
 
 fun Context.backToMainActivity() {
-    val needNext = SaveKeyValues.getValue(Constant.NEED_START_TASK_KEY, false) as Boolean
-    if (needNext) {
-        Intent(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION).apply {
-            sendBroadcast(this)
-        }
-    }
+    BroadcastManager.getDefault().sendBroadcast(this, MessageType.CANCEL_COUNT_DOWN_TIMER.action)
     val backToHome = SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
     if (backToHome) {
         //模拟点击Home键
         val home = Intent(Intent.ACTION_MAIN).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP
             addCategory(Intent.CATEGORY_HOME)
         }
         startActivity(home)
@@ -102,10 +99,9 @@ fun Context.backToMainActivity() {
 
 private fun Context.launchMainActivity() {
     val intent = Intent(this, MainActivity::class.java).apply {
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                Intent.FLAG_ACTIVITY_SINGLE_TOP
     }
     startActivity(intent)
-    Intent(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION).apply {
-        sendBroadcast(this)
-    }
 }

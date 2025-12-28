@@ -6,11 +6,11 @@ import android.os.Bundle
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
-import com.pengxh.daily.app.event.UpdateDingDingTimeoutEvent
-import com.pengxh.daily.app.event.UpdateTaskResetTimeEvent
 import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.widgets.TaskMessageDialog
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
@@ -20,7 +20,6 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.TitleBarView
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
-import org.greenrobot.eventbus.EventBus
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -157,7 +156,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     private fun setHourByPosition(position: Int) {
-        var hour = 0
         if (position == hourArray.size - 1) {
             AlertInputDialog.Builder().setContext(this).setTitle("设置重置时间")
                 .setHintMessage("直接输入整数时间即可，如：6").setNegativeButton("取消")
@@ -165,9 +163,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
-                            hour = value.toInt()
+                            val hour = value.toInt()
                             binding.resetTimeView.text = "每天${hour}点"
-                            updateTimeout(hour)
+                            setTaskResetTime(hour)
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -176,20 +174,23 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     override fun onCancelClick() {}
                 }).build().show()
         } else {
-            hour = hourArray[position].toInt()
+            val hour = hourArray[position].toInt()
             binding.resetTimeView.text = "每天${hour}点"
-            updateTimeout(hour)
+            setTaskResetTime(hour)
         }
     }
 
-    private fun updateTimeout(hour: Int) {
+    private fun setTaskResetTime(hour: Int) {
         SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
         // 重新开始重置每日任务计时
-        EventBus.getDefault().post(UpdateTaskResetTimeEvent(hour))
+        BroadcastManager.getDefault().sendBroadcast(
+            this,
+            MessageType.SET_RESET_TASK_TIME.action,
+            mapOf("hour" to hour)
+        )
     }
 
     private fun setTimeByPosition(position: Int) {
-        var time = 30
         if (position == timeArray.size - 1) {
             AlertInputDialog.Builder().setContext(this).setTitle("设置超时时间")
                 .setHintMessage("直接输入整数时间即可，如：60").setNegativeButton("取消")
@@ -197,7 +198,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
-                            time = value.toInt()
+                            val time = value.toInt()
                             binding.timeoutTextView.text = "${time}s"
                             updateDingDingTimeout(time)
                         } else {
@@ -208,7 +209,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     override fun onCancelClick() {}
                 }).build().show()
         } else {
-            time = timeArray[position].toInt()
+            val time = timeArray[position].toInt()
             binding.timeoutTextView.text = "${time}s"
             updateDingDingTimeout(time)
         }
@@ -217,6 +218,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private fun updateDingDingTimeout(time: Int) {
         SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
         // 更新钉钉任务超时时间
-        EventBus.getDefault().post(UpdateDingDingTimeoutEvent(time))
+        BroadcastManager.getDefault().sendBroadcast(
+            this,
+            MessageType.SET_DING_DING_OVERTIME.action,
+            mapOf("time" to time)
+        )
     }
 }

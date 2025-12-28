@@ -1,11 +1,8 @@
 package com.pengxh.daily.app.ui
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -33,24 +30,30 @@ import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.BaseFragmentAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
-import com.pengxh.daily.app.event.HideFloatingWindowEvent
 import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.fragment.DailyTaskFragment
 import com.pengxh.daily.app.fragment.SettingsFragment
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
+import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
-import org.greenrobot.eventbus.EventBus
 import java.util.Random
 import kotlin.math.abs
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private val kTag = "MainActivity"
+    private val actions by lazy {
+        listOf(
+            MessageType.SHOW_MASK_VIEW.action,
+            MessageType.HIDE_MASK_VIEW.action
+        )
+    }
     private val fragmentPages = mutableListOf<Fragment>().apply {
         add(DailyTaskFragment())
         add(SettingsFragment())
@@ -62,10 +65,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent?.action?.let {
-                    if (it == Constant.BROADCAST_SHOW_MASK_VIEW_ACTION && !binding.maskView.isVisible) {
-                        showMaskView()
-                    } else if (it == Constant.BROADCAST_HIDE_MASK_VIEW_ACTION && binding.maskView.isVisible) {
-                        hideMaskView()
+                    when (MessageType.fromAction(it)) {
+                        MessageType.SHOW_MASK_VIEW -> {
+                            if (!binding.maskView.isVisible) {
+                                showMaskView()
+                            }
+                        }
+
+                        MessageType.HIDE_MASK_VIEW -> {
+                            if (binding.maskView.isVisible) {
+                                hideMaskView()
+                            }
+                        }
+
+                        else -> {}
                     }
                 }
             }
@@ -82,21 +95,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.initImmersionBar(this, true, R.color.back_ground_color)
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_SHOW_MASK_VIEW_ACTION)
-            addAction(Constant.BROADCAST_HIDE_MASK_VIEW_ACTION)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(broadcastReceiver, filter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(broadcastReceiver, filter)
-        }
+        BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
 
         Intent(this, ForegroundRunningService::class.java).apply {
             startService(this)
         }
+
         val fragmentAdapter = BaseFragmentAdapter(supportFragmentManager, fragmentPages)
         binding.viewPager.adapter = fragmentAdapter
         val isFirst = SaveKeyValues.getValue("isFirst", true) as Boolean
@@ -275,6 +280,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * 显示蒙层以及其它组件
      * */
     private fun showMaskView() {
+        //隐藏悬浮窗显示
+        BroadcastManager.getDefault().sendBroadcast(this, MessageType.HIDE_FLOATING_WINDOW.action)
+
         //隐藏状态栏显示
         insetsController.hide(WindowInsetsCompat.Type.statusBars())
 
@@ -288,9 +296,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         //隐藏任务界面
         binding.rootView.visibility = View.GONE
 
-        //隐藏悬浮窗显示
-        EventBus.getDefault().post(HideFloatingWindowEvent())
-
         //启动时钟位置变换动画
         clockAnimationHandler.postDelayed(clockAnimationRunnable, 30000)
     }
@@ -299,6 +304,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * 隐藏蒙层以及其它组件
      * */
     private fun hideMaskView() {
+        //恢复悬浮窗显示
+        BroadcastManager.getDefault().sendBroadcast(this, MessageType.SHOW_FLOATING_WINDOW.action)
+
         //停止时钟动画
         clockAnimationHandler.removeCallbacks(clockAnimationRunnable)
 
@@ -314,15 +322,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         //显示任务界面
         binding.rootView.visibility = View.VISIBLE
+    }
 
-        //恢复悬浮窗显示
-        Intent(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION).apply {
-            sendBroadcast(this)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        Log.d(kTag, "onNewIntent: ${packageName}回到前台")
+        if (!binding.maskView.isVisible) {
+            showMaskView()
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(broadcastReceiver)
+        actions.forEach {
+            BroadcastManager.getDefault().unregisterReceiver(this, it)
+        }
     }
 }

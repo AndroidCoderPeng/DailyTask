@@ -1,19 +1,17 @@
 package com.pengxh.daily.app.fragment
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.ServiceConnection
-import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.Message
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,7 +27,6 @@ import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.FragmentDailyTaskBinding
-import com.pengxh.daily.app.event.UpdateFloatingWindowTimeEvent
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
@@ -37,16 +34,17 @@ import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.sqlite.DailyTaskBean
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseFragment
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.show
-import com.pengxh.kt.lite.utils.LiteKitConstant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.utils.WeakReferenceHandler
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
@@ -58,12 +56,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.greenrobot.eventbus.EventBus
 import java.util.Locale
 
 class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handler.Callback {
     private val kTag = "DailyTaskFragment"
     private val weakReferenceHandler by lazy { WeakReferenceHandler(this) }
+    private val actions by lazy {
+        listOf(
+            MessageType.RESET_DAILY_TASK.action,
+            MessageType.UPDATE_RESET_TICK_TIME.action,
+            MessageType.START_DAILY_TASK.action,
+            MessageType.STOP_DAILY_TASK.action,
+            MessageType.START_COUNT_DOWN_TIMER.action,
+            MessageType.CANCEL_COUNT_DOWN_TIMER.action
+        )
+    }
     private val startTaskCode = 2024120801
     private val startCountDownTimerCode = 2024120802
     private val executeNextTaskCode = 2024120803
@@ -83,32 +90,53 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent?.action?.let {
-                    when (it) {
-                        Constant.BROADCAST_START_DAILY_TASK_ACTION -> startExecuteTask()
-
-                        Constant.BROADCAST_STOP_DAILY_TASK_ACTION -> stopExecuteTask()
-
-                        Constant.BROADCAST_RESET_TASK_ACTION -> {
-                            dailyTaskHandler.post(dailyTaskRunnable)
+                    when (MessageType.fromAction(it)) {
+                        MessageType.RESET_DAILY_TASK -> {
+                            Log.d(kTag, "onReceive: 重置每日任务")
+                            startExecuteTask()
                         }
 
-                        Constant.BROADCAST_UPDATE_RESET_TICK_TIME_ACTION -> {
-                            binding.repeatTimeView.text = intent.getStringExtra(
-                                LiteKitConstant.BROADCAST_MESSAGE_KEY
-                            )
+                        MessageType.UPDATE_RESET_TICK_TIME -> {
+                            binding.repeatTimeView.text = intent.getStringExtra("message")
                         }
 
-                        Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION -> {
+                        MessageType.START_DAILY_TASK -> {
+                            if (!isTaskStarted) {
+                                startExecuteTask()
+                            } else {
+                                emailManager.sendEmail(
+                                    "启动任务通知",
+                                    "任务启动失败，任务已在运行中，请勿重复启动",
+                                    false
+                                )
+                            }
+                        }
+
+                        MessageType.STOP_DAILY_TASK -> {
+                            if (isTaskStarted) {
+                                stopExecuteTask()
+                            } else {
+                                emailManager.sendEmail(
+                                    "停止任务通知",
+                                    "任务停止失败，任务已经停止，请勿重复停止",
+                                    false
+                                )
+                            }
+                        }
+
+                        MessageType.START_COUNT_DOWN_TIMER -> {
                             // BroadcastReceiver不适合处理耗时操作，使用Handler处理
                             weakReferenceHandler.sendEmptyMessage(startCountDownTimerCode)
                         }
 
-                        Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION -> {
+                        MessageType.CANCEL_COUNT_DOWN_TIMER -> {
                             timeoutTimer?.cancel()
                             timeoutTimer = null
                             LogFileManager.writeLog("取消超时定时器，执行下一个任务")
                             weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
                         }
+
+                        else -> {}
                     }
                 }
             }
@@ -144,7 +172,11 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
                     override fun onTick(millisUntilFinished: Long) {
                         val tick = millisUntilFinished / 1000
                         // 更新悬浮窗倒计时
-                        EventBus.getDefault().post(UpdateFloatingWindowTimeEvent(tick))
+                        BroadcastManager.getDefault().sendBroadcast(
+                            requireContext(),
+                            MessageType.UPDATE_FLOATING_WINDOW_TIME.action,
+                            mapOf("tick" to tick)
+                        )
                     }
 
                     override fun onFinish() {
@@ -193,26 +225,16 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     }
 
     override fun initViewBinding(
-        inflater: LayoutInflater, container: ViewGroup?
+        inflater: LayoutInflater,
+        container: ViewGroup?
     ): FragmentDailyTaskBinding {
         return FragmentDailyTaskBinding.inflate(inflater, container, false)
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_START_DAILY_TASK_ACTION) // 开始执行每日任务
-            addAction(Constant.BROADCAST_STOP_DAILY_TASK_ACTION) // 取消执行每日任务
-            addAction(Constant.BROADCAST_RESET_TASK_ACTION) // 重置任务
-            addAction(Constant.BROADCAST_UPDATE_RESET_TICK_TIME_ACTION) // 更新任务倒计时
-            addAction(Constant.BROADCAST_START_COUNT_DOWN_TIMER_ACTION) // 开始超时定时器
-            addAction(Constant.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION) // 取消超时定时器
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
-        } else {
-            requireContext().registerReceiver(broadcastReceiver, filter)
-        }
+        BroadcastManager.getDefault().registerReceivers(
+            requireContext(), actions, broadcastReceiver
+        )
 
         taskBeans = DatabaseWrapper.loadAllTask()
         if (taskBeans.isEmpty()) {
@@ -356,6 +378,10 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
             if (isTaskStarted) {
                 stopExecuteTask()
             } else {
+                if (DatabaseWrapper.loadAllTask().isEmpty()) {
+                    "循环任务启动失败，请先添加任务时间点".show(requireContext())
+                    return@setOnClickListener
+                }
                 startExecuteTask()
             }
         }
@@ -380,19 +406,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
      * 启动任务
      * */
     private fun startExecuteTask() {
-        if (isTaskStarted) {
-            emailManager.sendEmail(
-                "启动任务通知",
-                "任务启动失败，任务已在运行中，请勿重复启动",
-                false
-            )
-            return
-        }
-
-        if (DatabaseWrapper.loadAllTask().isEmpty()) {
-            "循环任务启动失败，请先添加任务时间点".show(requireContext())
-            return
-        }
         LogFileManager.writeLog("开始执行每日任务")
         dailyTaskHandler.post(dailyTaskRunnable)
         isTaskStarted = true
@@ -423,10 +436,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     }
 
     private fun stopExecuteTask() {
-        if (!isTaskStarted) {
-            emailManager.sendEmail("停止任务通知", "任务停止失败，任务已经停止，请勿重复停止", false)
-            return
-        }
         LogFileManager.writeLog("停止执行每日任务")
         dailyTaskHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
@@ -509,6 +518,8 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
 
     override fun onDestroy() {
         super.onDestroy()
-        requireContext().unregisterReceiver(broadcastReceiver)
+        actions.forEach {
+            BroadcastManager.getDefault().unregisterReceiver(requireContext(), it)
+        }
     }
 }

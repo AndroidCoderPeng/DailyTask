@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.service
 
-import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -8,20 +7,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.CountDownTimer
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.event.UpdateTaskResetTimeEvent
 import com.pengxh.daily.app.extensions.formatTime
+import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
-import com.pengxh.kt.lite.utils.LiteKitConstant
+import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
 import java.util.Calendar
 import java.util.Locale
 
@@ -48,14 +45,13 @@ class ForegroundRunningService : Service() {
         }
     }
     private val emailManager by lazy { EmailManager(this) }
-    private var taskTimer: CountDownTimer? = null
+    private var systemBroadcastReceiver: BroadcastReceiver? = null
+    private var isTaskReset = false
     private var isTimerRunning = false
+    private var taskTimer: CountDownTimer? = null
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun onCreate() {
         super.onCreate()
-        EventBus.getDefault().register(this)
-
         val name = "${resources.getString(R.string.app_name)}前台服务"
         val channel = NotificationChannel(
             "foreground_running_service_channel", name, NotificationManager.IMPORTANCE_HIGH
@@ -67,20 +63,23 @@ class ForegroundRunningService : Service() {
             notificationManager.notify(notificationId, this)
         }
 
+        BroadcastManager.getDefault().registerReceiver(
+            this, MessageType.SET_RESET_TASK_TIME.action, object : BroadcastReceiver() {
+                override fun onReceive(context: Context?, intent: Intent?) {
+                    // 重置任务计时器
+                    val hour = intent?.getIntExtra("hour", 0) as Int
+                    startResetTaskTimer(hour)
+                }
+            })
+
         // 启动重置任务计时器
         val hour = SaveKeyValues.getValue(
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         ) as Int
         startResetTaskTimer(hour)
 
-        // 监听时间，系统级广播，每分钟触发一次。系统广播接收器不需要 RECEIVER_EXPORTED 或 RECEIVER_NOT_EXPORTED 标志
-        IntentFilter(Intent.ACTION_TIME_TICK).apply {
-            registerReceiver(systemBroadcastReceiver, this)
-        }
-    }
-
-    private val systemBroadcastReceiver by lazy {
-        object : BroadcastReceiver() {
+        // 监听时间，系统级广播，每分钟触发一次。
+        systemBroadcastReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 intent?.action?.let {
                     if (it == Intent.ACTION_TIME_TICK) {
@@ -88,25 +87,8 @@ class ForegroundRunningService : Service() {
                             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
                         ) as Int
                         val calendar = Calendar.getInstance()
-                        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-                        if (currentHour == hour) {
-                            val autoStart = SaveKeyValues.getValue(
-                                Constant.TASK_AUTO_START_KEY, true
-                            ) as Boolean
-                            val currentMinute = calendar.get(Calendar.MINUTE)
-                            // 只在整点执行
-                            if (currentMinute == 0) {
-                                var message = ""
-                                if (autoStart) {
-                                    message = "达到任务计划时间，重置每日任务。"
-                                    sendBroadcast(Intent(Constant.BROADCAST_RESET_TASK_ACTION))
-                                } else {
-                                    message =
-                                        "循环任务已手动停止，不再自动重置每日任务！如需恢复，可通过远程消息发送【启动】指令。"
-                                }
-                                LogFileManager.writeLog(message)
-                                emailManager.sendEmail("循环任务状态通知", message, false)
-                            }
+                        if (calendar.get(Calendar.HOUR_OF_DAY) == hour) {
+                            resetTask()
                         }
 
                         // 启动重置任务计时器
@@ -118,19 +100,34 @@ class ForegroundRunningService : Service() {
                 }
             }
         }
+        val filter = IntentFilter(Intent.ACTION_TIME_TICK)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(systemBroadcastReceiver, filter, RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(systemBroadcastReceiver, filter)
+        }
     }
 
-    @Subscribe
-    fun updateTaskResetTime(event: UpdateTaskResetTimeEvent) {
-        // 重置任务计时器
-        startResetTaskTimer(event.hour)
+    private fun resetTask() {
+        if (!isTaskReset) {
+            var message: String
+            if (SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean) {
+                message = "到达任务计划时间，重置每日任务。"
+                BroadcastManager.getDefault().sendBroadcast(
+                    this@ForegroundRunningService, MessageType.RESET_DAILY_TASK.action
+                )
+                isTaskReset = true
+            } else {
+                message = "每日任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【启动】指令。"
+            }
+            LogFileManager.writeLog(message)
+            emailManager.sendEmail("循环任务状态通知", message, false)
+        }
     }
 
     private fun startResetTaskTimer(hour: Int) {
         // 先取消之前的计时器
         taskTimer?.cancel()
-
-        Log.d(kTag, "重置任务时间为：$hour 点")
 
         val currentDiffSeconds = resetTaskSeconds(hour)
         taskTimer = object : CountDownTimer(currentDiffSeconds * 1000L, 1000) {
@@ -139,10 +136,11 @@ class ForegroundRunningService : Service() {
                 val message = String.format(
                     Locale.getDefault(), "%s后刷新每日任务", seconds.formatTime()
                 )
-                Intent(Constant.BROADCAST_UPDATE_RESET_TICK_TIME_ACTION).apply {
-                    putExtra(LiteKitConstant.BROADCAST_MESSAGE_KEY, message)
-                    sendBroadcast(this)
-                }
+                BroadcastManager.getDefault().sendBroadcast(
+                    this@ForegroundRunningService,
+                    MessageType.UPDATE_RESET_TICK_TIME.action,
+                    mapOf("message" to message)
+                )
             }
 
             override fun onFinish() {
@@ -179,8 +177,13 @@ class ForegroundRunningService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        EventBus.getDefault().unregister(this)
-        unregisterReceiver(systemBroadcastReceiver)
+        BroadcastManager.getDefault().unregisterReceiver(
+            this, MessageType.SET_RESET_TASK_TIME.action
+        )
+        systemBroadcastReceiver?.let {
+            unregisterReceiver(it)
+        }
+        systemBroadcastReceiver = null
         taskTimer?.cancel()
         taskTimer = null
         stopForeground(STOP_FOREGROUND_REMOVE)

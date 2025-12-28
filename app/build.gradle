@@ -13,8 +13,8 @@ android {
         applicationId 'com.pengxh.daily.app'
         minSdk 26
         targetSdk 36
-        versionCode 2241
-        versionName '2.2.4.1'
+        versionCode 2242
+        versionName '2.2.4.2'
     }
 
     flavorDimensions += 'versionCode'
@@ -103,6 +103,4 @@ dependencies {
     //日期、时间选择器
     implementation 'com.github.gzu-liyujiang.AndroidPicker:WheelPicker:4.1.14'
     implementation 'com.google.code.gson:gson:2.13.2'
-    //事件总线
-    implementation 'org.greenrobot:eventbus:3.3.1'
 }

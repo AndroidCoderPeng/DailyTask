@@ -1,14 +1,11 @@
 package com.pengxh.daily.app.fragment
 
-import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.LayoutInflater
@@ -28,7 +25,9 @@ import com.pengxh.daily.app.ui.EmailConfigActivity
 import com.pengxh.daily.app.ui.NoticeRecordActivity
 import com.pengxh.daily.app.ui.QuestionAndAnswerActivity
 import com.pengxh.daily.app.ui.TaskConfigActivity
+import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.base.KotlinBaseFragment
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
@@ -41,24 +40,34 @@ import kotlinx.coroutines.launch
 class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     private val kTag = "SettingsFragment"
+    private val actions by lazy {
+        listOf(
+            MessageType.NOTICE_LISTENER_CONNECTED.action,
+            MessageType.NOTICE_LISTENER_DISCONNECTED.action
+        )
+    }
     private val broadcastReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                when (intent?.action) {
-                    Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION -> {
-                        binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-                        binding.tipsView.setTextColor(
-                            R.color.theme_color.convertColor(requireContext())
-                        )
-                        binding.noticeSwitch.isChecked = true
-                        binding.tipsView.visibility = View.GONE
-                    }
+                intent?.action?.let {
+                    when (MessageType.fromAction(it)) {
+                        MessageType.NOTICE_LISTENER_CONNECTED -> {
+                            binding.tipsView.text = "通知监听服务状态查询中，请稍后"
+                            binding.tipsView.setTextColor(
+                                R.color.theme_color.convertColor(requireContext())
+                            )
+                            binding.noticeSwitch.isChecked = true
+                            binding.tipsView.visibility = View.GONE
+                        }
 
-                    Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION -> {
-                        binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
-                        binding.tipsView.setTextColor(Color.RED)
-                        binding.noticeSwitch.isChecked = false
-                        binding.tipsView.visibility = View.VISIBLE
+                        MessageType.NOTICE_LISTENER_DISCONNECTED -> {
+                            binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
+                            binding.tipsView.setTextColor(Color.RED)
+                            binding.noticeSwitch.isChecked = false
+                            binding.tipsView.visibility = View.VISIBLE
+                        }
+
+                        else -> {}
                     }
                 }
             }
@@ -74,22 +83,16 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
     }
 
     override fun initViewBinding(
-        inflater: LayoutInflater, container: ViewGroup?
+        inflater: LayoutInflater,
+        container: ViewGroup?
     ): FragmentSettingsBinding {
         return FragmentSettingsBinding.inflate(inflater, container, false)
     }
 
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_NOTICE_LISTENER_CONNECTED_ACTION)
-            addAction(Constant.BROADCAST_NOTICE_LISTENER_DISCONNECTED_ACTION)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            requireContext().registerReceiver(broadcastReceiver, filter, Context.RECEIVER_EXPORTED)
-        } else {
-            requireContext().registerReceiver(broadcastReceiver, filter)
-        }
+        BroadcastManager.getDefault().registerReceivers(
+            requireContext(), actions, broadcastReceiver
+        )
 
         binding.appVersion.text = BuildConfig.VERSION_NAME
         if (requireContext().notificationEnable()) {
@@ -111,7 +114,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         }
 
         binding.openTestLayout.setOnClickListener {
-            requireContext().openApplication(needCountDown = false, isRemoteCommand = false)
+            requireContext().openApplication(false)
         }
 
         binding.turnoffLightSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -206,6 +209,8 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
-        requireContext().unregisterReceiver(broadcastReceiver)
+        actions.forEach {
+            BroadcastManager.getDefault().unregisterReceiver(requireContext(), it)
+        }
     }
 }

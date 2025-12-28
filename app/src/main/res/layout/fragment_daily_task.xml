@@ -27,7 +27,6 @@
             <TextClock
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:format12Hour="yyyy年MM月dd日 HH:mm:ss EEEE"
                 android:format24Hour="yyyy年MM月dd日 HH:mm:ss EEEE"
                 android:textSize="@dimen/sp_16" />
 

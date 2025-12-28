@@ -1,32 +1,32 @@
 package com.pengxh.daily.app.service
 
-import android.annotation.SuppressLint
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.PixelFormat
-import android.os.Build
-import android.os.Handler
 import android.os.IBinder
-import android.os.Looper
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.WindowManager
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.event.HideFloatingWindowEvent
-import com.pengxh.daily.app.event.UpdateDingDingTimeoutEvent
-import com.pengxh.daily.app.event.UpdateFloatingWindowTimeEvent
+import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
 
 class FloatingWindowService : Service() {
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
+    private val actions by lazy {
+        listOf(
+            MessageType.SHOW_FLOATING_WINDOW.action,
+            MessageType.HIDE_FLOATING_WINDOW.action,
+            MessageType.SET_DING_DING_OVERTIME.action,
+            MessageType.UPDATE_FLOATING_WINDOW_TIME.action
+        )
+    }
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
@@ -36,29 +36,43 @@ class FloatingWindowService : Service() {
         LayoutInflater.from(this).inflate(R.layout.window_floating, tempContainer)
     }
     private val textView by lazy { floatView.findViewById<TextView>(R.id.timeView) }
-    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val broadcastReceiver by lazy {
         object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
-                if (Looper.myLooper() == Looper.getMainLooper()) {
-                    handleIntent(intent)
-                } else {
-                    mainHandler.post {
-                        handleIntent(intent)
+                intent?.action?.let {
+                    when (MessageType.fromAction(it)) {
+                        MessageType.SHOW_FLOATING_WINDOW -> {
+                            floatView.alpha = 1.0f
+                            if (textView.text == "0s") {
+                                val time = SaveKeyValues.getValue(
+                                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                                ) as Int
+                                textView.text = "${time}s"
+                            }
+                        }
+
+                        MessageType.HIDE_FLOATING_WINDOW -> floatView.alpha = 0.0f
+
+                        MessageType.SET_DING_DING_OVERTIME -> {
+                            // 更新钉钉任务超时时间
+                            val time = intent.getIntExtra("time", 30)
+                            textView.text = "${time}s"
+                        }
+
+                        MessageType.UPDATE_FLOATING_WINDOW_TIME -> {
+                            // 更新悬浮窗倒计时
+                            val tick = intent.getLongExtra("tick", 30)
+                            textView.text = "${tick}s"
+                            if (tick <= 0) {
+                                floatView.alpha = 0.0f
+                            } else {
+                                floatView.alpha = 1.0f
+                            }
+                        }
+
+                        else -> {}
                     }
                 }
-            }
-        }
-    }
-
-    private fun handleIntent(intent: Intent?) {
-        when (intent?.action) {
-            Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION -> {
-                floatView.alpha = 1.0f
-                val time = SaveKeyValues.getValue(
-                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                ) as Int
-                textView.text = "$time"
             }
         }
     }
@@ -67,12 +81,9 @@ class FloatingWindowService : Service() {
         return null
     }
 
-    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate() {
         super.onCreate()
-        EventBus.getDefault().register(this)
-
-        initBroadcastReceiver()
+        BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
 
         val floatLayoutParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -125,40 +136,11 @@ class FloatingWindowService : Service() {
         }
     }
 
-    @Subscribe
-    fun updateDingDingTimeout(event: UpdateDingDingTimeoutEvent) {
-        // 更新钉钉任务超时时间
-        textView.text = "${event.time}s"
-    }
-
-    @Subscribe
-    fun updateFloatingWindowTime(event: UpdateFloatingWindowTimeEvent) {
-        // 更新悬浮窗倒计时
-        textView.text = "${event.seconds}s"
-    }
-
-    @Subscribe
-    fun hideFloatingWindow(event: HideFloatingWindowEvent) {
-        // 隐藏悬浮窗
-        floatView.alpha = 0.0f
-    }
-
-    @SuppressLint("UnspecifiedRegisterReceiverFlag")
-    private fun initBroadcastReceiver() {
-        val filter = IntentFilter().apply {
-            addAction(Constant.BROADCAST_SHOW_FLOATING_WINDOW_ACTION)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(broadcastReceiver, filter, RECEIVER_EXPORTED)
-        } else {
-            registerReceiver(broadcastReceiver, filter)
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
-        EventBus.getDefault().unregister(this)
-        unregisterReceiver(broadcastReceiver)
+        actions.forEach {
+            BroadcastManager.getDefault().unregisterReceiver(this, it)
+        }
         windowManager.removeViewImmediate(floatView)
     }
 
