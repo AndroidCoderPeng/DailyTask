@@ -81,6 +81,7 @@ class FloatingWindowService : Service() {
         return null
     }
 
+    @SuppressWarnings("all")
     override fun onCreate() {
         super.onCreate()
         BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)

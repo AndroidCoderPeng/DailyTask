@@ -441,7 +441,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         countDownTimerService?.cancelCountDown()
         dailyTaskAdapter.updateCurrentTaskState(-1)
         isTaskStarted = false
-        binding.repeatTimeView.text = "--秒后刷新每日任务"
         binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
         binding.executeTaskButton.setIconTintResource(R.color.ios_green)
         binding.executeTaskButton.text = "启动"
