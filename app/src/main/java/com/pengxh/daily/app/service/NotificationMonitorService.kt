@@ -55,8 +55,10 @@ class NotificationMonitorService : NotificationListenerService() {
             return
         }
 
+        val targetApp = Constant.getTargetApp()
+
         // 保存指定包名的通知，其他的一律不保存
-        if (pkg == Constant.TARGET_APP || pkg in auxiliaryApp) {
+        if (pkg == targetApp || pkg in auxiliaryApp) {
             NotificationBean().apply {
                 packageName = pkg
                 notificationTitle = title
@@ -67,8 +69,8 @@ class NotificationMonitorService : NotificationListenerService() {
             }
         }
 
-        // 钉钉打卡通知
-        if (pkg == Constant.TARGET_APP && notice.contains("成功")) {
+        // 目标应用打卡通知
+        if (pkg == targetApp && notice.contains("成功")) {
             backToMainActivity()
             "即将发送通知邮件，请注意查收".show(this)
             emailManager.sendEmail(null, notice, false)

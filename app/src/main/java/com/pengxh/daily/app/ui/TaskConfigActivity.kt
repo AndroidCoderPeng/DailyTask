@@ -217,7 +217,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun updateDingDingTimeout(time: Int) {
         SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
-        // 更新钉钉任务超时时间
+        // 更新目标应用任务超时时间
         BroadcastManager.getDefault().sendBroadcast(
             this,
             MessageType.SET_DING_DING_OVERTIME.action,

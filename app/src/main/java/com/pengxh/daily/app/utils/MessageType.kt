@@ -10,7 +10,7 @@ enum class MessageType(val action: String) {
 
     /**
      * - 设置重置任务时间
-     * - 设置钉钉超时时间
+     * - 设置停止在目标应用界面上的超时时间
      * */
     SET_RESET_TASK_TIME("com.pengxh.daily.app.BROADCAST_SET_RESET_TASK_TIME_ACTION"),
     SET_DING_DING_OVERTIME("com.pengxh.daily.app.BROADCAST_SET_DING_DING_OVERTIME_ACTION"),

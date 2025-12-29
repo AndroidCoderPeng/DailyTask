@@ -28,13 +28,12 @@ fun Context.notificationEnable(): Boolean {
  * @param needCountDown 是否需要倒计时
  */
 fun Context.openApplication(needCountDown: Boolean) {
+    val targetApp = Constant.getTargetApp()
     val isContains = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManager.getPackageInfo(
-                Constant.TARGET_APP, PackageManager.PackageInfoFlags.of(0)
-            )
+            packageManager.getPackageInfo(targetApp, PackageManager.PackageInfoFlags.of(0))
         } else {
-            packageManager.getPackageInfo(Constant.TARGET_APP, 0)
+            packageManager.getPackageInfo(targetApp, 0)
         }
         true
     } catch (e: PackageManager.NameNotFoundException) {
@@ -45,7 +44,7 @@ fun Context.openApplication(needCountDown: Boolean) {
         AlertMessageDialog.Builder()
             .setContext(this)
             .setTitle("温馨提醒")
-            .setMessage("手机没有安装《钉钉》软件，无法自动打卡")
+            .setMessage("手机没有安装指定的目标应用软件，无法执行任务")
             .setPositiveButton("知道了")
             .setOnDialogButtonClickListener(object :
                 AlertMessageDialog.OnDialogButtonClickListener {
@@ -56,11 +55,11 @@ fun Context.openApplication(needCountDown: Boolean) {
         return
     }
 
-    // 跳转钉钉
+    // 跳转目标应用
     val intent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        setPackage(Constant.TARGET_APP)
+        setPackage(targetApp)
     }
     val activities = packageManager.queryIntentActivities(intent, 0)
     if (activities.isNotEmpty()) {
@@ -69,7 +68,7 @@ fun Context.openApplication(needCountDown: Boolean) {
         startActivity(intent)
     }
 
-    // 在钉钉界面更新悬浮窗倒计时
+    // 在目标应用界面更新悬浮窗倒计时
     if (needCountDown) {
         BroadcastManager.getDefault().sendBroadcast(
             this, MessageType.START_COUNT_DOWN_TIMER.action

@@ -54,7 +54,7 @@ class FloatingWindowService : Service() {
                         MessageType.HIDE_FLOATING_WINDOW -> floatView.alpha = 0.0f
 
                         MessageType.SET_DING_DING_OVERTIME -> {
-                            // 更新钉钉任务超时时间
+                            // 更新目标应用任务超时时间
                             val time = intent.getIntExtra("time", 30)
                             textView.text = "${time}s"
                         }
