@@ -126,10 +126,10 @@ class ForegroundRunningService : Service() {
     }
 
     private fun startResetTaskTimer(hour: Int) {
+        val currentDiffSeconds = resetTaskSeconds(hour)
+
         // 先取消之前的计时器
         taskTimer?.cancel()
-
-        val currentDiffSeconds = resetTaskSeconds(hour)
         taskTimer = object : CountDownTimer(currentDiffSeconds * 1000L, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val seconds = (millisUntilFinished / 1000).toInt()
@@ -144,6 +144,7 @@ class ForegroundRunningService : Service() {
             }
 
             override fun onFinish() {
+                isTaskReset = false
                 isTimerRunning = false
                 taskTimer = null
             }
