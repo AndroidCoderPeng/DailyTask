@@ -74,7 +74,7 @@ class BroadcastManager {
                 try {
                     context.unregisterReceiver(receiver)
                 } catch (e: IllegalArgumentException) {
-                    Log.e(kTag, "unregisterReceiver: ", e)
+                    Log.w(kTag, "unregisterReceiver: ", e)
                 }
                 receivers.remove(action)
             }
@@ -90,7 +90,7 @@ class BroadcastManager {
                 try {
                     context.unregisterReceiver(receiver)
                 } catch (e: IllegalArgumentException) {
-                    Log.e(kTag, "unregisterAll: ", e)
+                    Log.w(kTag, "unregisterAll: ", e)
                 }
             }
             receivers.clear()
