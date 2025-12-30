@@ -110,7 +110,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
 
         Intent(this, ForegroundRunningService::class.java).apply {
-            startService(this)
+            startForegroundService(this)
         }
 
         val fragmentAdapter = BaseFragmentAdapter(supportFragmentManager, fragmentPages)

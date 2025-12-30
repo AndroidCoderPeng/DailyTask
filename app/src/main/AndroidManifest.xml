@@ -39,6 +39,7 @@
         <activity android:name=".ui.NoticeRecordActivity" />
         <activity android:name=".ui.QuestionAndAnswerActivity" />
 
+        <service android:name=".service.FloatingWindowService" />
         <service
             android:name=".service.ForegroundRunningService"
             android:foregroundServiceType="dataSync" />
@@ -52,7 +53,6 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
-        <service android:name=".service.FloatingWindowService" />
         <service
             android:name=".service.CountDownTimerService"
             android:foregroundServiceType="dataSync" />

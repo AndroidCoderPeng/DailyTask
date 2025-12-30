@@ -59,9 +59,8 @@ class ForegroundRunningService : Service() {
             description = "Channel for Foreground Running Service"
         }
         notificationManager.createNotificationChannel(channel)
-        notificationBuilder.build().apply {
-            notificationManager.notify(notificationId, this)
-        }
+        val notification = notificationBuilder.build()
+        startForeground(notificationId, notification)
 
         BroadcastManager.getDefault().registerReceiver(
             this, MessageType.SET_RESET_TASK_TIME.action, object : BroadcastReceiver() {
