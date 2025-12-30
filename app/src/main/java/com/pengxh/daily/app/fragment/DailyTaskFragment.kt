@@ -23,7 +23,6 @@ import com.google.android.material.textview.MaterialTextView
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
-import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.FragmentDailyTaskBinding
@@ -257,32 +256,6 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         Intent(requireContext(), CountDownTimerService::class.java).apply {
             requireContext().bindService(this, connection, Context.BIND_AUTO_CREATE)
         }
-
-        DailyTaskApplication.get().sharedViewModel.addTaskCode.observe(this) {
-            if (it == 1) {
-                if (isTaskStarted) {
-                    "任务进行中，无法添加".show(requireContext())
-                    return@observe
-                }
-
-                if (taskBeans.isNotEmpty()) {
-                    addTask()
-                } else {
-                    BottomActionSheet.Builder()
-                        .setContext(requireContext())
-                        .setActionItemTitle(arrayListOf("添加任务", "导入任务"))
-                        .setItemTextColor(R.color.theme_color.convertColor(requireContext()))
-                        .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-                            override fun onActionItemClick(position: Int) {
-                                when (position) {
-                                    0 -> addTask()
-                                    1 -> importTask()
-                                }
-                            }
-                        }).build().show()
-                }
-            }
-        }
     }
 
     /**
@@ -448,7 +421,31 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
         emailManager.sendEmail("停止任务通知", "任务停止成功，请及时打开下次任务", false)
     }
 
-    private fun addTask() {
+    fun addTask() {
+        if (isTaskStarted) {
+            "任务进行中，无法添加".show(requireContext())
+            return
+        }
+
+        if (taskBeans.isNotEmpty()) {
+            createTask()
+        } else {
+            BottomActionSheet.Builder()
+                .setContext(requireContext())
+                .setActionItemTitle(arrayListOf("添加任务", "导入任务"))
+                .setItemTextColor(R.color.theme_color.convertColor(requireContext()))
+                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+                    override fun onActionItemClick(position: Int) {
+                        when (position) {
+                            0 -> createTask()
+                            1 -> importTask()
+                        }
+                    }
+                }).build().show()
+        }
+    }
+
+    private fun createTask() {
         val view = layoutInflater.inflate(R.layout.bottom_sheet_layout_select_time, null)
         val dialog = BottomSheetDialog(requireContext())
         dialog.setContentView(view)

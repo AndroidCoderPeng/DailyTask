@@ -26,7 +26,6 @@ import androidx.core.view.isVisible
 import androidx.core.view.size
 import androidx.fragment.app.Fragment
 import androidx.viewpager.widget.ViewPager
-import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.BaseFragmentAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
@@ -40,6 +39,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.setScreenBrightness
+import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
 import java.util.Random
@@ -98,12 +98,24 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     override fun initOnCreate(savedInstanceState: Bundle?) {
         BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
 
+        // 显示悬浮窗
+        if (Settings.canDrawOverlays(this)) {
+            Intent(this, FloatingWindowService::class.java).apply {
+                startService(this)
+            }
+        } else {
+            // 悬浮窗权限并显示悬浮窗
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+            overlayPermissionLauncher.launch(intent)
+        }
+
         Intent(this, ForegroundRunningService::class.java).apply {
             startService(this)
         }
 
         val fragmentAdapter = BaseFragmentAdapter(supportFragmentManager, fragmentPages)
         binding.viewPager.adapter = fragmentAdapter
+
         val isFirst = SaveKeyValues.getValue("isFirst", true) as Boolean
         if (isFirst) {
             AlertMessageDialog.Builder()
@@ -115,18 +127,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     AlertMessageDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick() {
                         SaveKeyValues.putValue("isFirst", false)
-                        // 悬浮窗权限并显示悬浮窗
-                        val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-                        overlayPermissionLauncher.launch(intent)
                     }
                 }).build().show()
-        }
-
-        // 显示悬浮窗
-        if (Settings.canDrawOverlays(this)) {
-            Intent(this, FloatingWindowService::class.java).apply {
-                startService(this)
-            }
         }
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
@@ -195,7 +197,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
 
         binding.floatingActionButton.setOnClickListener {
-            DailyTaskApplication.get().sharedViewModel.addTaskCode.value = 1
+            val fragment = fragmentPages.first()
+            if (fragment is DailyTaskFragment) {
+                fragment.addTask()
+            } else {
+                "添加任务失败，请重启软件再试".show(this)
+            }
         }
 
         binding.viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {

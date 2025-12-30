@@ -1,11 +1,9 @@
 package com.pengxh.daily.app
 
 import android.app.Application
-import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room.databaseBuilder
 import com.pengxh.daily.app.sqlite.DailyTaskDataBase
 import com.pengxh.daily.app.utils.LogFileManager
-import com.pengxh.daily.app.vm.SharedDataViewModel
 import com.pengxh.kt.lite.utils.SaveKeyValues
 
 
@@ -27,10 +25,6 @@ class DailyTaskApplication : Application() {
     }
 
     lateinit var dataBase: DailyTaskDataBase
-    val sharedViewModel by lazy {
-        ViewModelProvider.AndroidViewModelFactory.getInstance(this)
-            .create(SharedDataViewModel::class.java)
-    }
 
     override fun onCreate() {
         super.onCreate()
