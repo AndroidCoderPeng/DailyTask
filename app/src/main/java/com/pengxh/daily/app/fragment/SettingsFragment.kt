@@ -11,7 +11,6 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
@@ -31,7 +30,6 @@ import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.base.KotlinBaseFragment
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
-import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -115,16 +113,6 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
 
         binding.openTestLayout.setOnClickListener {
             requireContext().openApplication(false)
-        }
-
-        binding.turnoffLightSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                //最低亮度
-                requireActivity().window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF)
-            } else {
-                //恢复默认亮度
-                requireActivity().window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
-            }
         }
 
         binding.gestureDetectorSwitch.setOnCheckedChangeListener { _, isChecked ->
