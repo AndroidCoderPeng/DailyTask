@@ -43,15 +43,16 @@ class FloatingWindowService : Service() {
                     when (MessageType.fromAction(it)) {
                         MessageType.SHOW_FLOATING_WINDOW -> {
                             binding.root.alpha = 1.0f
-                            if (binding.timeView.text == "0s") {
-                                val time = SaveKeyValues.getValue(
-                                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                                ) as Int
-                                binding.timeView.text = "${time}s"
-                            }
+                            val time = SaveKeyValues.getValue(
+                                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                            ) as Int
+                            binding.timeView.text = "${time}s"
                         }
 
-                        MessageType.HIDE_FLOATING_WINDOW -> binding.root.alpha = 0.0f
+                        MessageType.HIDE_FLOATING_WINDOW -> {
+                            binding.root.alpha = 0.0f
+                            binding.timeView.text = "0s"
+                        }
 
                         MessageType.SET_DING_DING_OVERTIME -> {
                             // 更新目标应用任务超时时间
@@ -63,7 +64,7 @@ class FloatingWindowService : Service() {
                             // 更新悬浮窗倒计时
                             val tick = intent.getLongExtra("tick", 30)
                             binding.timeView.text = "${tick}s"
-                            if (tick <= 0) {
+                            if (tick < 1) {
                                 binding.root.alpha = 0.0f
                             } else {
                                 binding.root.alpha = 1.0f
