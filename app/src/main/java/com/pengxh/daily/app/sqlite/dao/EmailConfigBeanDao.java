@@ -1,9 +1,11 @@
-package com.pengxh.daily.app.sqlite;
+package com.pengxh.daily.app.sqlite.dao;
 
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 import androidx.room.Update;
+
+import com.pengxh.daily.app.sqlite.bean.EmailConfigBean;
 
 @Dao
 public interface EmailConfigBeanDao {

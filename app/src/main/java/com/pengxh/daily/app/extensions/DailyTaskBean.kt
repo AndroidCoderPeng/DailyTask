@@ -1,7 +1,7 @@
 package com.pengxh.daily.app.extensions
 
 import com.github.gzuliyujiang.wheelpicker.entity.TimeEntity
-import com.pengxh.daily.app.sqlite.DailyTaskBean
+import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.TimeKit
 import com.pengxh.kt.lite.extensions.appendZero

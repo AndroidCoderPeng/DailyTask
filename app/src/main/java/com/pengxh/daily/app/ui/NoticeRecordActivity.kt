@@ -8,7 +8,7 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityNoticeBinding
 import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
-import com.pengxh.daily.app.sqlite.NotificationBean
+import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity

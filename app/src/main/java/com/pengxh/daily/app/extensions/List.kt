@@ -1,6 +1,6 @@
 package com.pengxh.daily.app.extensions
 
-import com.pengxh.daily.app.sqlite.DailyTaskBean
+import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.TimeKit
 import java.text.SimpleDateFormat
 import java.util.Locale

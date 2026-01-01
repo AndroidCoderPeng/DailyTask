@@ -1,6 +1,9 @@
 package com.pengxh.daily.app.sqlite
 
 import com.pengxh.daily.app.DailyTaskApplication
+import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
+import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.daily.app.utils.TimeKit
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 

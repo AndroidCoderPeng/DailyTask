@@ -1,4 +1,4 @@
-package com.pengxh.daily.app.sqlite;
+package com.pengxh.daily.app.sqlite.bean;
 
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;

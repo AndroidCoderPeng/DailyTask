@@ -7,7 +7,7 @@ import android.service.notification.StatusBarNotification
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
-import com.pengxh.daily.app.sqlite.NotificationBean
+import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager

@@ -31,8 +31,8 @@ import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
-import com.pengxh.daily.app.sqlite.DailyTaskBean
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
