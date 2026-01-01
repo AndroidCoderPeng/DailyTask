@@ -111,16 +111,16 @@ class ForegroundRunningService : Service() {
         if (!isTaskReset) {
             var message: String
             if (SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean) {
-                message = "到达任务计划时间，重置每日任务。"
                 BroadcastManager.getDefault().sendBroadcast(
                     this@ForegroundRunningService, MessageType.RESET_DAILY_TASK.action
                 )
-                isTaskReset = true
+                message = "到达任务计划时间，重置每日任务。"
             } else {
                 message = "每日任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【启动】指令。"
             }
             LogFileManager.writeLog(message)
             emailManager.sendEmail("循环任务状态通知", message, false)
+            isTaskReset = true
         }
     }
 
