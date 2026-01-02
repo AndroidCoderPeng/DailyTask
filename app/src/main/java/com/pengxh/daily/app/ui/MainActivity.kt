@@ -61,25 +61,23 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val clockAnimationHandler = Handler(Looper.getMainLooper())
     private var menuItem: MenuItem? = null
     private lateinit var insetsController: WindowInsetsControllerCompat
-    private val broadcastReceiver by lazy {
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                intent?.action?.let {
-                    when (MessageType.fromAction(it)) {
-                        MessageType.SHOW_MASK_VIEW -> {
-                            if (!binding.maskView.isVisible) {
-                                showMaskView()
-                            }
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.action?.let {
+                when (MessageType.fromAction(it)) {
+                    MessageType.SHOW_MASK_VIEW -> {
+                        if (!binding.maskView.isVisible) {
+                            showMaskView()
                         }
-
-                        MessageType.HIDE_MASK_VIEW -> {
-                            if (binding.maskView.isVisible) {
-                                hideMaskView()
-                            }
-                        }
-
-                        else -> {}
                     }
+
+                    MessageType.HIDE_MASK_VIEW -> {
+                        if (binding.maskView.isVisible) {
+                            hideMaskView()
+                        }
+                    }
+
+                    else -> {}
                 }
             }
         }

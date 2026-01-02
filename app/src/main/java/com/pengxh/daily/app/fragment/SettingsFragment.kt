@@ -44,29 +44,27 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
             MessageType.NOTICE_LISTENER_DISCONNECTED.action
         )
     }
-    private val broadcastReceiver by lazy {
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                intent?.action?.let {
-                    when (MessageType.fromAction(it)) {
-                        MessageType.NOTICE_LISTENER_CONNECTED -> {
-                            binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-                            binding.tipsView.setTextColor(
-                                R.color.theme_color.convertColor(requireContext())
-                            )
-                            binding.noticeSwitch.isChecked = true
-                            binding.tipsView.visibility = View.GONE
-                        }
-
-                        MessageType.NOTICE_LISTENER_DISCONNECTED -> {
-                            binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
-                            binding.tipsView.setTextColor(Color.RED)
-                            binding.noticeSwitch.isChecked = false
-                            binding.tipsView.visibility = View.VISIBLE
-                        }
-
-                        else -> {}
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.action?.let {
+                when (MessageType.fromAction(it)) {
+                    MessageType.NOTICE_LISTENER_CONNECTED -> {
+                        binding.tipsView.text = "通知监听服务状态查询中，请稍后"
+                        binding.tipsView.setTextColor(
+                            R.color.theme_color.convertColor(requireContext())
+                        )
+                        binding.noticeSwitch.isChecked = true
+                        binding.tipsView.visibility = View.GONE
                     }
+
+                    MessageType.NOTICE_LISTENER_DISCONNECTED -> {
+                        binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
+                        binding.tipsView.setTextColor(Color.RED)
+                        binding.noticeSwitch.isChecked = false
+                        binding.tipsView.visibility = View.VISIBLE
+                    }
+
+                    else -> {}
                 }
             }
         }

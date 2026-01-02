@@ -84,59 +84,56 @@ class DailyTaskFragment : KotlinBaseFragment<FragmentDailyTaskBinding>(), Handle
     private var timeoutTimer: CountDownTimer? = null
     private var countDownTimerService: CountDownTimerService? = null
     private var isRefresh = false
-
-    private val broadcastReceiver by lazy {
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                intent?.action?.let {
-                    when (MessageType.fromAction(it)) {
-                        MessageType.RESET_DAILY_TASK -> {
-                            Log.d(kTag, "onReceive: 重置每日任务")
-                            startExecuteTask()
-                        }
-
-                        MessageType.UPDATE_RESET_TICK_TIME -> {
-                            binding.repeatTimeView.text = intent.getStringExtra("message")
-                        }
-
-                        MessageType.START_DAILY_TASK -> {
-                            if (!isTaskStarted) {
-                                startExecuteTask()
-                            } else {
-                                emailManager.sendEmail(
-                                    "启动任务通知",
-                                    "任务启动失败，任务已在运行中，请勿重复启动",
-                                    false
-                                )
-                            }
-                        }
-
-                        MessageType.STOP_DAILY_TASK -> {
-                            if (isTaskStarted) {
-                                stopExecuteTask()
-                            } else {
-                                emailManager.sendEmail(
-                                    "停止任务通知",
-                                    "任务停止失败，任务已经停止，请勿重复停止",
-                                    false
-                                )
-                            }
-                        }
-
-                        MessageType.START_COUNT_DOWN_TIMER -> {
-                            // BroadcastReceiver不适合处理耗时操作，使用Handler处理
-                            weakReferenceHandler.sendEmptyMessage(startCountDownTimerCode)
-                        }
-
-                        MessageType.CANCEL_COUNT_DOWN_TIMER -> {
-                            timeoutTimer?.cancel()
-                            timeoutTimer = null
-                            LogFileManager.writeLog("取消超时定时器，执行下一个任务")
-                            weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
-                        }
-
-                        else -> {}
+    private val broadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.action?.let {
+                when (MessageType.fromAction(it)) {
+                    MessageType.RESET_DAILY_TASK -> {
+                        Log.d(kTag, "onReceive: 重置每日任务")
+                        startExecuteTask()
                     }
+
+                    MessageType.UPDATE_RESET_TICK_TIME -> {
+                        binding.repeatTimeView.text = intent.getStringExtra("message")
+                    }
+
+                    MessageType.START_DAILY_TASK -> {
+                        if (!isTaskStarted) {
+                            startExecuteTask()
+                        } else {
+                            emailManager.sendEmail(
+                                "启动任务通知",
+                                "任务启动失败，任务已在运行中，请勿重复启动",
+                                false
+                            )
+                        }
+                    }
+
+                    MessageType.STOP_DAILY_TASK -> {
+                        if (isTaskStarted) {
+                            stopExecuteTask()
+                        } else {
+                            emailManager.sendEmail(
+                                "停止任务通知",
+                                "任务停止失败，任务已经停止，请勿重复停止",
+                                false
+                            )
+                        }
+                    }
+
+                    MessageType.START_COUNT_DOWN_TIMER -> {
+                        // BroadcastReceiver不适合处理耗时操作，使用Handler处理
+                        weakReferenceHandler.sendEmptyMessage(startCountDownTimerCode)
+                    }
+
+                    MessageType.CANCEL_COUNT_DOWN_TIMER -> {
+                        timeoutTimer?.cancel()
+                        timeoutTimer = null
+                        LogFileManager.writeLog("取消超时定时器，执行下一个任务")
+                        weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
+                    }
+
+                    else -> {}
                 }
             }
         }
