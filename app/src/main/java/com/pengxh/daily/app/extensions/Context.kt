@@ -24,23 +24,29 @@ fun Context.notificationEnable(): Boolean {
 }
 
 /**
- * 打开指定包名的apk
- * @param needCountDown 是否需要倒计时
+ * 判断指定包名的应用是否存在
  */
-fun Context.openApplication(needCountDown: Boolean) {
-    val targetApp = Constant.getTargetApp()
-    val isContains = try {
+fun Context.isApplicationExist(packageName: String): Boolean {
+    return try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            packageManager.getPackageInfo(targetApp, PackageManager.PackageInfoFlags.of(0))
+            packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
         } else {
-            packageManager.getPackageInfo(targetApp, 0)
+            packageManager.getPackageInfo(packageName, 0)
         }
         true
     } catch (e: PackageManager.NameNotFoundException) {
         e.printStackTrace()
         false
     }
-    if (!isContains) {
+}
+
+/**
+ * 打开指定包名的apk
+ * @param needCountDown 是否需要倒计时
+ */
+fun Context.openApplication(needCountDown: Boolean) {
+    val targetApp = Constant.getTargetApp()
+    if (!isApplicationExist(targetApp)) {
         AlertMessageDialog.Builder()
             .setContext(this)
             .setTitle("温馨提醒")
@@ -70,9 +76,7 @@ fun Context.openApplication(needCountDown: Boolean) {
 
     // 在目标应用界面更新悬浮窗倒计时
     if (needCountDown) {
-        BroadcastManager.getDefault().sendBroadcast(
-            this, MessageType.START_COUNT_DOWN_TIMER.action
-        )
+        BroadcastManager.getDefault().sendBroadcast(this, MessageType.START_COUNT_DOWN_TIMER.action)
     }
 }
 
