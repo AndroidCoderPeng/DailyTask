@@ -60,19 +60,19 @@ class CountDownTimerService : Service() {
         return START_STICKY
     }
 
-    fun startCountDown(index: Int, seconds: Int) {
+    fun startCountDown(taskIndex: Int, seconds: Int) {
         if (isTimerRunning) {
             countDownTimer?.cancel()
             countDownTimer = null
             isTimerRunning = false
-            LogFileManager.writeLog("startCountDown: 第${index}个任务重复执行，取消之前的任务")
+            LogFileManager.writeLog("startCountDown: 第${taskIndex}个任务重复执行，取消之前的任务")
         }
-        LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${index}个任务")
+        LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务")
         countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
             override fun onTick(millisUntilFinished: Long) {
                 val seconds = (millisUntilFinished / 1000).toInt()
                 val notification = notificationBuilder.apply {
-                    setContentText("${seconds.formatTime()}后执行第${index}个任务")
+                    setContentText("${seconds.formatTime()}后执行第${taskIndex}个任务")
                 }.build()
                 notificationManager.notify(notificationId, notification)
             }

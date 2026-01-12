@@ -310,21 +310,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
             bindService(this, connection, BIND_AUTO_CREATE)
         }
 
-        val isFirst = SaveKeyValues.getValue("isFirst", true) as Boolean
-        if (isFirst) {
-            AlertMessageDialog.Builder()
-                .setContext(this)
-                .setTitle("温馨提醒")
-                .setMessage("本软件仅供内部使用，严禁商用或者用作其他非法用途")
-                .setPositiveButton("知道了")
-                .setOnDialogButtonClickListener(object :
-                    AlertMessageDialog.OnDialogButtonClickListener {
-                    override fun onConfirmClick() {
-                        SaveKeyValues.putValue("isFirst", false)
-                    }
-                }).build().show()
-        }
-
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(
                 e1: MotionEvent?,
@@ -385,6 +370,21 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                 marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
+
+        val isFirst = SaveKeyValues.getValue("isFirst", true) as Boolean
+        if (isFirst) {
+            AlertMessageDialog.Builder()
+                .setContext(this)
+                .setTitle("温馨提醒")
+                .setMessage("本软件仅供内部使用，严禁商用或者用作其他非法用途")
+                .setPositiveButton("知道了")
+                .setOnDialogButtonClickListener(object :
+                    AlertMessageDialog.OnDialogButtonClickListener {
+                    override fun onConfirmClick() {
+                        SaveKeyValues.putValue("isFirst", false)
+                    }
+                }).build().show()
+        }
     }
 
     private val overlayPermissionLauncher =
@@ -541,14 +541,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
             LogFileManager.writeLog("今日任务已全部执行完毕")
             weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
             emailManager.sendEmail("任务状态通知", "今日任务已全部执行完毕", false)
-        } else {
-            LogFileManager.writeLog("执行任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
-            weakReferenceHandler.run {
-                val message = obtainMessage()
-                message.what = startTaskCode
-                message.obj = taskIndex
-                sendMessage(message)
-            }
+            return@Runnable
+        }
+
+        LogFileManager.writeLog("执行任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
+        weakReferenceHandler.run {
+            val message = obtainMessage()
+            message.what = startTaskCode
+            message.obj = taskIndex + 1
+            sendMessage(message)
         }
     }
 
