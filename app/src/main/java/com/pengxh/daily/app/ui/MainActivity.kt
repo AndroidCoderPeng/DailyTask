@@ -358,7 +358,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    private fun startFloatViewTime(event: FloatViewTimerEvent) {
+    private fun startFloatViewTimer(event: FloatViewTimerEvent) {
         val time = SaveKeyValues.getValue(
             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
         ) as Int
