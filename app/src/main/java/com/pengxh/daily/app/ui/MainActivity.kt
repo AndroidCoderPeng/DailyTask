@@ -36,6 +36,7 @@ import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
+import com.pengxh.daily.app.event.FloatViewTimerEvent
 import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
@@ -68,6 +69,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -86,7 +90,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
             MessageType.UPDATE_RESET_TICK_TIME.action,
             MessageType.START_DAILY_TASK.action,
             MessageType.STOP_DAILY_TASK.action,
-            MessageType.START_COUNT_DOWN_TIMER.action,
             MessageType.CANCEL_COUNT_DOWN_TIMER.action
         )
     }
@@ -104,9 +107,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
     private val emailManager by lazy { EmailManager(this) }
     private val weakReferenceHandler by lazy { WeakReferenceHandler(this) }
     private val startTaskCode = 2024120801
-    private val startCountDownTimerCode = 2024120802
-    private val executeNextTaskCode = 2024120803
-    private val completedAllTaskCode = 2024120804
+    private val executeNextTaskCode = 2024120802
+    private val completedAllTaskCode = 2024120803
     private var timeoutTimer: CountDownTimer? = null
     private val gson by lazy { Gson() }
 
@@ -155,11 +157,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                         }
                     }
 
-                    MessageType.START_COUNT_DOWN_TIMER -> {
-                        // BroadcastReceiver不适合处理耗时操作，使用Handler处理
-                        weakReferenceHandler.sendEmptyMessage(startCountDownTimerCode)
-                    }
-
                     MessageType.CANCEL_COUNT_DOWN_TIMER -> {
                         timeoutTimer?.cancel()
                         timeoutTimer = null
@@ -192,31 +189,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                     false
                 )
                 countDownTimerService?.startCountDown(index + 1, diff)
-            }
-
-            startCountDownTimerCode -> {
-                val time = SaveKeyValues.getValue(
-                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                ) as Int
-                timeoutTimer = object : CountDownTimer(time * 1000L, 1000) {
-                    override fun onTick(millisUntilFinished: Long) {
-                        val tick = millisUntilFinished / 1000
-                        // 更新悬浮窗倒计时
-                        BroadcastManager.getDefault().sendBroadcast(
-                            context,
-                            MessageType.UPDATE_FLOATING_WINDOW_TIME.action,
-                            mapOf("tick" to tick)
-                        )
-                    }
-
-                    override fun onFinish() {
-                        //如果倒计时结束，那么表明没有收到打卡成功的通知
-                        backToMainActivity()
-                        LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                        emailManager.sendEmail(null, "", false)
-                    }
-                }
-                timeoutTimer?.start()
             }
 
             executeNextTaskCode -> mainHandler.post(dailyTaskRunnable)
@@ -286,6 +258,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
         BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
+
+        EventBus.getDefault().register(this)
 
         // 显示悬浮窗
         if (Settings.canDrawOverlays(this)) {
@@ -381,6 +355,30 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                     }
                 }).build().show()
         }
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    private fun startFloatViewTime(event: FloatViewTimerEvent) {
+        val time = SaveKeyValues.getValue(
+            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+        ) as Int
+        timeoutTimer = object : CountDownTimer(time * 1000L, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val tick = millisUntilFinished / 1000
+                // 更新悬浮窗倒计时
+                BroadcastManager.getDefault().sendBroadcast(
+                    context, MessageType.UPDATE_FLOATING_WINDOW_TIME.action, mapOf("tick" to tick)
+                )
+            }
+
+            override fun onFinish() {
+                //如果倒计时结束，那么表明没有收到打卡成功的通知
+                backToMainActivity()
+                LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+                emailManager.sendEmail(null, "", false)
+            }
+        }
+        timeoutTimer?.start()
     }
 
     private val overlayPermissionLauncher =
@@ -778,5 +776,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
         actions.forEach {
             BroadcastManager.getDefault().unregisterReceiver(this, it)
         }
+        EventBus.getDefault().unregister(this)
     }
 }

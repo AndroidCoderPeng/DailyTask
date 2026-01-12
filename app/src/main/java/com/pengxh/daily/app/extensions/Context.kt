@@ -8,12 +8,14 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.core.app.NotificationManagerCompat
+import com.pengxh.daily.app.event.FloatViewTimerEvent
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
+import org.greenrobot.eventbus.EventBus
 
 /**
  * 检测通知监听服务是否被授权
@@ -76,7 +78,7 @@ fun Context.openApplication(needCountDown: Boolean) {
 
     // 在目标应用界面更新悬浮窗倒计时
     if (needCountDown) {
-        BroadcastManager.getDefault().sendBroadcast(this, MessageType.START_COUNT_DOWN_TIMER.action)
+        EventBus.getDefault().post(FloatViewTimerEvent())
     }
 }
 

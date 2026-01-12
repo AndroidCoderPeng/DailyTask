@@ -44,10 +44,8 @@ enum class MessageType(val action: String) {
     STOP_DAILY_TASK("com.pengxh.daily.app.BROADCAST_STOP_DAILY_TASK_ACTION"),
 
     /**
-     * - 开始倒计时
      * - 取消倒计时
      * */
-    START_COUNT_DOWN_TIMER("com.pengxh.daily.app.BROADCAST_START_COUNT_DOWN_TIMER_ACTION"),
     CANCEL_COUNT_DOWN_TIMER("com.pengxh.daily.app.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION"),
 
     /**
