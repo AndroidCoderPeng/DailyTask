@@ -22,7 +22,6 @@ class DailyTaskAdapter(
     private val context: Context, private val dataBeans: MutableList<DailyTaskBean>
 ) : RecyclerView.Adapter<ViewHolder>() {
 
-    private val kTag = "DailyTaskAdapter"
     private var layoutInflater = LayoutInflater.from(context)
     private var mPosition = -1
     private var actualTime = "--:--:--"

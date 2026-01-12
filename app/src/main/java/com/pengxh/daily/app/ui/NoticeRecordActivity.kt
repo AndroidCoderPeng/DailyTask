@@ -30,7 +30,7 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             if (menuItem.itemId == R.id.menu_clear_history) {
                 AlertControlDialog.Builder()
-                    .setContext(this@NoticeRecordActivity)
+                    .setContext(this)
                     .setTitle("温馨提示")
                     .setMessage("此操作将会清空所有通知记录，且不可恢复")
                     .setNegativeButton("取消")

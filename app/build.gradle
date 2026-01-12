@@ -91,7 +91,6 @@ dependencies {
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
     implementation 'com.scwang.smartrefresh:SmartRefreshLayout:1.1.0'
-    implementation 'com.geyifeng.immersionbar:immersionbar:3.2.2'
     //数据库框架
     implementation 'androidx.room:room-runtime:2.8.2'
     annotationProcessor 'androidx.room:room-compiler:2.8.2'

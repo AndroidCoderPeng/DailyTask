@@ -31,7 +31,6 @@ import kotlinx.coroutines.launch
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
-    private val kTag = "SettingsActivity"
     private val context = this
 
     private val actions by lazy {

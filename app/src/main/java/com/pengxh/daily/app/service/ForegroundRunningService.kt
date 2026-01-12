@@ -73,7 +73,7 @@ class ForegroundRunningService : Service() {
             var message: String
             if (SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean) {
                 BroadcastManager.getDefault().sendBroadcast(
-                    this@ForegroundRunningService, MessageType.RESET_DAILY_TASK.action
+                    this, MessageType.RESET_DAILY_TASK.action
                 )
                 message = "到达任务计划时间，重置每日任务。"
             } else {

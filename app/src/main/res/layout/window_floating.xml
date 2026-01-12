@@ -31,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="@dimen/dp_8"
-            android:text="未开始"
+            android:text="30s"
             android:textColor="@color/white"
             android:textSize="@dimen/sp_14" />
     </LinearLayout>

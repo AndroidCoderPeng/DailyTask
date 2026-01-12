@@ -115,7 +115,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.minuteRangeLayout.setOnClickListener {
             AlertInputDialog.Builder()
-                .setContext(this).setTitle("设置随机时间范围")
+                .setContext(this)
+                .setTitle("设置随机时间范围")
                 .setHintMessage("请输入整数，如：30")
                 .setNegativeButton("取消")
                 .setPositiveButton("确定")
@@ -163,7 +164,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 .setTitle("设置重置时间")
                 .setHintMessage("直接输入整数时间即可，如：6")
                 .setNegativeButton("取消")
-                .setPositiveButton("确定").setOnDialogButtonClickListener(object :
+                .setPositiveButton("确定")
+                .setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
@@ -199,7 +201,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 .setTitle("设置超时时间")
                 .setHintMessage("直接输入整数时间即可，如：60")
                 .setNegativeButton("取消")
-                .setPositiveButton("确定").setOnDialogButtonClickListener(object :
+                .setPositiveButton("确定")
+                .setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
