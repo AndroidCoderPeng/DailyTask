@@ -84,15 +84,17 @@ class NotificationMonitorService : NotificationListenerService() {
                 )
                 emailManager.sendEmail("查询手机电量通知", "当前手机剩余电量为：${capacity}%", false)
             } else if (notice.contains("启动")) {
-                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
                 BroadcastManager.getDefault().sendBroadcast(
                     this@NotificationMonitorService, MessageType.START_DAILY_TASK.action
                 )
             } else if (notice.contains("停止")) {
-                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
                 BroadcastManager.getDefault().sendBroadcast(
                     this@NotificationMonitorService, MessageType.STOP_DAILY_TASK.action
                 )
+            } else if ("把远程任务开关和自动循环开关混在一起，会出问题") {
+//                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
+            } else if ("把远程任务开关和自动循环开关混在一起，会出问题") {
+//                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
             } else if (notice.contains("息屏")) {
                 BroadcastManager.getDefault().sendBroadcast(
                     this@NotificationMonitorService, MessageType.SHOW_MASK_VIEW.action

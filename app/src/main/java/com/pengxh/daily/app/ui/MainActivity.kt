@@ -140,9 +140,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                             startExecuteTask()
                         } else {
                             emailManager.sendEmail(
-                                "启动任务通知",
-                                "任务启动失败，任务已在运行中，请勿重复启动",
-                                false
+                                "启动任务通知", "任务启动失败，任务已在运行中，请勿重复启动", false
                             )
                         }
                     }
@@ -152,9 +150,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                             stopExecuteTask()
                         } else {
                             emailManager.sendEmail(
-                                "停止任务通知",
-                                "任务停止失败，任务已经停止，请勿重复停止",
-                                false
+                                "停止任务通知", "任务停止失败，任务已经停止，请勿重复停止", false
                             )
                         }
                     }
@@ -524,11 +520,18 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
      * */
     private fun startExecuteTask() {
         LogFileManager.writeLog("开始执行每日任务")
+        // 启动任务调度
         mainHandler.post(dailyTaskRunnable)
+
+        // 更新状态标志
         isTaskStarted = true
+
+        // 更新按钮状态
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
+
+        // 发送邮件通知
         emailManager.sendEmail("启动任务通知", "任务启动成功，请注意下次打卡时间", false)
     }
 
@@ -555,14 +558,28 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
 
     private fun stopExecuteTask() {
         LogFileManager.writeLog("停止执行每日任务")
+
+        // 取消任务调度
         mainHandler.removeCallbacks(dailyTaskRunnable)
+
+        // 取消定时器
+        timeoutTimer?.cancel()
+        timeoutTimer = null
+
+        // 取消服务中的倒计时
         countDownTimerService?.cancelCountDown()
+
+        // 重置UI状态
         dailyTaskAdapter.updateCurrentTaskState(-1)
+        binding.tipsView.text = ""
         isTaskStarted = false
+
+        // 重置按钮状态
         binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
         binding.executeTaskButton.setIconTintResource(R.color.ios_green)
         binding.executeTaskButton.text = "启动"
-        binding.tipsView.text = ""
+
+        // 发送通知
         emailManager.sendEmail("停止任务通知", "任务停止成功，请及时打开下次任务", false)
     }
 
