@@ -77,7 +77,6 @@ class ForegroundRunningService : Service() {
                 )
                 message = "到达任务计划时间，重置每日任务。"
             } else {
-                // TODO 任务指令待定
                 message = "每日任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【】指令。"
             }
             LogFileManager.writeLog(message)

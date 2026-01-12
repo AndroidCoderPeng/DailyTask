@@ -78,45 +78,71 @@ class NotificationMonitorService : NotificationListenerService() {
 
         // 其他消息指令
         if (pkg in auxiliaryApp) {
-            if (notice.contains("电量")) {
-                val capacity = batteryManager.getIntProperty(
-                    BatteryManager.BATTERY_PROPERTY_CAPACITY
-                )
-                emailManager.sendEmail("查询手机电量通知", "当前手机剩余电量为：${capacity}%", false)
-            } else if (notice.contains("启动")) {
-                BroadcastManager.getDefault().sendBroadcast(
-                    this@NotificationMonitorService, MessageType.START_DAILY_TASK.action
-                )
-            } else if (notice.contains("停止")) {
-                BroadcastManager.getDefault().sendBroadcast(
-                    this@NotificationMonitorService, MessageType.STOP_DAILY_TASK.action
-                )
-            } else if ("把远程任务开关和自动循环开关混在一起，会出问题") {
-//                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
-            } else if ("把远程任务开关和自动循环开关混在一起，会出问题") {
-//                SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
-            } else if (notice.contains("息屏")) {
-                BroadcastManager.getDefault().sendBroadcast(
-                    this@NotificationMonitorService, MessageType.SHOW_MASK_VIEW.action
-                )
-            } else if (notice.contains("亮屏")) {
-                BroadcastManager.getDefault().sendBroadcast(
-                    this@NotificationMonitorService, MessageType.HIDE_MASK_VIEW.action
-                )
-            } else if (notice.contains("考勤记录")) {
-                var record = ""
-                var index = 1
-                DatabaseWrapper.loadCurrentDayNotice().forEach {
-                    if (it.notificationMsg.contains("考勤打卡")) {
-                        record += "【第${index}次】${it.notificationMsg}，时间：${it.postTime}\r\n"
-                        index++
-                    }
+            when {
+                notice.contains("电量") -> {
+                    val capacity = batteryManager.getIntProperty(
+                        BatteryManager.BATTERY_PROPERTY_CAPACITY
+                    )
+                    emailManager.sendEmail(
+                        "查询手机电量通知", "当前手机剩余电量为：${capacity}%", false
+                    )
                 }
-                emailManager.sendEmail("当天考勤记录通知", record, false)
-            } else {
-                val key = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
-                if (notice.contains(key)) {
-                    openApplication(true)
+
+                notice.contains("启动") -> {
+                    BroadcastManager.getDefault().sendBroadcast(
+                        this, MessageType.START_DAILY_TASK.action
+                    )
+                }
+
+                notice.contains("停止") -> {
+                    BroadcastManager.getDefault().sendBroadcast(
+                        this, MessageType.STOP_DAILY_TASK.action
+                    )
+                }
+
+                notice.contains("开始循环") -> {
+                    SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
+                    emailManager.sendEmail(
+                        "循环任务状态通知", "循环任务状态已更新为：开启", false
+                    )
+                }
+
+                notice.contains("暂停循环") -> {
+                    SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
+                    emailManager.sendEmail(
+                        "循环任务状态通知", "循环任务状态已更新为：暂停", false
+                    )
+                }
+
+                notice.contains("息屏") -> {
+                    BroadcastManager.getDefault().sendBroadcast(
+                        this, MessageType.SHOW_MASK_VIEW.action
+                    )
+                }
+
+                notice.contains("亮屏") -> {
+                    BroadcastManager.getDefault().sendBroadcast(
+                        this, MessageType.HIDE_MASK_VIEW.action
+                    )
+                }
+
+                notice.contains("考勤记录") -> {
+                    var record = ""
+                    var index = 1
+                    DatabaseWrapper.loadCurrentDayNotice().forEach {
+                        if (it.notificationMsg.contains("考勤打卡")) {
+                            record += "【第${index}次】${it.notificationMsg}，时间：${it.postTime}\r\n"
+                            index++
+                        }
+                    }
+                    emailManager.sendEmail("当天考勤记录通知", record, false)
+                }
+
+                else -> {
+                    val key = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
+                    if (notice.contains(key)) {
+                        openApplication(true)
+                    }
                 }
             }
         }

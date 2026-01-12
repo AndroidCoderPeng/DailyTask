@@ -358,7 +358,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
-    private fun startFloatViewTimer(event: FloatViewTimerEvent) {
+    fun startFloatViewTimer(event: FloatViewTimerEvent) {
         val time = SaveKeyValues.getValue(
             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
         ) as Int
@@ -549,7 +549,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
         weakReferenceHandler.run {
             val message = obtainMessage()
             message.what = startTaskCode
-            message.obj = taskIndex + 1
+            message.obj = taskIndex
             sendMessage(message)
         }
     }
