@@ -6,14 +6,12 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityQuestionAndAnswerBinding
-import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.model.QuestionAnAnswerModel
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.readAssetsFile
 import com.pengxh.kt.lite.utils.HtmlRenderEngine
-import com.pengxh.kt.lite.widget.TitleBarView
 
 class QuestionAndAnswerActivity : KotlinBaseActivity<ActivityQuestionAndAnswerBinding>() {
     private val context = this
@@ -60,15 +58,6 @@ class QuestionAndAnswerActivity : KotlinBaseActivity<ActivityQuestionAndAnswerBi
     }
 
     override fun setupTopBarLayout() {
-        binding.rootView.initImmersionBar(this, true, R.color.white)
-        binding.titleView.setOnClickListener(object : TitleBarView.OnClickListener {
-            override fun onLeftClick() {
-                finish()
-            }
-
-            override fun onRightClick() {
-
-            }
-        })
+        binding.toolbar.setNavigationOnClickListener { finish() }
     }
 }

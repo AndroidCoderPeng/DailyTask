@@ -1,16 +1,20 @@
 package com.pengxh.daily.app.ui
 
 import android.content.BroadcastReceiver
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
+import android.os.IBinder
 import android.os.Looper
+import android.os.Message
 import android.provider.Settings
 import android.util.Log
 import android.view.GestureDetector
 import android.view.KeyEvent
-import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
@@ -20,47 +24,92 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.forEachIndexed
-import androidx.core.view.get
 import androidx.core.view.isVisible
-import androidx.core.view.size
-import androidx.fragment.app.Fragment
-import androidx.viewpager.widget.ViewPager
+import androidx.lifecycle.lifecycleScope
+import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textview.MaterialTextView
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
+import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.adapter.BaseFragmentAdapter
+import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
-import com.pengxh.daily.app.extensions.initImmersionBar
-import com.pengxh.daily.app.fragment.DailyTaskFragment
-import com.pengxh.daily.app.fragment.SettingsFragment
+import com.pengxh.daily.app.extensions.backToMainActivity
+import com.pengxh.daily.app.extensions.convertToTimeEntity
+import com.pengxh.daily.app.extensions.diffCurrent
+import com.pengxh.daily.app.extensions.getTaskIndex
+import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
+import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageType
+import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseActivity
+import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
+import com.pengxh.kt.lite.extensions.convertColor
+import com.pengxh.kt.lite.extensions.dp2px
+import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.kt.lite.utils.WeakReferenceHandler
+import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
+import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
+import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.Random
 import kotlin.math.abs
 
-class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
+class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback {
 
     private val kTag = "MainActivity"
+    private val context = this
     private val actions by lazy {
         listOf(
             MessageType.SHOW_MASK_VIEW.action,
-            MessageType.HIDE_MASK_VIEW.action
+            MessageType.HIDE_MASK_VIEW.action,
+            MessageType.RESET_DAILY_TASK.action,
+            MessageType.UPDATE_RESET_TICK_TIME.action,
+            MessageType.START_DAILY_TASK.action,
+            MessageType.STOP_DAILY_TASK.action,
+            MessageType.START_COUNT_DOWN_TIMER.action,
+            MessageType.CANCEL_COUNT_DOWN_TIMER.action
         )
     }
-    private val fragmentPages = mutableListOf<Fragment>().apply {
-        add(DailyTaskFragment())
-        add(SettingsFragment())
-    }
-    private val clockAnimationHandler = Handler(Looper.getMainLooper())
-    private var menuItem: MenuItem? = null
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val dateFormat = SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.getDefault())
     private lateinit var insetsController: WindowInsetsControllerCompat
+    private var countDownTimerService: CountDownTimerService? = null
+    private lateinit var gestureDetector: GestureDetector
+    private lateinit var dailyTaskAdapter: DailyTaskAdapter
+    private var taskBeans = mutableListOf<DailyTaskBean>()
+    private val marginOffset by lazy { 16.dp2px(this) }
+    private var isTaskStarted = false
+    private var isRefresh = false
+    private val emailManager by lazy { EmailManager(this) }
+    private val weakReferenceHandler by lazy { WeakReferenceHandler(this) }
+    private val startTaskCode = 2024120801
+    private val startCountDownTimerCode = 2024120802
+    private val executeNextTaskCode = 2024120803
+    private val completedAllTaskCode = 2024120804
+    private var timeoutTimer: CountDownTimer? = null
+    private val gson by lazy { Gson() }
+
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
@@ -77,12 +126,115 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         }
                     }
 
+                    MessageType.RESET_DAILY_TASK -> {
+                        Log.d(kTag, "onReceive: 重置每日任务")
+                        startExecuteTask()
+                    }
+
+                    MessageType.UPDATE_RESET_TICK_TIME -> {
+                        binding.repeatTimeView.text = intent.getStringExtra("message")
+                    }
+
+                    MessageType.START_DAILY_TASK -> {
+                        if (!isTaskStarted) {
+                            startExecuteTask()
+                        } else {
+                            emailManager.sendEmail(
+                                "启动任务通知",
+                                "任务启动失败，任务已在运行中，请勿重复启动",
+                                false
+                            )
+                        }
+                    }
+
+                    MessageType.STOP_DAILY_TASK -> {
+                        if (isTaskStarted) {
+                            stopExecuteTask()
+                        } else {
+                            emailManager.sendEmail(
+                                "停止任务通知",
+                                "任务停止失败，任务已经停止，请勿重复停止",
+                                false
+                            )
+                        }
+                    }
+
+                    MessageType.START_COUNT_DOWN_TIMER -> {
+                        // BroadcastReceiver不适合处理耗时操作，使用Handler处理
+                        weakReferenceHandler.sendEmptyMessage(startCountDownTimerCode)
+                    }
+
+                    MessageType.CANCEL_COUNT_DOWN_TIMER -> {
+                        timeoutTimer?.cancel()
+                        timeoutTimer = null
+                        LogFileManager.writeLog("取消超时定时器，执行下一个任务")
+                        weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
+                    }
+
                     else -> {}
                 }
             }
         }
     }
-    private lateinit var gestureDetector: GestureDetector
+
+    override fun handleMessage(msg: Message): Boolean {
+        when (msg.what) {
+            startTaskCode -> {
+                val index = msg.obj as Int
+                val task = taskBeans[index]
+                binding.tipsView.text = String.format(
+                    Locale.getDefault(), "准备执行第 %d 个任务", index + 1
+                )
+                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
+
+                val pair = task.diffCurrent()
+                dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
+                val diff = pair.second
+                emailManager.sendEmail(
+                    "任务执行通知",
+                    "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
+                    false
+                )
+                countDownTimerService?.startCountDown(index + 1, diff)
+            }
+
+            startCountDownTimerCode -> {
+                val time = SaveKeyValues.getValue(
+                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                ) as Int
+                timeoutTimer = object : CountDownTimer(time * 1000L, 1000) {
+                    override fun onTick(millisUntilFinished: Long) {
+                        val tick = millisUntilFinished / 1000
+                        // 更新悬浮窗倒计时
+                        BroadcastManager.getDefault().sendBroadcast(
+                            context,
+                            MessageType.UPDATE_FLOATING_WINDOW_TIME.action,
+                            mapOf("tick" to tick)
+                        )
+                    }
+
+                    override fun onFinish() {
+                        //如果倒计时结束，那么表明没有收到打卡成功的通知
+                        backToMainActivity()
+                        LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+                        emailManager.sendEmail(null, "", false)
+                    }
+                }
+                timeoutTimer?.start()
+            }
+
+            executeNextTaskCode -> mainHandler.post(dailyTaskRunnable)
+
+            completedAllTaskCode -> {
+                binding.tipsView.text = "当天所有任务已执行完毕"
+                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
+                dailyTaskAdapter.updateCurrentTaskState(-1)
+                mainHandler.removeCallbacks(dailyTaskRunnable)
+                countDownTimerService?.updateDailyTaskState()
+            }
+        }
+        return true
+    }
 
     override fun initViewBinding(): ActivityMainBinding {
         return ActivityMainBinding.inflate(layoutInflater)
@@ -90,7 +242,50 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun setupTopBarLayout() {
         insetsController = WindowCompat.getInsetsController(window, binding.rootView)
-        binding.rootView.initImmersionBar(this, true, R.color.back_ground_color)
+        mainHandler.post(timerRunnable)
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            when (menuItem.itemId) {
+                R.id.menu_add_task -> {
+                    if (isTaskStarted) {
+                        "任务进行中，无法添加".show(this)
+                        return@setOnMenuItemClickListener true
+                    }
+
+                    if (taskBeans.isNotEmpty()) {
+                        createTask()
+                    } else {
+                        BottomActionSheet.Builder()
+                            .setContext(this)
+                            .setActionItemTitle(arrayListOf("添加任务", "导入任务"))
+                            .setItemTextColor(R.color.theme_color.convertColor(this))
+                            .setOnActionSheetListener(object :
+                                BottomActionSheet.OnActionSheetListener {
+                                override fun onActionItemClick(position: Int) {
+                                    when (position) {
+                                        0 -> createTask()
+                                        1 -> importTask()
+                                    }
+                                }
+                            }).build().show()
+                    }
+                }
+
+                R.id.menu_settings -> navigatePageTo<SettingsActivity>()
+            }
+            true
+        }
+    }
+
+    private val timerRunnable = object : Runnable {
+        override fun run() {
+            val currentTime = dateFormat.format(Date())
+            val parts = currentTime.split(" ")
+            binding.toolbar.apply {
+                title = parts[2]
+                subtitle = "${parts[0]} ${parts[1]}"
+            }
+            mainHandler.postDelayed(this, 1000)
+        }
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
@@ -111,8 +306,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             startForegroundService(this)
         }
 
-        val fragmentAdapter = BaseFragmentAdapter(supportFragmentManager, fragmentPages)
-        binding.viewPager.adapter = fragmentAdapter
+        Intent(this, CountDownTimerService::class.java).apply {
+            bindService(this, connection, BIND_AUTO_CREATE)
+        }
 
         val isFirst = SaveKeyValues.getValue("isFirst", true) as Boolean
         if (isFirst) {
@@ -163,6 +359,32 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 return super.onFling(e1, e2, velocityX, velocityY)
             }
         })
+
+        // 数据
+        taskBeans = DatabaseWrapper.loadAllTask()
+        if (taskBeans.isEmpty()) {
+            binding.recyclerView.visibility = View.GONE
+            binding.emptyView.visibility = View.VISIBLE
+        } else {
+            binding.recyclerView.visibility = View.VISIBLE
+            binding.emptyView.visibility = View.GONE
+        }
+        dailyTaskAdapter = DailyTaskAdapter(this, taskBeans)
+        dailyTaskAdapter.setOnItemClickListener(object : DailyTaskAdapter.OnItemClickListener {
+            override fun onItemClick(position: Int) {
+                itemClick(position)
+            }
+
+            override fun onItemLongClick(position: Int) {
+                itemLongClick(position)
+            }
+        })
+        binding.recyclerView.adapter = dailyTaskAdapter
+        binding.recyclerView.addItemDecoration(
+            RecyclerViewItemOffsets(
+                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
+            )
+        )
     }
 
     private val overlayPermissionLauncher =
@@ -174,6 +396,94 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
         }
 
+    /**
+     * 服务绑定
+     * */
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as CountDownTimerService.LocaleBinder
+            countDownTimerService = binder.getService()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+
+        }
+    }
+
+    /**
+     * 列表项单击
+     * */
+    private fun itemClick(adapterPosition: Int) {
+        if (isTaskStarted) {
+            "任务进行中，无法修改".show(this)
+            return
+        }
+        val item = taskBeans[adapterPosition]
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_layout_select_time, null)
+        val dialog = BottomSheetDialog(this)
+        dialog.setContentView(view)
+        val titleView = view.findViewById<MaterialTextView>(R.id.titleView)
+        titleView.text = "修改任务时间"
+        val timePicker = view.findViewById<TimeWheelLayout>(R.id.timePicker)
+        timePicker.setDefaultValue(item.convertToTimeEntity())
+        view.findViewById<MaterialButton>(R.id.saveButton).setOnClickListener {
+            val time = String.format(
+                Locale.getDefault(),
+                "%02d:%02d:%02d",
+                timePicker.selectedHour,
+                timePicker.selectedMinute,
+                timePicker.selectedSecond
+            )
+            item.time = time
+            DatabaseWrapper.updateTask(item)
+            taskBeans = DatabaseWrapper.loadAllTask()
+            dailyTaskAdapter.refresh(taskBeans)
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    /**
+     * 列表项长按
+     * */
+    private fun itemLongClick(adapterPosition: Int) {
+        if (isTaskStarted) {
+            "任务进行中，无法删除".show(this)
+            return
+        }
+        AlertControlDialog.Builder()
+            .setContext(this)
+            .setTitle("删除提示")
+            .setMessage("确定要删除这个任务吗")
+            .setNegativeButton("取消")
+            .setPositiveButton("确定")
+            .setOnDialogButtonClickListener(object :
+                AlertControlDialog.OnDialogButtonClickListener {
+                override fun onConfirmClick() {
+                    try {
+                        val item = taskBeans[adapterPosition]
+                        DatabaseWrapper.deleteTask(item)
+                        taskBeans.removeAt(adapterPosition)
+                        dailyTaskAdapter.refresh(taskBeans)
+                        if (taskBeans.isEmpty()) {
+                            binding.recyclerView.visibility = View.GONE
+                            binding.emptyView.visibility = View.VISIBLE
+                        } else {
+                            binding.recyclerView.visibility = View.VISIBLE
+                            binding.emptyView.visibility = View.GONE
+                        }
+                    } catch (e: IndexOutOfBoundsException) {
+                        e.printStackTrace()
+                        "删除失败，请刷新重试".show(context)
+                    }
+                }
+
+                override fun onCancelClick() {
+
+                }
+            }).build().show()
+    }
+
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ev?.let {
             gestureDetector.onTouchEvent(it)
@@ -182,52 +492,87 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     override fun initEvent() {
-        binding.bottomNavigation.setOnItemSelectedListener { item ->
-            val itemId = item.itemId
-            val menuItems = binding.bottomNavigation.menu
-            menuItems.forEachIndexed { index, _ ->
-                if (menuItems[index].itemId == itemId) {
-                    binding.viewPager.currentItem = index
-                    return@forEachIndexed
-                }
-            }
-            false
-        }
-
-        binding.floatingActionButton.setOnClickListener {
-            val fragment = fragmentPages.first()
-            if (fragment is DailyTaskFragment) {
-                fragment.addTask()
+        binding.executeTaskButton.setOnClickListener {
+            if (isTaskStarted) {
+                stopExecuteTask()
             } else {
-                "添加任务失败，请重启软件再试".show(this)
+                if (DatabaseWrapper.loadAllTask().isEmpty()) {
+                    "循环任务启动失败，请先添加任务时间点".show(this)
+                    return@setOnClickListener
+                }
+                startExecuteTask()
             }
         }
 
-        binding.viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
-            override fun onPageScrolled(
-                position: Int, positionOffset: Float, positionOffsetPixels: Int
-            ) {
-            }
-
-            override fun onPageSelected(position: Int) {
-                if (position < 0 || position >= binding.bottomNavigation.menu.size) {
-                    return
+        binding.refreshView.setOnRefreshListener {
+            isRefresh = true
+            lifecycleScope.launch(Dispatchers.Main) {
+                val result = withContext(Dispatchers.IO) {
+                    DatabaseWrapper.loadAllTask()
                 }
-
-                // 获取当前选中的菜单项并取消选中
-                val currentMenuItem = menuItem ?: binding.bottomNavigation.menu[0]
-                currentMenuItem.isChecked = false
-
-                // 更新新的选中菜单项
-                when (position) {
-                    0 -> menuItem = binding.bottomNavigation.menu[position]
-                    1 -> menuItem = binding.bottomNavigation.menu[position + 1]
-                }
-                menuItem?.isChecked = true
+                delay(500)
+                binding.refreshView.finishRefresh()
+                isRefresh = false
+                dailyTaskAdapter.refresh(result, itemComparator)
             }
+        }
+        binding.refreshView.setEnableLoadMore(false)
+    }
 
-            override fun onPageScrollStateChanged(state: Int) {}
-        })
+    /**
+     * 启动任务
+     * */
+    private fun startExecuteTask() {
+        LogFileManager.writeLog("开始执行每日任务")
+        mainHandler.post(dailyTaskRunnable)
+        isTaskStarted = true
+        binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+        binding.executeTaskButton.setIconTintResource(R.color.red)
+        binding.executeTaskButton.text = "停止"
+        emailManager.sendEmail("启动任务通知", "任务启动成功，请注意下次打卡时间", false)
+    }
+
+    /**
+     * 当日串行任务Runnable
+     * */
+    private val dailyTaskRunnable = Runnable {
+        val taskIndex = taskBeans.getTaskIndex()
+        if (taskIndex == -1) {
+            LogFileManager.writeLog("今日任务已全部执行完毕")
+            weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
+            emailManager.sendEmail("任务状态通知", "今日任务已全部执行完毕", false)
+        } else {
+            LogFileManager.writeLog("执行任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
+            weakReferenceHandler.run {
+                val message = obtainMessage()
+                message.what = startTaskCode
+                message.obj = taskIndex
+                sendMessage(message)
+            }
+        }
+    }
+
+    private fun stopExecuteTask() {
+        LogFileManager.writeLog("停止执行每日任务")
+        mainHandler.removeCallbacks(dailyTaskRunnable)
+        countDownTimerService?.cancelCountDown()
+        dailyTaskAdapter.updateCurrentTaskState(-1)
+        isTaskStarted = false
+        binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
+        binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+        binding.executeTaskButton.text = "启动"
+        binding.tipsView.text = ""
+        emailManager.sendEmail("停止任务通知", "任务停止成功，请及时打开下次任务", false)
+    }
+
+    private val itemComparator = object : NormalRecyclerAdapter.ItemComparator<DailyTaskBean> {
+        override fun areItemsTheSame(oldItem: DailyTaskBean, newItem: DailyTaskBean): Boolean {
+            return oldItem.id == newItem.id && oldItem.time == newItem.time
+        }
+
+        override fun areContentsTheSame(oldItem: DailyTaskBean, newItem: DailyTaskBean): Boolean {
+            return oldItem.time == newItem.time
+        }
     }
 
     override fun observeRequestState() {
@@ -277,7 +622,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 .start()
 
             // 每30秒执行一次位置变换
-            clockAnimationHandler.postDelayed(this, 30000)
+            mainHandler.postDelayed(this, 30000)
         }
     }
 
@@ -288,8 +633,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         //隐藏悬浮窗显示
         BroadcastManager.getDefault().sendBroadcast(this, MessageType.HIDE_FLOATING_WINDOW.action)
 
-        //隐藏状态栏显示
-        insetsController.hide(WindowInsetsCompat.Type.statusBars())
+        //隐藏状态栏和导航栏显示
+        insetsController.apply {
+            hide(WindowInsetsCompat.Type.statusBars())
+            hide(WindowInsetsCompat.Type.navigationBars())
+        }
 
         //显示蒙层
         binding.maskView.visibility = View.VISIBLE
@@ -302,7 +650,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.rootView.visibility = View.GONE
 
         //启动时钟位置变换动画
-        clockAnimationHandler.postDelayed(clockAnimationRunnable, 30000)
+        mainHandler.postDelayed(clockAnimationRunnable, 30000)
     }
 
     /**
@@ -313,10 +661,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         BroadcastManager.getDefault().sendBroadcast(this, MessageType.SHOW_FLOATING_WINDOW.action)
 
         //停止时钟动画
-        clockAnimationHandler.removeCallbacks(clockAnimationRunnable)
+        mainHandler.removeCallbacks(clockAnimationRunnable)
 
-        //恢复状态栏显示
-        insetsController.show(WindowInsetsCompat.Type.statusBars())
+        //恢复状态栏和导航栏显示
+        insetsController.apply {
+            show(WindowInsetsCompat.Type.statusBars())
+            show(WindowInsetsCompat.Type.navigationBars())
+        }
 
         //隐藏蒙层
         binding.maskView.visibility = View.GONE
@@ -327,6 +678,73 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         //显示任务界面
         binding.rootView.visibility = View.VISIBLE
+    }
+
+    private fun createTask() {
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_layout_select_time, null)
+        val dialog = BottomSheetDialog(this)
+        dialog.setContentView(view)
+        val titleView = view.findViewById<MaterialTextView>(R.id.titleView)
+        titleView.text = "添加任务"
+        val timePicker = view.findViewById<TimeWheelLayout>(R.id.timePicker)
+        view.findViewById<MaterialButton>(R.id.saveButton).setOnClickListener {
+            val time = String.format(
+                Locale.getDefault(),
+                "%02d:%02d:%02d",
+                timePicker.selectedHour,
+                timePicker.selectedMinute,
+                timePicker.selectedSecond
+            )
+
+            if (DatabaseWrapper.isTaskTimeExist(time)) {
+                "任务时间点已存在".show(this)
+                return@setOnClickListener
+            }
+            binding.recyclerView.visibility = View.VISIBLE
+            binding.emptyView.visibility = View.GONE
+            val bean = DailyTaskBean().apply {
+                this.time = time
+            }
+            DatabaseWrapper.insert(bean)
+            taskBeans = DatabaseWrapper.loadAllTask()
+            dailyTaskAdapter.refresh(taskBeans)
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    private fun importTask() {
+        AlertInputDialog.Builder()
+            .setContext(this)
+            .setTitle("导入任务")
+            .setHintMessage("请将导出的任务粘贴到这里")
+            .setNegativeButton("取消")
+            .setPositiveButton("确定")
+            .setOnDialogButtonClickListener(object :
+                AlertInputDialog.OnDialogButtonClickListener {
+                override fun onConfirmClick(value: String) {
+                    val type = object : TypeToken<List<DailyTaskBean>>() {}.type
+                    try {
+                        val tasks = gson.fromJson<List<DailyTaskBean>>(value, type)
+                        for (task in tasks) {
+                            if (DatabaseWrapper.isTaskTimeExist(task.time)) {
+                                continue
+                            }
+                            DatabaseWrapper.insert(task)
+                        }
+                        binding.recyclerView.visibility = View.VISIBLE
+                        binding.emptyView.visibility = View.GONE
+                        taskBeans = DatabaseWrapper.loadAllTask()
+                        dailyTaskAdapter.refresh(taskBeans)
+                        "任务导入成功".show(context)
+                    } catch (e: JsonSyntaxException) {
+                        e.printStackTrace()
+                        "导入失败，请确认导入的是正确的任务数据".show(context)
+                    }
+                }
+
+                override fun onCancelClick() {}
+            }).build().show()
     }
 
     override fun onNewIntent(intent: Intent) {

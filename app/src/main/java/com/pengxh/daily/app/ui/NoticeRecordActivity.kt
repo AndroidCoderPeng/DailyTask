@@ -6,14 +6,12 @@ import android.os.CountDownTimer
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityNoticeBinding
-import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemDivider
-import com.pengxh.kt.lite.widget.TitleBarView
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
 class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
@@ -28,13 +26,9 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
     }
 
     override fun setupTopBarLayout() {
-        binding.rootView.initImmersionBar(this, true, R.color.white)
-        binding.titleView.setOnClickListener(object : TitleBarView.OnClickListener {
-            override fun onLeftClick() {
-                finish()
-            }
-
-            override fun onRightClick() {
+        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            if (menuItem.itemId == R.id.menu_clear_history) {
                 AlertControlDialog.Builder()
                     .setContext(this@NoticeRecordActivity)
                     .setTitle("温馨提示")
@@ -54,7 +48,8 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
                         }
                     }).build().show()
             }
-        })
+            true
+        }
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {

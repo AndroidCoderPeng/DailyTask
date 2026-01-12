@@ -1,22 +1,7 @@
 <resources>
-    <style name="PopupAnimation">
-        <item name="android:windowEnterAnimation">@anim/popup_show</item>
-        <item name="android:windowExitAnimation">@anim/popup_hide</item>
-    </style>
-
     <!--ShapeableImageView 圆角-->
     <style name="RoundedStyle">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">10dp</item>
-    </style>
-
-    <style name="ActivityInOutAnimation" parent="Theme.MaterialComponents.Light">
-        <!--进入-->
-        <item name="android:activityOpenEnterAnimation">@anim/activity_in</item>
-        <item name="android:activityOpenExitAnimation">@anim/activity_out</item>
-
-        <!--退出-->
-        <item name="android:activityCloseEnterAnimation">@anim/activity_in</item>
-        <item name="android:activityCloseExitAnimation">@anim/activity_out</item>
     </style>
 </resources>

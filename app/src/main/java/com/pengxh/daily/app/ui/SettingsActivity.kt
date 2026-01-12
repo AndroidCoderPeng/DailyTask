@@ -1,4 +1,4 @@
-package com.pengxh.daily.app.fragment
+package com.pengxh.daily.app.ui
 
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -8,26 +8,20 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
 import android.provider.Settings
-import android.view.LayoutInflater
 import android.view.View
-import android.view.ViewGroup
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.databinding.FragmentSettingsBinding
+import com.pengxh.daily.app.databinding.ActivitySettingsBinding
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
-import com.pengxh.daily.app.ui.EmailConfigActivity
-import com.pengxh.daily.app.ui.NoticeRecordActivity
-import com.pengxh.daily.app.ui.QuestionAndAnswerActivity
-import com.pengxh.daily.app.ui.TaskConfigActivity
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
-import com.pengxh.kt.lite.base.KotlinBaseFragment
+import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -35,9 +29,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
+class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
-    private val kTag = "SettingsFragment"
+    private val kTag = "SettingsActivity"
+    private val context = this
+
     private val actions by lazy {
         listOf(
             MessageType.NOTICE_LISTENER_CONNECTED.action,
@@ -51,7 +47,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
                     MessageType.NOTICE_LISTENER_CONNECTED -> {
                         binding.tipsView.text = "通知监听服务状态查询中，请稍后"
                         binding.tipsView.setTextColor(
-                            R.color.theme_color.convertColor(requireContext())
+                            R.color.theme_color.convertColor(this@SettingsActivity)
                         )
                         binding.noticeSwitch.isChecked = true
                         binding.tipsView.visibility = View.GONE
@@ -70,39 +66,34 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         }
     }
 
-    override fun setupTopBarLayout() {
+    override fun initViewBinding(): ActivitySettingsBinding {
+        return ActivitySettingsBinding.inflate(layoutInflater)
+    }
 
+    override fun setupTopBarLayout() {
+        binding.toolbar.setNavigationOnClickListener { finish() }
+    }
+
+    override fun initOnCreate(savedInstanceState: Bundle?) {
+        BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
+
+        binding.appVersion.text = BuildConfig.VERSION_NAME
+        if (notificationEnable()) {
+            turnOnNotificationMonitorService()
+        }
     }
 
     override fun observeRequestState() {
 
     }
 
-    override fun initViewBinding(
-        inflater: LayoutInflater,
-        container: ViewGroup?
-    ): FragmentSettingsBinding {
-        return FragmentSettingsBinding.inflate(inflater, container, false)
-    }
-
-    override fun initOnCreate(savedInstanceState: Bundle?) {
-        BroadcastManager.getDefault().registerReceivers(
-            requireContext(), actions, broadcastReceiver
-        )
-
-        binding.appVersion.text = BuildConfig.VERSION_NAME
-        if (requireContext().notificationEnable()) {
-            turnOnNotificationMonitorService()
-        }
-    }
-
     override fun initEvent() {
         binding.emailConfigLayout.setOnClickListener {
-            requireContext().navigatePageTo<EmailConfigActivity>()
+            navigatePageTo<EmailConfigActivity>()
         }
 
         binding.taskConfigLayout.setOnClickListener {
-            requireContext().navigatePageTo<TaskConfigActivity>()
+            navigatePageTo<TaskConfigActivity>()
         }
 
         binding.noticeSwitch.setOnClickListener {
@@ -110,7 +101,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         }
 
         binding.openTestLayout.setOnClickListener {
-            requireContext().openApplication(false)
+            openApplication(false)
         }
 
         binding.gestureDetectorSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -122,17 +113,17 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         }
 
         binding.notificationLayout.setOnClickListener {
-            requireContext().navigatePageTo<NoticeRecordActivity>()
+            navigatePageTo<NoticeRecordActivity>()
         }
 
         binding.introduceLayout.setOnClickListener {
-            requireContext().navigatePageTo<QuestionAndAnswerActivity>()
+            navigatePageTo<QuestionAndAnswerActivity>()
         }
     }
 
     private val notificationSettingLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (requireContext().notificationEnable()) {
+            if (notificationEnable()) {
                 turnOnNotificationMonitorService()
             }
         }
@@ -145,12 +136,12 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
         binding.backToHomeSwitch.isChecked =
             SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
 
-        if (requireContext().notificationEnable()) {
+        if (notificationEnable()) {
             binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-            binding.tipsView.setTextColor(R.color.theme_color.convertColor(requireContext()))
+            binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
             lifecycleScope.launch(Dispatchers.Main) {
                 delay(500)
-                if (requireContext().notificationEnable()) {
+                if (notificationEnable()) {
                     binding.noticeSwitch.isChecked = true
                     binding.tipsView.visibility = View.GONE
                 }
@@ -166,7 +157,6 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
     private fun turnOnNotificationMonitorService() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val context = requireContext()
                 val componentName = ComponentName(context, NotificationMonitorService::class.java)
 
                 // 检查当前组件状态
@@ -196,7 +186,7 @@ class SettingsFragment : KotlinBaseFragment<FragmentSettingsBinding>() {
     override fun onDestroy() {
         super.onDestroy()
         actions.forEach {
-            BroadcastManager.getDefault().unregisterReceiver(requireContext(), it)
+            BroadcastManager.getDefault().unregisterReceiver(this, it)
         }
     }
 }

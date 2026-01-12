@@ -7,15 +7,14 @@
     android:background="@color/back_ground_color"
     android:orientation="vertical">
 
-    <com.pengxh.kt.lite.widget.TitleBarView
-        android:id="@+id/titleView"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        app:tbv_left_image="@drawable/ic_title_left_black"
-        app:tbv_smaller_title="true"
-        app:tbv_text="常见问题"
-        app:tbv_text_color="@color/black" />
+        android:background="@color/theme_color"
+        app:navigationIcon="@drawable/ic_title_left"
+        app:title="常见问题"
+        app:titleTextColor="@color/white" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"

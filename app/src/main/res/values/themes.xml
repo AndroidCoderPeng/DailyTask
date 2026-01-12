@@ -4,6 +4,7 @@
     <style name="Base.Theme.DailyTask" parent="Theme.Material3.Light.NoActionBar">
         <!-- 修改控件系统默认颜色 -->
         <item name="colorPrimary">@color/theme_color</item>
+        <item name="colorSecondary">@color/theme_color</item>
         <!-- Customize your theme here. -->
 
         <!-- 从 Android 15 开始，系统默认开启了 Edge-to-Edge 模式，这可能会导致 ImmersionBar 的一些功能失效 -->
@@ -11,8 +12,4 @@
     </style>
 
     <style name="Theme.DailyTask" parent="Base.Theme.DailyTask" />
-
-    <style name="Theme.CustomActivityAnimation" parent="Theme.DailyTask">
-        <item name="android:windowAnimationStyle">@style/ActivityInOutAnimation</item>
-    </style>
 </resources>

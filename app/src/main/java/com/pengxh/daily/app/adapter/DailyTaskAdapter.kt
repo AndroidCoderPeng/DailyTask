@@ -26,6 +26,7 @@ class DailyTaskAdapter(
     private var layoutInflater = LayoutInflater.from(context)
     private var mPosition = -1
     private var actualTime = "--:--:--"
+    private var onItemClickListener: OnItemClickListener? = null
 
     fun updateCurrentTaskState(position: Int) {
         this.mPosition = position
@@ -68,6 +69,15 @@ class DailyTaskAdapter(
                 .setText(R.id.actualTimeView, "--:--:--")
                 .setTextColor(R.id.taskTimeView, Color.BLACK)
             arrowView.animate().rotation(0f).setDuration(500).start()
+        }
+
+        holder.itemView.setOnClickListener {
+            onItemClickListener?.onItemClick(position)
+        }
+
+        holder.itemView.setOnLongClickListener {
+            onItemClickListener?.onItemLongClick(position)
+            return@setOnLongClickListener true
         }
     }
 
@@ -126,5 +136,15 @@ class DailyTaskAdapter(
             }
             notifyItemRangeChanged(0, newSize)
         }
+    }
+
+    interface OnItemClickListener {
+        fun onItemClick(position: Int)
+
+        fun onItemLongClick(position: Int)
+    }
+
+    fun setOnItemClickListener(listener: OnItemClickListener) {
+        this.onItemClickListener = listener
     }
 }

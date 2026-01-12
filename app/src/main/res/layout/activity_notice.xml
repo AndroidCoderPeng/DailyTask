@@ -7,17 +7,15 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <com.pengxh.kt.lite.widget.TitleBarView
-        android:id="@+id/titleView"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        app:tbv_left_image="@drawable/ic_title_left_black"
-        app:tbv_right_image="@drawable/ic_clear"
-        app:tbv_show_right_image="true"
-        app:tbv_smaller_title="true"
-        app:tbv_text="所有通知"
-        app:tbv_text_color="@color/black" />
+        android:background="@color/theme_color"
+        app:menu="@menu/notice_history_top_bar_menu"
+        app:navigationIcon="@drawable/ic_title_left"
+        app:title="通知记录"
+        app:titleTextColor="@color/white" />
 
     <com.scwang.smartrefresh.layout.SmartRefreshLayout
         android:id="@+id/refreshLayout"

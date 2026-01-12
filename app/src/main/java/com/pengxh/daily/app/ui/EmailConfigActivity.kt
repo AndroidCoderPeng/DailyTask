@@ -3,19 +3,16 @@ package com.pengxh.daily.app.ui
 import android.os.Bundle
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityEmailConfigBinding
-import com.pengxh.daily.app.extensions.initImmersionBar
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
-import com.pengxh.kt.lite.widget.TitleBarView
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
 class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
 
-    private val kTag = "EmailConfigActivity"
     private val context = this
     private val emailManager by lazy { EmailManager(this) }
 
@@ -43,13 +40,9 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
     }
 
     override fun setupTopBarLayout() {
-        binding.rootView.initImmersionBar(this, true, R.color.white)
-        binding.titleView.setOnClickListener(object : TitleBarView.OnClickListener {
-            override fun onLeftClick() {
-                finish()
-            }
-
-            override fun onRightClick() {
+        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            if (menuItem.itemId == R.id.menu_right) {
                 val address = binding.emailSendAddressView.text.toString()
                 val outbox = if (address.contains("@qq.com")) {
                     address
@@ -58,27 +51,27 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
                 }
                 if (outbox.isBlank()) {
                     "发件箱地址为空".show(context)
-                    return
+                    return@setOnMenuItemClickListener true
                 }
                 if (!outbox.isEmail()) {
                     "发件箱格式错误，请检查".show(context)
-                    return
+                    return@setOnMenuItemClickListener true
                 }
 
                 val authCode = binding.emailSendCodeView.text.toString()
                 if (authCode.isBlank()) {
                     "发件箱授权码为空".show(context)
-                    return
+                    return@setOnMenuItemClickListener true
                 }
 
                 val inbox = binding.emailInboxView.text.toString()
                 if (inbox.isBlank()) {
                     "收件箱地址为空".show(context)
-                    return
+                    return@setOnMenuItemClickListener true
                 }
                 if (!inbox.isEmail()) {
                     "发件箱格式错误，请检查".show(context)
-                    return
+                    return@setOnMenuItemClickListener true
                 }
 
                 val title = binding.emailTitleView.text.toString()
@@ -87,7 +80,8 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
 
                 sendTestEmail()
             }
-        })
+            true
+        }
     }
 
     private fun sendTestEmail() {
