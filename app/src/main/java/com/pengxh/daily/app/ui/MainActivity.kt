@@ -10,7 +10,6 @@ import android.os.CountDownTimer
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.Message
 import android.provider.Settings
 import android.util.Log
 import android.view.GestureDetector
@@ -60,7 +59,6 @@ import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import com.pengxh.kt.lite.utils.WeakReferenceHandler
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
@@ -78,7 +76,7 @@ import java.util.Locale
 import java.util.Random
 import kotlin.math.abs
 
-class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback {
+class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private val kTag = "MainActivity"
     private val context = this
@@ -105,10 +103,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
     private var isTaskStarted = false
     private var isRefresh = false
     private val emailManager by lazy { EmailManager(this) }
-    private val weakReferenceHandler by lazy { WeakReferenceHandler(this) }
-    private val startTaskCode = 2024120801
-    private val executeNextTaskCode = 2024120802
-    private val completedAllTaskCode = 2024120803
     private var timeoutTimer: CountDownTimer? = null
     private val gson by lazy { Gson() }
 
@@ -160,8 +154,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                     MessageType.CANCEL_COUNT_DOWN_TIMER -> {
                         timeoutTimer?.cancel()
                         timeoutTimer = null
+
                         LogFileManager.writeLog("取消超时定时器，执行下一个任务")
-                        weakReferenceHandler.sendEmptyMessage(executeNextTaskCode)
+                        mainHandler.post(dailyTaskRunnable)
                     }
 
                     else -> {}
@@ -170,47 +165,26 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
         }
     }
 
-    override fun handleMessage(msg: Message): Boolean {
-        when (msg.what) {
-            startTaskCode -> {
-                val index = msg.obj as Int
-                val task = taskBeans[index]
-                binding.tipsView.text = String.format(
-                    Locale.getDefault(), "准备执行第 %d 个任务", index + 1
-                )
-                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
-
-                val pair = task.diffCurrent()
-                dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
-                val diff = pair.second
-                emailManager.sendEmail(
-                    "任务执行通知",
-                    "准备执行第 ${index + 1} 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
-                    false
-                )
-                countDownTimerService?.startCountDown(index + 1, diff)
-            }
-
-            executeNextTaskCode -> mainHandler.post(dailyTaskRunnable)
-
-            completedAllTaskCode -> {
-                binding.tipsView.text = "当天所有任务已执行完毕"
-                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
-                dailyTaskAdapter.updateCurrentTaskState(-1)
-                mainHandler.removeCallbacks(dailyTaskRunnable)
-                countDownTimerService?.updateDailyTaskState()
-            }
-        }
-        return true
-    }
-
     override fun initViewBinding(): ActivityMainBinding {
         return ActivityMainBinding.inflate(layoutInflater)
     }
 
     override fun setupTopBarLayout() {
         insetsController = WindowCompat.getInsetsController(window, binding.rootView)
-        mainHandler.post(timerRunnable)
+
+        // 显示时间
+        mainHandler.post(object : Runnable {
+            override fun run() {
+                val currentTime = dateFormat.format(Date())
+                val parts = currentTime.split(" ")
+                binding.toolbar.apply {
+                    title = parts[2]
+                    subtitle = "${parts[0]} ${parts[1]}"
+                }
+                mainHandler.postDelayed(this, 1000)
+            }
+        })
+
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.menu_add_task -> {
@@ -241,18 +215,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                 R.id.menu_settings -> navigatePageTo<SettingsActivity>()
             }
             true
-        }
-    }
-
-    private val timerRunnable = object : Runnable {
-        override fun run() {
-            val currentTime = dateFormat.format(Date())
-            val parts = currentTime.split(" ")
-            binding.toolbar.apply {
-                title = parts[2]
-                subtitle = "${parts[0]} ${parts[1]}"
-            }
-            mainHandler.postDelayed(this, 1000)
         }
     }
 
@@ -287,11 +249,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
-                val isGestureDetector =
-                    SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean
-                if (isGestureDetector) {
+                if (SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean) {
                     val deltaY = abs(e2.y - (e1?.y ?: e2.y))
-                    Log.d(kTag, "onFling: $deltaY")
 
                     // 从上向下滑动手势
                     if (deltaY > 1000
@@ -367,13 +326,16 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
                 val tick = millisUntilFinished / 1000
                 // 更新悬浮窗倒计时
                 BroadcastManager.getDefault().sendBroadcast(
-                    context, MessageType.UPDATE_FLOATING_WINDOW_TIME.action, mapOf("tick" to tick)
+                    context,
+                    MessageType.UPDATE_FLOATING_WINDOW_TIME.action,
+                    mapOf("tick" to tick)
                 )
             }
 
             override fun onFinish() {
                 //如果倒计时结束，那么表明没有收到打卡成功的通知
                 backToMainActivity()
+
                 LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
                 emailManager.sendEmail(null, "", false)
             }
@@ -536,21 +498,52 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), Handler.Callback
     /**
      * 当日串行任务Runnable
      * */
-    private val dailyTaskRunnable = Runnable {
-        val taskIndex = taskBeans.getTaskIndex()
-        if (taskIndex == -1) {
-            LogFileManager.writeLog("今日任务已全部执行完毕")
-            weakReferenceHandler.sendEmptyMessage(completedAllTaskCode)
-            emailManager.sendEmail("任务状态通知", "今日任务已全部执行完毕", false)
-            return@Runnable
-        }
+    private val dailyTaskRunnable = object : Runnable {
+        override fun run() {
+            try {
+                val index = taskBeans.getTaskIndex()
+                if (index == -1) {
+                    LogFileManager.writeLog("今日任务已全部执行完毕")
+                    mainHandler.removeCallbacks(this)
 
-        LogFileManager.writeLog("执行任务，任务index是: $taskIndex，时间是: ${taskBeans[taskIndex].time}")
-        weakReferenceHandler.run {
-            val message = obtainMessage()
-            message.what = startTaskCode
-            message.obj = taskIndex
-            sendMessage(message)
+                    binding.tipsView.text = "当天所有任务已执行完毕"
+                    binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
+
+                    dailyTaskAdapter.updateCurrentTaskState(-1)
+                    countDownTimerService?.updateDailyTaskState()
+
+                    emailManager.sendEmail("任务状态通知", "今日任务已全部执行完毕", false)
+                    return
+                }
+
+                // 二次验证索引是否在有效范围内
+                if (index < 0 || index >= taskBeans.size) {
+                    LogFileManager.writeLog("任务索引超出范围: $index, 数组大小: ${taskBeans.size}")
+                    return
+                }
+
+                LogFileManager.writeLog("执行任务，任务index是: $index，时间是: ${taskBeans[index].time}")
+                val task = taskBeans[index]
+                val taskIndex = index + 1
+                binding.tipsView.text = String.format(
+                    Locale.getDefault(), "准备执行第 %d 个任务", taskIndex
+                )
+                binding.tipsView.setTextColor(R.color.theme_color.convertColor(context))
+
+                val pair = task.diffCurrent()
+                dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
+                val diff = pair.second
+                emailManager.sendEmail(
+                    "任务执行通知",
+                    "准备执行第 $taskIndex 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
+                    false
+                )
+                countDownTimerService?.startCountDown(taskIndex, diff)
+            } catch (e: IndexOutOfBoundsException) {
+                LogFileManager.writeLog("任务数组访问越界: ${e.message}")
+            } catch (e: Exception) {
+                LogFileManager.writeLog("执行任务时发生异常: ${e.message}")
+            }
         }
     }
 
