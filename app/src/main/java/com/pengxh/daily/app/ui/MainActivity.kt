@@ -136,7 +136,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                             startExecuteTask()
                         } else {
                             emailManager.sendEmail(
-                                "启动任务通知", "任务启动失败，任务已在运行中，请勿重复启动", false
+                                "启动任务通知",
+                                "任务启动失败，任务已在运行中，请勿重复启动",
+                                false
                             )
                         }
                     }
@@ -146,7 +148,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                             stopExecuteTask()
                         } else {
                             emailManager.sendEmail(
-                                "停止任务通知", "任务停止失败，任务已经停止，请勿重复停止", false
+                                "停止任务通知",
+                                "任务停止失败，任务已经停止，请勿重复停止",
+                                false
                             )
                         }
                     }
@@ -296,12 +300,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.recyclerView.adapter = dailyTaskAdapter
         binding.recyclerView.addItemDecoration(
             RecyclerViewItemOffsets(
-                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
+                marginOffset,
+                marginOffset shr 1,
+                marginOffset,
+                marginOffset shr 1
             )
         )
 
-        val isFirst = SaveKeyValues.getValue("isFirst", true) as Boolean
-        if (isFirst) {
+        if (SaveKeyValues.getValue("isFirst", true) as Boolean) {
             AlertMessageDialog.Builder()
                 .setContext(this)
                 .setTitle("温馨提醒")
