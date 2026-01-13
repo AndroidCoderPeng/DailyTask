@@ -48,6 +48,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         ) as Int
         binding.timeoutTextView.text = "${time}s"
         binding.keyTextView.text = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
+        binding.autoTaskSwitch.isChecked = SaveKeyValues.getValue(
+            Constant.TASK_AUTO_START_KEY, true
+        ) as Boolean
         val needRandom = SaveKeyValues.getValue(Constant.RANDOM_TIME_KEY, true) as Boolean
         binding.randomTimeSwitch.isChecked = needRandom
         if (needRandom) {

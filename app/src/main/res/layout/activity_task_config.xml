@@ -125,6 +125,52 @@
             android:background="@color/white"
             android:paddingHorizontal="@dimen/dp_16">
 
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="循环任务"
+                    android:textColor="@color/text_default_color"
+                    android:textSize="@dimen/sp_16" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="end"
+                    android:layout_marginTop="@dimen/dp_4"
+                    android:singleLine="true"
+                    android:text="注意：此开关只能通过远程指令修改"
+                    android:textColor="@color/red"
+                    android:textSize="@dimen/sp_10" />
+            </LinearLayout>
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/autoTaskSwitch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:clickable="false"
+                android:focusable="false" />
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1px"
+            android:layout_marginHorizontal="@dimen/dp_16"
+            android:background="#CCC" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/itemLayoutHeight"
+            android:background="@color/white"
+            android:paddingHorizontal="@dimen/dp_16">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
