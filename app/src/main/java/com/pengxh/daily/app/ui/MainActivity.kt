@@ -652,6 +652,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         insetsController.apply {
             hide(WindowInsetsCompat.Type.statusBars())
             hide(WindowInsetsCompat.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
 
         //显示蒙层
@@ -682,6 +683,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         insetsController.apply {
             show(WindowInsetsCompat.Type.statusBars())
             show(WindowInsetsCompat.Type.navigationBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
         }
 
         //隐藏蒙层
