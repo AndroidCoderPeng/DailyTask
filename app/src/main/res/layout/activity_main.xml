@@ -34,7 +34,8 @@
                 android:layout_marginTop="@dimen/dp_16"
                 android:layout_marginBottom="@dimen/dp_8"
                 android:backgroundTint="@color/white"
-                app:cardCornerRadius="@dimen/dp_16">
+                app:cardCornerRadius="@dimen/dp_16"
+                app:cardElevation="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
