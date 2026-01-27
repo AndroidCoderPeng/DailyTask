@@ -102,4 +102,6 @@ dependencies {
     implementation 'com.google.code.gson:gson:2.13.2'
     //事件总线
     implementation 'org.greenrobot:eventbus:3.3.1'
+    //异常日志记录
+    implementation 'com.tencent.bugly:crashreport:4.1.9.3'
 }

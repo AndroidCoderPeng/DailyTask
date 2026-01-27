@@ -5,6 +5,7 @@ import androidx.room.Room.databaseBuilder
 import com.pengxh.daily.app.sqlite.DailyTaskDataBase
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.tencent.bugly.crashreport.CrashReport
 
 
 /**
@@ -31,6 +32,10 @@ class DailyTaskApplication : Application() {
         initApplication(this)
         SaveKeyValues.initSharedPreferences(this)
         LogFileManager.initLogFile(this)
+
+        val isDebugMode = BuildConfig.DEBUG
+        CrashReport.initCrashReport(this, "ecbdc9baf5", isDebugMode)
+
         dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db")
             .allowMainThreadQueries()
             .build()
