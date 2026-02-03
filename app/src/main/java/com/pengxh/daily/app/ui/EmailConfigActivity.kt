@@ -17,17 +17,19 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
     private val emailManager by lazy { EmailManager(this) }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val config = DatabaseWrapper.loadEmailConfig()
-        if (config != null) {
-            val outbox = if (config.outbox.contains("@qq.com")) {
-                config.outbox.dropLast(7)
-            } else {
-                config.outbox
+        val configs = DatabaseWrapper.loadAll()
+        if (configs.isNotEmpty()) {
+            configs.last().run {
+                val outbox = if (outbox.contains("@qq.com")) {
+                    outbox.dropLast(7)
+                } else {
+                    outbox
+                }
+                binding.emailSendAddressView.setText(outbox)
+                binding.emailSendCodeView.setText(authCode)
+                binding.emailInboxView.setText(inbox)
+                binding.emailTitleView.setText(title)
             }
-            binding.emailSendAddressView.setText(outbox)
-            binding.emailSendCodeView.setText(config.authCode)
-            binding.emailInboxView.setText(config.inbox)
-            binding.emailTitleView.setText(config.title)
         }
     }
 

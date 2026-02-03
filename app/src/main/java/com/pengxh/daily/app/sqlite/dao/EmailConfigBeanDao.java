@@ -7,6 +7,8 @@ import androidx.room.Update;
 
 import com.pengxh.daily.app.sqlite.bean.EmailConfigBean;
 
+import java.util.List;
+
 @Dao
 public interface EmailConfigBeanDao {
     @Insert
@@ -17,4 +19,7 @@ public interface EmailConfigBeanDao {
 
     @Query("SELECT * FROM email_config_table ORDER BY createTime DESC LIMIT 1")
     EmailConfigBean loadEmailConfig();
+
+    @Query("SELECT * FROM email_config_table")
+    List<EmailConfigBean> loadAll();
 }
