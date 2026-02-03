@@ -56,12 +56,13 @@ class EmailManager(private val context: Context) {
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
-        val config = DatabaseWrapper.loadEmailConfig()
-        if (config == null) {
+        val configs = DatabaseWrapper.loadAll()
+        if (configs.isEmpty()) {
             onFailure?.invoke("邮箱未配置，无法发送邮件")
             return
         }
 
+        val config = configs.last()
         Log.d(kTag, "邮箱配置: ${config.toJson()}")
 
         val authenticator = EmailAuthenticator(config.outbox, config.authCode)

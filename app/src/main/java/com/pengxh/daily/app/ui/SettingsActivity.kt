@@ -129,7 +129,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     override fun onResume() {
         super.onResume()
-        binding.emailSwitch.isChecked = DatabaseWrapper.loadEmailConfig() != null
+        binding.emailSwitch.isChecked = DatabaseWrapper.loadAll().isNotEmpty()
         binding.gestureDetectorSwitch.isChecked =
             SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean
         binding.backToHomeSwitch.isChecked =
