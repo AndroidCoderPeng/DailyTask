@@ -145,7 +145,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 return@setOnClickListener
             }
 
-            val emailConfig = DatabaseWrapper.loadEmailConfig()
+            val configs = DatabaseWrapper.loadAll()
+            if (configs.isNotEmpty()) {
+                val emailConfig = configs.last()
+            }
             val isDetectGesture = SaveKeyValues.getValue(
                 Constant.GESTURE_DETECTOR_KEY, false
             ) as Boolean
