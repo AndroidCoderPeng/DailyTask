@@ -62,7 +62,7 @@ object DatabaseWrapper {
         emailConfigDao.insert(bean)
     }
 
-    fun loadEmailConfig(): EmailConfigBean? {
-        return emailConfigDao.loadEmailConfig()
+    fun loadAll(): List<EmailConfigBean> {
+        return emailConfigDao.loadAll()
     }
 }
