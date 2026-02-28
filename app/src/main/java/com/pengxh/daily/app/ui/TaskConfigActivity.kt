@@ -140,11 +140,18 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.outputLayout.setOnClickListener {
             val taskBeans = DatabaseWrapper.loadAllTask()
-
             if (taskBeans.isEmpty()) {
                 "没有任务可以导出".show(this)
                 return@setOnClickListener
             }
+
+            val emailConfig = DatabaseWrapper.loadEmailConfig()
+            val isDetectGesture = SaveKeyValues.getValue(
+                Constant.GESTURE_DETECTOR_KEY, false
+            ) as Boolean
+            val isBackToHome = SaveKeyValues.getValue(
+                Constant.BACK_TO_HOME_KEY, false
+            ) as Boolean
 
             TaskMessageDialog.Builder()
                 .setContext(this)
