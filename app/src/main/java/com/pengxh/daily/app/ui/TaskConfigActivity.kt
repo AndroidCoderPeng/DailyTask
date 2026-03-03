@@ -12,7 +12,6 @@ import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
-import com.pengxh.daily.app.widgets.TaskMessageDialog
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.isNumber
@@ -51,7 +50,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
         ) as Int
         binding.timeoutTextView.text = "${time}s"
-        binding.keyTextView.text = SaveKeyValues.getValue(Constant.TASK_NAME_KEY, "打卡") as String
+        binding.keyTextView.text = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
         binding.autoTaskSwitch.isChecked = SaveKeyValues.getValue(
             Constant.TASK_AUTO_START_KEY, true
         ) as Boolean
@@ -101,7 +100,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 .setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
-                        SaveKeyValues.putValue(Constant.TASK_NAME_KEY, value)
+                        SaveKeyValues.putValue(Constant.TASK_COMMAND_KEY, value)
                         binding.keyTextView.text = value
                     }
 
@@ -176,7 +175,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             ) as Int
             exportData.overTime = time
 
-            exportData.command = binding.keyTextView.text.toString()
+            val command = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
+            exportData.command = command
 
             exportData.isAutoStart = SaveKeyValues.getValue(
                 Constant.TASK_AUTO_START_KEY, true
@@ -189,19 +189,12 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
             exportData.timeRange = value
 
-            Log.d(kTag, exportData.toJson())
+            val json = exportData.toJson()
+            Log.d(kTag, json)
 
-            TaskMessageDialog.Builder()
-                .setContext(this)
-                .setTasks(taskBeans)
-                .setOnDialogButtonClickListener(object :
-                    TaskMessageDialog.OnDialogButtonClickListener {
-                    override fun onConfirmClick(taskValue: String) {
-                        val cipData = ClipData.newPlainText("DailyTask", taskValue)
-                        clipboard.setPrimaryClip(cipData)
-                        "任务已复制到剪切板".show(context)
-                    }
-                }).build().show()
+            val cipData = ClipData.newPlainText("TaskConfig", json)
+            clipboard.setPrimaryClip(cipData)
+            "配置已复制到剪切板".show(context)
         }
     }
 
