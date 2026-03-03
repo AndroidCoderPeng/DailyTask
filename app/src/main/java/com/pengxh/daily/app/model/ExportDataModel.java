@@ -6,10 +6,7 @@ import com.pengxh.daily.app.sqlite.bean.EmailConfigBean;
 import java.util.List;
 
 /**
- * @description: 导出数据模型
- * @author: Pengxh
- * @email: <EMAIL>
- * @date: 2020/6/10 21:05
+ * 导出数据模型
  */
 public class ExportDataModel {
     private List<DailyTaskBean> tasks; // 任务列表

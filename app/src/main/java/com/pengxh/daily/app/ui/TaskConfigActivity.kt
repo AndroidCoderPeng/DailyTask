@@ -3,9 +3,11 @@ package com.pengxh.daily.app.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
+import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
@@ -15,12 +17,14 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.isNumber
 import com.pengxh.kt.lite.extensions.show
+import com.pengxh.kt.lite.extensions.toJson
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
+    private val kTag = "TaskConfigActivity"
     private val context = this
     private val hourArray = arrayListOf("0", "1", "2", "3", "4", "5", "6", "自定义（单位：时）")
     private val timeArray = arrayListOf("15", "30", "45", "自定义（单位：秒）")
@@ -139,22 +143,53 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.outputLayout.setOnClickListener {
+            val exportData = ExportDataModel()
+
             val taskBeans = DatabaseWrapper.loadAllTask()
             if (taskBeans.isEmpty()) {
                 "没有任务可以导出".show(this)
                 return@setOnClickListener
             }
+            exportData.tasks = taskBeans
 
             val configs = DatabaseWrapper.loadAll()
             if (configs.isNotEmpty()) {
-                val emailConfig = configs.last()
+                exportData.emailConfig = configs.last()
             }
             val isDetectGesture = SaveKeyValues.getValue(
                 Constant.GESTURE_DETECTOR_KEY, false
             ) as Boolean
+            exportData.isDetectGesture = isDetectGesture
+
             val isBackToHome = SaveKeyValues.getValue(
                 Constant.BACK_TO_HOME_KEY, false
             ) as Boolean
+            exportData.isBackToHome = isBackToHome
+
+            val hour = SaveKeyValues.getValue(
+                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+            ) as Int
+            exportData.resetTime = hour
+
+            val time = SaveKeyValues.getValue(
+                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+            ) as Int
+            exportData.overTime = time
+
+            exportData.command = binding.keyTextView.text.toString()
+
+            exportData.isAutoStart = SaveKeyValues.getValue(
+                Constant.TASK_AUTO_START_KEY, true
+            ) as Boolean
+
+            exportData.isRandomTime = SaveKeyValues.getValue(
+                Constant.RANDOM_TIME_KEY, true
+            ) as Boolean
+
+            val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+            exportData.timeRange = value
+
+            Log.d(kTag, exportData.toJson())
 
             TaskMessageDialog.Builder()
                 .setContext(this)
