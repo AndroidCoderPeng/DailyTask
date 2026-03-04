@@ -48,9 +48,11 @@ import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageType
+import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
@@ -258,6 +260,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         Intent(this, CountDownTimerService::class.java).apply {
             bindService(this, connection, BIND_AUTO_CREATE)
         }
+
+        val watermark = DailyTask.getWatermarkText()
+        binding.contentView.background = WatermarkDrawable(watermark)
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(

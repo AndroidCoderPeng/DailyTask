@@ -20,7 +20,9 @@ import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.MessageType
+import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
@@ -80,6 +82,9 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         if (notificationEnable()) {
             turnOnNotificationMonitorService()
         }
+
+        val watermark = DailyTask.getWatermarkText()
+        binding.contentView.background = WatermarkDrawable(watermark)
     }
 
     override fun observeRequestState() {
