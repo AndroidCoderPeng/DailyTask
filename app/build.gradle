@@ -15,6 +15,16 @@ android {
         targetSdk 36
         versionCode 2251
         versionName '2.2.5.1'
+        ndkVersion '21.4.7075529'
+
+        ndk {
+            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
+        }
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++14"
+            }
+        }
     }
 
     flavorDimensions += 'versionCode'
@@ -36,12 +46,12 @@ android {
         }
     }
 
-    GString id = "com.alibaba.android.${createRandomCode()}"
-    productFlavors {
-        daily {
-            applicationId = id
-        }
-    }
+//    GString id = "com.alibaba.android.${createRandomCode()}"
+//    productFlavors {
+//        daily {
+//            applicationId = id
+//        }
+//    }
 
     packagingOptions {
         exclude 'META-INF/NOTICE.md'
@@ -51,6 +61,13 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
     }
 
     kotlinOptions {
@@ -103,5 +120,6 @@ dependencies {
     //事件总线
     implementation 'org.greenrobot:eventbus:3.3.1'
     //异常日志记录
+    //noinspection Aligned16KB
     implementation 'com.tencent.bugly:crashreport:4.1.9.3'
 }
