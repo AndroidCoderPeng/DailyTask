@@ -217,7 +217,19 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     }
                 }
 
-                R.id.menu_settings -> navigatePageTo<SettingsActivity>()
+                R.id.menu_settings -> {
+                    AlertMessageDialog.Builder()
+                        .setContext(this)
+                        .setTitle("温馨提醒")
+                        .setMessage("本软件完全免费！近期发现有人在咸鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！")
+                        .setPositiveButton("知道了")
+                        .setOnDialogButtonClickListener(object :
+                            AlertMessageDialog.OnDialogButtonClickListener {
+                            override fun onConfirmClick() {
+                                navigatePageTo<SettingsActivity>()
+                            }
+                        }).build().show()
+                }
             }
             true
         }
