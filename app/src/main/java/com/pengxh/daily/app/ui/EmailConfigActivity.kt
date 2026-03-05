@@ -1,11 +1,13 @@
 package com.pengxh.daily.app.ui
 
+import android.os.Build
 import android.os.Bundle
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityEmailConfigBinding
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.kt.lite.base.KotlinBaseActivity
+import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
@@ -42,6 +44,9 @@ class EmailConfigActivity : KotlinBaseActivity<ActivityEmailConfigBinding>() {
     }
 
     override fun setupTopBarLayout() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
+            binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
+        }
         binding.toolbar.setNavigationOnClickListener { finish() }
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             if (menuItem.itemId == R.id.menu_right) {

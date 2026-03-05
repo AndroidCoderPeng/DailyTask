@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
@@ -25,6 +26,7 @@ import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
+import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.Dispatchers
@@ -72,6 +74,9 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun setupTopBarLayout() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
+            binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
+        }
         binding.toolbar.setNavigationOnClickListener { finish() }
     }
 

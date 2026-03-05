@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
@@ -58,6 +59,7 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
+import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.extensions.show
@@ -178,6 +180,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun setupTopBarLayout() {
         insetsController = WindowCompat.getInsetsController(window, binding.rootView)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
+            binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
+        }
 
         // 显示时间
         mainHandler.post(object : Runnable {

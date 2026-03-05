@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.ui
 
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
@@ -12,6 +13,7 @@ import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemDivider
+import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
 class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
@@ -26,6 +28,9 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
     }
 
     override fun setupTopBarLayout() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
+            binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
+        }
         binding.toolbar.setNavigationOnClickListener { finish() }
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             if (menuItem.itemId == R.id.menu_clear_history) {

@@ -2,6 +2,7 @@ package com.pengxh.daily.app.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -14,6 +15,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
+import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.isNumber
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.toJson
@@ -38,6 +40,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun setupTopBarLayout() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
+            binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
+        }
         binding.toolbar.setNavigationOnClickListener { finish() }
     }
 
