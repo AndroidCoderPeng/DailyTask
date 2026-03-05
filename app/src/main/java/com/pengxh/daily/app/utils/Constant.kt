@@ -1,5 +1,7 @@
 package com.pengxh.daily.app.utils
 
+import com.pengxh.kt.lite.utils.SaveKeyValues
+
 /**
  * @author: Pengxh
  * @email: 290677893@qq.com
@@ -14,8 +16,10 @@ object Constant {
     const val RANDOM_TIME_KEY = "RANDOM_TIME_KEY"
     const val RANDOM_MINUTE_RANGE_KEY = "RANDOM_MINUTE_RANGE_KEY"
     const val TASK_AUTO_START_KEY = "TASK_AUTO_START_KEY"
+    const val TARGET_APP_KEY = "TARGET_APP_KEY"
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
+    const val FEI_SHU = "com.ss.android.lark" // 飞书
     const val WECHAT = "com.tencent.mm" // 微信
     const val WEWORK = "com.tencent.wework" // 企业微信
     const val QQ = "com.tencent.mobileqq" // QQ
@@ -28,6 +32,12 @@ object Constant {
 
     // 目标APP
     fun getTargetApp(): String {
-        return DING_DING
+        val index = SaveKeyValues.getValue(TARGET_APP_KEY, 0) as Int
+        return when (index) {
+            0 -> DING_DING
+            1 -> FEI_SHU
+//            2 -> WEWORK
+            else -> DING_DING
+        }
     }
 }

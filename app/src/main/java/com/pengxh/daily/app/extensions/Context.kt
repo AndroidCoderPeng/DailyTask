@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.event.FloatViewTimerEvent
 import com.pengxh.daily.app.ui.MainActivity
@@ -48,6 +49,7 @@ fun Context.isApplicationExist(packageName: String): Boolean {
  */
 fun Context.openApplication(needCountDown: Boolean) {
     val targetApp = Constant.getTargetApp()
+    Log.d("Ex-Context", "openApplication: $targetApp")
     if (!isApplicationExist(targetApp)) {
         AlertMessageDialog.Builder()
             .setContext(this)
