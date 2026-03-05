@@ -509,11 +509,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * */
     private fun startExecuteTask() {
         LogFileManager.writeLog("开始执行每日任务")
-        // 启动任务调度
-        mainHandler.post(dailyTaskRunnable)
-
         // 更新状态标志
         isTaskStarted = true
+
+        // 启动任务调度
+        mainHandler.post(dailyTaskRunnable)
 
         // 更新按钮状态
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
@@ -578,6 +578,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private fun stopExecuteTask() {
         LogFileManager.writeLog("停止执行每日任务")
+        isTaskStarted = false
 
         // 取消任务调度
         mainHandler.removeCallbacks(dailyTaskRunnable)
@@ -592,7 +593,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         // 重置UI状态
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = ""
-        isTaskStarted = false
 
         // 重置按钮状态
         binding.executeTaskButton.setIconResource(R.mipmap.ic_start)

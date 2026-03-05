@@ -12,7 +12,6 @@ import android.os.CountDownTimer
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
@@ -129,23 +128,32 @@ class ForegroundRunningService : Service() {
         startResetTaskTimer(hour)
     }
 
+    private fun updateResetTimeView(seconds: Int) {
+        val hours = seconds / 3600
+        val minutes = (seconds % 3600) / 60
+        val s = String.format(Locale.getDefault(), "%02d小时%02d分钟", hours, minutes)
+        val message = String.format(Locale.getDefault(), "%s后刷新每日任务", s)
+        BroadcastManager.getDefault().sendBroadcast(
+            this@ForegroundRunningService,
+            MessageType.UPDATE_RESET_TICK_TIME.action,
+            mapOf("message" to message)
+        )
+    }
+
     private fun startResetTaskTimer(hour: Int) {
         if (isTimerRunning) return  // 防止重复启动
         val currentDiffSeconds = resetTaskSeconds(hour)
+        updateResetTimeView(currentDiffSeconds)
 
         // 先取消之前的计时器
         taskTimer?.cancel()
         taskTimer = object : CountDownTimer(currentDiffSeconds * 1000L, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val seconds = (millisUntilFinished / 1000).toInt()
-                val message = String.format(
-                    Locale.getDefault(), "%s后刷新每日任务", seconds.formatTime()
-                )
-                BroadcastManager.getDefault().sendBroadcast(
-                    this@ForegroundRunningService,
-                    MessageType.UPDATE_RESET_TICK_TIME.action,
-                    mapOf("message" to message)
-                )
+                // 每分钟发送一次广播，更省电
+                if (seconds % 60 == 0) {
+                    updateResetTimeView(seconds)
+                }
             }
 
             override fun onFinish() {
