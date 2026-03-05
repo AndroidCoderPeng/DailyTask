@@ -84,7 +84,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         val watermark = DailyTask.getWatermarkText()
-        binding.contentView.background = WatermarkDrawable(watermark)
+        binding.contentView.background = WatermarkDrawable(this, watermark)
     }
 
     override fun observeRequestState() {

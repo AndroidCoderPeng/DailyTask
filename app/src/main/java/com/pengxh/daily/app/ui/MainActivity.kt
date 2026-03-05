@@ -262,7 +262,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
 
         val watermark = DailyTask.getWatermarkText()
-        binding.contentView.background = WatermarkDrawable(watermark)
+        binding.contentView.background = WatermarkDrawable(this, watermark)
 
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(

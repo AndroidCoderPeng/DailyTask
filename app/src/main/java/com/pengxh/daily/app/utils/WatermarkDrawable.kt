@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.utils
 
+import android.content.Context
 import android.graphics.Canvas
 import android.graphics.ColorFilter
 import android.graphics.Paint
@@ -7,14 +8,16 @@ import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withRotation
+import com.pengxh.kt.lite.extensions.sp2px
 import kotlin.math.sqrt
 
-class WatermarkDrawable(private val watermark: String) : Drawable() {
+class WatermarkDrawable(private val context: Context, private val watermark: String) : Drawable() {
 
-    private val paint = Paint().apply {
-        textSize = 30f
-        color = "#50AEAEAE".toColorInt()
-        isAntiAlias = true
+    private val paint by lazy {
+        Paint().apply {
+            textSize = 15f.sp2px(context)
+            color = "#FFDFDFDF".toColorInt()
+        }
     }
 
     override fun draw(canvas: Canvas) {
@@ -38,14 +41,13 @@ class WatermarkDrawable(private val watermark: String) : Drawable() {
                 var x = -diagonal + offset
 
                 // 绘制这一行的水印
-                val horizontalSpacing = diagonal * 0.4f
+                val horizontalSpacing = diagonal * 0.35f
                 repeat((0..3).count()) {
                     canvas.drawText(watermark, x, y, paint)
                     x += horizontalSpacing
                 }
 
-                // 垂直间距：每行之间留出足够空间
-                y += textHeight + 50
+                y += textHeight + 180
                 rowIndex++
             }
         }
