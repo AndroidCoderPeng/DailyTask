@@ -35,7 +35,7 @@ object Constant {
         val index = SaveKeyValues.getValue(TARGET_APP_KEY, 0) as Int
         return when (index) {
             0 -> DING_DING
-            1 -> FEI_SHU
+//            1 -> FEI_SHU
 //            2 -> WEWORK
             else -> DING_DING
         }

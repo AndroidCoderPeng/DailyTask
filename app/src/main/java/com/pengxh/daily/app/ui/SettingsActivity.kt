@@ -45,7 +45,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val apps by lazy {
         listOf(
             R.drawable.ic_ding_ding,
-            R.drawable.ic_fei_shu,
+//            R.drawable.ic_fei_shu,
 //            R.drawable.ic_wei_xin
         )
     }
