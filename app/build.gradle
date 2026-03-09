@@ -13,8 +13,8 @@ android {
         applicationId 'com.pengxh.daily.app'
         minSdk 26
         targetSdk 36
-        versionCode 2251
-        versionName '2.2.5.1'
+        versionCode 2252
+        versionName '2.2.5.2'
         ndkVersion '21.4.7075529'
 
         ndk {
@@ -46,12 +46,12 @@ android {
         }
     }
 
-//    GString id = "com.alibaba.android.${createRandomCode()}"
-//    productFlavors {
-//        daily {
-//            applicationId = id
-//        }
-//    }
+    GString id = "com.alibaba.android.${createRandomCode()}"
+    productFlavors {
+        daily {
+            applicationId = id
+        }
+    }
 
     packagingOptions {
         exclude 'META-INF/NOTICE.md'

@@ -74,3 +74,4 @@ lint/tmp/
 apk/daily/release/*.json
 *.zip
 *.dm
+*.apk
