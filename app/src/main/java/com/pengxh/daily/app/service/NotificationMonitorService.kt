@@ -27,9 +27,7 @@ class NotificationMonitorService : NotificationListenerService() {
     private val kTag = "MonitorService"
     private val emailManager by lazy { EmailManager(this) }
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
-    private val auxiliaryApp = arrayOf(
-        Constant.WECHAT, Constant.WEWORK, Constant.QQ, Constant.TIM, Constant.ZFB
-    )
+    private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
 
     /**
      * 有可用的并且和通知管理器连接成功时回调

@@ -20,8 +20,9 @@ object Constant {
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
     const val FEI_SHU = "com.ss.android.lark" // 飞书
-    const val WECHAT = "com.tencent.mm" // 微信
     const val WEWORK = "com.tencent.wework" // 企业微信
+
+    const val WECHAT = "com.tencent.mm" // 微信
     const val QQ = "com.tencent.mobileqq" // QQ
     const val TIM = "com.tencent.tim" // TIM
     const val ZFB = "com.eg.android.AlipayGphone" // 支付宝
