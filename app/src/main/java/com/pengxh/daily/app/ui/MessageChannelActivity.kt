@@ -70,7 +70,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     override fun initEvent() {
         binding.wxRadioButton.setOnCheckedChangeListener { _, isChecked ->
             binding.qqRadioButton.isChecked = !isChecked
-            if (isChecked && !binding.wxKeyView.text.toString().isNotBlank()) {
+            if (isChecked && binding.wxKeyView.text.toString().isNotBlank()) {
                 SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 0)
             } else {
                 "请先配置微信 Webhook key".show(context)
