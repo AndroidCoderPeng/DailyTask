@@ -34,6 +34,7 @@
                 android:orientation="vertical">
 
                 <RelativeLayout
+                    android:id="@+id/targetAppLayout"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/itemLayoutHeight"
                     android:background="@drawable/bg_solid_layout_white_16"
@@ -56,21 +57,6 @@
                         android:background="#F1F1F1"
                         app:shapeAppearance="@style/RoundedStyle" />
                 </RelativeLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1px"
-                    android:layout_marginHorizontal="@dimen/dp_16"
-                    android:background="#CCC" />
-
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:padding="@dimen/dp_16"
-                    android:scrollbars="none"
-                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
             </LinearLayout>
 
             <LinearLayout

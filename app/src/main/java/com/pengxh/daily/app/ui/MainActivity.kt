@@ -778,6 +778,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         dailyTaskAdapter.refresh(taskBeans)
 
                         // 写入配置
+                        SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, config.wxKey)
+
                         val email = config.emailConfig
                         if (email != null) {
                             DatabaseWrapper.insertConfig(
@@ -787,14 +789,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                                 email.title
                             )
                         }
+
                         SaveKeyValues.putValue(
                             Constant.GESTURE_DETECTOR_KEY,
                             config.isDetectGesture
                         )
+
                         SaveKeyValues.putValue(
                             Constant.BACK_TO_HOME_KEY,
                             config.isBackToHome
                         )
+
                         SaveKeyValues.putValue(
                             Constant.RESET_TIME_KEY,
                             config.resetTime
@@ -813,10 +818,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                             Constant.TASK_AUTO_START_KEY,
                             config.isAutoStart
                         )
+
                         SaveKeyValues.putValue(
                             Constant.RANDOM_TIME_KEY,
                             config.isRandomTime
                         )
+
                         SaveKeyValues.putValue(
                             Constant.RANDOM_MINUTE_RANGE_KEY,
                             config.timeRange

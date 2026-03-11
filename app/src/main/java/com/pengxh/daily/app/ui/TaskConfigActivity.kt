@@ -156,6 +156,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             }
             exportData.tasks = taskBeans
 
+            val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
+            exportData.wxKey = key
+
             val configs = DatabaseWrapper.loadAll()
             if (configs.isNotEmpty()) {
                 exportData.emailConfig = configs.last()

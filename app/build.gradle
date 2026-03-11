@@ -46,12 +46,12 @@ android {
         }
     }
 
-    GString id = "com.alibaba.android.${createRandomCode()}"
-    productFlavors {
-        daily {
-            applicationId = id
-        }
-    }
+//    GString id = "com.alibaba.android.${createRandomCode()}"
+//    productFlavors {
+//        daily {
+//            applicationId = id
+//        }
+//    }
 
     packagingOptions {
         exclude 'META-INF/NOTICE.md'
@@ -122,4 +122,12 @@ dependencies {
     //异常日志记录
     //noinspection Aligned16KB
     implementation 'com.tencent.bugly:crashreport:4.1.9.3'
+    //返回值转换器
+    implementation 'com.jakewharton.retrofit:retrofit2-kotlin-coroutines-adapter:0.9.2'
+    implementation 'com.squareup.retrofit2:converter-gson:3.0.0'
+    //okhttp3日志拦截器
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.1.0'
+    //网络请求和接口封装
+    implementation 'com.squareup.retrofit2:retrofit:3.0.0'
+    implementation 'com.squareup.okhttp3:okhttp:5.1.0'
 }

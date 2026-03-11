@@ -24,15 +24,13 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.WatermarkDrawable
-import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
-import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
-import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
+import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -41,14 +39,15 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     private val context = this
 
-    private val marginOffset by lazy { 16.dp2px(this) }
-    private val apps by lazy {
+    private val apps = arrayListOf("钉钉", "企业微信", "飞书")
+    private val icons by lazy {
         listOf(
             R.drawable.ic_ding_ding,
-//            R.drawable.ic_fei_shu,
-//            R.drawable.ic_wei_xin
+            R.drawable.ic_wei_xin,
+            R.drawable.ic_fei_shu
         )
     }
+
     private val actions by lazy {
         listOf(
             MessageType.NOTICE_LISTENER_CONNECTED.action,
@@ -97,22 +96,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
 
         val index = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
-        binding.iconView.setBackgroundResource(apps[index])
-        val adapter = object : NormalRecyclerAdapter<Int>(
-            R.layout.item_app_rv_l, apps.toMutableList()
-        ) {
-            override fun convertView(viewHolder: ViewHolder, position: Int, item: Int) {
-                viewHolder.setImageResource(R.id.imageView, item)
-            }
-        }
-        binding.recyclerView.addItemDecoration(RecyclerViewItemOffsets(0, 0, marginOffset, 0))
-        binding.recyclerView.adapter = adapter
-        adapter.setOnItemClickedListener(object : NormalRecyclerAdapter.OnItemClickedListener<Int> {
-            override fun onItemClicked(position: Int, item: Int) {
-                binding.iconView.setBackgroundResource(item)
-                SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
-            }
-        })
+        binding.iconView.setBackgroundResource(icons[index])
 
         binding.appVersion.text = BuildConfig.VERSION_NAME
         if (notificationEnable()) {
@@ -128,6 +112,23 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun initEvent() {
+        binding.targetAppLayout.setOnClickListener {
+            BottomActionSheet.Builder()
+                .setContext(this)
+                .setActionItemTitle(apps)
+                .setItemTextColor(R.color.theme_color.convertColor(this))
+                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+                    override fun onActionItemClick(position: Int) {
+                        if (position == 2) {
+                            "暂不支持飞书".show(context)
+                            return
+                        }
+                        binding.iconView.setBackgroundResource(icons[position])
+                        SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
+                    }
+                }).build().show()
+        }
+
         binding.emailConfigLayout.setOnClickListener {
             navigatePageTo<EmailConfigActivity>()
         }

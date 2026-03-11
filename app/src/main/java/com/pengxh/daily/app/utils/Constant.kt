@@ -17,10 +17,11 @@ object Constant {
     const val RANDOM_MINUTE_RANGE_KEY = "RANDOM_MINUTE_RANGE_KEY"
     const val TASK_AUTO_START_KEY = "TASK_AUTO_START_KEY"
     const val TARGET_APP_KEY = "TARGET_APP_KEY"
+    const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY"
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
-    const val FEI_SHU = "com.ss.android.lark" // 飞书
     const val WEWORK = "com.tencent.wework" // 企业微信
+    const val FEI_SHU = "com.ss.android.lark" // 飞书
 
     const val WECHAT = "com.tencent.mm" // 微信
     const val QQ = "com.tencent.mobileqq" // QQ
@@ -28,6 +29,7 @@ object Constant {
     const val ZFB = "com.eg.android.AlipayGphone" // 支付宝
 
     const val FOREGROUND_RUNNING_SERVICE_TITLE = "为保证程序正常运行，请勿移除此通知"
+    const val WX_WEB_HOOK_URL = "https://qyapi.weixin.qq.com"
     const val DEFAULT_RESET_HOUR = 0
     const val DEFAULT_OVER_TIME = 30
 
@@ -36,8 +38,8 @@ object Constant {
         val index = SaveKeyValues.getValue(TARGET_APP_KEY, 0) as Int
         return when (index) {
             0 -> DING_DING
-//            1 -> FEI_SHU
-//            2 -> WEWORK
+            1 -> WEWORK
+//            2 -> FEI_SHU
             else -> DING_DING
         }
     }
