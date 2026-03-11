@@ -68,12 +68,14 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     override fun initEvent() {
-        binding.wxRadioButton.setOnCheckedChangeListener { _, isChecked ->
-            binding.qqRadioButton.isChecked = !isChecked
-            if (isChecked && binding.wxKeyView.text.toString().isNotBlank()) {
+        binding.wxRadioButton.setOnClickListener {
+            val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
+            if (binding.wxRadioButton.isChecked && key.isNotBlank()) {
                 SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 0)
+                binding.qqRadioButton.isChecked = false
             } else {
-                "请先配置微信 Webhook key".show(context)
+                "请先配置企业微信消息 Webhook key".show(context)
+                binding.wxRadioButton.isChecked = false
             }
         }
 
@@ -103,10 +105,14 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 }).build().show()
         }
 
-        binding.qqRadioButton.setOnCheckedChangeListener { _, isChecked ->
-            binding.wxRadioButton.isChecked = !isChecked
-            if (isChecked) {
+        binding.qqRadioButton.setOnClickListener {
+            val configs = DatabaseWrapper.loadAll()
+            if (binding.qqRadioButton.isChecked && configs.isNotEmpty()) {
                 SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 1)
+                binding.wxRadioButton.isChecked = false
+            } else {
+                "请先配置QQ邮箱".show(context)
+                binding.qqRadioButton.isChecked = false
             }
         }
 

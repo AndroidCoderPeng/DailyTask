@@ -18,7 +18,6 @@ import com.pengxh.daily.app.databinding.ActivitySettingsBinding
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.NotificationMonitorService
-import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
@@ -39,14 +38,16 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     private val context = this
 
-    private val apps = arrayListOf("钉钉", "企业微信", "飞书")
+    private val apps = arrayListOf("钉钉", "企业微信", "飞书", "移动办公M3")
     private val icons by lazy {
         listOf(
             R.drawable.ic_ding_ding,
             R.drawable.ic_wei_xin,
-            R.drawable.ic_fei_shu
+            R.drawable.ic_fei_shu,
+            R.mipmap.ic_launcher
         )
     }
+    private val channels = arrayListOf("企业微信", "QQ邮箱")
 
     private val actions by lazy {
         listOf(
@@ -119,18 +120,18 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
-                        if (position == 2) {
-                            "暂不支持飞书".show(context)
-                            return
+                        if (position == 0) {
+                            binding.iconView.setBackgroundResource(icons[position])
+                            SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
+                        } else {
+                            "暂时仅支持钉钉".show(context)
                         }
-                        binding.iconView.setBackgroundResource(icons[position])
-                        SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
                     }
                 }).build().show()
         }
 
-        binding.emailConfigLayout.setOnClickListener {
-            navigatePageTo<EmailConfigActivity>()
+        binding.msgChannelLayout.setOnClickListener {
+            navigatePageTo<MessageChannelActivity>()
         }
 
         binding.taskConfigLayout.setOnClickListener {
@@ -171,7 +172,24 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     override fun onResume() {
         super.onResume()
-        binding.emailSwitch.isChecked = DatabaseWrapper.loadAll().isNotEmpty()
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        when (type) {
+            0 -> {
+                binding.channelView.text = channels[type]
+                binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
+            }
+
+            1 -> {
+                binding.channelView.text = channels[type]
+                binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
+            }
+
+            else -> {
+                binding.channelView.text = "未配置"
+                binding.channelView.setTextColor(R.color.red.convertColor(this))
+            }
+        }
+
         binding.gestureDetectorSwitch.isChecked =
             SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean
         binding.backToHomeSwitch.isChecked =

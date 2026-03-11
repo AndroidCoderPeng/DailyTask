@@ -13,7 +13,7 @@
         android:layout_height="wrap_content"
         android:background="@color/theme_color"
         app:navigationIcon="@drawable/ic_title_left"
-        app:title="消息通道"
+        app:title="消息渠道"
         app:titleTextColor="@color/white" />
 
     <LinearLayout
@@ -87,6 +87,7 @@
                     android:id="@+id/sendWxButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="2dp"
                     android:text="测试企业微信推送" />
             </LinearLayout>
         </LinearLayout>
@@ -257,6 +258,7 @@
                         android:id="@+id/sendEmailButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginEnd="2dp"
                         android:text="测试QQ邮件发送" />
                 </LinearLayout>
             </LinearLayout>

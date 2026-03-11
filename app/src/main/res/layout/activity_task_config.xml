@@ -242,7 +242,7 @@
                 android:layout_height="wrap_content"
                 android:layout_centerVertical="true"
                 android:gravity="center_vertical"
-                android:text="导出任务"
+                android:text="导出配置"
                 android:textColor="@color/text_default_color"
                 android:textSize="@dimen/sp_16" />
 

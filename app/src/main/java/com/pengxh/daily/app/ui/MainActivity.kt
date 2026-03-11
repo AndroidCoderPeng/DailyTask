@@ -5,6 +5,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -25,6 +26,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -33,6 +35,7 @@ import com.google.android.material.textview.MaterialTextView
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
+import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
@@ -54,15 +57,18 @@ import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.WatermarkDrawable
+import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
+import com.pengxh.kt.lite.extensions.getSystemService
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.extensions.show
+import com.pengxh.kt.lite.extensions.timestampToDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
@@ -107,6 +113,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val marginOffset by lazy { 16.dp2px(this) }
     private var isTaskStarted = false
     private var isRefresh = false
+    private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val emailManager by lazy { EmailManager(this) }
     private var timeoutTimer: CountDownTimer? = null
     private val gson by lazy { Gson() }
@@ -140,10 +147,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         if (!isTaskStarted) {
                             startExecuteTask()
                         } else {
-                            emailManager.sendEmail(
+                            sendChannelMessage(
                                 "启动任务通知",
                                 "任务启动失败，任务已在运行中，请勿重复启动",
-                                false
                             )
                         }
                     }
@@ -152,10 +158,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         if (isTaskStarted) {
                             stopExecuteTask()
                         } else {
-                            emailManager.sendEmail(
+                            sendChannelMessage(
                                 "停止任务通知",
                                 "任务停止失败，任务已经停止，请勿重复停止",
-                                false
                             )
                         }
                     }
@@ -366,7 +371,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 backToMainActivity()
 
                 LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                emailManager.sendEmail(null, "", false)
+                sendChannelMessage("", "")
             }
         }
         timeoutTimer?.start()
@@ -521,7 +526,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.executeTaskButton.text = "停止"
 
         // 发送邮件通知
-        emailManager.sendEmail("启动任务通知", "任务启动成功，请注意下次打卡时间", false)
+        sendChannelMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
     }
 
     /**
@@ -541,7 +546,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     dailyTaskAdapter.updateCurrentTaskState(-1)
                     countDownTimerService?.updateDailyTaskState()
 
-                    emailManager.sendEmail("任务状态通知", "今日任务已全部执行完毕", false)
+                    sendChannelMessage("任务状态通知", "今日任务已全部执行完毕")
                     return
                 }
 
@@ -562,10 +567,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 val pair = task.diffCurrent()
                 dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
                 val diff = pair.second
-                emailManager.sendEmail(
+                sendChannelMessage(
                     "任务执行通知",
                     "准备执行第 $taskIndex 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
-                    false
                 )
                 countDownTimerService?.startCountDown(taskIndex, diff)
             } catch (e: IndexOutOfBoundsException) {
@@ -600,7 +604,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.executeTaskButton.text = "启动"
 
         // 发送通知
-        emailManager.sendEmail("停止任务通知", "任务停止成功，请及时打开下次任务", false)
+        sendChannelMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
     }
 
     private val itemComparator = object : NormalRecyclerAdapter.ItemComparator<DailyTaskBean> {
@@ -854,5 +858,38 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             BroadcastManager.getDefault().unregisterReceiver(this, it)
         }
         EventBus.getDefault().unregister(this)
+    }
+
+    private fun String.buildContent(): String {
+        val baseContent = if (this.isBlank()) {
+            "未监听到打卡成功的通知，请手动登录检查 ${System.currentTimeMillis().timestampToDate()}"
+        } else {
+            "$this，版本号：${BuildConfig.VERSION_NAME}"
+        }
+
+        val batteryCapacity = getSystemService<BatteryManager>()
+            ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+
+        return "$baseContent，当前手机剩余电量为：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}"
+    }
+
+    private fun sendChannelMessage(title: String, content: String) {
+        val text = content.buildContent()
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        when (type) {
+            0 -> {
+                // 企业微信
+                messageViewModel.sendMessage(text, {}, {}, {})
+            }
+
+            1 -> {
+                // QQ邮箱
+                emailManager.sendEmail(title, text, false)
+            }
+
+            else -> {
+                Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
+            }
+        }
     }
 }

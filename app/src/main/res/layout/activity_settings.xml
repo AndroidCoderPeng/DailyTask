@@ -40,7 +40,7 @@
                     android:background="@drawable/bg_solid_layout_white_16"
                     android:paddingHorizontal="@dimen/dp_16">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
@@ -57,36 +57,36 @@
                         android:background="#F1F1F1"
                         app:shapeAppearance="@style/RoundedStyle" />
                 </RelativeLayout>
-            </LinearLayout>
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginVertical="@dimen/dp_16"
-                android:background="@drawable/bg_solid_layout_white_16"
-                android:orientation="vertical">
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1px"
+                    android:layout_marginHorizontal="@dimen/dp_16"
+                    android:background="#CCC" />
 
                 <RelativeLayout
-                    android:id="@+id/emailConfigLayout"
+                    android:id="@+id/msgChannelLayout"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/itemLayoutHeight"
                     android:background="@drawable/bg_solid_layout_white_16"
                     android:paddingHorizontal="@dimen/dp_16">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
-                        android:text="邮箱配置"
+                        android:text="消息渠道"
                         android:textColor="@color/text_default_color"
                         android:textSize="@dimen/sp_16" />
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/emailSwitch"
+                    <com.google.android.material.textview.MaterialTextView
+                        android:id="@+id/channelView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
+                        android:layout_centerVertical="true"
+                        android:textSize="@dimen/sp_16"
+                        android:textStyle="bold" />
                 </RelativeLayout>
 
                 <View
@@ -102,7 +102,7 @@
                     android:background="@drawable/bg_solid_layout_white_16"
                     android:paddingHorizontal="@dimen/dp_16">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
@@ -123,6 +123,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/dp_16"
                 android:background="@drawable/bg_solid_layout_white_16"
                 android:orientation="vertical">
 
@@ -138,14 +139,14 @@
                         android:layout_centerVertical="true"
                         android:orientation="vertical">
 
-                        <TextView
+                        <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="通知监听"
                             android:textColor="@color/text_default_color"
                             android:textSize="@dimen/sp_16" />
 
-                        <TextView
+                        <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/tipsView"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -181,14 +182,14 @@
                         android:layout_centerVertical="true"
                         android:orientation="vertical">
 
-                        <TextView
+                        <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="手势辅助"
                             android:textColor="@color/text_default_color"
                             android:textSize="@dimen/sp_16" />
 
-                        <TextView
+                        <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="end"
@@ -224,14 +225,14 @@
                         android:layout_centerVertical="true"
                         android:orientation="vertical">
 
-                        <TextView
+                        <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="退回桌面"
                             android:textColor="@color/text_default_color"
                             android:textSize="@dimen/sp_16" />
 
-                        <TextView
+                        <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="end"
@@ -253,7 +254,6 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginVertical="@dimen/dp_16"
                 android:background="@drawable/bg_solid_layout_white_16"
                 android:orientation="vertical">
 
@@ -264,7 +264,7 @@
                     android:background="@drawable/bg_solid_layout_white_16"
                     android:paddingHorizontal="@dimen/dp_16">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
@@ -293,7 +293,7 @@
                     android:background="@color/white"
                     android:paddingHorizontal="@dimen/dp_16">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
@@ -322,7 +322,7 @@
                     android:background="@color/white"
                     android:paddingHorizontal="@dimen/dp_16">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
@@ -350,7 +350,7 @@
                     android:background="@drawable/bg_solid_layout_white_16"
                     android:paddingHorizontal="@dimen/dp_16">
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
@@ -359,7 +359,7 @@
                         android:textColor="@color/text_default_color"
                         android:textSize="@dimen/sp_16" />
 
-                    <TextView
+                    <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/appVersion"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
