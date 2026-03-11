@@ -60,8 +60,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="12dp">
+                        android:padding="@dimen/dp_16">
 
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/tipsView"
