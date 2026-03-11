@@ -18,6 +18,7 @@ object Constant {
     const val TASK_AUTO_START_KEY = "TASK_AUTO_START_KEY"
     const val TARGET_APP_KEY = "TARGET_APP_KEY"
     const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY"
+    const val CHANNEL_TYPE_KEY = "CHANNEL_TYPE_KEY"
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
     const val WEWORK = "com.tencent.wework" // 企业微信

@@ -70,14 +70,25 @@
                     android:textSize="@dimen/sp_16" />
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/sendWxButton"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end"
-                android:layout_marginEnd="@dimen/dp_8"
-                android:layout_marginBottom="@dimen/dp_8"
-                android:text="测试企业微信推送" />
+                android:orientation="horizontal">
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/wxRadioButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/dp_8"
+                    android:layout_weight="1"
+                    android:text="选它" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/sendWxButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="测试企业微信推送" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- QQ邮件 -->
@@ -229,14 +240,25 @@
                         android:textSize="@dimen/sp_16" />
                 </LinearLayout>
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/sendEmailButton"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end"
-                    android:layout_marginEnd="@dimen/dp_8"
-                    android:layout_marginBottom="@dimen/dp_8"
-                    android:text="测试QQ邮件发送" />
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.radiobutton.MaterialRadioButton
+                        android:id="@+id/qqRadioButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/dp_8"
+                        android:layout_weight="1"
+                        android:text="选它" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/sendEmailButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="测试QQ邮件发送" />
+                </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

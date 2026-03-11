@@ -16,7 +16,7 @@ import com.pengxh.kt.lite.utils.LoadingDialog
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
-class MessageChannelActivity: KotlinBaseActivity<ActivityMessageChannelBinding>() {
+class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>() {
 
     private val kTag = "MessageChannelActivity"
     private val context = this
@@ -35,6 +35,13 @@ class MessageChannelActivity: KotlinBaseActivity<ActivityMessageChannelBinding>(
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        if (type == 0) {
+            binding.wxRadioButton.isChecked = true
+        } else if (type == 1) {
+            binding.qqRadioButton.isChecked = true
+        }
+
         val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
         if (!key.isBlank()) {
             binding.wxKeyView.setText(key)
@@ -57,10 +64,19 @@ class MessageChannelActivity: KotlinBaseActivity<ActivityMessageChannelBinding>(
     }
 
     override fun observeRequestState() {
-        
+
     }
 
     override fun initEvent() {
+        binding.wxRadioButton.setOnCheckedChangeListener { _, isChecked ->
+            binding.qqRadioButton.isChecked = !isChecked
+            if (isChecked && !binding.wxKeyView.text.toString().isNotBlank()) {
+                SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 0)
+            } else {
+                "请先配置微信 Webhook key".show(context)
+            }
+        }
+
         binding.sendWxButton.setOnClickListener {
             val key = binding.wxKeyView.text.toString()
             if (key.isBlank()) {
@@ -85,6 +101,13 @@ class MessageChannelActivity: KotlinBaseActivity<ActivityMessageChannelBinding>(
                         sendTestMessage()
                     }
                 }).build().show()
+        }
+
+        binding.qqRadioButton.setOnCheckedChangeListener { _, isChecked ->
+            binding.wxRadioButton.isChecked = !isChecked
+            if (isChecked) {
+                SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 1)
+            }
         }
 
         binding.sendEmailButton.setOnClickListener {
