@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.BatteryManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -35,12 +34,12 @@ import com.google.android.material.textview.MaterialTextView
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
-import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.event.FloatViewTimerEvent
 import com.pengxh.daily.app.extensions.backToMainActivity
+import com.pengxh.daily.app.extensions.buildContent
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.getTaskIndex
@@ -64,11 +63,9 @@ import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
-import com.pengxh.kt.lite.extensions.getSystemService
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.extensions.show
-import com.pengxh.kt.lite.extensions.timestampToDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
@@ -860,26 +857,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         EventBus.getDefault().unregister(this)
     }
 
-    private fun String.buildContent(): String {
-        val baseContent = if (this.isBlank()) {
-            "未监听到打卡成功的通知，请手动登录检查 ${System.currentTimeMillis().timestampToDate()}"
-        } else {
-            "$this，版本号：${BuildConfig.VERSION_NAME}"
-        }
-
-        val batteryCapacity = getSystemService<BatteryManager>()
-            ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
-
-        return "$baseContent，当前手机剩余电量为：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}"
-    }
-
     private fun sendChannelMessage(title: String, content: String) {
-        val text = content.buildContent()
+        val text = content.buildContent(this)
         val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         when (type) {
             0 -> {
                 // 企业微信
-                messageViewModel.sendMessage(text, {}, {}, {})
+                val message = """
+            标题：$title
+            内容：${content.buildContent(context)}
+        """.trimIndent()
+                messageViewModel.sendMessage(message, {}, {}, {})
             }
 
             1 -> {

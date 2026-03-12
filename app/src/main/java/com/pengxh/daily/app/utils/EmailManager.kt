@@ -1,12 +1,9 @@
 package com.pengxh.daily.app.utils
 
 import android.content.Context
-import android.os.BatteryManager
 import android.util.Log
-import com.pengxh.daily.app.BuildConfig
+import com.pengxh.daily.app.extensions.buildContent
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
-import com.pengxh.kt.lite.extensions.getSystemService
-import com.pengxh.kt.lite.extensions.timestampToDate
 import com.pengxh.kt.lite.extensions.toJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,19 +33,6 @@ class EmailManager(private val context: Context) {
         return props
     }
 
-    private fun buildMailContent(content: String): String {
-        val baseContent = if (content.isBlank()) {
-            "未监听到打卡成功的通知，请手动登录检查 ${System.currentTimeMillis().timestampToDate()}"
-        } else {
-            "$content，版本号：${BuildConfig.VERSION_NAME}"
-        }
-
-        val batteryCapacity = context.getSystemService<BatteryManager>()
-            ?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
-
-        return "$baseContent，当前手机剩余电量为：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}"
-    }
-
     fun sendEmail(
         title: String?,
         content: String,
@@ -74,7 +58,7 @@ class EmailManager(private val context: Context) {
             setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
             subject = title ?: config.title
             sentDate = Date()
-            setText(buildMailContent(content))
+            setText(content.buildContent(context))
         }
         CoroutineScope(Dispatchers.IO).launch {
             try {

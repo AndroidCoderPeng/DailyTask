@@ -10,11 +10,13 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.CountDownTimer
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -43,6 +45,7 @@ class ForegroundRunningService : Service() {
             setVibrate(null) // 禁用振动
         }
     }
+    private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager(this) }
     private var isTaskReset = false
     private var isTimerRunning = false
@@ -79,7 +82,24 @@ class ForegroundRunningService : Service() {
                 message = "每日任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【】指令。"
             }
             LogFileManager.writeLog(message)
-            emailManager.sendEmail("循环任务状态通知", message, false)
+
+            val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+            when (type) {
+                0 -> {
+                    // 企业微信
+                    httpRequestManager.sendMessage("循环任务状态通知", message)
+                }
+
+                1 -> {
+                    // QQ邮箱
+                    emailManager.sendEmail("循环任务状态通知", message, false)
+                }
+
+                else -> {
+                    Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
+                }
+            }
+
             isTaskReset = true
 
             // 重置任务计时器

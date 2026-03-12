@@ -157,8 +157,12 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     private fun sendTestMessage() {
+        val message = """
+            标题：你好！
+            内容：这是来自 DailyTask 的测试消息 🎉
+        """.trimIndent()
         messageViewModel.sendMessage(
-            "你好！这是来自 DailyTask 的测试消息 🎉",
+            message,
             onLoading = {
                 LoadingDialog.show(this, "消息发送中，请稍后...")
             },

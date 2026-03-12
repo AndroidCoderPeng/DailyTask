@@ -4,13 +4,16 @@ import android.app.Notification
 import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
 import com.pengxh.daily.app.extensions.backToMainActivity
+import com.pengxh.daily.app.extensions.buildContent
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
@@ -25,6 +28,7 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 class NotificationMonitorService : NotificationListenerService() {
 
     private val kTag = "MonitorService"
+    private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager(this) }
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
@@ -71,7 +75,7 @@ class NotificationMonitorService : NotificationListenerService() {
         if (pkg == targetApp && notice.contains("成功")) {
             backToMainActivity()
             "即将发送通知邮件，请注意查收".show(this)
-            emailManager.sendEmail(null, notice, false)
+            sendChannelMessage("", notice)
         }
 
         // 其他消息指令
@@ -81,9 +85,7 @@ class NotificationMonitorService : NotificationListenerService() {
                     val capacity = batteryManager.getIntProperty(
                         BatteryManager.BATTERY_PROPERTY_CAPACITY
                     )
-                    emailManager.sendEmail(
-                        "查询手机电量通知", "当前手机剩余电量为：${capacity}%", false
-                    )
+                    sendChannelMessage("查询手机电量通知", "当前手机剩余电量为：${capacity}%")
                 }
 
                 notice.contains("启动") -> {
@@ -100,16 +102,12 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("开始循环") -> {
                     SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
-                    emailManager.sendEmail(
-                        "循环任务状态通知", "循环任务状态已更新为：开启", false
-                    )
+                    sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：开启")
                 }
 
                 notice.contains("暂停循环") -> {
                     SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
-                    emailManager.sendEmail(
-                        "循环任务状态通知", "循环任务状态已更新为：暂停", false
-                    )
+                    sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：暂停")
                 }
 
                 notice.contains("息屏") -> {
@@ -133,7 +131,7 @@ class NotificationMonitorService : NotificationListenerService() {
                             index++
                         }
                     }
-                    emailManager.sendEmail("当天考勤记录通知", record, false)
+                    sendChannelMessage("当天考勤记录通知", record)
                 }
 
                 else -> {
@@ -142,6 +140,26 @@ class NotificationMonitorService : NotificationListenerService() {
                         openApplication(true)
                     }
                 }
+            }
+        }
+    }
+
+    private fun sendChannelMessage(title: String, content: String) {
+        val text = content.buildContent(this)
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        when (type) {
+            0 -> {
+                // 企业微信
+                httpRequestManager.sendMessage(title, text)
+            }
+
+            1 -> {
+                // QQ邮箱
+                emailManager.sendEmail(title, text, false)
+            }
+
+            else -> {
+                Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
             }
         }
     }
