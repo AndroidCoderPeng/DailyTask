@@ -26,7 +26,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -57,7 +56,6 @@ import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
-import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
@@ -71,10 +69,6 @@ import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -109,7 +103,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val marginOffset by lazy { 16.dp2px(this) }
     private var isTaskStarted = false
-    private var isRefresh = false
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val emailManager by lazy { EmailManager(this) }
     private var timeoutTimer: CountDownTimer? = null
@@ -174,6 +167,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 }
             }
         }
+    }
+
+    override fun observeRequestState() {
+
     }
 
     override fun initViewBinding(): ActivityMainBinding {
@@ -490,20 +487,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 startExecuteTask()
             }
         }
-
-        binding.refreshView.setOnRefreshListener {
-            isRefresh = true
-            lifecycleScope.launch(Dispatchers.Main) {
-                val result = withContext(Dispatchers.IO) {
-                    DatabaseWrapper.loadAllTask()
-                }
-                delay(500)
-                binding.refreshView.finishRefresh()
-                isRefresh = false
-                dailyTaskAdapter.refresh(result, itemComparator)
-            }
-        }
-        binding.refreshView.setEnableLoadMore(false)
     }
 
     /**
@@ -602,20 +585,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         // 发送通知
         sendChannelMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
-    }
-
-    private val itemComparator = object : NormalRecyclerAdapter.ItemComparator<DailyTaskBean> {
-        override fun areItemsTheSame(oldItem: DailyTaskBean, newItem: DailyTaskBean): Boolean {
-            return oldItem.id == newItem.id && oldItem.time == newItem.time
-        }
-
-        override fun areContentsTheSame(oldItem: DailyTaskBean, newItem: DailyTaskBean): Boolean {
-            return oldItem.time == newItem.time
-        }
-    }
-
-    override fun observeRequestState() {
-
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

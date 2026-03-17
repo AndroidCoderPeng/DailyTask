@@ -27,7 +27,6 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
-import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
@@ -38,13 +37,20 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     private val context = this
 
-    private val apps = arrayListOf("钉钉", "企业微信", "飞书", "移动办公M3")
+    private val apps by lazy {
+        listOf(
+            "钉钉",
+//            "企业微信",
+//            "飞书",
+//            "移动办公M3"
+        )
+    }
     private val icons by lazy {
         listOf(
             R.drawable.ic_ding_ding,
-            R.drawable.ic_wei_xin,
-            R.drawable.ic_fei_shu,
-            R.mipmap.ic_launcher
+//            R.drawable.ic_wei_xin,
+//            R.drawable.ic_fei_shu,
+//            R.mipmap.ic_launcher
         )
     }
     private val channels = arrayListOf("企业微信", "QQ邮箱")
@@ -120,12 +126,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
-                        if (position == 0) {
-                            binding.iconView.setBackgroundResource(icons[position])
-                            SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
-                        } else {
-                            "暂时仅支持钉钉".show(context)
-                        }
+                        binding.iconView.setBackgroundResource(icons[position])
+                        SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
                     }
                 }).build().show()
         }

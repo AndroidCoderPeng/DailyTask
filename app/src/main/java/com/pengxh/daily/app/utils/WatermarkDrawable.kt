@@ -41,13 +41,13 @@ class WatermarkDrawable(private val context: Context, private val watermark: Str
                 var x = -diagonal + offset
 
                 // 绘制这一行的水印
-                val horizontalSpacing = diagonal * 0.35f
-                repeat((0..3).count()) {
+                val horizontalSpacing = diagonal * 0.5f
+                repeat((0..2).count()) {
                     canvas.drawText(watermark, x, y, paint)
                     x += horizontalSpacing
                 }
 
-                y += textHeight + 180
+                y += textHeight + 200
                 rowIndex++
             }
         }

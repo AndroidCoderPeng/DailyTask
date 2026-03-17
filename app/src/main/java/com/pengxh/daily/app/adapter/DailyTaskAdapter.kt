@@ -6,17 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.AppCompatImageView
-import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter.ItemComparator
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.extensions.convertColor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class DailyTaskAdapter(
     private val context: Context, private val dataBeans: MutableList<DailyTaskBean>
@@ -80,61 +74,18 @@ class DailyTaskAdapter(
         }
     }
 
-    fun refresh(
-        newRows: MutableList<DailyTaskBean>, itemComparator: ItemComparator<DailyTaskBean>? = null
-    ) {
-        if (newRows.isEmpty()) {
-            return
-        }
-
+    fun refresh(newRows: MutableList<DailyTaskBean>) {
         val oldSize = dataBeans.size
+        val newSize = newRows.size
 
-        if (itemComparator != null) {
-            val oldDataSnapshot = ArrayList(dataBeans) // 旧数据副本
-            val newDataSnapshot = ArrayList(newRows)  // 新数据副本
+        dataBeans.clear()
+        dataBeans.addAll(newRows)
 
-            val diffCallback = object : DiffUtil.Callback() {
-                override fun getOldListSize(): Int = oldDataSnapshot.size
-                override fun getNewListSize(): Int = newDataSnapshot.size
-
-                override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                    return itemComparator.areItemsTheSame(
-                        oldDataSnapshot[oldItemPosition], newDataSnapshot[newItemPosition]
-                    )
-                }
-
-                override fun areContentsTheSame(
-                    oldItemPosition: Int, newItemPosition: Int
-                ): Boolean {
-                    return itemComparator.areContentsTheSame(
-                        oldDataSnapshot[oldItemPosition], newDataSnapshot[newItemPosition]
-                    )
-                }
-            }
-
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val result = DiffUtil.calculateDiff(diffCallback)
-                    withContext(Dispatchers.Main) {
-                        dataBeans.clear()
-                        dataBeans.addAll(newDataSnapshot)
-                        result.dispatchUpdatesTo(this@DailyTaskAdapter)
-                    }
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-        } else {
-            val newSize = newRows.size
-            dataBeans.clear()
-            dataBeans.addAll(newRows)
-
-            // 新数据比旧数据少，需要通知删除部分 item ，否则会越界
-            if (newSize < oldSize) {
-                notifyItemRangeRemoved(newSize, oldSize - newSize)
-            }
-            notifyItemRangeChanged(0, newSize)
+        // 新数据比旧数据少，需要通知删除部分 item ，否则会越界
+        if (newSize < oldSize) {
+            notifyItemRangeRemoved(newSize, oldSize - newSize)
         }
+        notifyItemRangeChanged(0, newSize)
     }
 
     interface OnItemClickListener {
