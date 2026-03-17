@@ -77,9 +77,9 @@ class ForegroundRunningService : Service() {
                 BroadcastManager.getDefault().sendBroadcast(
                     this, MessageType.RESET_DAILY_TASK.action
                 )
-                message = "到达任务计划时间，重置每日任务。"
+                message = "到达任务计划时间，重置每日任务"
             } else {
-                message = "每日任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【】指令。"
+                message = "每日任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
             }
             LogFileManager.writeLog(message)
 
