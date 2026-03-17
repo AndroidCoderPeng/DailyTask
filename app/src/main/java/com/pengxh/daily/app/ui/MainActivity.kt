@@ -19,6 +19,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.Animation
 import android.view.animation.ScaleAnimation
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
@@ -95,7 +96,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
-    private val dateFormat = SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.getDefault())
+    private val dateFormat by lazy {
+        SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.getDefault())
+    }
     private lateinit var insetsController: WindowInsetsControllerCompat
     private var countDownTimerService: CountDownTimerService? = null
     private lateinit var gestureDetector: GestureDetector
@@ -107,6 +110,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val emailManager by lazy { EmailManager(this) }
     private var timeoutTimer: CountDownTimer? = null
     private val gson by lazy { Gson() }
+    private val random by lazy { Random() }
+    private var currentAnimation: Animation? = null
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -262,7 +267,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
 
         Intent(this, CountDownTimerService::class.java).apply {
-            bindService(this, connection, BIND_AUTO_CREATE)
+            bindService(this, serviceConnection, BIND_AUTO_CREATE)
         }
 
         val watermark = DailyTask.getWatermarkText()
@@ -346,6 +351,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun startFloatViewTimer(event: FloatViewTimerEvent) {
+        // 取消之前的定时器，防止重复创建
+        timeoutTimer?.cancel()
+
         val time = SaveKeyValues.getValue(
             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
         ) as Int
@@ -366,6 +374,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
                 LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
                 sendChannelMessage("", "")
+
+                // 清理引用
+                timeoutTimer = null
             }
         }
         timeoutTimer?.start()
@@ -383,14 +394,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     /**
      * 服务绑定
      * */
-    private val connection = object : ServiceConnection {
+    private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as CountDownTimerService.LocaleBinder
             countDownTimerService = binder.getService()
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-
+            Log.w(kTag, "Service disconnected: $name")
+            countDownTimerService = null
         }
     }
 
@@ -617,7 +629,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             if (maxX <= 0 || maxY <= 0) return
 
             // 生成随机位置
-            val random = Random()
             val newX = random.nextInt(maxX.coerceAtLeast(1))
             val newY = random.nextInt(maxY.coerceAtLeast(1))
 
@@ -650,9 +661,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         //显示蒙层
         binding.maskView.visibility = View.VISIBLE
-        val visibleAction = ScaleAnimation(1.0f, 1.0f, 0.0f, 1.0f)
-        visibleAction.duration = 500
-        binding.maskView.startAnimation(visibleAction)
+        currentAnimation?.cancel()
+        currentAnimation = ScaleAnimation(1.0f, 1.0f, 0.0f, 1.0f).apply {
+            duration = 500
+        }
+        binding.maskView.startAnimation(currentAnimation)
         window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF)
 
         //隐藏任务界面
@@ -681,9 +694,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         //隐藏蒙层
         binding.maskView.visibility = View.GONE
-        val invisibleAction = ScaleAnimation(1.0f, 1.0f, 1.0f, 0.0f)
-        invisibleAction.duration = 500
-        binding.maskView.startAnimation(invisibleAction)
+        currentAnimation?.cancel()
+        currentAnimation = ScaleAnimation(1.0f, 1.0f, 1.0f, 0.0f).apply {
+            duration = 500
+        }
+        binding.maskView.startAnimation(currentAnimation)
         window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
 
         //显示任务界面
@@ -820,10 +835,24 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
+        currentAnimation?.cancel()
+        currentAnimation = null
+
+        mainHandler.removeCallbacks(clockAnimationRunnable)
+        mainHandler.removeCallbacks(dailyTaskRunnable)
+        mainHandler.removeCallbacksAndMessages(null)
+
         actions.forEach {
             BroadcastManager.getDefault().unregisterReceiver(this, it)
         }
+        timeoutTimer?.cancel()
+        timeoutTimer = null
         EventBus.getDefault().unregister(this)
+        try {
+            unbindService(serviceConnection)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun sendChannelMessage(title: String, content: String) {
