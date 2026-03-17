@@ -148,6 +148,7 @@ class FloatingWindowService : Service() {
                 Log.w(kTag, "View not attached to window manager", e)
             }
         }
+        Log.d(kTag, "onDestroy: FloatingWindowService")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {

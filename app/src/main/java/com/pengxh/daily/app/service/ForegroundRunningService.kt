@@ -219,6 +219,7 @@ class ForegroundRunningService : Service() {
         taskTimer?.cancel()
         taskTimer = null
         stopForeground(STOP_FOREGROUND_REMOVE)
+        Log.d(kTag, "onDestroy: ForegroundRunningService")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

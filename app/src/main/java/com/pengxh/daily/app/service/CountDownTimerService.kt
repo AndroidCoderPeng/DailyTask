@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.CountDownTimer
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.extensions.formatTime
@@ -17,6 +18,8 @@ import com.pengxh.daily.app.utils.LogFileManager
  * APP倒计时服务，解决手机灭屏后倒计时会出现延迟的问题
  * */
 class CountDownTimerService : Service() {
+
+    private val kTag = "CountDownTimerService"
     private val binder by lazy { LocaleBinder() }
     private val notificationManager by lazy { getSystemService(NOTIFICATION_SERVICE) as NotificationManager }
     private val notificationBuilder by lazy {
@@ -112,5 +115,6 @@ class CountDownTimerService : Service() {
         super.onDestroy()
         stopForeground(STOP_FOREGROUND_REMOVE)
         cancelCountDown()
+        Log.d(kTag, "onDestroy: CountDownTimerService")
     }
 }
