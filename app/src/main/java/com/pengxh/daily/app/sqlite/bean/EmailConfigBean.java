@@ -8,11 +8,11 @@ public class EmailConfigBean {
     @PrimaryKey(autoGenerate = true)
     private int id;//主键ID
 
-    private String outbox; // 发件箱
-    private String authCode; // 授权码
-    private String inbox; // 收件箱
-    private String title; // 标题
-    private String createTime; // 时间
+    private String outbox = ""; // 发件箱
+    private String authCode = ""; // 授权码
+    private String inbox = ""; // 收件箱
+    private String title = ""; // 标题
+    private String createTime = ""; // 时间
 
     public int getId() {
         return id;

@@ -10,6 +10,8 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
@@ -150,11 +152,11 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val exportData = ExportDataModel()
 
             val taskBeans = DatabaseWrapper.loadAllTask()
-            if (taskBeans.isEmpty()) {
-                "没有任务可以导出".show(this)
-                return@setOnClickListener
+            if (taskBeans.isNotEmpty()) {
+                exportData.tasks = taskBeans
+            } else {
+                exportData.tasks = ArrayList<DailyTaskBean>()
             }
-            exportData.tasks = taskBeans
 
             val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
             exportData.wxKey = key
@@ -162,7 +164,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val configs = DatabaseWrapper.loadAll()
             if (configs.isNotEmpty()) {
                 exportData.emailConfig = configs.last()
+            } else {
+                exportData.emailConfig = EmailConfigBean()
             }
+
             val isDetectGesture = SaveKeyValues.getValue(
                 Constant.GESTURE_DETECTOR_KEY, false
             ) as Boolean
