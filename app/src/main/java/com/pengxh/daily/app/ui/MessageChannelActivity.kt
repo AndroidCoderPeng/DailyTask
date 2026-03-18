@@ -172,12 +172,15 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         messageViewModel.sendMessage(
             message,
             onLoading = {
+                if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.show(this, "消息发送中，请稍后...")
             },
             onSuccess = {
+                if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
             },
             onFailed = {
+                if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
                 it.show(this)
             })
@@ -201,10 +204,12 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                         "邮箱测试", "这是一封测试邮件，不必关注",
                         true,
                         onSuccess = {
+                            if (isFinishing || isDestroyed) return@sendEmail
                             LoadingDialog.dismiss()
                             "发送成功，请注意查收".show(context)
                         },
                         onFailure = {
+                            if (isFinishing || isDestroyed) return@sendEmail
                             LoadingDialog.dismiss()
                             "发送失败：${it}".show(context)
                         }
