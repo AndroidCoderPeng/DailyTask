@@ -17,15 +17,9 @@ import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.view.WindowManager
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.Animation
-import android.view.animation.ScaleAnimation
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.core.view.isVisible
 import androidx.lifecycle.ViewModelProvider
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -52,6 +46,7 @@ import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.WatermarkDrawable
@@ -62,7 +57,6 @@ import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
-import com.pengxh.kt.lite.extensions.setScreenBrightness
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
@@ -75,7 +69,6 @@ import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import java.util.Random
 import kotlin.math.abs
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
@@ -99,6 +92,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.getDefault())
     }
     private lateinit var insetsController: WindowInsetsControllerCompat
+    private lateinit var maskViewController: MaskViewController
     private var countDownTimerService: CountDownTimerService? = null
     private lateinit var gestureDetector: GestureDetector
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
@@ -109,22 +103,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private var timeoutTimer: CountDownTimer? = null
     private val gson by lazy { Gson() }
-    private val random by lazy { Random() }
-    private var currentAnimation: Animation? = null
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
                 when (MessageType.fromAction(it)) {
                     MessageType.SHOW_MASK_VIEW -> {
-                        if (!binding.maskView.isVisible) {
-                            showMaskView()
+                        if (!maskViewController.isMaskVisible()) {
+                            maskViewController.showMaskView(mainHandler)
                         }
                     }
 
                     MessageType.HIDE_MASK_VIEW -> {
-                        if (binding.maskView.isVisible) {
-                            hideMaskView()
+                        if (maskViewController.isMaskVisible()) {
+                            maskViewController.hideMaskView(mainHandler)
                         }
                     }
 
@@ -182,7 +174,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     override fun setupTopBarLayout() {
-        insetsController = WindowCompat.getInsetsController(window, binding.rootView)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
             binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
         }
@@ -261,6 +252,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             overlayPermissionLauncher.launch(intent)
         }
 
+        insetsController = WindowCompat.getInsetsController(window, binding.rootView)
+        maskViewController = MaskViewController(this, binding, insetsController)
+
         Intent(this, ForegroundRunningService::class.java).apply {
             startForegroundService(this)
         }
@@ -285,18 +279,18 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     // 从上向下滑动手势
                     if (deltaY > 1000
                         && (e2.y - (e1?.y ?: e2.y)) > 0
-                        && !binding.maskView.isVisible
+                        && !maskViewController.isMaskVisible()
                     ) {
-                        showMaskView()
+                        maskViewController.showMaskView(mainHandler)
                         return true
                     }
 
                     // 从下向上滑动手势
                     if (deltaY > 1000
                         && (e2.y - (e1?.y ?: e2.y)) < 0
-                        && binding.maskView.isVisible
+                        && maskViewController.isMaskVisible()
                     ) {
-                        hideMaskView()
+                        maskViewController.hideMaskView(mainHandler)
                         return true
                     }
                 }
@@ -600,108 +594,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            if (binding.maskView.isVisible) {
-                hideMaskView()
+            if (maskViewController.isMaskVisible()) {
+                maskViewController.hideMaskView(mainHandler)
             } else {
-                showMaskView()
+                maskViewController.showMaskView(mainHandler)
             }
             return true
         }
         return super.onKeyDown(keyCode, event)
-    }
-
-    private var clockAnimationRunnable = object : Runnable {
-        override fun run() {
-            // 确保视图已经布局完成
-            if (binding.maskView.width == 0 || binding.maskView.height == 0) return
-
-            // 获取时钟控件尺寸
-            binding.clockView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
-            val clockWidth = binding.clockView.measuredWidth
-            val clockHeight = binding.clockView.measuredHeight
-
-            // 计算可移动范围
-            val maxX = binding.maskView.width - clockWidth
-            val maxY = binding.maskView.height - clockHeight
-
-            // 确保范围有效
-            if (maxX <= 0 || maxY <= 0) return
-
-            // 生成随机位置
-            val newX = random.nextInt(maxX.coerceAtLeast(1))
-            val newY = random.nextInt(maxY.coerceAtLeast(1))
-
-            // 应用动画移动到新位置
-            binding.clockView.animate()
-                .x(newX.toFloat())
-                .y(newY.toFloat())
-                .setDuration(1000)
-                .setInterpolator(AccelerateDecelerateInterpolator())
-                .start()
-
-            // 每30秒执行一次位置变换
-            mainHandler.postDelayed(this, 30000)
-        }
-    }
-
-    /**
-     * 显示蒙层以及其它组件
-     * */
-    private fun showMaskView() {
-        //隐藏悬浮窗显示
-        BroadcastManager.getDefault().sendBroadcast(this, MessageType.HIDE_FLOATING_WINDOW.action)
-
-        //隐藏状态栏和导航栏显示
-        insetsController.apply {
-            hide(WindowInsetsCompat.Type.statusBars())
-            hide(WindowInsetsCompat.Type.navigationBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        }
-
-        //显示蒙层
-        binding.maskView.visibility = View.VISIBLE
-        currentAnimation?.cancel()
-        currentAnimation = ScaleAnimation(1.0f, 1.0f, 0.0f, 1.0f).apply {
-            duration = 500
-        }
-        binding.maskView.startAnimation(currentAnimation)
-        window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF)
-
-        //隐藏任务界面
-        binding.rootView.visibility = View.GONE
-
-        //启动时钟位置变换动画
-        mainHandler.postDelayed(clockAnimationRunnable, 30000)
-    }
-
-    /**
-     * 隐藏蒙层以及其它组件
-     * */
-    private fun hideMaskView() {
-        //恢复悬浮窗显示
-        BroadcastManager.getDefault().sendBroadcast(this, MessageType.SHOW_FLOATING_WINDOW.action)
-
-        //停止时钟动画
-        mainHandler.removeCallbacks(clockAnimationRunnable)
-
-        //恢复状态栏和导航栏显示
-        insetsController.apply {
-            show(WindowInsetsCompat.Type.statusBars())
-            show(WindowInsetsCompat.Type.navigationBars())
-            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_DEFAULT
-        }
-
-        //隐藏蒙层
-        binding.maskView.visibility = View.GONE
-        currentAnimation?.cancel()
-        currentAnimation = ScaleAnimation(1.0f, 1.0f, 1.0f, 0.0f).apply {
-            duration = 500
-        }
-        binding.maskView.startAnimation(currentAnimation)
-        window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
-
-        //显示任务界面
-        binding.rootView.visibility = View.VISIBLE
     }
 
     private fun createTask() {
@@ -825,17 +725,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         Log.d(kTag, "onNewIntent: ${packageName}回到前台")
-        if (!binding.maskView.isVisible) {
-            showMaskView()
+        if (!maskViewController.isMaskVisible()) {
+            maskViewController.showMaskView(mainHandler)
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        currentAnimation?.cancel()
-        currentAnimation = null
+        maskViewController.destroy(mainHandler)
 
-        mainHandler.removeCallbacks(clockAnimationRunnable)
         mainHandler.removeCallbacks(dailyTaskRunnable)
         mainHandler.removeCallbacksAndMessages(null)
 
