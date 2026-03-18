@@ -25,9 +25,6 @@ import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textview.MaterialTextView
-import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
-import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
@@ -36,7 +33,6 @@ import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.getTaskIndex
-import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
@@ -49,6 +45,7 @@ import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MessageType
+import com.pengxh.daily.app.utils.TaskDataManager
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -93,6 +90,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
     private lateinit var insetsController: WindowInsetsControllerCompat
     private lateinit var maskViewController: MaskViewController
+    private val taskDataManager by lazy { TaskDataManager() }
     private var countDownTimerService: CountDownTimerService? = null
     private lateinit var gestureDetector: GestureDetector
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
@@ -102,7 +100,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private var timeoutTimer: CountDownTimer? = null
-    private val gson by lazy { Gson() }
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -647,74 +644,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             .setOnDialogButtonClickListener(object :
                 AlertInputDialog.OnDialogButtonClickListener {
                 override fun onConfirmClick(value: String) {
-                    val type = object : TypeToken<ExportDataModel>() {}.type
-                    try {
-                        val config = gson.fromJson<ExportDataModel>(value, type)
-                        for (task in config.tasks) {
-                            if (DatabaseWrapper.isTaskTimeExist(task.time)) {
-                                continue
+                    when (val result = taskDataManager.importTasks(value)) {
+                        is TaskDataManager.ImportResult.Success -> {
+                            if (result.count > 0) {
+                                binding.recyclerView.visibility = View.VISIBLE
+                                binding.emptyView.visibility = View.GONE
+                                taskBeans = DatabaseWrapper.loadAllTask()
+                                dailyTaskAdapter.refresh(taskBeans)
                             }
-                            DatabaseWrapper.insert(task)
-                        }
-                        if (config.tasks.isNotEmpty()) {
-                            binding.recyclerView.visibility = View.VISIBLE
-                            binding.emptyView.visibility = View.GONE
-                            taskBeans = DatabaseWrapper.loadAllTask()
-                            dailyTaskAdapter.refresh(taskBeans)
+                            "任务导入成功".show(context)
                         }
 
-                        // 写入配置
-                        SaveKeyValues.putValue(Constant.MESSAGE_TITLE_KEY, config.messageTitle)
-                        SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, config.wxKey)
-
-                        val email = config.emailConfig
-                        if (email != null) {
-                            DatabaseWrapper.insertConfig(email.outbox, email.authCode, email.inbox)
+                        is TaskDataManager.ImportResult.Error -> {
+                            result.message.show(context)
                         }
-
-                        SaveKeyValues.putValue(
-                            Constant.GESTURE_DETECTOR_KEY,
-                            config.isDetectGesture
-                        )
-
-                        SaveKeyValues.putValue(
-                            Constant.BACK_TO_HOME_KEY,
-                            config.isBackToHome
-                        )
-
-                        SaveKeyValues.putValue(
-                            Constant.RESET_TIME_KEY,
-                            config.resetTime
-                        )
-                        SaveKeyValues.putValue(
-                            Constant.STAY_DD_TIMEOUT_KEY,
-                            config.overTime
-                        )
-
-                        SaveKeyValues.putValue(
-                            Constant.TASK_COMMAND_KEY,
-                            config.command
-                        )
-
-                        SaveKeyValues.putValue(
-                            Constant.TASK_AUTO_START_KEY,
-                            config.isAutoStart
-                        )
-
-                        SaveKeyValues.putValue(
-                            Constant.RANDOM_TIME_KEY,
-                            config.isRandomTime
-                        )
-
-                        SaveKeyValues.putValue(
-                            Constant.RANDOM_MINUTE_RANGE_KEY,
-                            config.timeRange
-                        )
-
-                        "任务导入成功".show(context)
-                    } catch (e: JsonSyntaxException) {
-                        e.printStackTrace()
-                        "导入失败，请确认导入的是正确的任务数据".show(context)
                     }
                 }
 
