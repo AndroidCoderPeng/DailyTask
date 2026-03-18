@@ -30,7 +30,7 @@ import java.util.Locale
 class ForegroundRunningService : Service() {
     private val kTag = "ForegroundRunningService"
     private val notificationId = Int.MAX_VALUE
-    private val notificationManager by lazy { getSystemService(NOTIFICATION_SERVICE) as NotificationManager }
+    private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
     private val notificationBuilder by lazy {
         NotificationCompat.Builder(this, "foreground_running_service_channel").apply {
             setSmallIcon(R.mipmap.ic_launcher)
@@ -79,7 +79,7 @@ class ForegroundRunningService : Service() {
                 )
                 message = "到达任务计划时间，重置每日任务"
             } else {
-                message = "每日任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
+                message = "任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
             }
             LogFileManager.writeLog(message)
 
