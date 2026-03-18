@@ -14,8 +14,8 @@ import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
+import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
 import org.greenrobot.eventbus.EventBus
 
 /**
@@ -51,17 +51,9 @@ fun Context.openApplication(needCountDown: Boolean) {
     val targetApp = Constant.getTargetApp()
     Log.d("Ex-Context", "openApplication: $targetApp")
     if (!isApplicationExist(targetApp)) {
-        AlertMessageDialog.Builder()
-            .setContext(this)
-            .setTitle("温馨提醒")
-            .setMessage("手机没有安装指定的目标应用软件，无法执行任务")
-            .setPositiveButton("知道了")
-            .setOnDialogButtonClickListener(object :
-                AlertMessageDialog.OnDialogButtonClickListener {
-                override fun onConfirmClick() {
-
-                }
-            }).build().show()
+        "未安装指定的目标软件，无法执行任务".show(this)
+        // 停止任务
+        BroadcastManager.getDefault().sendBroadcast(this, MessageType.STOP_DAILY_TASK.action)
         return
     }
 
