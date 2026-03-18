@@ -21,7 +21,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     private val kTag = "MessageChannelActivity"
     private val context = this
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val emailManager by lazy { EmailManager(this) }
+    private val emailManager by lazy { EmailManager() }
 
     override fun initViewBinding(): ActivityMessageChannelBinding {
         return ActivityMessageChannelBinding.inflate(layoutInflater)
@@ -35,6 +35,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
+        val title = SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
+        binding.messageTitleView.setText(title)
+
         val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         if (type == 0) {
             binding.wxRadioButton.isChecked = true
@@ -58,7 +61,6 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 binding.emailSendAddressView.setText(outbox)
                 binding.emailSendCodeView.setText(authCode)
                 binding.emailInboxView.setText(inbox)
-                binding.emailTitleView.setText(title)
             }
         }
     }
@@ -86,6 +88,10 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 return@setOnClickListener
             }
 
+            SaveKeyValues.putValue(
+                Constant.MESSAGE_TITLE_KEY,
+                binding.messageTitleView.text.toString().trim()
+            )
             SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, key)
 
             AlertControlDialog.Builder()
@@ -148,9 +154,11 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 return@setOnClickListener
             }
 
-            val title = binding.emailTitleView.text.toString()
-
-            DatabaseWrapper.insertConfig(outbox, authCode, inbox, title)
+            SaveKeyValues.putValue(
+                Constant.MESSAGE_TITLE_KEY,
+                binding.messageTitleView.text.toString().trim()
+            )
+            DatabaseWrapper.insertConfig(outbox, authCode, inbox)
 
             sendTestEmail()
         }
@@ -158,9 +166,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
     private fun sendTestMessage() {
         val message = """
-            标题：你好！
-            内容：这是来自 DailyTask 的测试消息 🎉
-        """.trimIndent()
+                        标题：你好！
+                        内容：这是来自 DailyTask 的测试消息 🎉
+                      """.trimIndent()
         messageViewModel.sendMessage(
             message,
             onLoading = {

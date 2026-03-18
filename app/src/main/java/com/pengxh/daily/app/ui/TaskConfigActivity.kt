@@ -158,6 +158,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 exportData.tasks = ArrayList<DailyTaskBean>()
             }
 
+            val title = SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
+            exportData.messageTitle = title
+
             val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
             exportData.wxKey = key
 

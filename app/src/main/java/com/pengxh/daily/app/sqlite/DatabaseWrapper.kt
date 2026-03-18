@@ -52,12 +52,11 @@ object DatabaseWrapper {
     /*****************************************************************************************/
     private val emailConfigDao by lazy { DailyTaskApplication.get().dataBase.emailConfigDao() }
 
-    fun insertConfig(outbox: String, authCode: String, inbox: String, title: String) {
+    fun insertConfig(outbox: String, authCode: String, inbox: String) {
         val bean = EmailConfigBean()
         bean.outbox = outbox
         bean.authCode = authCode
         bean.inbox = inbox
-        bean.title = title
         bean.createTime = System.currentTimeMillis().timestampToCompleteDate()
         emailConfigDao.insert(bean)
     }

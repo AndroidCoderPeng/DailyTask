@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class ExportDataModel {
     private List<DailyTaskBean> tasks; // 任务列表
+    private String messageTitle; // 打卡消息标题
     private String wxKey; // 企业微信消息Key
     private EmailConfigBean emailConfig; // 邮箱配置
     private boolean detectGesture; // 检测手势
@@ -27,6 +28,14 @@ public class ExportDataModel {
 
     public void setTasks(List<DailyTaskBean> tasks) {
         this.tasks = tasks;
+    }
+
+    public String getMessageTitle() {
+        return messageTitle;
+    }
+
+    public void setMessageTitle(String messageTitle) {
+        this.messageTitle = messageTitle;
     }
 
     public String getWxKey() {

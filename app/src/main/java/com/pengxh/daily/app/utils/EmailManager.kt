@@ -1,8 +1,6 @@
 package com.pengxh.daily.app.utils
 
-import android.content.Context
 import android.util.Log
-import com.pengxh.daily.app.extensions.buildContent
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.kt.lite.extensions.toJson
 import kotlinx.coroutines.CoroutineScope
@@ -17,7 +15,7 @@ import javax.mail.Transport
 import javax.mail.internet.InternetAddress
 import javax.mail.internet.MimeMessage
 
-class EmailManager(private val context: Context) {
+class EmailManager() {
     private val kTag = "EmailManager"
 
     private fun createSmtpProperties(): Properties {
@@ -34,7 +32,7 @@ class EmailManager(private val context: Context) {
     }
 
     fun sendEmail(
-        title: String?,
+        title: String,
         content: String,
         isTest: Boolean,
         onSuccess: (() -> Unit)? = null,
@@ -56,9 +54,9 @@ class EmailManager(private val context: Context) {
         val message = MimeMessage(session).apply {
             setFrom(InternetAddress(config.outbox))
             setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
-            subject = title ?: config.title
+            subject = title
             sentDate = Date()
-            setText(content.buildContent(context))
+            setText(content)
         }
         CoroutineScope(Dispatchers.IO).launch {
             try {

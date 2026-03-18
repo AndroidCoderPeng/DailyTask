@@ -46,7 +46,7 @@ class ForegroundRunningService : Service() {
         }
     }
     private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager(this) }
+    private val emailManager by lazy { EmailManager() }
     private var isTaskReset = false
     private var isTimerRunning = false
     private var taskTimer: CountDownTimer? = null

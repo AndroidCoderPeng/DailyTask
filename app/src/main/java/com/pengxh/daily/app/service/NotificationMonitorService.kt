@@ -6,7 +6,6 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import com.pengxh.daily.app.extensions.backToMainActivity
-import com.pengxh.daily.app.extensions.buildContent
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
@@ -29,7 +28,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
     private val kTag = "MonitorService"
     private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager(this) }
+    private val emailManager by lazy { EmailManager() }
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
 
@@ -145,17 +144,16 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun sendChannelMessage(title: String, content: String) {
-        val text = content.buildContent(this)
         val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         when (type) {
             0 -> {
                 // 企业微信
-                httpRequestManager.sendMessage(title, text)
+                httpRequestManager.sendMessage(title, content)
             }
 
             1 -> {
                 // QQ邮箱
-                emailManager.sendEmail(title, text, false)
+                emailManager.sendEmail(title, content, false)
             }
 
             else -> {

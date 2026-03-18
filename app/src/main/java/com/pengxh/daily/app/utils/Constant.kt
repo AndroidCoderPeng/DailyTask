@@ -17,6 +17,7 @@ object Constant {
     const val RANDOM_MINUTE_RANGE_KEY = "RANDOM_MINUTE_RANGE_KEY"
     const val TASK_AUTO_START_KEY = "TASK_AUTO_START_KEY"
     const val TARGET_APP_KEY = "TARGET_APP_KEY"
+    const val MESSAGE_TITLE_KEY = "MESSAGE_TITLE_KEY"
     const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY"
     const val CHANNEL_TYPE_KEY = "CHANNEL_TYPE_KEY"
 

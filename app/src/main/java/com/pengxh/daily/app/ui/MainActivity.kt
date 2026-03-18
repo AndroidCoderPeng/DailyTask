@@ -39,7 +39,6 @@ import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.event.FloatViewTimerEvent
 import com.pengxh.daily.app.extensions.backToMainActivity
-import com.pengxh.daily.app.extensions.buildContent
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.getTaskIndex
@@ -52,8 +51,8 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
-import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
@@ -107,7 +106,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val marginOffset by lazy { 16.dp2px(this) }
     private var isTaskStarted = false
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val emailManager by lazy { EmailManager(this) }
+    private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private var timeoutTimer: CountDownTimer? = null
     private val gson by lazy { Gson() }
     private val random by lazy { Random() }
@@ -142,7 +141,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         if (!isTaskStarted) {
                             startExecuteTask()
                         } else {
-                            sendChannelMessage(
+                            messageDispatcher.sendMessage(
                                 "启动任务通知",
                                 "任务启动失败，任务已在运行中，请勿重复启动",
                             )
@@ -153,7 +152,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         if (isTaskStarted) {
                             stopExecuteTask()
                         } else {
-                            sendChannelMessage(
+                            messageDispatcher.sendMessage(
                                 "停止任务通知",
                                 "任务停止失败，任务已经停止，请勿重复停止",
                             )
@@ -373,7 +372,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 backToMainActivity()
 
                 LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                sendChannelMessage("", "")
+                messageDispatcher.sendMessage("", "")
 
                 // 清理引用
                 timeoutTimer = null
@@ -518,7 +517,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.executeTaskButton.text = "停止"
 
         // 发送邮件通知
-        sendChannelMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
+        messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
     }
 
     /**
@@ -538,7 +537,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     dailyTaskAdapter.updateCurrentTaskState(-1)
                     countDownTimerService?.updateDailyTaskState()
 
-                    sendChannelMessage("任务状态通知", "今日任务已全部执行完毕")
+                    messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
                     return
                 }
 
@@ -559,7 +558,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 val pair = task.diffCurrent()
                 dailyTaskAdapter.updateCurrentTaskState(index, pair.first)
                 val diff = pair.second
-                sendChannelMessage(
+                messageDispatcher.sendMessage(
                     "任务执行通知",
                     "准备执行第 $taskIndex 个任务，计划时间：${task.time}，实际时间: ${pair.first}",
                 )
@@ -596,7 +595,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.executeTaskButton.text = "启动"
 
         // 发送通知
-        sendChannelMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
+        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
@@ -757,22 +756,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                             }
                             DatabaseWrapper.insert(task)
                         }
-                        binding.recyclerView.visibility = View.VISIBLE
-                        binding.emptyView.visibility = View.GONE
-                        taskBeans = DatabaseWrapper.loadAllTask()
-                        dailyTaskAdapter.refresh(taskBeans)
+                        if (config.tasks.isNotEmpty()) {
+                            binding.recyclerView.visibility = View.VISIBLE
+                            binding.emptyView.visibility = View.GONE
+                            taskBeans = DatabaseWrapper.loadAllTask()
+                            dailyTaskAdapter.refresh(taskBeans)
+                        }
 
                         // 写入配置
+                        SaveKeyValues.putValue(Constant.MESSAGE_TITLE_KEY, config.messageTitle)
                         SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, config.wxKey)
 
                         val email = config.emailConfig
                         if (email != null) {
-                            DatabaseWrapper.insertConfig(
-                                email.outbox,
-                                email.authCode,
-                                email.inbox,
-                                email.title
-                            )
+                            DatabaseWrapper.insertConfig(email.outbox, email.authCode, email.inbox)
                         }
 
                         SaveKeyValues.putValue(
@@ -852,30 +849,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             unbindService(serviceConnection)
         } catch (e: Exception) {
             e.printStackTrace()
-        }
-    }
-
-    private fun sendChannelMessage(title: String, content: String) {
-        val text = content.buildContent(this)
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
-        when (type) {
-            0 -> {
-                // 企业微信
-                val message = """
-            标题：$title
-            内容：${content.buildContent(context)}
-        """.trimIndent()
-                messageViewModel.sendMessage(message, {}, {}, {})
-            }
-
-            1 -> {
-                // QQ邮箱
-                emailManager.sendEmail(title, text, false)
-            }
-
-            else -> {
-                Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
-            }
         }
     }
 }
