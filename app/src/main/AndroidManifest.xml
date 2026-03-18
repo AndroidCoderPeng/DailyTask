@@ -9,6 +9,7 @@
     <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!-- 此权限在适用于Android 10以下（包含），Android 11 引入queries，但勉强能用，再往上就不行了，只能通过queries查询指定的应用 -->
@@ -35,7 +36,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ui.SettingsActivity"/>
+        <activity android:name=".ui.SettingsActivity" />
         <activity android:name=".ui.MessageChannelActivity" />
         <activity android:name=".ui.TaskConfigActivity" />
         <activity android:name=".ui.NoticeRecordActivity" />
@@ -44,7 +45,12 @@
         <service android:name=".service.FloatingWindowService" />
         <service
             android:name=".service.ForegroundRunningService"
-            android:foregroundServiceType="dataSync" />
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="background_keep_alive" />
+        </service>
         <service
             android:name=".service.NotificationMonitorService"
             android:enabled="true"

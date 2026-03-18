@@ -5,7 +5,6 @@ import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import com.pengxh.daily.app.extensions.backToMainActivity
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
@@ -72,7 +71,9 @@ class NotificationMonitorService : NotificationListenerService() {
 
         // 目标应用打卡通知
         if (pkg == targetApp && notice.contains("成功")) {
-            backToMainActivity()
+            BroadcastManager.getDefault().sendBroadcast(
+                this, MessageType.GO_BACK_MAIN_ACTIVITY.action
+            )
             "即将发送通知邮件，请注意查收".show(this)
             sendChannelMessage("", notice)
         }

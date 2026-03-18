@@ -5,17 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.event.FloatViewTimerEvent
-import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.extensions.show
-import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 
 /**
@@ -74,29 +70,4 @@ fun Context.openApplication(needCountDown: Boolean) {
     if (needCountDown) {
         EventBus.getDefault().post(FloatViewTimerEvent())
     }
-}
-
-fun Context.backToMainActivity() {
-    BroadcastManager.getDefault().sendBroadcast(this, MessageType.CANCEL_COUNT_DOWN_TIMER.action)
-    val backToHome = SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
-    if (backToHome) {
-        //模拟点击Home键
-        val home = Intent(Intent.ACTION_MAIN).apply {
-            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
-            addCategory(Intent.CATEGORY_HOME)
-        }
-        startActivity(home)
-        Handler(Looper.getMainLooper()).postDelayed({
-            launchMainActivity()
-        }, 2000)
-    } else {
-        launchMainActivity()
-    }
-}
-
-private fun Context.launchMainActivity() {
-    val intent = Intent(this, MainActivity::class.java).apply {
-        flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
-    }
-    startActivity(intent)
 }

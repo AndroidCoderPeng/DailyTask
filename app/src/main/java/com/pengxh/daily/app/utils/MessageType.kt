@@ -44,14 +44,14 @@ enum class MessageType(val action: String) {
     STOP_DAILY_TASK("com.pengxh.daily.app.BROADCAST_STOP_DAILY_TASK_ACTION"),
 
     /**
-     * - 取消倒计时
-     * */
-    CANCEL_COUNT_DOWN_TIMER("com.pengxh.daily.app.BROADCAST_CANCEL_COUNT_DOWN_TIMER_ACTION"),
-
-    /**
      * - 更新悬浮窗倒计时
      * */
-    UPDATE_FLOATING_WINDOW_TIME("com.pengxh.daily.app.BROADCAST_UPDATE_FLOATING_WINDOW_TIME_ACTION");
+    UPDATE_FLOATING_WINDOW_TIME("com.pengxh.daily.app.BROADCAST_UPDATE_FLOATING_WINDOW_TIME_ACTION"),
+
+    /**
+     * - 回到主界面
+     * */
+    GO_BACK_MAIN_ACTIVITY("com.pengxh.daily.app.BROADCAST_GO_BACK_MAIN_ACTIVITY_ACTION");
 
     companion object {
         fun fromAction(action: String): MessageType? {
