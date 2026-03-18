@@ -89,7 +89,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private lateinit var insetsController: WindowInsetsControllerCompat
     private lateinit var maskViewController: MaskViewController
     private val taskDataManager by lazy { TaskDataManager() }
-    private var countDownTimerService: CountDownTimerService? = null
     private lateinit var gestureDetector: GestureDetector
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
     private var taskBeans = mutableListOf<DailyTaskBean>()
@@ -317,7 +316,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         )
 
         taskScheduler = TaskScheduler(mainHandler, taskBeans)
-        taskScheduler.setCountDownTimerService(countDownTimerService)
         taskScheduler.setTaskStateListener(object : TaskScheduler.TaskStateListener {
             override fun onTaskStarted() {
                 binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
@@ -412,13 +410,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as CountDownTimerService.LocaleBinder
             val serviceInstance = binder.getService()
-            countDownTimerService = serviceInstance
             taskScheduler.setCountDownTimerService(serviceInstance)
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             Log.w(kTag, "Service disconnected: $name")
-            countDownTimerService = null
             taskScheduler.setCountDownTimerService(null)
         }
     }
