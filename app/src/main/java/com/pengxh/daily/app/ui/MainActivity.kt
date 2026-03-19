@@ -12,7 +12,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
-import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -37,6 +36,7 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
+import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
@@ -64,7 +64,6 @@ import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.math.abs
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
@@ -88,8 +87,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
     private lateinit var insetsController: WindowInsetsControllerCompat
     private lateinit var maskViewController: MaskViewController
+    private lateinit var gestureController: GestureController
     private val taskDataManager by lazy { TaskDataManager() }
-    private lateinit var gestureDetector: GestureDetector
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val marginOffset by lazy { 16.dp2px(this) }
@@ -242,6 +241,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         insetsController = WindowCompat.getInsetsController(window, binding.rootView)
         maskViewController = MaskViewController(this, binding, insetsController)
+        gestureController = GestureController(this, maskViewController, mainHandler)
 
         Intent(this, ForegroundRunningService::class.java).apply {
             startForegroundService(this)
@@ -253,38 +253,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         val watermark = DailyTask.getWatermarkText()
         binding.contentView.background = WatermarkDrawable(this, watermark)
-
-        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean) {
-                    val deltaY = abs(e2.y - (e1?.y ?: e2.y))
-
-                    // 从上向下滑动手势
-                    if (deltaY > 1000
-                        && (e2.y - (e1?.y ?: e2.y)) > 0
-                        && !maskViewController.isMaskVisible()
-                    ) {
-                        maskViewController.showMaskView(mainHandler)
-                        return true
-                    }
-
-                    // 从下向上滑动手势
-                    if (deltaY > 1000
-                        && (e2.y - (e1?.y ?: e2.y)) < 0
-                        && maskViewController.isMaskVisible()
-                    ) {
-                        maskViewController.hideMaskView(mainHandler)
-                        return true
-                    }
-                }
-                return super.onFling(e1, e2, velocityX, velocityY)
-            }
-        })
 
         // 数据
         taskBeans = DatabaseWrapper.loadAllTask()
@@ -308,10 +276,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.recyclerView.adapter = dailyTaskAdapter
         binding.recyclerView.addItemDecoration(
             RecyclerViewItemOffsets(
-                marginOffset,
-                marginOffset shr 1,
-                marginOffset,
-                marginOffset shr 1
+                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
 
@@ -478,7 +443,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ev?.let {
-            gestureDetector.onTouchEvent(it)
+            gestureController.onTouchEvent(it)
         }
         return super.dispatchTouchEvent(ev)
     }
