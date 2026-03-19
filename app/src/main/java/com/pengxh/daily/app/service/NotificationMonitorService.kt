@@ -15,6 +15,10 @@ import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 
 /**
@@ -59,11 +63,17 @@ class NotificationMonitorService : NotificationListenerService() {
         if (pkg == targetApp || pkg in auxiliaryApp) {
             NotificationBean().apply {
                 packageName = pkg
-                notificationTitle = title
-                notificationMsg = notice
+                noticeTitle = title
+                noticeMessage = notice
                 postTime = System.currentTimeMillis().timestampToCompleteDate()
             }.also {
-                DatabaseWrapper.insertNotice(it)
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        DatabaseWrapper.insertNotice(it)
+                    } catch (e: Exception) {
+                        Log.e(kTag, "Insert notice failed", e)
+                    }
+                }
             }
         }
 
@@ -111,15 +121,28 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("考勤记录") -> {
-                    var record = ""
-                    var index = 1
-                    DatabaseWrapper.loadCurrentDayNotice().forEach {
-                        if (it.notificationMsg.contains("考勤打卡")) {
-                            record += "【第${index}次】${it.notificationMsg}，时间：${it.postTime}\r\n"
-                            index++
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val notices = try {
+                            DatabaseWrapper.loadCurrentDayNotice()
+                        } catch (e: Exception) {
+                            Log.e(kTag, "Load notices failed", e)
+                            emptyList()
+                        }
+
+                        val record = buildString {
+                            var index = 1
+                            notices.filter {
+                                it.noticeMessage.contains("考勤打卡")
+                            }.forEach {
+                                append("【第${index}次】${it.noticeMessage}，时间：${it.postTime}\r\n")
+                                index++
+                            }
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            sendChannelMessage("当天考勤记录通知", record)
                         }
                     }
-                    sendChannelMessage("当天考勤记录通知", record)
                 }
 
                 else -> {

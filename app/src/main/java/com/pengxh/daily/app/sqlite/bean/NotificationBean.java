@@ -9,8 +9,8 @@ public class NotificationBean {
     private int id;//主键ID
 
     private String packageName;
-    private String notificationTitle;
-    private String notificationMsg;
+    private String noticeTitle;
+    private String noticeMessage;
     private String postTime;
 
     public int getId() {
@@ -29,20 +29,20 @@ public class NotificationBean {
         this.packageName = packageName;
     }
 
-    public String getNotificationTitle() {
-        return notificationTitle;
+    public String getNoticeTitle() {
+        return noticeTitle;
     }
 
-    public void setNotificationTitle(String notificationTitle) {
-        this.notificationTitle = notificationTitle;
+    public void setNoticeTitle(String noticeTitle) {
+        this.noticeTitle = noticeTitle;
     }
 
-    public String getNotificationMsg() {
-        return notificationMsg;
+    public String getNoticeMessage() {
+        return noticeMessage;
     }
 
-    public void setNotificationMsg(String notificationMsg) {
-        this.notificationMsg = notificationMsg;
+    public void setNoticeMessage(String noticeMessage) {
+        this.noticeMessage = noticeMessage;
     }
 
     public String getPostTime() {
