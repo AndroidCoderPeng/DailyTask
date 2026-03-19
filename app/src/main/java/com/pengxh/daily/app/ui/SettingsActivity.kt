@@ -1,8 +1,6 @@
 package com.pengxh.daily.app.ui
 
-import android.content.BroadcastReceiver
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -15,13 +13,12 @@ import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
+import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.NotificationMonitorService
-import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
-import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
@@ -32,11 +29,13 @@ import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     private val context = this
-
     private val apps by lazy {
         listOf(
             "钉钉",
@@ -55,39 +54,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
     private val channels = arrayListOf("企业微信", "QQ邮箱")
 
-    private val actions by lazy {
-        listOf(
-            MessageType.NOTICE_LISTENER_CONNECTED.action,
-            MessageType.NOTICE_LISTENER_DISCONNECTED.action
-        )
-    }
-
-    private val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.action?.let {
-                when (MessageType.fromAction(it)) {
-                    MessageType.NOTICE_LISTENER_CONNECTED -> {
-                        binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-                        binding.tipsView.setTextColor(
-                            R.color.theme_color.convertColor(this@SettingsActivity)
-                        )
-                        binding.noticeSwitch.isChecked = true
-                        binding.tipsView.visibility = View.GONE
-                    }
-
-                    MessageType.NOTICE_LISTENER_DISCONNECTED -> {
-                        binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
-                        binding.tipsView.setTextColor(Color.RED)
-                        binding.noticeSwitch.isChecked = false
-                        binding.tipsView.visibility = View.VISIBLE
-                    }
-
-                    else -> {}
-                }
-            }
-        }
-    }
-
     override fun initViewBinding(): ActivitySettingsBinding {
         return ActivitySettingsBinding.inflate(layoutInflater)
     }
@@ -100,7 +66,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
+        EventBus.getDefault().register(this)
 
         val index = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
         binding.iconView.setBackgroundResource(icons[index])
@@ -112,6 +78,30 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         val watermark = DailyTask.getWatermarkText()
         binding.contentView.background = WatermarkDrawable(this, watermark)
+    }
+
+    @Suppress("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun handleApplicationEvent(event: ApplicationEvent) {
+        when (event) {
+            is ApplicationEvent.ListenerConnected -> {
+                binding.tipsView.text = "通知监听服务状态查询中，请稍后"
+                binding.tipsView.setTextColor(
+                    R.color.theme_color.convertColor(this@SettingsActivity)
+                )
+                binding.noticeSwitch.isChecked = true
+                binding.tipsView.visibility = View.GONE
+            }
+
+            is ApplicationEvent.ListenerDisconnected -> {
+                binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
+                binding.tipsView.setTextColor(Color.RED)
+                binding.noticeSwitch.isChecked = false
+                binding.tipsView.visibility = View.VISIBLE
+            }
+
+            else -> {}
+        }
     }
 
     override fun observeRequestState() {
@@ -246,8 +236,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
-        actions.forEach {
-            BroadcastManager.getDefault().unregisterReceiver(this, it)
-        }
+        EventBus.getDefault().unregister(this)
     }
 }

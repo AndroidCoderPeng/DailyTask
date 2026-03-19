@@ -16,10 +16,12 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
  *
  * @param mainHandler 主线程Handler
  * @param taskBeans 任务列表
+ * @param listener 任务状态回调
  */
 class TaskScheduler(
     private val mainHandler: Handler,
-    private val taskBeans: MutableList<DailyTaskBean>
+    private val taskBeans: MutableList<DailyTaskBean>,
+    private val listener: TaskStateListener
 ) {
     private var countDownTimerService: CountDownTimerService? = null
     private var isTaskStarted = false
@@ -31,12 +33,6 @@ class TaskScheduler(
         fun onTaskCompleted()
         fun onTaskExecuting(taskIndex: Int, task: DailyTaskBean, realTime: String)
         fun onTaskExecutionError(message: String)
-    }
-
-    private var stateListener: TaskStateListener? = null
-
-    fun setTaskStateListener(listener: TaskStateListener?) {
-        this.stateListener = listener
     }
 
     fun setCountDownTimerService(service: CountDownTimerService?) {
@@ -58,7 +54,7 @@ class TaskScheduler(
         mainHandler.post(dailyTaskRunnable)
 
         // 通知状态变更
-        stateListener?.onTaskStarted()
+        listener.onTaskStarted()
     }
 
     /**
@@ -75,7 +71,7 @@ class TaskScheduler(
         countDownTimerService?.cancelCountDown()
 
         // 通知状态变更
-        stateListener?.onTaskStopped()
+        listener.onTaskStopped()
     }
 
     /**
@@ -99,7 +95,7 @@ class TaskScheduler(
                     mainHandler.removeCallbacks(this)
 
                     // 通知任务完成
-                    stateListener?.onTaskCompleted()
+                    listener.onTaskCompleted()
 
                     // 更新服务状态
                     countDownTimerService?.updateDailyTaskState()
@@ -110,7 +106,7 @@ class TaskScheduler(
                 if (index < 0 || index >= taskBeans.size) {
                     val errorMsg = "任务索引超出范围: $index, 数组大小: ${taskBeans.size}"
                     LogFileManager.writeLog(errorMsg)
-                    stateListener?.onTaskExecutionError(errorMsg)
+                    listener.onTaskExecutionError(errorMsg)
                     return
                 }
 
@@ -123,18 +119,18 @@ class TaskScheduler(
                 val diff = pair.second
 
                 // 通知UI更新
-                stateListener?.onTaskExecuting(taskIndex, task, pair.first)
+                listener.onTaskExecuting(taskIndex, task, pair.first)
 
                 // 启动倒计时
                 countDownTimerService?.startCountDown(taskIndex, diff)
             } catch (e: IndexOutOfBoundsException) {
                 val errorMsg = "任务数组访问越界: ${e.message}"
                 LogFileManager.writeLog(errorMsg)
-                stateListener?.onTaskExecutionError(errorMsg)
+                listener.onTaskExecutionError(errorMsg)
             } catch (e: Exception) {
                 val errorMsg = "执行任务时发生异常: ${e.message}"
                 LogFileManager.writeLog(errorMsg)
-                stateListener?.onTaskExecutionError(errorMsg)
+                listener.onTaskExecutionError(errorMsg)
             }
         }
     }
@@ -142,6 +138,5 @@ class TaskScheduler(
     fun destroy() {
         mainHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService = null
-        stateListener = null
     }
 }

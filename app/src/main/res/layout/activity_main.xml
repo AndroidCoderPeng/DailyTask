@@ -51,7 +51,7 @@
                         android:drawablePadding="@dimen/dp_4"
                         android:padding="@dimen/dp_8"
                         android:singleLine="true"
-                        android:text="--秒后刷新每日任务"
+                        android:text="--分钟后刷新每日任务"
                         android:textColor="@color/white"
                         android:textSize="@dimen/sp_14"
                         app:drawableStartCompat="@drawable/ic_sand" />

@@ -27,7 +27,6 @@ class GestureController(
     private val minFlingDistance = 1000f
 
     private val gestureDetector: GestureDetector
-    private var isGestureEnabled: Boolean = false
 
     init {
         gestureDetector = GestureDetector(context, GestureListener())

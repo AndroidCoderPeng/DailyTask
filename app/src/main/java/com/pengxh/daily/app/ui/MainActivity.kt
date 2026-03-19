@@ -1,8 +1,6 @@
 package com.pengxh.daily.app.ui
 
-import android.content.BroadcastReceiver
 import android.content.ComponentName
-import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Build
@@ -26,21 +24,19 @@ import com.google.android.material.textview.MaterialTextView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
-import com.pengxh.daily.app.event.FloatViewTimerEvent
+import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
-import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.TaskDataManager
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.TimeoutTimerManager
@@ -65,22 +61,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
+class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.TaskStateListener {
 
     private val kTag = "MainActivity"
     private val context = this
-    private val actions by lazy {
-        listOf(
-            MessageType.SHOW_MASK_VIEW.action,
-            MessageType.HIDE_MASK_VIEW.action,
-            MessageType.RESET_DAILY_TASK.action,
-            MessageType.UPDATE_RESET_TICK_TIME.action,
-            MessageType.START_DAILY_TASK.action,
-            MessageType.STOP_DAILY_TASK.action,
-            MessageType.GO_BACK_MAIN_ACTIVITY.action
-        )
-    }
-
     private val dateFormat by lazy {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.getDefault())
     }
@@ -96,61 +80,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private lateinit var taskScheduler: TaskScheduler
     private lateinit var timeoutTimerManager: TimeoutTimerManager
     private var taskBeans = mutableListOf<DailyTaskBean>()
-
-    private val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.action?.let {
-                when (MessageType.fromAction(it)) {
-                    MessageType.SHOW_MASK_VIEW -> {
-                        if (!maskViewController.isMaskVisible()) {
-                            maskViewController.showMaskView(mainHandler)
-                        }
-                    }
-
-                    MessageType.HIDE_MASK_VIEW -> {
-                        if (maskViewController.isMaskVisible()) {
-                            maskViewController.hideMaskView(mainHandler)
-                        }
-                    }
-
-                    MessageType.RESET_DAILY_TASK -> {
-                        Log.d(kTag, "onReceive: 重置每日任务")
-                        taskScheduler.startTask()
-                    }
-
-                    MessageType.UPDATE_RESET_TICK_TIME -> {
-                        binding.repeatTimeView.text = intent.getStringExtra("message")
-                    }
-
-                    MessageType.START_DAILY_TASK -> {
-                        if (!taskScheduler.isTaskStarted()) {
-                            taskScheduler.startTask()
-                        } else {
-                            messageDispatcher.sendMessage(
-                                "启动任务通知",
-                                "任务启动失败，任务已在运行中，请勿重复启动",
-                            )
-                        }
-                    }
-
-                    MessageType.STOP_DAILY_TASK -> {
-                        if (taskScheduler.isTaskStarted()) {
-                            taskScheduler.stopTask()
-                        } else {
-                            messageDispatcher.sendMessage(
-                                "停止任务通知",
-                                "任务停止失败，任务已经停止，请勿重复停止",
-                            )
-                        }
-                    }
-
-                    MessageType.GO_BACK_MAIN_ACTIVITY -> backToMainActivity()
-
-                    else -> {}
-                }
-            }
-        }
-    }
 
     override fun observeRequestState() {
 
@@ -224,8 +153,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
-
         EventBus.getDefault().register(this)
 
         // 显示悬浮窗
@@ -242,6 +169,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         insetsController = WindowCompat.getInsetsController(window, binding.rootView)
         maskViewController = MaskViewController(this, binding, insetsController)
         gestureController = GestureController(this, maskViewController, mainHandler)
+        taskScheduler = TaskScheduler(mainHandler, taskBeans, this)
+        timeoutTimerManager = TimeoutTimerManager(mainHandler)
 
         Intent(this, ForegroundRunningService::class.java).apply {
             startForegroundService(this)
@@ -279,67 +208,116 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
-
-        taskScheduler = TaskScheduler(mainHandler, taskBeans)
-        taskScheduler.setTaskStateListener(object : TaskScheduler.TaskStateListener {
-            override fun onTaskStarted() {
-                binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-                binding.executeTaskButton.setIconTintResource(R.color.red)
-                binding.executeTaskButton.text = "停止"
-                messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
-            }
-
-            override fun onTaskStopped() {
-                // 重置UI状态
-                dailyTaskAdapter.updateCurrentTaskState(-1)
-                binding.tipsView.text = ""
-
-                // 重置按钮状态
-                binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-                binding.executeTaskButton.setIconTintResource(R.color.ios_green)
-                binding.executeTaskButton.text = "启动"
-                messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
-            }
-
-            override fun onTaskCompleted() {
-                // 任务全部完成
-                binding.tipsView.text = "当天所有任务已执行完毕"
-                binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
-                dailyTaskAdapter.updateCurrentTaskState(-1)
-                messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
-            }
-
-            override fun onTaskExecuting(taskIndex: Int, task: DailyTaskBean, realTime: String) {
-                // 任务执行中
-                binding.tipsView.text = String.format(
-                    Locale.getDefault(), "准备执行第 %d 个任务", taskIndex
-                )
-                binding.tipsView.setTextColor(R.color.theme_color.convertColor(context))
-                dailyTaskAdapter.updateCurrentTaskState(taskIndex - 1, task.time)
-
-                messageDispatcher.sendMessage(
-                    "任务执行通知",
-                    "准备执行第 $taskIndex 个任务，计划时间：${task.time}，实际时间: $realTime",
-                )
-            }
-
-            override fun onTaskExecutionError(message: String) {
-                Log.e(kTag, message)
-            }
-        })
-
-        timeoutTimerManager = TimeoutTimerManager(this, mainHandler)
     }
 
+    @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
-    fun startFloatViewTimer(event: FloatViewTimerEvent) {
-        timeoutTimerManager.startTimeoutTimer {
-            //如果倒计时结束，那么表明没有收到打卡成功的通知
-            backToMainActivity()
+    fun handleApplicationEvent(event: ApplicationEvent) {
+        when (event) {
+            is ApplicationEvent.ShowMaskView -> {
+                if (!maskViewController.isMaskVisible()) {
+                    maskViewController.showMaskView(mainHandler)
+                }
+            }
 
-            LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-            messageDispatcher.sendMessage("", "")
+            is ApplicationEvent.HideMaskView -> {
+                if (maskViewController.isMaskVisible()) {
+                    maskViewController.hideMaskView(mainHandler)
+                }
+            }
+
+            is ApplicationEvent.ResetDailyTask -> {
+                Log.d(kTag, "onApplicationEvent: 重置每日任务")
+                taskScheduler.startTask()
+            }
+
+            is ApplicationEvent.UpdateResetTickTime -> {
+                binding.repeatTimeView.text = event.countDownTime
+            }
+
+            is ApplicationEvent.StartDailyTask -> {
+                if (!taskScheduler.isTaskStarted()) {
+                    taskScheduler.startTask()
+                } else {
+                    messageDispatcher.sendMessage(
+                        "启动任务通知",
+                        "任务启动失败，任务已在运行中，请勿重复启动",
+                    )
+                }
+            }
+
+            is ApplicationEvent.StopDailyTask -> {
+                if (taskScheduler.isTaskStarted()) {
+                    taskScheduler.stopTask()
+                } else {
+                    messageDispatcher.sendMessage(
+                        "停止任务通知",
+                        "任务停止失败，任务已经停止，请勿重复停止",
+                    )
+                }
+            }
+
+            is ApplicationEvent.GoBackMainActivity -> { // 打卡成功发送的消息，回到主界面
+                backToMainActivity()
+            }
+
+            is ApplicationEvent.StartCountdownTime -> {
+                timeoutTimerManager.startTimeoutTimer {
+                    //如果倒计时结束，那么表明没有收到打卡成功的通知
+                    backToMainActivity()
+
+                    LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+                    messageDispatcher.sendMessage("", "")
+                }
+            }
+
+            else -> {}
         }
+    }
+
+    override fun onTaskStarted() {
+        binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+        binding.executeTaskButton.setIconTintResource(R.color.red)
+        binding.executeTaskButton.text = "停止"
+        messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
+    }
+
+    override fun onTaskStopped() {
+        // 重置UI状态
+        dailyTaskAdapter.updateCurrentTaskState(-1)
+        binding.tipsView.text = ""
+
+        // 重置按钮状态
+        binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
+        binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+        binding.executeTaskButton.text = "启动"
+        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
+    }
+
+    override fun onTaskCompleted() {
+        // 任务全部完成
+        binding.tipsView.text = "当天所有任务已执行完毕"
+        binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
+        dailyTaskAdapter.updateCurrentTaskState(-1)
+        messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
+    }
+
+    override fun onTaskExecuting(taskIndex: Int, task: DailyTaskBean, realTime: String) {
+        // 任务执行中
+        binding.tipsView.text = String.format(
+            Locale.getDefault(), "准备执行第 %d 个任务", taskIndex
+        )
+        binding.tipsView.setTextColor(R.color.theme_color.convertColor(context))
+        dailyTaskAdapter.updateCurrentTaskState(taskIndex - 1, task.time)
+
+        messageDispatcher.sendMessage(
+            "任务执行通知",
+            "准备执行第 $taskIndex 个任务，计划时间：${task.time}，实际时间: $realTime",
+        )
+    }
+
+    override fun onTaskExecutionError(message: String) {
+        Log.e(kTag, message)
     }
 
     private val overlayPermissionLauncher =
@@ -554,9 +532,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         mainHandler.removeCallbacksAndMessages(null)
 
-        actions.forEach {
-            BroadcastManager.getDefault().unregisterReceiver(this, it)
-        }
         EventBus.getDefault().unregister(this)
         try {
             unbindService(serviceConnection)

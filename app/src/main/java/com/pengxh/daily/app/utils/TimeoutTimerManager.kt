@@ -1,9 +1,10 @@
 package com.pengxh.daily.app.utils
 
-import android.content.Context
 import android.os.CountDownTimer
 import android.os.Handler
+import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import org.greenrobot.eventbus.EventBus
 
 /**
  * 超时定时器管理器
@@ -14,10 +15,9 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
  * 3. 处理超时后的逻辑（返回主界面、发送异常邮件）
  * 4. 提供定时器取消接口
  *
- * @param context 上下文
  * @param mainHandler 主线程Handler
  */
-class TimeoutTimerManager(private val context: Context, private val mainHandler: Handler) {
+class TimeoutTimerManager(private val mainHandler: Handler) {
 
     private var timeoutTimer: CountDownTimer? = null
     private var timeoutSeconds: Int = 0
@@ -44,13 +44,8 @@ class TimeoutTimerManager(private val context: Context, private val mainHandler:
         timeoutTimer = object : CountDownTimer(timeoutSeconds * 1000L, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val tick = (millisUntilFinished / 1000).toInt()
-
                 // 更新悬浮窗倒计时
-                BroadcastManager.getDefault().sendBroadcast(
-                    context,
-                    MessageType.UPDATE_FLOATING_WINDOW_TIME.action,
-                    mapOf("tick" to tick)
-                )
+                EventBus.getDefault().post(ApplicationEvent.UpdateFloatingViewTime(tick))
             }
 
             override fun onFinish() {

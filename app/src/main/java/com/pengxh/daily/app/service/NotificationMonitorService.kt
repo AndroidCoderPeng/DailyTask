@@ -5,17 +5,17 @@ import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
-import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
-import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import org.greenrobot.eventbus.EventBus
 
 /**
  * @description: 状态栏监听服务
@@ -35,9 +35,7 @@ class NotificationMonitorService : NotificationListenerService() {
      * 有可用的并且和通知管理器连接成功时回调
      */
     override fun onListenerConnected() {
-        BroadcastManager.getDefault().sendBroadcast(
-            this, MessageType.NOTICE_LISTENER_CONNECTED.action
-        )
+        EventBus.getDefault().post(ApplicationEvent.ListenerConnected)
     }
 
     /**
@@ -71,9 +69,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
         // 目标应用打卡通知
         if (pkg == targetApp && notice.contains("成功")) {
-            BroadcastManager.getDefault().sendBroadcast(
-                this, MessageType.GO_BACK_MAIN_ACTIVITY.action
-            )
+            EventBus.getDefault().post(ApplicationEvent.GoBackMainActivity)
             "即将发送通知邮件，请注意查收".show(this)
             sendChannelMessage("", notice)
         }
@@ -89,15 +85,11 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("启动") -> {
-                    BroadcastManager.getDefault().sendBroadcast(
-                        this, MessageType.START_DAILY_TASK.action
-                    )
+                    EventBus.getDefault().post(ApplicationEvent.StartDailyTask)
                 }
 
                 notice.contains("停止") -> {
-                    BroadcastManager.getDefault().sendBroadcast(
-                        this, MessageType.STOP_DAILY_TASK.action
-                    )
+                    EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
                 }
 
                 notice.contains("开始循环") -> {
@@ -111,15 +103,11 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("息屏") -> {
-                    BroadcastManager.getDefault().sendBroadcast(
-                        this, MessageType.SHOW_MASK_VIEW.action
-                    )
+                    EventBus.getDefault().post(ApplicationEvent.ShowMaskView)
                 }
 
                 notice.contains("亮屏") -> {
-                    BroadcastManager.getDefault().sendBroadcast(
-                        this, MessageType.HIDE_MASK_VIEW.action
-                    )
+                    EventBus.getDefault().post(ApplicationEvent.HideMaskView)
                 }
 
                 notice.contains("考勤记录") -> {
@@ -169,8 +157,6 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification) {}
 
     override fun onListenerDisconnected() {
-        BroadcastManager.getDefault().sendBroadcast(
-            this, MessageType.NOTICE_LISTENER_DISCONNECTED.action
-        )
+        EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
     }
 }

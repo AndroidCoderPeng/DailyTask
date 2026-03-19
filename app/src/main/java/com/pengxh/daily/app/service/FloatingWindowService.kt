@@ -2,8 +2,6 @@ package com.pengxh.daily.app.service
 
 import android.annotation.SuppressLint
 import android.app.Service
-import android.content.BroadcastReceiver
-import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.IBinder
@@ -14,67 +12,22 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import com.pengxh.daily.app.databinding.WindowFloatingBinding
-import com.pengxh.daily.app.utils.BroadcastManager
+import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import org.greenrobot.eventbus.EventBus
+import org.greenrobot.eventbus.Subscribe
+import org.greenrobot.eventbus.ThreadMode
 
 class FloatingWindowService : Service() {
     private val kTag = "FloatingWindowService"
     private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
     private lateinit var binding: WindowFloatingBinding
     private var floatViewParams: WindowManager.LayoutParams? = null
-    private val actions by lazy {
-        listOf(
-            MessageType.SHOW_FLOATING_WINDOW.action,
-            MessageType.HIDE_FLOATING_WINDOW.action,
-            MessageType.SET_DING_DING_OVERTIME.action,
-            MessageType.UPDATE_FLOATING_WINDOW_TIME.action
-        )
-    }
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
     private var initialTouchY = 0f
-    private val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            intent?.action?.let {
-                when (MessageType.fromAction(it)) {
-                    MessageType.SHOW_FLOATING_WINDOW -> {
-                        binding.root.alpha = 1.0f
-                        val time = SaveKeyValues.getValue(
-                            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                        ) as Int
-                        binding.timeView.text = "${time}s"
-                    }
-
-                    MessageType.HIDE_FLOATING_WINDOW -> {
-                        binding.root.alpha = 0.0f
-                        binding.timeView.text = "0s"
-                    }
-
-                    MessageType.SET_DING_DING_OVERTIME -> {
-                        // 更新目标应用任务超时时间
-                        val time = intent.getIntExtra("time", 30)
-                        binding.timeView.text = "${time}s"
-                    }
-
-                    MessageType.UPDATE_FLOATING_WINDOW_TIME -> {
-                        // 更新悬浮窗倒计时
-                        val tick = intent.getIntExtra("tick", 30)
-                        binding.timeView.text = "${tick}s"
-                        if (tick < 1) {
-                            binding.root.alpha = 0.0f
-                        } else {
-                            binding.root.alpha = 1.0f
-                        }
-                    }
-
-                    else -> {}
-                }
-            }
-        }
-    }
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -84,7 +37,7 @@ class FloatingWindowService : Service() {
         super.onCreate()
         binding = WindowFloatingBinding.inflate(LayoutInflater.from(this))
 
-        BroadcastManager.getDefault().registerReceivers(this, actions, broadcastReceiver)
+        EventBus.getDefault().register(this)
 
         floatViewParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -106,6 +59,42 @@ class FloatingWindowService : Service() {
 
         // 移动悬浮窗
         onDragMove()
+    }
+
+    @Suppress("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun handleApplicationEvent(event: ApplicationEvent) {
+        when (event) {
+            is ApplicationEvent.ShowFloatingWindow -> {
+                binding.root.alpha = 1.0f
+                val time = SaveKeyValues.getValue(
+                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                ) as Int
+                binding.timeView.text = "${time}s"
+            }
+
+            is ApplicationEvent.HideFloatingWindow -> {
+                binding.root.alpha = 0.0f
+                binding.timeView.text = "0s"
+            }
+
+            is ApplicationEvent.SetTaskOvertime -> {
+                // 更新目标应用任务超时时间
+                binding.timeView.text = "${event.time}s"
+            }
+
+            is ApplicationEvent.UpdateFloatingViewTime -> {
+                // 更新悬浮窗倒计时
+                binding.timeView.text = "${event.tick}s"
+                if (event.tick < 1) {
+                    binding.root.alpha = 0.0f
+                } else {
+                    binding.root.alpha = 1.0f
+                }
+            }
+
+            else -> {}
+        }
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -138,9 +127,7 @@ class FloatingWindowService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        actions.forEach {
-            BroadcastManager.getDefault().unregisterReceiver(this, it)
-        }
+        EventBus.getDefault().unregister(this)
         if (::binding.isInitialized && binding.root.isAttachedToWindow) {
             try {
                 windowManager.removeViewImmediate(binding.root)

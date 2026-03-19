@@ -1,0 +1,42 @@
+package com.pengxh.daily.app.event
+
+/**
+ * 应用内事件定义
+ * 统一使用EventBus进行应用内组件通信
+ */
+sealed class ApplicationEvent {
+    /**
+     * 蒙版视图控制事件
+     */
+    object ShowMaskView : ApplicationEvent()
+    object HideMaskView : ApplicationEvent()
+
+    /**
+     * 监听器状态事件
+     */
+    object ListenerConnected : ApplicationEvent()
+    object ListenerDisconnected : ApplicationEvent()
+
+    /**
+     * 任务控制事件
+     */
+    object StartDailyTask : ApplicationEvent()
+    object StopDailyTask : ApplicationEvent()
+    data class SetResetTaskTime(val hour: Int) : ApplicationEvent()
+    data class UpdateResetTickTime(val countDownTime: String) : ApplicationEvent()
+    object ResetDailyTask : ApplicationEvent()
+
+    /**
+     * 悬浮窗控制事件
+     */
+    object ShowFloatingWindow : ApplicationEvent()
+    object HideFloatingWindow : ApplicationEvent()
+    object StartCountdownTime : ApplicationEvent()
+    data class UpdateFloatingViewTime(val tick: Int) : ApplicationEvent()
+    data class SetTaskOvertime(val time: Int) : ApplicationEvent()
+
+    /**
+     * 导航事件
+     */
+    object GoBackMainActivity : ApplicationEvent()
+}

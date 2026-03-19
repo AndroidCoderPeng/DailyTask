@@ -7,10 +7,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
-import com.pengxh.daily.app.event.FloatViewTimerEvent
-import com.pengxh.daily.app.utils.BroadcastManager
+import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.extensions.show
 import org.greenrobot.eventbus.EventBus
 
@@ -49,7 +47,7 @@ fun Context.openApplication(needCountDown: Boolean) {
     if (!isApplicationExist(targetApp)) {
         "未安装指定的目标软件，无法执行任务".show(this)
         // 停止任务
-        BroadcastManager.getDefault().sendBroadcast(this, MessageType.STOP_DAILY_TASK.action)
+        EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
         return
     }
 
@@ -68,6 +66,6 @@ fun Context.openApplication(needCountDown: Boolean) {
 
     // 在目标应用界面更新悬浮窗倒计时
     if (needCountDown) {
-        EventBus.getDefault().post(FloatViewTimerEvent())
+        EventBus.getDefault().post(ApplicationEvent.StartCountdownTime)
     }
 }

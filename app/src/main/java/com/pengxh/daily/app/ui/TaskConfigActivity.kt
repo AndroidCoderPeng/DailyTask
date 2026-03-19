@@ -8,13 +8,12 @@ import android.util.Log
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
+import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
-import com.pengxh.daily.app.utils.BroadcastManager
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
@@ -24,6 +23,7 @@ import com.pengxh.kt.lite.extensions.toJson
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
+import org.greenrobot.eventbus.EventBus
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -246,9 +246,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private fun setTaskResetTime(hour: Int) {
         SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
         // 重新开始重置每日任务计时
-        BroadcastManager.getDefault().sendBroadcast(
-            this, MessageType.SET_RESET_TASK_TIME.action, mapOf("hour" to hour)
-        )
+        EventBus.getDefault().post(ApplicationEvent.SetResetTaskTime(hour))
     }
 
     private fun setTimeByPosition(position: Int) {
@@ -283,8 +281,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private fun updateDingDingTimeout(time: Int) {
         SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
         // 更新目标应用任务超时时间
-        BroadcastManager.getDefault().sendBroadcast(
-            this, MessageType.SET_DING_DING_OVERTIME.action, mapOf("time" to time)
-        )
+        EventBus.getDefault().post(ApplicationEvent.SetTaskOvertime(time))
     }
 }
