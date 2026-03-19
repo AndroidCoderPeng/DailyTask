@@ -13,7 +13,8 @@ import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.extensions.convertColor
 
 class DailyTaskAdapter(
-    private val context: Context, private val dataBeans: MutableList<DailyTaskBean>
+    private val context: Context,
+    private val dataBeans: MutableList<DailyTaskBean>
 ) : RecyclerView.Adapter<ViewHolder>() {
 
     private var layoutInflater = LayoutInflater.from(context)

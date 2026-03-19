@@ -33,8 +33,7 @@ class DailyTaskApplication : Application() {
         SaveKeyValues.initSharedPreferences(this)
         LogFileManager.initLogFile(this)
 
-        val isDebugMode = BuildConfig.DEBUG
-        CrashReport.initCrashReport(this, "ecbdc9baf5", isDebugMode)
+        CrashReport.initCrashReport(this, "ecbdc9baf5", BuildConfig.DEBUG)
 
         dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db")
             .allowMainThreadQueries()
