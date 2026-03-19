@@ -21,7 +21,7 @@ import org.greenrobot.eventbus.ThreadMode
 
 class FloatingWindowService : Service() {
     private val kTag = "FloatingWindowService"
-    private val windowManager by lazy { getSystemService(WINDOW_SERVICE) as WindowManager }
+    private val windowManager by lazy { getSystemService(WindowManager::class.java) }
     private lateinit var binding: WindowFloatingBinding
     private var floatViewParams: WindowManager.LayoutParams? = null
     private var initialX = 0
@@ -101,7 +101,8 @@ class FloatingWindowService : Service() {
     private fun onDragMove() {
         binding.root.setOnTouchListener(object : View.OnTouchListener {
             override fun onTouch(v: View?, event: MotionEvent?): Boolean {
-                when (event?.action) {
+                event ?: return false
+                when (event.action) {
                     MotionEvent.ACTION_DOWN -> {
                         initialX = floatViewParams?.x ?: 0
                         initialY = floatViewParams?.y ?: 0
