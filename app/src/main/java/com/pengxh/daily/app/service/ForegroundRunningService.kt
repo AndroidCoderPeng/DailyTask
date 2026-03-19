@@ -30,55 +30,15 @@ import java.util.Locale
  * */
 class ForegroundRunningService : Service() {
     private val kTag = "ForegroundRunningService"
-    private val notificationId = Int.MAX_VALUE
-    private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
-    private val notificationBuilder by lazy {
-        NotificationCompat.Builder(this, "foreground_running_service_channel").apply {
-            setSmallIcon(R.mipmap.ic_launcher)
-            setContentText(Constant.FOREGROUND_RUNNING_SERVICE_TITLE)
-            setPriority(NotificationCompat.PRIORITY_HIGH) // 设置通知优先级
-            setOngoing(true)
-            setOnlyAlertOnce(true)
-            setSilent(true)
-            setCategory(NotificationCompat.CATEGORY_SERVICE)
-            setShowWhen(true)
-            setSound(null) // 禁用声音
-            setVibrate(null) // 禁用振动
-        }
-    }
     private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager() }
+
+    @Volatile
     private var isTaskReset = false
+
+    @Volatile
     private var isTimerRunning = false
     private var taskTimer: CountDownTimer? = null
-
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleApplicationEvent(event: ApplicationEvent) {
-        if (event is ApplicationEvent.SetResetTaskTime) {
-            // 重置任务计时器
-            startResetTaskTimer(event.hour)
-        }
-    }
-
-    private val systemBroadcastReceiver by lazy {
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                intent?.action?.let {
-                    // 监听时间，系统级广播，每分钟触发一次。
-                    if (it == Intent.ACTION_TIME_TICK) {
-                        val hour = SaveKeyValues.getValue(
-                            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-                        ) as Int
-                        val calendar = Calendar.getInstance()
-                        if (calendar.get(Calendar.HOUR_OF_DAY) == hour) {
-                            resetTask()
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     private fun resetTask() {
         if (!isTaskReset) {
@@ -120,19 +80,33 @@ class ForegroundRunningService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        val notificationManager = getSystemService(NotificationManager::class.java)
         val name = "${resources.getString(R.string.app_name)}前台服务"
         val channel = NotificationChannel(
-            "foreground_running_service_channel", name, NotificationManager.IMPORTANCE_HIGH
+            "foreground_running_service_channel", name, NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "Channel for Foreground Running Service"
         }
         notificationManager.createNotificationChannel(channel)
+        val notificationBuilder =
+            NotificationCompat.Builder(this, "foreground_running_service_channel").apply {
+                setSmallIcon(R.mipmap.ic_launcher)
+                setContentText(Constant.FOREGROUND_RUNNING_SERVICE_TITLE)
+                setPriority(NotificationCompat.PRIORITY_LOW) // 设置通知优先级
+                setOngoing(true)
+                setOnlyAlertOnce(true)
+                setSilent(true)
+                setCategory(NotificationCompat.CATEGORY_SERVICE)
+                setShowWhen(true)
+                setSound(null) // 禁用声音
+                setVibrate(null) // 禁用振动
+            }
         val notification = notificationBuilder.build()
-        startForeground(notificationId, notification)
+        startForeground(1002, notification)
 
         val filter = IntentFilter(Intent.ACTION_TIME_TICK)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(systemBroadcastReceiver, filter, RECEIVER_EXPORTED)
+            registerReceiver(systemBroadcastReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(systemBroadcastReceiver, filter)
         }
@@ -144,6 +118,34 @@ class ForegroundRunningService : Service() {
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         ) as Int
         startResetTaskTimer(hour)
+    }
+
+    private val systemBroadcastReceiver by lazy {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                intent?.action?.let {
+                    // 监听时间，系统级广播，每分钟触发一次。
+                    if (it == Intent.ACTION_TIME_TICK) {
+                        val hour = SaveKeyValues.getValue(
+                            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+                        ) as Int
+                        val calendar = Calendar.getInstance()
+                        if (calendar.get(Calendar.HOUR_OF_DAY) == hour) {
+                            resetTask()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Suppress("unused")
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun handleApplicationEvent(event: ApplicationEvent) {
+        if (event is ApplicationEvent.SetResetTaskTime) {
+            // 重置任务计时器
+            startResetTaskTimer(event.hour)
+        }
     }
 
     private fun startResetTaskTimer(hour: Int) {
@@ -206,10 +208,12 @@ class ForegroundRunningService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        EventBus.getDefault().unregister(this)
-        unregisterReceiver(systemBroadcastReceiver)
         taskTimer?.cancel()
         taskTimer = null
+
+        EventBus.getDefault().unregister(this)
+        unregisterReceiver(systemBroadcastReceiver)
+
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 

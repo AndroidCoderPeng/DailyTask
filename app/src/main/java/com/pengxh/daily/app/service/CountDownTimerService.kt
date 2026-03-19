@@ -26,7 +26,7 @@ class CountDownTimerService : Service() {
         NotificationCompat.Builder(this, "countdown_timer_service_channel").apply {
             setSmallIcon(R.mipmap.ic_launcher)
             setContentText("倒计时服务已就绪")
-            setPriority(NotificationCompat.PRIORITY_MIN)
+            setPriority(NotificationCompat.PRIORITY_LOW)
             setOngoing(true)
             setOnlyAlertOnce(true)
             setSilent(true)
