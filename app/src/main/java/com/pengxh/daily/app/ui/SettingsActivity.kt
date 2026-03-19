@@ -86,9 +86,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         when (event) {
             is ApplicationEvent.ListenerConnected -> {
                 binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-                binding.tipsView.setTextColor(
-                    R.color.theme_color.convertColor(this@SettingsActivity)
-                )
+                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
                 binding.noticeSwitch.isChecked = true
                 binding.tipsView.visibility = View.GONE
             }
