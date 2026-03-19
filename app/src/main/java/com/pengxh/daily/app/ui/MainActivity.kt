@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -44,6 +43,7 @@ import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MessageType
 import com.pengxh.daily.app.utils.TaskDataManager
 import com.pengxh.daily.app.utils.TaskScheduler
+import com.pengxh.daily.app.utils.TimeoutTimerManager
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -96,7 +96,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private lateinit var taskScheduler: TaskScheduler
-    private var timeoutTimer: CountDownTimer? = null
+    private lateinit var timeoutTimerManager: TimeoutTimerManager
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -362,36 +362,19 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 Log.e(kTag, message)
             }
         })
+
+        timeoutTimerManager = TimeoutTimerManager(this, mainHandler)
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun startFloatViewTimer(event: FloatViewTimerEvent) {
-        // 取消之前的定时器，防止重复创建
-        timeoutTimer?.cancel()
+        timeoutTimerManager.startTimeoutTimer {
+            //如果倒计时结束，那么表明没有收到打卡成功的通知
+            backToMainActivity()
 
-        val time = SaveKeyValues.getValue(
-            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-        ) as Int
-        timeoutTimer = object : CountDownTimer(time * 1000L, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val tick = millisUntilFinished / 1000
-                // 更新悬浮窗倒计时
-                BroadcastManager.getDefault().sendBroadcast(
-                    context,
-                    MessageType.UPDATE_FLOATING_WINDOW_TIME.action,
-                    mapOf("tick" to tick)
-                )
-            }
-
-            override fun onFinish() {
-                //如果倒计时结束，那么表明没有收到打卡成功的通知
-                backToMainActivity()
-
-                LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
-                messageDispatcher.sendMessage("", "")
-            }
+            LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+            messageDispatcher.sendMessage("", "")
         }
-        timeoutTimer?.start()
     }
 
     private val overlayPermissionLauncher =
@@ -601,16 +584,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     override fun onDestroy() {
         super.onDestroy()
         maskViewController.destroy(mainHandler)
-
         taskScheduler.destroy()
+        timeoutTimerManager.destroy()
 
         mainHandler.removeCallbacksAndMessages(null)
 
         actions.forEach {
             BroadcastManager.getDefault().unregisterReceiver(this, it)
         }
-        timeoutTimer?.cancel()
-        timeoutTimer = null
         EventBus.getDefault().unregister(this)
         try {
             unbindService(serviceConnection)
@@ -620,8 +601,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     fun backToMainActivity() {
-        timeoutTimer?.cancel()
-        timeoutTimer = null
         LogFileManager.writeLog("取消超时定时器，执行下一个任务")
         taskScheduler.cancelTimeoutAndExecuteNext()
 

@@ -61,7 +61,7 @@ class FloatingWindowService : Service() {
 
                     MessageType.UPDATE_FLOATING_WINDOW_TIME -> {
                         // 更新悬浮窗倒计时
-                        val tick = intent.getLongExtra("tick", 30)
+                        val tick = intent.getIntExtra("tick", 30)
                         binding.timeView.text = "${tick}s"
                         if (tick < 1) {
                             binding.root.alpha = 0.0f
