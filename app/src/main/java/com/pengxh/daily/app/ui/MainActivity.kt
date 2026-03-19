@@ -81,21 +81,21 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         )
     }
 
-    private val mainHandler = Handler(Looper.getMainLooper())
     private val dateFormat by lazy {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.getDefault())
     }
+    private val marginOffset by lazy { 16.dp2px(this) }
+    private val taskDataManager by lazy { TaskDataManager() }
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
+    private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private lateinit var insetsController: WindowInsetsControllerCompat
     private lateinit var maskViewController: MaskViewController
     private lateinit var gestureController: GestureController
-    private val taskDataManager by lazy { TaskDataManager() }
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
-    private var taskBeans = mutableListOf<DailyTaskBean>()
-    private val marginOffset by lazy { 16.dp2px(this) }
-    private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private lateinit var taskScheduler: TaskScheduler
     private lateinit var timeoutTimerManager: TimeoutTimerManager
+    private var taskBeans = mutableListOf<DailyTaskBean>()
 
     private val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
