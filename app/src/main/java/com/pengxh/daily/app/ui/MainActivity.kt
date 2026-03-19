@@ -24,13 +24,13 @@ import com.google.android.material.textview.MaterialTextView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
-import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController

@@ -13,10 +13,10 @@ import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
-import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.NotificationMonitorService
+import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.WatermarkDrawable

@@ -11,7 +11,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import com.pengxh.daily.app.databinding.ActivityMainBinding
-import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.kt.lite.extensions.setScreenBrightness
 import org.greenrobot.eventbus.EventBus
 import java.util.Random

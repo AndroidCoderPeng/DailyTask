@@ -1,4 +1,4 @@
-package com.pengxh.daily.app.event
+package com.pengxh.daily.app.utils
 
 /**
  * 应用内事件定义

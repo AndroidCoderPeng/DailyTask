@@ -2,7 +2,6 @@ package com.pengxh.daily.app.utils
 
 import android.os.CountDownTimer
 import android.os.Handler
-import com.pengxh.daily.app.event.ApplicationEvent
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 

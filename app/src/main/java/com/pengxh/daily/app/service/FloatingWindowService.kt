@@ -12,7 +12,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import com.pengxh.daily.app.databinding.WindowFloatingBinding
-import com.pengxh.daily.app.event.ApplicationEvent
+import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus

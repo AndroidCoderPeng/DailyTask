@@ -7,7 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
-import com.pengxh.daily.app.event.ApplicationEvent
+import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.extensions.show
 import org.greenrobot.eventbus.EventBus

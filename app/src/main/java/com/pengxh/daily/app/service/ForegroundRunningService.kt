@@ -13,7 +13,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.event.ApplicationEvent
+import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
