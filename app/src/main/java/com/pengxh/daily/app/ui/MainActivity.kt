@@ -66,7 +66,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     private val kTag = "MainActivity"
     private val context = this
     private val dateFormat by lazy {
-        SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.getDefault())
+        SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.CHINA)
     }
     private val marginOffset by lazy { 16.dp2px(this) }
     private val taskDataManager by lazy { TaskDataManager() }
@@ -167,10 +167,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         }
 
         insetsController = WindowCompat.getInsetsController(window, binding.rootView)
-        maskViewController = MaskViewController(this, binding, insetsController)
-        gestureController = GestureController(this, maskViewController, mainHandler)
-        taskScheduler = TaskScheduler(mainHandler, taskBeans, this)
-        timeoutTimerManager = TimeoutTimerManager(mainHandler)
 
         Intent(this, ForegroundRunningService::class.java).apply {
             startForegroundService(this)
@@ -208,6 +204,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                 marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
+
+        maskViewController = MaskViewController(this, binding, insetsController)
+        gestureController = GestureController(this, maskViewController, mainHandler)
+        taskScheduler = TaskScheduler(mainHandler, taskBeans, this)
+        timeoutTimerManager = TimeoutTimerManager(mainHandler)
     }
 
     @Suppress("unused")

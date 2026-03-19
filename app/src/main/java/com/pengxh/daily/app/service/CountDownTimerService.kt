@@ -37,7 +37,10 @@ class CountDownTimerService : Service() {
         }
     }
     private val notificationId = 1001
+    private val timerLock = Any()
     private var countDownTimer: CountDownTimer? = null
+
+    @Volatile
     private var isTimerRunning = false
 
     inner class LocaleBinder : Binder() {
@@ -52,7 +55,7 @@ class CountDownTimerService : Service() {
         super.onCreate()
         val name = "${resources.getString(R.string.app_name)}倒计时服务"
         val channel = NotificationChannel(
-            "countdown_timer_service_channel", name, NotificationManager.IMPORTANCE_HIGH
+            "countdown_timer_service_channel", name, NotificationManager.IMPORTANCE_LOW
         )
         channel.description = "Channel for CountDownTimer Service"
         notificationManager.createNotificationChannel(channel)
@@ -64,30 +67,32 @@ class CountDownTimerService : Service() {
     }
 
     fun startCountDown(taskIndex: Int, seconds: Int) {
-        if (isTimerRunning) {
-            countDownTimer?.cancel()
-            countDownTimer = null
-            isTimerRunning = false
-            LogFileManager.writeLog("startCountDown: 第${taskIndex}个任务重复执行，取消之前的任务")
-        }
-        LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务")
-        countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
-            override fun onTick(millisUntilFinished: Long) {
-                val seconds = (millisUntilFinished / 1000).toInt()
-                val notification = notificationBuilder.apply {
-                    setContentText("${seconds.formatTime()}后执行第${taskIndex}个任务")
-                }.build()
-                notificationManager.notify(notificationId, notification)
-            }
-
-            override fun onFinish() {
+        synchronized(timerLock) {
+            if (isTimerRunning) {
+                countDownTimer?.cancel()
+                countDownTimer = null
                 isTimerRunning = false
-                openApplication(true)
+                LogFileManager.writeLog("startCountDown: 第${taskIndex}个任务重复执行，取消之前的任务")
             }
-        }.apply {
-            start()
+            LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务")
+            countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
+                override fun onTick(millisUntilFinished: Long) {
+                    val seconds = (millisUntilFinished / 1000).toInt()
+                    val notification = notificationBuilder.apply {
+                        setContentText("${seconds.formatTime()}后执行第${taskIndex}个任务")
+                    }.build()
+                    notificationManager.notify(notificationId, notification)
+                }
+
+                override fun onFinish() {
+                    isTimerRunning = false
+                    openApplication(true)
+                }
+            }.apply {
+                start()
+            }
+            isTimerRunning = true
         }
-        isTimerRunning = true
     }
 
     fun updateDailyTaskState() {
@@ -99,22 +104,24 @@ class CountDownTimerService : Service() {
     }
 
     fun cancelCountDown() {
-        if (isTimerRunning) {
-            countDownTimer?.cancel()
-            countDownTimer = null
-            val notification = notificationBuilder.apply {
-                setContentText("倒计时任务已停止")
-            }.build()
-            notificationManager.notify(notificationId, notification)
-            isTimerRunning = false
+        synchronized(timerLock) {
+            if (isTimerRunning) {
+                countDownTimer?.cancel()
+                countDownTimer = null
+                val notification = notificationBuilder.apply {
+                    setContentText("倒计时任务已停止")
+                }.build()
+                notificationManager.notify(notificationId, notification)
+                isTimerRunning = false
+            }
+            LogFileManager.writeLog("cancelCountDown: 倒计时任务取消")
         }
-        LogFileManager.writeLog("cancelCountDown: 倒计时任务取消")
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        stopForeground(STOP_FOREGROUND_REMOVE)
         cancelCountDown()
+        stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d(kTag, "onDestroy: CountDownTimerService")
     }
 }
