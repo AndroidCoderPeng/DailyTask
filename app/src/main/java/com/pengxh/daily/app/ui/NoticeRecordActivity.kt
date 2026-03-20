@@ -3,12 +3,12 @@ package com.pengxh.daily.app.ui
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityNoticeBinding
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
+import com.pengxh.daily.app.utils.TimeKit
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -19,9 +19,6 @@ import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
 
     private var noticeAdapter: NormalRecyclerAdapter<NotificationBean>? = null
-    private var isRefresh = false
-    private var isLoadMore = false
-    private var offset = 1
 
     override fun initViewBinding(): ActivityNoticeBinding {
         return ActivityNoticeBinding.inflate(layoutInflater)
@@ -58,7 +55,8 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val dataBeans = getNotificationRecord()
+        val (startDate, endDate) = TimeKit.getWeekDateRange()
+        val dataBeans = DatabaseWrapper.loadWeeklyNotice(startDate, endDate)
         if (dataBeans.isEmpty()) {
             binding.emptyView.visibility = View.VISIBLE
             binding.recyclerView.visibility = View.GONE
@@ -83,38 +81,10 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
     }
 
     override fun initEvent() {
-        binding.refreshLayout.setOnRefreshListener {
-            isRefresh = true
-            offset = 0
-            object : CountDownTimer(1000, 500) {
-                override fun onTick(millisUntilFinished: Long) {}
-                override fun onFinish() {
-                    it.finishRefresh()
-                    isRefresh = false
-                    noticeAdapter?.refresh(getNotificationRecord())
-                }
-            }.start()
-        }
 
-        binding.refreshLayout.setOnLoadMoreListener {
-            isLoadMore = true
-            offset++
-            object : CountDownTimer(1000, 500) {
-                override fun onTick(millisUntilFinished: Long) {}
-                override fun onFinish() {
-                    it.finishLoadMore()
-                    isLoadMore = false
-                    noticeAdapter?.loadMore(getNotificationRecord())
-                }
-            }.start()
-        }
     }
 
     override fun observeRequestState() {
 
-    }
-
-    private fun getNotificationRecord(): MutableList<NotificationBean> {
-        return DatabaseWrapper.loadNoticeByTime(10, (offset - 1) * 10)
     }
 }

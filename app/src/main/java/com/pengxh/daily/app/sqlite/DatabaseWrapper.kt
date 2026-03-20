@@ -37,8 +37,8 @@ object DatabaseWrapper {
         noticeDao.deleteAll()
     }
 
-    fun loadNoticeByTime(pageSize: Int, offset: Int): MutableList<NotificationBean> {
-        return noticeDao.loadNoticeByTime(pageSize, offset)
+    fun loadWeeklyNotice(startDate: String, endDate: String): MutableList<NotificationBean> {
+        return noticeDao.loadWeeklyNotice(startDate, endDate)
     }
 
     fun loadCurrentDayNotice(): MutableList<NotificationBean> {

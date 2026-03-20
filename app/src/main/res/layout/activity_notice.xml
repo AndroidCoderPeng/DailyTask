@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/rootView"
     android:layout_width="match_parent"
-    android:background="@color/back_ground_color"
     android:layout_height="match_parent"
+    android:background="@color/back_ground_color"
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
@@ -14,39 +14,27 @@
         android:background="@color/theme_color"
         app:menu="@menu/notice_history_top_bar_menu"
         app:navigationIcon="@drawable/ic_title_left"
+        app:subtitle="只显示最近一周的通知记录"
+        app:subtitleTextColor="@color/white"
         app:title="通知记录"
         app:titleTextColor="@color/white" />
 
-    <com.scwang.smartrefresh.layout.SmartRefreshLayout
-        android:id="@+id/refreshLayout"
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.scwang.smartrefresh.layout.header.ClassicsHeader
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerView"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="match_parent"
+            android:scrollbars="none"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-        <FrameLayout
+        <com.pengxh.kt.lite.widget.EmptyView
+            android:id="@+id/emptyView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:scrollbars="none"
-                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-
-            <com.pengxh.kt.lite.widget.EmptyView
-                android:id="@+id/emptyView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:visibility="gone"
-                app:show_reload_button="false" />
-        </FrameLayout>
-
-        <com.scwang.smartrefresh.layout.footer.ClassicsFooter
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </com.scwang.smartrefresh.layout.SmartRefreshLayout>
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            app:show_reload_button="false" />
+    </FrameLayout>
 </LinearLayout>
