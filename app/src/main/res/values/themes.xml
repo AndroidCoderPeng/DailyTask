@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.DailyTask" parent="Theme.Material3.Light.NoActionBar">
         <!-- 修改控件系统默认颜色 -->
         <item name="colorPrimary">@color/theme_color</item>
         <item name="colorSecondary">@color/theme_color</item>
         <!-- Customize your theme here. -->
-
-        <!-- 从 Android 15 开始，系统默认开启了 Edge-to-Edge 模式，这可能会导致 ImmersionBar 的一些功能失效 -->
-        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
     </style>
 
     <style name="Theme.DailyTask" parent="Base.Theme.DailyTask" />

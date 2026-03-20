@@ -4,7 +4,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityNoticeBinding
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
@@ -32,7 +32,7 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
         binding.toolbar.setNavigationOnClickListener { finish() }
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             if (menuItem.itemId == R.id.menu_clear_history) {
-                AlertDialog.Builder(this)
+                MaterialAlertDialogBuilder(this)
                     .setTitle("清空通知")
                     .setMessage("此操作将会清空所有通知记录，且不可恢复。\n\n是否清空？")
                     .setCancelable(false) // 禁止点击外部关闭

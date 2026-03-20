@@ -9,8 +9,8 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
@@ -168,7 +168,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     private fun showRestartDialog() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("目标应用已切换")
             .setMessage("切换目标应用后需要重启才能生效，否则可能出现服务混用的情况。\n\n是否立即重启？")
             .setCancelable(false) // 禁止点击外部关闭

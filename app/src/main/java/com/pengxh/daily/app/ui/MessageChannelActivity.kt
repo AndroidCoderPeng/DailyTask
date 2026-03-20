@@ -2,8 +2,8 @@ package com.pengxh.daily.app.ui
 
 import android.os.Build
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.utils.Constant
@@ -94,7 +94,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             )
             SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, key)
 
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle("测试消息")
                 .setMessage("企业微信配置完成，可以发送企业微信消息。\n\n是否继续？")
                 .setCancelable(false) // 禁止点击外部关闭
@@ -179,7 +179,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     private fun sendTestEmail() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("测试邮件")
             .setMessage("QQ邮箱配置完成，可以发送QQ邮件。\n\n是否继续？")
             .setCancelable(false) // 禁止点击外部关闭

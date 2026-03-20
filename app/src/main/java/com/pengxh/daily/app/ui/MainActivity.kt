@@ -14,13 +14,13 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textview.MaterialTextView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
@@ -52,7 +52,6 @@ import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
-import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -135,17 +134,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                 }
 
                 R.id.menu_settings -> {
-                    AlertMessageDialog.Builder()
-                        .setContext(this)
-                        .setTitle("温馨提醒")
-                        .setMessage("本软件仅供内部使用，严禁商用或者用作其他非法用途！\r\n另外，本软件完全免费！近期发现有人在咸鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！")
-                        .setPositiveButton("知道了")
-                        .setOnDialogButtonClickListener(object :
-                            AlertMessageDialog.OnDialogButtonClickListener {
-                            override fun onConfirmClick() {
-                                navigatePageTo<SettingsActivity>()
-                            }
-                        }).build().show()
+                    MaterialAlertDialogBuilder(this)
+                        .setTitle("使用须知")
+                        .setMessage("本软件完全免费！仅供内部使用！严禁商用或者用作其他非法用途！\r\n近期发现有人在咸鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！")
+                        .setCancelable(false) // 禁止点击外部关闭
+                        .setPositiveButton("知道了") { _, _ ->
+                            navigatePageTo<SettingsActivity>()
+                        }.show()
                 }
             }
             true
@@ -385,7 +380,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             "任务进行中，无法删除".show(this)
             return
         }
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle("删除任务")
             .setMessage("确定要删除这个任务吗？")
             .setCancelable(false) // 禁止点击外部关闭
