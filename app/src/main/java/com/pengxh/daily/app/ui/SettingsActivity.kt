@@ -41,7 +41,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val apps by lazy {
         listOf(
             "钉钉",
-            "企业微信",
+//            "企业微信",
 //            "飞书",
 //            "移动办公M3"
         )
@@ -49,7 +49,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val icons by lazy {
         listOf(
             R.drawable.ic_ding_ding,
-            R.drawable.ic_wei_xin,
+//            R.drawable.ic_wei_xin,
 //            R.drawable.ic_fei_shu,
 //            R.mipmap.ic_launcher
         )
@@ -173,27 +173,9 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             .setMessage("切换目标应用后需要重启才能生效，否则可能出现服务混用的情况。\n\n是否立即重启？")
             .setCancelable(false) // 禁止点击外部关闭
             .setPositiveButton("立即重启") { _, _ ->
-                restartApp()
+                // 杀死当前进程，确保完全重启
+                exitProcess(0)
             }.show()
-    }
-
-    /**
-     * 重启 APP
-     * 确保所有服务使用新的 TARGET_APP_KEY 配置
-     */
-    private fun restartApp() {
-        // 清除任务栈并重启 APP
-        val intent = packageManager.getLaunchIntentForPackage(packageName)
-        intent?.addFlags(
-            Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP
-        )
-        startActivity(intent)
-        finish()
-
-        // 杀死当前进程，确保完全重启
-        exitProcess(0)
     }
 
     private val notificationSettingLauncher =
