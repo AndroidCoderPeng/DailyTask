@@ -17,6 +17,8 @@ import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
@@ -34,6 +36,7 @@ class NotificationMonitorService : NotificationListenerService() {
     private val emailManager by lazy { EmailManager() }
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     /**
      * 有可用的并且和通知管理器连接成功时回调
@@ -67,7 +70,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 noticeMessage = notice
                 postTime = System.currentTimeMillis().timestampToCompleteDate()
             }.also {
-                CoroutineScope(Dispatchers.IO).launch {
+                serviceScope.launch {
                     try {
                         DatabaseWrapper.insertNotice(it)
                     } catch (e: Exception) {
@@ -121,7 +124,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("考勤记录") -> {
-                    CoroutineScope(Dispatchers.IO).launch {
+                    serviceScope.launch {
                         val notices = try {
                             DatabaseWrapper.loadCurrentDayNotice()
                         } catch (e: Exception) {
@@ -181,5 +184,10 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        serviceScope.cancel()
     }
 }
