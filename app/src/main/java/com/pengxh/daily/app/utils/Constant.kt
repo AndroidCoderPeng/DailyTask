@@ -38,8 +38,7 @@ object Constant {
 
     // 目标APP
     fun getTargetApp(): String {
-        val index = SaveKeyValues.getValue(TARGET_APP_KEY, 0) as Int
-        return when (index) {
+        return when (SaveKeyValues.getValue(TARGET_APP_KEY, 0) as Int) {
             0 -> DING_DING
             1 -> WEWORK
             2 -> FEI_SHU
