@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.appcompat.app.AlertDialog
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityNoticeBinding
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
@@ -14,7 +15,7 @@ import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemDivider
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
-import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
+import com.pengxh.kt.lite.extensions.show
 
 class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
 
@@ -31,24 +32,16 @@ class NoticeRecordActivity : KotlinBaseActivity<ActivityNoticeBinding>() {
         binding.toolbar.setNavigationOnClickListener { finish() }
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             if (menuItem.itemId == R.id.menu_clear_history) {
-                AlertControlDialog.Builder()
-                    .setContext(this)
-                    .setTitle("温馨提示")
-                    .setMessage("此操作将会清空所有通知记录，且不可恢复")
-                    .setNegativeButton("取消")
-                    .setPositiveButton("知道了")
-                    .setOnDialogButtonClickListener(object :
-                        AlertControlDialog.OnDialogButtonClickListener {
-                        override fun onCancelClick() {
-
-                        }
-
-                        override fun onConfirmClick() {
-                            DatabaseWrapper.deleteAllNotice()
-                            binding.emptyView.visibility = View.VISIBLE
-                            binding.recyclerView.visibility = View.GONE
-                        }
-                    }).build().show()
+                AlertDialog.Builder(this)
+                    .setTitle("清空通知")
+                    .setMessage("此操作将会清空所有通知记录，且不可恢复。\n\n是否清空？")
+                    .setCancelable(false) // 禁止点击外部关闭
+                    .setPositiveButton("确认清空") { _, _ ->
+                        DatabaseWrapper.deleteAllNotice()
+                        binding.emptyView.visibility = View.VISIBLE
+                        binding.recyclerView.visibility = View.GONE
+                        "通知记录已全部清空！".show(this)
+                    }.setNegativeButton("取消操作", null).show()
             }
             true
         }

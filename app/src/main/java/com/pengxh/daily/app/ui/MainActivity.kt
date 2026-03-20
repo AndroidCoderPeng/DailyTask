@@ -14,6 +14,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
@@ -50,7 +51,6 @@ import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.AlertMessageDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
@@ -385,37 +385,28 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             "任务进行中，无法删除".show(this)
             return
         }
-        AlertControlDialog.Builder()
-            .setContext(this)
-            .setTitle("删除提示")
-            .setMessage("确定要删除这个任务吗")
-            .setNegativeButton("取消")
-            .setPositiveButton("确定")
-            .setOnDialogButtonClickListener(object :
-                AlertControlDialog.OnDialogButtonClickListener {
-                override fun onConfirmClick() {
-                    try {
-                        val item = taskBeans[adapterPosition]
-                        DatabaseWrapper.deleteTask(item)
-                        taskBeans.removeAt(adapterPosition)
-                        dailyTaskAdapter.refresh(taskBeans)
-                        if (taskBeans.isEmpty()) {
-                            binding.recyclerView.visibility = View.GONE
-                            binding.emptyView.visibility = View.VISIBLE
-                        } else {
-                            binding.recyclerView.visibility = View.VISIBLE
-                            binding.emptyView.visibility = View.GONE
-                        }
-                    } catch (e: IndexOutOfBoundsException) {
-                        e.printStackTrace()
-                        "删除失败，请刷新重试".show(context)
+        AlertDialog.Builder(this)
+            .setTitle("删除任务")
+            .setMessage("确定要删除这个任务吗？")
+            .setCancelable(false) // 禁止点击外部关闭
+            .setPositiveButton("确定") { _, _ ->
+                try {
+                    val item = taskBeans[adapterPosition]
+                    DatabaseWrapper.deleteTask(item)
+                    taskBeans.removeAt(adapterPosition)
+                    dailyTaskAdapter.refresh(taskBeans)
+                    if (taskBeans.isEmpty()) {
+                        binding.recyclerView.visibility = View.GONE
+                        binding.emptyView.visibility = View.VISIBLE
+                    } else {
+                        binding.recyclerView.visibility = View.VISIBLE
+                        binding.emptyView.visibility = View.GONE
                     }
+                } catch (e: IndexOutOfBoundsException) {
+                    e.printStackTrace()
+                    "删除失败，请刷新重试".show(context)
                 }
-
-                override fun onCancelClick() {
-
-                }
-            }).build().show()
+            }.setNegativeButton("取消", null).show()
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {

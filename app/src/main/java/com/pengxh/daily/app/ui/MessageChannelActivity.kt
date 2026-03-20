@@ -2,6 +2,7 @@ package com.pengxh.daily.app.ui
 
 import android.os.Build
 import android.os.Bundle
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModelProvider
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
@@ -14,7 +15,6 @@ import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import com.pengxh.kt.lite.widget.dialog.AlertControlDialog
 
 class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>() {
 
@@ -94,21 +94,13 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             )
             SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, key)
 
-            AlertControlDialog.Builder()
-                .setContext(this)
-                .setTitle("温馨提醒")
-                .setMessage("企业微信配置完成，是否发送测试消息？")
-                .setNegativeButton("取消")
-                .setPositiveButton("好的").setOnDialogButtonClickListener(object :
-                    AlertControlDialog.OnDialogButtonClickListener {
-                    override fun onCancelClick() {
-
-                    }
-
-                    override fun onConfirmClick() {
-                        sendTestMessage()
-                    }
-                }).build().show()
+            AlertDialog.Builder(this)
+                .setTitle("测试消息")
+                .setMessage("企业微信配置完成，可以发送企业微信消息。\n\n是否继续？")
+                .setCancelable(false) // 禁止点击外部关闭
+                .setPositiveButton("继续") { _, _ ->
+                    sendTestMessage()
+                }.setNegativeButton("取消", null).show()
         }
 
         binding.qqRadioButton.setOnClickListener {
@@ -187,34 +179,26 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     private fun sendTestEmail() {
-        AlertControlDialog.Builder()
-            .setContext(this)
-            .setTitle("温馨提醒")
-            .setMessage("邮箱配置完成，是否发送测试邮件？")
-            .setNegativeButton("取消")
-            .setPositiveButton("好的").setOnDialogButtonClickListener(object :
-                AlertControlDialog.OnDialogButtonClickListener {
-                override fun onCancelClick() {
-
-                }
-
-                override fun onConfirmClick() {
-                    LoadingDialog.show(context, "邮件发送中，请稍后....")
-                    emailManager.sendEmail(
-                        "邮箱测试", "这是一封测试邮件，不必关注",
-                        true,
-                        onSuccess = {
-                            if (isFinishing || isDestroyed) return@sendEmail
-                            LoadingDialog.dismiss()
-                            "发送成功，请注意查收".show(context)
-                        },
-                        onFailure = {
-                            if (isFinishing || isDestroyed) return@sendEmail
-                            LoadingDialog.dismiss()
-                            "发送失败：${it}".show(context)
-                        }
-                    )
-                }
-            }).build().show()
+        AlertDialog.Builder(this)
+            .setTitle("测试邮件")
+            .setMessage("QQ邮箱配置完成，可以发送QQ邮件。\n\n是否继续？")
+            .setCancelable(false) // 禁止点击外部关闭
+            .setPositiveButton("继续") { _, _ ->
+                LoadingDialog.show(context, "邮件发送中，请稍后....")
+                emailManager.sendEmail(
+                    "邮箱测试", "这是一封测试邮件，不必关注",
+                    true,
+                    onSuccess = {
+                        if (isFinishing || isDestroyed) return@sendEmail
+                        LoadingDialog.dismiss()
+                        "发送成功，请注意查收".show(context)
+                    },
+                    onFailure = {
+                        if (isFinishing || isDestroyed) return@sendEmail
+                        LoadingDialog.dismiss()
+                        "发送失败：${it}".show(context)
+                    }
+                )
+            }.setNegativeButton("取消", null).show()
     }
 }

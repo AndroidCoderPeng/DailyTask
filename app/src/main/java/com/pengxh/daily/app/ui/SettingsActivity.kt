@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import kotlin.system.exitProcess
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
@@ -39,7 +41,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val apps by lazy {
         listOf(
             "钉钉",
-//            "企业微信",
+            "企业微信",
 //            "飞书",
 //            "移动办公M3"
         )
@@ -47,7 +49,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val icons by lazy {
         listOf(
             R.drawable.ic_ding_ding,
-//            R.drawable.ic_wei_xin,
+            R.drawable.ic_wei_xin,
 //            R.drawable.ic_fei_shu,
 //            R.mipmap.ic_launcher
         )
@@ -114,8 +116,20 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
+                        val oldPosition = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
+
+                        // 如果 position 没有变化，直接返回
+                        if (oldPosition == position) {
+                            binding.iconView.setBackgroundResource(icons[position])
+                            return
+                        }
+
+                        // 更新配置
                         binding.iconView.setBackgroundResource(icons[position])
                         SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
+
+                        // 显示重启确认对话框
+                        showRestartDialog()
                     }
                 }).build().show()
         }
@@ -151,6 +165,35 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }
+    }
+
+    private fun showRestartDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("目标应用已切换")
+            .setMessage("切换目标应用后需要重启才能生效，否则可能出现服务混用的情况。\n\n是否立即重启？")
+            .setCancelable(false) // 禁止点击外部关闭
+            .setPositiveButton("立即重启") { _, _ ->
+                restartApp()
+            }.show()
+    }
+
+    /**
+     * 重启 APP
+     * 确保所有服务使用新的 TARGET_APP_KEY 配置
+     */
+    private fun restartApp() {
+        // 清除任务栈并重启 APP
+        val intent = packageManager.getLaunchIntentForPackage(packageName)
+        intent?.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+        )
+        startActivity(intent)
+        finish()
+
+        // 杀死当前进程，确保完全重启
+        exitProcess(0)
     }
 
     private val notificationSettingLauncher =
