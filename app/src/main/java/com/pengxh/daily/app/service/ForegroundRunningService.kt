@@ -40,44 +40,6 @@ class ForegroundRunningService : Service() {
     private var isTimerRunning = false
     private var taskTimer: CountDownTimer? = null
 
-    private fun resetTask() {
-        if (!isTaskReset) {
-            var message: String
-            if (SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean) {
-                EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
-                message = "到达任务计划时间，重置每日任务"
-            } else {
-                message = "任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
-            }
-            LogFileManager.writeLog(message)
-
-            val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
-            when (type) {
-                0 -> {
-                    // 企业微信
-                    httpRequestManager.sendMessage("循环任务状态通知", message)
-                }
-
-                1 -> {
-                    // QQ邮箱
-                    emailManager.sendEmail("循环任务状态通知", message, false)
-                }
-
-                else -> {
-                    Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
-                }
-            }
-
-            isTaskReset = true
-
-            // 重置任务计时器
-            val hour = SaveKeyValues.getValue(
-                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-            ) as Int
-            startResetTaskTimer(hour)
-        }
-    }
-
     override fun onCreate() {
         super.onCreate()
         val notificationManager = getSystemService(NotificationManager::class.java)
@@ -120,22 +82,57 @@ class ForegroundRunningService : Service() {
         startResetTaskTimer(hour)
     }
 
-    private val systemBroadcastReceiver by lazy {
-        object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                intent?.action?.let {
-                    // 监听时间，系统级广播，每分钟触发一次。
-                    if (it == Intent.ACTION_TIME_TICK) {
-                        val hour = SaveKeyValues.getValue(
-                            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-                        ) as Int
-                        val calendar = Calendar.getInstance()
-                        if (calendar.get(Calendar.HOUR_OF_DAY) == hour) {
-                            resetTask()
-                        }
+    private val systemBroadcastReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            intent?.action?.let {
+                // 监听时间，系统级广播，每分钟触发一次。
+                if (it == Intent.ACTION_TIME_TICK) {
+                    val hour = SaveKeyValues.getValue(
+                        Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+                    ) as Int
+                    if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == hour) {
+                        resetTask()
                     }
                 }
             }
+        }
+    }
+
+    private fun resetTask() {
+        if (!isTaskReset) {
+            var message: String
+            if (SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean) {
+                EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
+                message = "到达任务计划时间，重置每日任务"
+            } else {
+                message = "任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
+            }
+            LogFileManager.writeLog(message)
+
+            val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+            when (type) {
+                0 -> {
+                    // 企业微信
+                    httpRequestManager.sendMessage("循环任务状态通知", message)
+                }
+
+                1 -> {
+                    // QQ邮箱
+                    emailManager.sendEmail("循环任务状态通知", message, false)
+                }
+
+                else -> {
+                    Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
+                }
+            }
+
+            isTaskReset = true
+
+            // 重置任务计时器
+            val hour = SaveKeyValues.getValue(
+                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+            ) as Int
+            startResetTaskTimer(hour)
         }
     }
 
@@ -155,6 +152,7 @@ class ForegroundRunningService : Service() {
         // 先取消之前的计时器
         taskTimer?.cancel()
         isTimerRunning = false
+        taskTimer = null
 
         taskTimer = object : CountDownTimer(currentDiffSeconds * 1000L, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -168,7 +166,6 @@ class ForegroundRunningService : Service() {
             override fun onFinish() {
                 isTaskReset = false
                 isTimerRunning = false
-                taskTimer = null
             }
         }
         isTimerRunning = true
