@@ -399,7 +399,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                     }
                 } catch (e: IndexOutOfBoundsException) {
                     e.printStackTrace()
-                    "删除失败，请刷新重试".show(context)
                 }
             }.setNegativeButton("取消", null).show()
     }
