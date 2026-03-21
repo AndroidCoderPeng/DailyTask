@@ -302,7 +302,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             Locale.getDefault(), "准备执行第 %d 个任务", taskIndex
         )
         binding.tipsView.setTextColor(R.color.theme_color.convertColor(context))
-        dailyTaskAdapter.updateCurrentTaskState(taskIndex - 1, task.time)
+        dailyTaskAdapter.updateCurrentTaskState(taskIndex - 1, realTime)
 
         messageDispatcher.sendMessage(
             "任务执行通知",

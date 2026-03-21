@@ -115,14 +115,13 @@ class TaskScheduler(
                 val taskIndex = index + 1
 
                 // 计算时间差
-                val pair = task.diffCurrent()
-                val diff = pair.second
+                val (realTime, timeSeconds) = task.diffCurrent()
 
                 // 通知UI更新
-                listener.onTaskExecuting(taskIndex, task, pair.first)
+                listener.onTaskExecuting(taskIndex, task, realTime)
 
                 // 启动倒计时
-                countDownTimerService?.startCountDown(taskIndex, diff)
+                countDownTimerService?.startCountDown(taskIndex, timeSeconds)
             } catch (e: IndexOutOfBoundsException) {
                 val errorMsg = "任务数组访问越界: ${e.message}"
                 LogFileManager.writeLog(errorMsg)
