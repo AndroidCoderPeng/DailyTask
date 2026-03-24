@@ -84,7 +84,9 @@ class NotificationMonitorService : NotificationListenerService() {
         if (pkg == targetApp && notice.contains("成功")) {
             EventBus.getDefault().post(ApplicationEvent.GoBackMainActivity)
             "即将发送通知邮件，请注意查收".show(this)
-            sendChannelMessage(title, notice)
+            val messageTitle =
+                SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
+            sendChannelMessage(title.ifBlank { messageTitle }, notice)
         }
 
         // 其他消息指令
