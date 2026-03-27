@@ -10,6 +10,7 @@ import android.provider.Settings
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
@@ -39,17 +40,15 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val apps by lazy {
         listOf(
             "钉钉",
-//            "企业微信",
-//            "飞书",
-//            "移动办公M3"
+            "企业微信",
+            "飞书"
         )
     }
     private val icons by lazy {
         listOf(
             R.drawable.ic_ding_ding,
-//            R.drawable.ic_wei_xin,
-//            R.drawable.ic_fei_shu,
-//            R.mipmap.ic_launcher
+            R.drawable.ic_wei_xin,
+            R.drawable.ic_fei_shu
         )
     }
     private val channels = arrayListOf("企业微信", "QQ邮箱")
@@ -126,7 +125,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         binding.iconView.setBackgroundResource(icons[position])
                         SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
 
-                        // TODO 如果选择的是非“钉钉”，则不监听通知栏，改为截屏
+                        showMessageDialog(position)
                     }
                 }).build().show()
         }
@@ -162,6 +161,21 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }
+    }
+
+    private fun showMessageDialog(position: Int) {
+        val message = if (position == 0) {
+            SaveKeyValues.putValue(Constant.NEED_NOTICE_MONITOR_KEY, true)
+            "目标应用已切换为【${apps[position]}】，通知监听已启用！"
+        } else {
+            SaveKeyValues.putValue(Constant.NEED_NOTICE_MONITOR_KEY, false)
+            "目标应用已切换为【${apps[position]}】，通知监听已失效，虽不影响打卡，但无法获取打卡结果，请注意！"
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("目标应用切换")
+            .setMessage(message)
+            .setCancelable(false)
+            .setPositiveButton("知道了", null).show()
     }
 
     private val notificationSettingLauncher =

@@ -42,7 +42,7 @@
                     android:drawablePadding="@dimen/dp_4"
                     android:paddingHorizontal="@dimen/dp_16"
                     android:paddingTop="@dimen/dp_4"
-                    android:paddingBottom="@dimen/dp_16"
+                    android:paddingBottom="@dimen/dp_12"
                     android:singleLine="true"
                     android:text="--分钟后刷新每日任务"
                     android:textColor="@color/white"

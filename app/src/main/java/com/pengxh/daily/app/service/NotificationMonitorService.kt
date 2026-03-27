@@ -49,12 +49,15 @@ class NotificationMonitorService : NotificationListenerService() {
      * 当有新通知到来时会回调
      */
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        val needMonitor = SaveKeyValues.getValue(Constant.NEED_NOTICE_MONITOR_KEY, true) as Boolean
+        if (!needMonitor) {
+            Log.d(kTag, "onNotificationPosted: 消息监听已停止")
+            return
+        }
+
         val extras = sbn.notification.extras
-        // 获取接收消息APP的包名
         val pkg = sbn.packageName
-        // 获取接收消息的标题
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
-        // 获取接收消息的内容
         val notice = extras.getString(Notification.EXTRA_TEXT)
         if (notice.isNullOrBlank()) {
             return
@@ -63,6 +66,22 @@ class NotificationMonitorService : NotificationListenerService() {
         val targetApp = Constant.getTargetApp()
 
         // 保存指定包名的通知，其他的一律不保存
+        saveTagetNotice(pkg, targetApp, title, notice)
+
+        // 目标应用打卡通知
+        if (pkg == targetApp && notice.contains("成功")) {
+            EventBus.getDefault().post(ApplicationEvent.GoBackMainActivity)
+            "即将发送通知邮件，请注意查收".show(this)
+            val messageTitle =
+                SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
+            sendChannelMessage(title.ifBlank { messageTitle }, notice)
+        }
+
+        // 其他消息指令
+        handleRemoteCommand(pkg, notice)
+    }
+
+    private fun saveTagetNotice(pkg: String, targetApp: String, title: String, notice: String) {
         if (pkg == targetApp || pkg in auxiliaryApp) {
             NotificationBean().apply {
                 packageName = pkg
@@ -78,18 +97,12 @@ class NotificationMonitorService : NotificationListenerService() {
                     }
                 }
             }
+        } else {
+            Log.d(kTag, "saveTagetNotice: 其他应用通知不处理")
         }
+    }
 
-        // 目标应用打卡通知
-        if (pkg == targetApp && notice.contains("成功")) {
-            EventBus.getDefault().post(ApplicationEvent.GoBackMainActivity)
-            "即将发送通知邮件，请注意查收".show(this)
-            val messageTitle =
-                SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
-            sendChannelMessage(title.ifBlank { messageTitle }, notice)
-        }
-
-        // 其他消息指令
+    private fun handleRemoteCommand(pkg: String, notice: String) {
         if (pkg in auxiliaryApp) {
             when {
                 notice.contains("电量") -> {
