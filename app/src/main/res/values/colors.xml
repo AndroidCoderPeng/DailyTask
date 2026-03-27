@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="theme_color">#007AFF</color>
+    <color name="theme_color">#3399FF</color>
     <color name="ios_green">#4DDC64</color>
     <color name="back_ground_color">#F5F5F5</color>
     <color name="text_hint_color">#CCCCCC</color>
