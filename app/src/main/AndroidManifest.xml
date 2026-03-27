@@ -70,6 +70,7 @@
         <package android:name="com.alibaba.android.rimet" />
         <package android:name="com.tencent.mm" />
         <package android:name="com.tencent.wework" />
+        <package android:name="com.ss.android.lark" />
         <package android:name="com.tencent.mobileqq" />
         <package android:name="com.tencent.tim" />
         <package android:name="com.eg.android.AlipayGphone" />
