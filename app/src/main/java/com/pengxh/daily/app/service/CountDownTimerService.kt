@@ -42,6 +42,7 @@ class CountDownTimerService : Service() {
 
     @Volatile
     private var isTimerRunning = false
+    private var currentTaskIndex: Int = -1
 
     inner class LocaleBinder : Binder() {
         fun getService(): CountDownTimerService = this@CountDownTimerService
@@ -68,12 +69,21 @@ class CountDownTimerService : Service() {
 
     fun startCountDown(taskIndex: Int, seconds: Int) {
         synchronized(timerLock) {
+            // 如果是同一个任务正在执行，直接跳过
+            if (isTimerRunning && currentTaskIndex == taskIndex) {
+                LogFileManager.writeLog("startCountDown: 任务$taskIndex 已在执行中，跳过")
+                return@synchronized
+            }
+
+            // 如果有其他任务正在执行，先取消它
             if (isTimerRunning) {
                 countDownTimer?.cancel()
                 countDownTimer = null
                 isTimerRunning = false
-                LogFileManager.writeLog("startCountDown: 第${taskIndex}个任务重复执行，取消之前的任务")
+                LogFileManager.writeLog("startCountDown: 取消之前的任务（任务${currentTaskIndex}），准备执行任务$taskIndex")
             }
+
+            currentTaskIndex = taskIndex
             LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务")
             countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
                 override fun onTick(millisUntilFinished: Long) {
@@ -86,6 +96,7 @@ class CountDownTimerService : Service() {
 
                 override fun onFinish() {
                     isTimerRunning = false
+                    currentTaskIndex = -1
                     openApplication(true)
                 }
             }.apply {
@@ -113,6 +124,7 @@ class CountDownTimerService : Service() {
                 }.build()
                 notificationManager.notify(notificationId, notification)
                 isTimerRunning = false
+                currentTaskIndex = -1
             }
             LogFileManager.writeLog("cancelCountDown: 倒计时任务取消")
         }

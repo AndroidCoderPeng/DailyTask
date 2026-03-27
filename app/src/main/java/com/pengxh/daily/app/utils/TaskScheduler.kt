@@ -50,7 +50,8 @@ class TaskScheduler(
         // 更新状态标志
         isTaskStarted = true
 
-        // 启动任务调度
+        // 启动任务调度，先移除所有未执行的 Runnable，避免重复投递
+        mainHandler.removeCallbacks(dailyTaskRunnable)
         mainHandler.post(dailyTaskRunnable)
 
         // 通知状态变更
@@ -76,9 +77,11 @@ class TaskScheduler(
 
     /**
      * 取消超时定时器并执行下一个任务
-     * 注意：此方法由外部调用，通常在收到打卡成功广播时
+     * 此方法由外部调用，在收到打卡成功广播时
      */
     fun cancelTimeoutAndExecuteNext() {
+        // 先移除所有未执行的 Runnable，避免重复投递
+        mainHandler.removeCallbacks(dailyTaskRunnable)
         mainHandler.post(dailyTaskRunnable)
     }
 
