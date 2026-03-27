@@ -95,8 +95,10 @@ class CountDownTimerService : Service() {
                 }
 
                 override fun onFinish() {
-                    isTimerRunning = false
-                    currentTaskIndex = -1
+                    synchronized(timerLock) {
+                        isTimerRunning = false
+                        currentTaskIndex = -1
+                    }
                     openApplication(true)
                 }
             }.apply {

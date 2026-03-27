@@ -66,7 +66,7 @@ class NotificationMonitorService : NotificationListenerService() {
         val targetApp = Constant.getTargetApp()
 
         // 保存指定包名的通知，其他的一律不保存
-        saveTagetNotice(pkg, targetApp, title, notice)
+        saveTargetNotice(pkg, targetApp, title, notice)
 
         // 目标应用打卡通知
         if (pkg == targetApp && notice.contains("成功")) {
@@ -81,7 +81,7 @@ class NotificationMonitorService : NotificationListenerService() {
         handleRemoteCommand(pkg, notice)
     }
 
-    private fun saveTagetNotice(pkg: String, targetApp: String, title: String, notice: String) {
+    private fun saveTargetNotice(pkg: String, targetApp: String, title: String, notice: String) {
         if (pkg == targetApp || pkg in auxiliaryApp) {
             NotificationBean().apply {
                 packageName = pkg

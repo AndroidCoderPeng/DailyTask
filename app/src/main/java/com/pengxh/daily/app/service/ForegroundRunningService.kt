@@ -100,12 +100,12 @@ class ForegroundRunningService : Service() {
 
     private fun resetTask() {
         if (!isTaskReset) {
-            var message: String
-            if (SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean) {
+            val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
+            val message = if (autoStart) {
                 EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
-                message = "到达任务计划时间，重置每日任务"
+                "到达任务计划时间，重置每日任务"
             } else {
-                message = "任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
+                "任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
             }
             LogFileManager.writeLog(message)
 
