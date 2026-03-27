@@ -10,7 +10,6 @@ import android.provider.Settings
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
@@ -33,7 +32,6 @@ import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import kotlin.system.exitProcess
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
@@ -128,8 +126,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         binding.iconView.setBackgroundResource(icons[position])
                         SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
 
-                        // 显示重启确认对话框
-                        showRestartDialog()
+                        // TODO 如果选择的是非“钉钉”，则不监听通知栏，改为截屏
                     }
                 }).build().show()
         }
@@ -165,17 +162,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }
-    }
-
-    private fun showRestartDialog() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("目标应用已切换")
-            .setMessage("切换目标应用后需要重启才能生效，否则可能出现服务混用的情况。\n\n是否立即重启？")
-            .setCancelable(false) // 禁止点击外部关闭
-            .setPositiveButton("立即重启") { _, _ ->
-                // 杀死当前进程，确保完全重启
-                exitProcess(0)
-            }.show()
     }
 
     private val notificationSettingLauncher =
