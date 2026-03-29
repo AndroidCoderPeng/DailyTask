@@ -2,7 +2,7 @@
 <resources>
     <color name="theme_color">#3399FF</color>
     <color name="ios_green">#4DDC64</color>
-    <color name="back_ground_color">#F5F5F5</color>
+    <color name="back_ground_color">#F1F1F1</color>
     <color name="text_hint_color">#CCCCCC</color>
     <color name="text_default_color">#424242</color>
 

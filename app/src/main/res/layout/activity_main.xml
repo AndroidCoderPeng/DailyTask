@@ -3,6 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/back_ground_color"
     android:keepScreenOn="true">
 
     <LinearLayout
@@ -24,8 +25,6 @@
             android:id="@+id/contentView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/back_ground_color"
-            android:keepScreenOn="true"
             android:orientation="vertical">
 
             <LinearLayout
@@ -84,7 +83,7 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginTop="@dimen/dp_8"
+                android:layout_marginVertical="@dimen/dp_8"
                 android:layout_weight="1">
 
                 <androidx.recyclerview.widget.RecyclerView
