@@ -19,6 +19,9 @@ import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.cancel
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -28,7 +31,7 @@ import java.util.Locale
 /**
  * APP前台服务，降低APP被系统杀死的可能性
  * */
-class ForegroundRunningService : Service() {
+class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
     private val kTag = "ForegroundRunningService"
     private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager() }
@@ -210,6 +213,8 @@ class ForegroundRunningService : Service() {
 
         EventBus.getDefault().unregister(this)
         unregisterReceiver(systemBroadcastReceiver)
+
+        cancel()
 
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
