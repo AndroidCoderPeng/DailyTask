@@ -39,4 +39,9 @@ sealed class ApplicationEvent {
      * 导航事件
      */
     object GoBackMainActivity : ApplicationEvent()
+
+    /**
+     * 截屏事件
+     */
+    object CaptureScreen : ApplicationEvent()
 }

@@ -20,6 +20,7 @@ class TimeoutTimerManager(private val mainHandler: Handler) {
 
     private var timeoutTimer: CountDownTimer? = null
     private var timeoutSeconds: Int = 0
+    private var hasCaptured = false
 
     /**
      * 启动超时定时器
@@ -27,6 +28,7 @@ class TimeoutTimerManager(private val mainHandler: Handler) {
      * @param onTimeout 超时回调，当倒计时结束时触发
      */
     fun startTimeoutTimer(onTimeout: () -> Unit) {
+        hasCaptured = false
         // 取消之前的定时器，防止重复创建
         cancelTimeoutTimer()
 
@@ -45,6 +47,10 @@ class TimeoutTimerManager(private val mainHandler: Handler) {
                 val tick = (millisUntilFinished / 1000).toInt()
                 // 更新悬浮窗倒计时
                 EventBus.getDefault().post(ApplicationEvent.UpdateFloatingViewTime(tick))
+                if (tick <= 3 && !hasCaptured) {
+                    hasCaptured = true
+                    EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+                }
             }
 
             override fun onFinish() {
@@ -52,6 +58,7 @@ class TimeoutTimerManager(private val mainHandler: Handler) {
                     onTimeout()
                 }
                 timeoutTimer = null
+                hasCaptured = false
             }
         }
         timeoutTimer?.start()

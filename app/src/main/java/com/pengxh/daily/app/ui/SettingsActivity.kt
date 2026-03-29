@@ -4,9 +4,12 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.lifecycleScope
@@ -16,15 +19,18 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
+import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
+import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
+import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +42,7 @@ import org.greenrobot.eventbus.ThreadMode
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
+    private val kTag = "SettingsActivity"
     private val context = this
     private val apps by lazy {
         listOf(
@@ -52,6 +59,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         )
     }
     private val channels = arrayListOf("企业微信", "QQ邮箱")
+    private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
+    private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
 
     override fun initViewBinding(): ActivitySettingsBinding {
         return ActivitySettingsBinding.inflate(layoutInflater)
@@ -84,17 +93,17 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     fun handleApplicationEvent(event: ApplicationEvent) {
         when (event) {
             is ApplicationEvent.ListenerConnected -> {
-                binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
+                binding.noticeTipsView.text = "通知监听服务状态查询中，请稍后"
+                binding.noticeTipsView.setTextColor(R.color.theme_color.convertColor(this))
                 binding.noticeSwitch.isChecked = true
-                binding.tipsView.visibility = View.GONE
+                binding.noticeTipsView.visibility = View.GONE
             }
 
             is ApplicationEvent.ListenerDisconnected -> {
-                binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
-                binding.tipsView.setTextColor(Color.RED)
+                binding.noticeTipsView.text = "通知监听服务未开启，无法监听打卡通知"
+                binding.noticeTipsView.setTextColor(Color.RED)
                 binding.noticeSwitch.isChecked = false
-                binding.tipsView.visibility = View.VISIBLE
+                binding.noticeTipsView.visibility = View.VISIBLE
             }
 
             else -> {}
@@ -142,6 +151,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             notificationSettingLauncher.launch(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
 
+        binding.captureSwitch.setOnClickListener {
+            projectionLauncher.launch(mpr.createScreenCaptureIntent())
+        }
+
         binding.openTestLayout.setOnClickListener {
             openApplication(false)
         }
@@ -160,6 +173,56 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
+        }
+    }
+
+    private val projectionLauncher = registerForActivityResult(projectionContract) {
+        if (it.resultCode != RESULT_OK) {
+            "用户拒绝授权".show(this)
+            return@registerForActivityResult
+        }
+
+        val data = it.data ?: run {
+            "授权失败".show(this)
+            return@registerForActivityResult
+        }
+
+        if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+            Log.d(kTag, "MediaProjection already active, skipping creation")
+            return@registerForActivityResult
+        }
+
+        createMediaProjection(it.resultCode, data)
+    }
+
+    private fun createMediaProjection(resultCode: Int, data: Intent) {
+        try {
+            val projection = mpr.getMediaProjection(resultCode, data)
+            if (projection == null) {
+                "截屏服务启动失败：截屏API未初始化".show(this)
+                return
+            }
+
+            projection.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    super.onStop()
+                    ProjectionSession.markStoppedNeedAuth()
+                    "截屏会话已中断，需要重新授权".show(context)
+                }
+            }, null)
+
+            ProjectionSession.setProjection(projection)
+
+            binding.captureSwitch.isChecked = true
+            binding.captureTipsView.visibility = View.GONE
+            Log.d(kTag, "MediaProjection created successfully")
+
+            // 启动截图服务
+            Intent(this, CaptureImageService::class.java).apply {
+                startForegroundService(this)
+            }
+        } catch (e: Exception) {
+            Log.w(kTag, "createMediaProjection: ", e)
         }
     }
 
@@ -211,20 +274,30 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
 
         if (notificationEnable()) {
-            binding.tipsView.text = "通知监听服务状态查询中，请稍后"
-            binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
+            binding.noticeTipsView.text = "通知监听服务状态查询中，请稍后"
+            binding.noticeTipsView.setTextColor(R.color.theme_color.convertColor(this))
             lifecycleScope.launch(Dispatchers.Main) {
                 delay(500)
                 if (notificationEnable()) {
                     binding.noticeSwitch.isChecked = true
-                    binding.tipsView.visibility = View.GONE
+                    binding.noticeTipsView.visibility = View.GONE
                 }
             }
         } else {
-            binding.tipsView.text = "通知监听服务未开启，无法监听打卡通知"
-            binding.tipsView.setTextColor(Color.RED)
+            binding.noticeTipsView.text = "通知监听服务未开启，无法监听打卡通知"
+            binding.noticeTipsView.setTextColor(Color.RED)
             binding.noticeSwitch.isChecked = false
-            binding.tipsView.visibility = View.VISIBLE
+            binding.noticeTipsView.visibility = View.VISIBLE
+        }
+
+        if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+            binding.captureSwitch.isChecked = true
+            binding.captureTipsView.visibility = View.GONE
+        } else {
+            binding.captureTipsView.text = "截屏服务未开启，无法获取打卡结果"
+            binding.captureTipsView.setTextColor(Color.RED)
+            binding.captureSwitch.isChecked = false
+            binding.captureTipsView.visibility = View.VISIBLE
         }
     }
 

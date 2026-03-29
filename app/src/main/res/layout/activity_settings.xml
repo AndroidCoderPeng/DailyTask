@@ -147,7 +147,7 @@
                             android:textSize="@dimen/sp_16" />
 
                         <com.google.android.material.textview.MaterialTextView
-                            android:id="@+id/tipsView"
+                            android:id="@+id/noticeTipsView"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/dp_4"
@@ -158,6 +158,49 @@
 
                     <com.google.android.material.switchmaterial.SwitchMaterial
                         android:id="@+id/noticeSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1px"
+                    android:layout_marginHorizontal="@dimen/dp_16"
+                    android:background="#CCC" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/itemLayoutHeight"
+                    android:background="@drawable/bg_solid_layout_white_16"
+                    android:paddingHorizontal="@dimen/dp_16">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="截屏服务"
+                            android:textColor="@color/text_default_color"
+                            android:textSize="@dimen/sp_16" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/captureTipsView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/dp_4"
+                            android:text="截屏服务未开启，无法获取打卡结果"
+                            android:textColor="@color/red"
+                            android:textSize="@dimen/sp_10" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/captureSwitch"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
