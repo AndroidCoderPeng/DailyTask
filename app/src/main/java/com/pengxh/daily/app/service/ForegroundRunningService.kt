@@ -85,6 +85,10 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
         startResetTaskTimer(hour)
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
+    }
+
     private val systemBroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
