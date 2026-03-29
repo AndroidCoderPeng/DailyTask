@@ -57,13 +57,15 @@ class CountDownTimerService : Service() {
         val name = "${resources.getString(R.string.app_name)}倒计时服务"
         val channel = NotificationChannel(
             "countdown_timer_service_channel", name, NotificationManager.IMPORTANCE_LOW
-        )
-        channel.description = "Channel for CountDownTimer Service"
+        ).apply {
+            description = "Channel for CountDownTimer Service"
+        }
         notificationManager.createNotificationChannel(channel)
+        val notification = notificationBuilder.build()
+        startForeground(notificationId, notification)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(notificationId, notificationBuilder.build())
         return START_STICKY
     }
 
