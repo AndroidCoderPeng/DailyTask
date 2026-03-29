@@ -144,8 +144,12 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     Bitmap.createBitmap(bitmap, 0, 0, width, height)
                 } else bitmap
 
+                // 只取上半截（50%高度）
+                val halfHeight = cropped.height / 2
+                val topHalf = Bitmap.createBitmap(cropped, 0, 0, cropped.width, halfHeight)
+
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
-                cropped.saveImage(imagePath)
+                topHalf.saveImage(imagePath)
                 Log.d(kTag, "完成截屏: $imagePath")
 
                 // 发送通知
