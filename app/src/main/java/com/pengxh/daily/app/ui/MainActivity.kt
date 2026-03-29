@@ -253,6 +253,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
             is ApplicationEvent.GoBackMainActivity -> { // 打卡成功发送的消息，回到主界面
                 timeoutTimerManager.cancelTimeoutTimer()
+                maskViewController.showMaskView(mainHandler)
                 backToMainActivity()
             }
 
