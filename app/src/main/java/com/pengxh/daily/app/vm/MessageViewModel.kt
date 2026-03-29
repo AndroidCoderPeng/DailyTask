@@ -24,4 +24,23 @@ class MessageViewModel : ViewModel() {
         it.printStackTrace()
         onFailed(it.message ?: "Unknown error")
     })
+
+    fun sendImageMessage(
+        imagePath: String,
+        onLoading: () -> Unit,
+        onSuccess: () -> Unit,
+        onFailed: (String) -> Unit
+    ) = launch({
+        onLoading()
+        val response = RetrofitServiceManager.sendImageMessage(imagePath)
+        val header = response.getResponseHeader()
+        if (header.first == 0) {
+            onSuccess()
+        } else {
+            onFailed(header.second)
+        }
+    }, {
+        it.printStackTrace()
+        onFailed(it.message ?: "Unknown error")
+    })
 }
