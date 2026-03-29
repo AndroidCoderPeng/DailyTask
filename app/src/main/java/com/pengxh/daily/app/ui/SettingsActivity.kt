@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.BuildConfig
@@ -26,16 +27,19 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
+import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
+import com.pengxh.kt.lite.utils.LoadingDialog
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -61,6 +65,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val channels = arrayListOf("企业微信", "QQ邮箱")
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
+    private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
 
     override fun initViewBinding(): ActivitySettingsBinding {
         return ActivitySettingsBinding.inflate(layoutInflater)
@@ -157,6 +162,32 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         binding.openTestLayout.setOnClickListener {
             openApplication(false)
+        }
+
+        binding.captureTestLayout.setOnClickListener {
+            lifecycleScope.launch(Dispatchers.IO) {
+                EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+
+                delay(1000)
+
+                withContext(Dispatchers.Main) {
+                    val path = SaveKeyValues.getValue(Constant.CAPTURE_IMAGE_PATH_KEY, "") as String
+                    messageViewModel.sendImageMessage(
+                        path, onLoading = {
+                            if (isFinishing || isDestroyed) return@sendImageMessage
+                            LoadingDialog.show(context, "消息发送中，请稍后...")
+                        },
+                        onSuccess = {
+                            if (isFinishing || isDestroyed) return@sendImageMessage
+                            LoadingDialog.dismiss()
+                        },
+                        onFailed = {
+                            if (isFinishing || isDestroyed) return@sendImageMessage
+                            LoadingDialog.dismiss()
+                            it.show(context)
+                        })
+                }
+            }
         }
 
         binding.gestureDetectorSwitch.setOnCheckedChangeListener { _, isChecked ->

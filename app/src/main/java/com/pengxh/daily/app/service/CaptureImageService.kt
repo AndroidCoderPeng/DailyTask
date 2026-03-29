@@ -151,8 +151,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
                 topHalf.saveImage(imagePath)
                 Log.d(kTag, "完成截屏: $imagePath")
-
-                // 发送通知
+                SaveKeyValues.putValue(Constant.CAPTURE_IMAGE_PATH_KEY, imagePath)
             } finally {
                 runCatching { virtualDisplay?.release() }
                 runCatching { imageReader.close() }
