@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.service
 
 import android.app.Notification
+import android.content.ComponentName
 import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -53,6 +54,11 @@ class NotificationMonitorService : NotificationListenerService() {
         val pkg = sbn.packageName
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
         val notice = extras.getString(Notification.EXTRA_TEXT)
+            ?: extras.getString(Notification.EXTRA_BIG_TEXT)
+            ?: extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+                ?.joinToString("\n")
+            ?: extras.getString(Notification.EXTRA_SUMMARY_TEXT)
+
         if (notice.isNullOrBlank()) {
             return
         }
@@ -194,6 +200,8 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
+        // 主动请求系统重新绑定监听服务
+        requestRebind(ComponentName(this, NotificationMonitorService::class.java))
     }
 
     override fun onDestroy() {
