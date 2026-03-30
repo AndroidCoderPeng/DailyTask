@@ -21,6 +21,7 @@ object Constant {
     const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY"
     const val CHANNEL_TYPE_KEY = "CHANNEL_TYPE_KEY"
     const val NEED_NOTICE_MONITOR_KEY = "NEED_NOTICE_MONITOR_KEY"
+    const val RESULT_SOURCE_KEY = "RESULT_SOURCE_KEY"
 
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
     const val WEWORK = "com.tencent.wework" // 企业微信

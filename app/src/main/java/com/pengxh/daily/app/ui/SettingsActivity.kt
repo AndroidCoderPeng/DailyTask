@@ -201,6 +201,28 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             navigatePageTo<MessageChannelActivity>()
         }
 
+        binding.noticeRadioButton.setOnClickListener {
+            if (binding.noticeSwitch.isChecked) {
+                binding.noticeRadioButton.isChecked = true
+                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                binding.captureRadioButton.isChecked = false
+            } else {
+                "请先打开通知监听".show(context)
+                binding.noticeRadioButton.isChecked = false
+            }
+        }
+
+        binding.captureRadioButton.setOnClickListener {
+            if (binding.captureSwitch.isChecked) {
+                binding.captureRadioButton.isChecked = true
+                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
+                binding.noticeRadioButton.isChecked = false
+            } else {
+                "请先打开截屏服务".show(context)
+                binding.captureRadioButton.isChecked = false
+            }
+        }
+
         binding.taskConfigLayout.setOnClickListener {
             navigatePageTo<TaskConfigActivity>()
         }
@@ -301,6 +323,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 binding.channelView.text = "未配置"
                 binding.channelView.setTextColor(R.color.red.convertColor(this))
             }
+        }
+
+        val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+        if (resultSource == 0) {
+            binding.noticeRadioButton.isChecked = true
+        } else {
+            binding.captureRadioButton.isChecked = true
         }
 
         binding.gestureDetectorSwitch.isChecked =
