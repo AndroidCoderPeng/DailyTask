@@ -2,7 +2,6 @@ package com.pengxh.daily.app.service
 
 import android.app.Notification
 import android.content.ComponentName
-import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -37,7 +36,6 @@ class NotificationMonitorService : NotificationListenerService() {
     private val kTag = "MonitorService"
     private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager(this) }
-    private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var listenerConnected = false
@@ -110,13 +108,6 @@ class NotificationMonitorService : NotificationListenerService() {
     private fun handleRemoteCommand(pkg: String, notice: String) {
         if (pkg in auxiliaryApp) {
             when {
-                notice.contains("电量") -> {
-                    val capacity = batteryManager.getIntProperty(
-                        BatteryManager.BATTERY_PROPERTY_CAPACITY
-                    )
-                    sendChannelMessage("查询手机电量通知", "当前手机剩余电量为：${capacity}%")
-                }
-
                 notice.contains("启动") -> {
                     EventBus.getDefault().post(ApplicationEvent.StartDailyTask)
                 }
