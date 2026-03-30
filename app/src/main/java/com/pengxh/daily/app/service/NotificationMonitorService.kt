@@ -6,7 +6,6 @@ import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
@@ -171,17 +170,12 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("状态查询") -> {
                     val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
-                    val battery =
-                        batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-
-                    val content = """
-                                  任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}
-                                  通知监听：${if (listenerConnected) "正常" else "断开"}
-                                  截图服务：${if (ProjectionSession.state == ProjectionSession.State.ACTIVE) "正常" else "断开"}
-                                  消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}
-                                  版本号：${BuildConfig.VERSION_NAME}
-                                  当前手机电量：${if (battery >= 0) "$battery%" else "未知"}
-                                  """.trimIndent()
+                    val content = buildString {
+                        appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
+                        appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
+                        appendLine("截图服务：${if (ProjectionSession.state == ProjectionSession.State.ACTIVE) "正常" else "断开"}")
+                        append("消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}")
+                    }
                     sendChannelMessage("状态查询通知", content)
                 }
 
