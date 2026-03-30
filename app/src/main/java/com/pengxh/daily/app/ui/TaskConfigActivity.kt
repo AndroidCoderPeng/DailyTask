@@ -269,7 +269,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private fun setTaskResetTime(hour: Int) {
         SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
         // 重新开始重置每日任务计时
-        EventBus.getDefault().post(ApplicationEvent.SetResetTaskTime(hour))
+        EventBus.getDefault().post(ApplicationEvent.SetResetTaskTime)
     }
 
     private fun setTimeByPosition(position: Int) {

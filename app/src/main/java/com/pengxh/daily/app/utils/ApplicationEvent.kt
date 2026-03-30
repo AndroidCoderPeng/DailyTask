@@ -22,7 +22,7 @@ sealed class ApplicationEvent {
      */
     object StartDailyTask : ApplicationEvent()
     object StopDailyTask : ApplicationEvent()
-    data class SetResetTaskTime(val hour: Int) : ApplicationEvent()
+    object SetResetTaskTime : ApplicationEvent()
     data class UpdateResetTickTime(val countDownTime: String) : ApplicationEvent()
     object ResetDailyTask : ApplicationEvent()
 

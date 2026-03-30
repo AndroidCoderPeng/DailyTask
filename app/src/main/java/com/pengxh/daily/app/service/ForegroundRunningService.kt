@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
-import android.os.CountDownTimer
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
@@ -31,10 +30,6 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
 
     @Volatile
     private var isTaskReset = false
-
-    @Volatile
-    private var isTimerRunning = false
-    private var taskTimer: CountDownTimer? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -64,54 +59,47 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
 
         val filter = IntentFilter(Intent.ACTION_TIME_TICK)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(systemBroadcastReceiver, filter, RECEIVER_NOT_EXPORTED)
+            registerReceiver(timeTickReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
-            registerReceiver(systemBroadcastReceiver, filter)
+            registerReceiver(timeTickReceiver, filter)
         }
 
         EventBus.getDefault().register(this)
 
-        // 启动重置任务计时器
-        val hour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
-        startResetTaskTimer(hour)
+        // 立即更新一次倒计时显示
+        updateResetTimeView()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         return START_STICKY
     }
 
-    private val systemBroadcastReceiver = object : BroadcastReceiver() {
+    private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
                 // 监听时间，系统级广播，每分钟触发一次。
                 if (it == Intent.ACTION_TIME_TICK) {
-                    val hour = SaveKeyValues.getValue(
+                    // 每分钟更新倒计时显示
+                    updateResetTimeView()
+
+                    // 检查是否到达重置时间点
+                    val resetHour = SaveKeyValues.getValue(
                         Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
                     ) as Int
-                    if (Calendar.getInstance().get(Calendar.HOUR_OF_DAY) == hour) {
-                        resetTask()
+                    val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+                    if (currentHour == resetHour && !isTaskReset) {
+                        val autoStart = SaveKeyValues.getValue(
+                            Constant.TASK_AUTO_START_KEY, true
+                        ) as Boolean
+                        if (autoStart) {
+                            EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
+                        }
+
+                        isTaskReset = true
                     }
                 }
             }
-        }
-    }
-
-    private fun resetTask() {
-        if (!isTaskReset) {
-            val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
-            if (autoStart) {
-                EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
-            }
-
-            isTaskReset = true
-
-            // 重置任务计时器
-            val hour = SaveKeyValues.getValue(
-                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-            ) as Int
-            startResetTaskTimer(hour)
         }
     }
 
@@ -119,39 +107,19 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleApplicationEvent(event: ApplicationEvent) {
         if (event is ApplicationEvent.SetResetTaskTime) {
-            // 重置任务计时器
-            startResetTaskTimer(event.hour)
+            // 重新计算并更新倒计时显示
+            updateResetTimeView()
+            // 重置标志位，允许在新的时间点再次触发重置
+            isTaskReset = false
         }
     }
 
-    private fun startResetTaskTimer(hour: Int) {
-        val currentDiffSeconds = resetTaskSeconds(hour)
-        updateResetTimeView(currentDiffSeconds)
+    private fun updateResetTimeView() {
+        val resetHour = SaveKeyValues.getValue(
+            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+        ) as Int
+        val seconds = resetTaskSeconds(resetHour)
 
-        // 先取消之前的计时器
-        taskTimer?.cancel()
-        isTimerRunning = false
-        taskTimer = null
-
-        taskTimer = object : CountDownTimer(currentDiffSeconds * 1000L, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val seconds = (millisUntilFinished / 1000).toInt()
-                // 每分钟发送一次广播，更省电
-                if (seconds % 60 == 0) {
-                    updateResetTimeView(seconds)
-                }
-            }
-
-            override fun onFinish() {
-                isTaskReset = false
-                isTimerRunning = false
-            }
-        }
-        isTimerRunning = true
-        taskTimer?.start()
-    }
-
-    private fun updateResetTimeView(seconds: Int) {
         val hours = seconds / 3600
         val minutes = (seconds % 3600) / 60
         val time = String.format(Locale.getDefault(), "%02d小时%02d分钟", hours, minutes)
@@ -161,6 +129,9 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
     private fun resetTaskSeconds(hour: Int): Int {
         val calendar = Calendar.getInstance()
         val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
+        val currentMinute = calendar.get(Calendar.MINUTE)
+        val currentSecond = calendar.get(Calendar.SECOND)
+
         // 设置今天的计划时间
         val todayTargetMillis = calendar.clone() as Calendar
         todayTargetMillis.set(Calendar.HOUR_OF_DAY, hour)
@@ -171,6 +142,10 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
         // 根据当前时间决定计算哪一天的计划时间
         val targetMillis = if (currentHour < hour) {
             // 今天还没到计划时间
+            todayTargetMillis.timeInMillis
+        } else if (currentHour == hour && currentMinute == 0 && currentSecond == 0) {
+            // 刚好是整点，计算明天的
+            todayTargetMillis.add(Calendar.DATE, 1)
             todayTargetMillis.timeInMillis
         } else {
             // 今天已经过了计划时间，计算明天的
@@ -184,14 +159,15 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
 
     override fun onDestroy() {
         super.onDestroy()
-        taskTimer?.cancel()
-        taskTimer = null
-
         EventBus.getDefault().unregister(this)
-        unregisterReceiver(systemBroadcastReceiver)
+
+        try {
+            unregisterReceiver(timeTickReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
 
         cancel()
-
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
