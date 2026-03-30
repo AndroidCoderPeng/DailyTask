@@ -35,7 +35,7 @@ class QuestionAndAnswerActivity : KotlinBaseActivity<ActivityQuestionAndAnswerBi
             override fun convertView(
                 viewHolder: ViewHolder, position: Int, item: QuestionAnAnswerModel
             ) {
-                viewHolder.setText(R.id.questionView, item.question)
+                viewHolder.setText(R.id.questionView, "${position + 1}、${item.question}")
                 val textView = viewHolder.getView<TextView>(R.id.answerView)
                 HtmlRenderEngine.Builder()
                     .setContext(context)
