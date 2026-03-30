@@ -56,7 +56,7 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
         val notificationBuilder =
             NotificationCompat.Builder(this, "foreground_running_service_channel").apply {
                 setSmallIcon(R.mipmap.ic_launcher)
-                setContentText(Constant.FOREGROUND_RUNNING_SERVICE_TITLE)
+                setContentText("为保证程序正常运行，请勿移除此通知")
                 setPriority(NotificationCompat.PRIORITY_LOW) // 设置通知优先级
                 setOngoing(true)
                 setOnlyAlertOnce(true)
