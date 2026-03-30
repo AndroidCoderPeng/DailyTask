@@ -6,13 +6,16 @@ import android.os.BatteryManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
+import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
+import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -38,11 +41,13 @@ class NotificationMonitorService : NotificationListenerService() {
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var listenerConnected = false
 
     /**
      * 有可用的并且和通知管理器连接成功时回调
      */
     override fun onListenerConnected() {
+        listenerConnected = true
         EventBus.getDefault().post(ApplicationEvent.ListenerConnected)
     }
 
@@ -164,6 +169,22 @@ class NotificationMonitorService : NotificationListenerService() {
                     }
                 }
 
+                notice.contains("状态查询") -> {
+                    val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+                    val battery =
+                        batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+
+                    val content = """
+                                  任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}
+                                  通知监听：${if (listenerConnected) "正常" else "断开"}
+                                  截图服务：${if (ProjectionSession.state == ProjectionSession.State.ACTIVE) "正常" else "断开"}
+                                  消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}
+                                  版本号：${BuildConfig.VERSION_NAME}
+                                  当前手机电量：${if (battery >= 0) "$battery%" else "未知"}
+                                  """.trimIndent()
+                    sendChannelMessage("状态查询通知", content)
+                }
+
                 else -> {
                     val key = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
                     if (notice.contains(key)) {
@@ -199,6 +220,7 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification) {}
 
     override fun onListenerDisconnected() {
+        listenerConnected = false
         EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
         // 主动请求系统重新绑定监听服务
         requestRebind(ComponentName(this, NotificationMonitorService::class.java))

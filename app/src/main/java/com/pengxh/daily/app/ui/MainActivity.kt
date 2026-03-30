@@ -67,6 +67,10 @@ import java.util.Locale
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.TaskStateListener {
 
+    companion object {
+        var isTaskStarted = false
+    }
+
     private val kTag = "MainActivity"
     private val context = this
     private val dateFormat by lazy {
@@ -316,6 +320,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     override fun onTaskStarted() {
+        isTaskStarted = true
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
@@ -323,6 +328,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     override fun onTaskStopped() {
+        isTaskStarted = false
         // 重置UI状态
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = ""
@@ -357,7 +363,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     override fun onTaskExecutionError(message: String) {
-        Log.e(kTag, message)
+        messageDispatcher.sendMessage("任务执行出错通知", message)
     }
 
     private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
