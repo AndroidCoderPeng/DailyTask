@@ -2,12 +2,14 @@ package com.pengxh.daily.app.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
+import com.pengxh.daily.app.extensions.isApplicationExist
 import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
@@ -31,6 +33,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private val context = this
     private val hourArray = arrayListOf("0", "1", "2", "3", "4", "5", "6", "自定义（单位：时）")
     private val timeArray = arrayListOf("15", "30", "45", "自定义（单位：秒）")
+    private val optionsArray = arrayListOf("QQ", "微信", "TIM", "支付宝", "剪切板")
     private val clipboard by lazy { getSystemService(CLIPBOARD_SERVICE) as ClipboardManager }
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
@@ -57,7 +60,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
         ) as Int
         binding.timeoutTextView.text = "${time}s"
-        binding.keyTextView.text = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
+        binding.keyTextView.text =
+            SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
         binding.autoTaskSwitch.isChecked = SaveKeyValues.getValue(
             Constant.TASK_AUTO_START_KEY, true
         ) as Boolean
@@ -208,9 +212,53 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val json = exportData.toJson()
             Log.d(kTag, json)
 
-            val cipData = ClipData.newPlainText("TaskConfig", json)
-            clipboard.setPrimaryClip(cipData)
-            "配置已复制到剪切板".show(context)
+            // 分享
+            BottomActionSheet.Builder()
+                .setContext(this)
+                .setActionItemTitle(optionsArray)
+                .setItemTextColor(R.color.theme_color.convertColor(this))
+                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+                    override fun onActionItemClick(position: Int) {
+                        when (position) {
+                            0 -> {
+                                // QQ
+                            }
+
+                            1 -> {
+                                // 微信
+                                if (isApplicationExist(Constant.WECHAT)) {
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, json)
+                                        setPackage(Constant.WECHAT)
+                                    }
+                                    try {
+                                        startActivity(intent)
+                                    } catch (e: Exception) {
+                                        e.printStackTrace()
+                                        "分享失败".show(context)
+                                    }
+                                } else {
+                                    "请先安装微信".show(context)
+                                }
+                            }
+
+                            2 -> {
+                                // TIM
+                            }
+
+                            3 -> {
+                                // 支付宝
+                            }
+
+                            4 -> {
+                                val cipData = ClipData.newPlainText("TaskConfig", json)
+                                clipboard.setPrimaryClip(cipData)
+                                "已复制到剪切板".show(context)
+                            }
+                        }
+                    }
+                }).build().show()
         }
     }
 
