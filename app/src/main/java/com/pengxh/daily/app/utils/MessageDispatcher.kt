@@ -16,32 +16,31 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
         val messageTitle =
             SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
 
-        val batteryCapacity =
-            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val date = System.currentTimeMillis().timestampToDate()
 
         val channelType = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         when (channelType) {
             0 -> {
                 // 企业微信
-                val content = """
-                              标题：${title.ifBlank { messageTitle }}
-                              内容：${content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" }}
-                              日期：$date
-                              版本号：${BuildConfig.VERSION_NAME}
-                              当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}
-                              """.trimIndent()
+                val content = buildString {
+                    appendLine(title.ifBlank { messageTitle })
+                    appendLine(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
+                    appendLine("当前日期：$date")
+                    appendLine("版本号：${BuildConfig.VERSION_NAME}")
+                    append("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                }
                 viewModel.sendMessage(content, {}, {}, {})
             }
 
             1 -> {
                 // QQ邮箱
-                val content = """
-                              内容：${content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" }}
-                              日期：$date
-                              版本号：${BuildConfig.VERSION_NAME}
-                              当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}
-                              """.trimIndent()
+                val content = buildString {
+                    appendLine(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
+                    appendLine("当前日期：$date")
+                    appendLine("版本号：${BuildConfig.VERSION_NAME}")
+                    append("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                }
                 emailManager.sendEmail(title.ifBlank { messageTitle }, content, false)
             }
         }
@@ -71,12 +70,12 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
 
             1 -> {
                 // QQ邮箱
-                val content = """
-                              内容：${content}
-                              日期：$date
-                              版本号：${BuildConfig.VERSION_NAME}
-                              当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}
-                              """.trimIndent()
+                val content = buildString {
+                    appendLine("内容：$content")
+                    appendLine("日期：$date")
+                    appendLine("版本号：${BuildConfig.VERSION_NAME}")
+                    append("当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}")
+                }
                 emailManager.sendAttachmentEmail(
                     title.ifBlank { messageTitle },
                     content,
