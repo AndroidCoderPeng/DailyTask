@@ -49,12 +49,6 @@ class NotificationMonitorService : NotificationListenerService() {
      * 当有新通知到来时会回调
      */
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val needMonitor = SaveKeyValues.getValue(Constant.NEED_NOTICE_MONITOR_KEY, true) as Boolean
-        if (!needMonitor) {
-            Log.d(kTag, "onNotificationPosted: 消息监听已停止")
-            return
-        }
-
         val extras = sbn.notification.extras
         val pkg = sbn.packageName
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""

@@ -13,7 +13,6 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
@@ -191,8 +190,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         // 更新配置
                         binding.iconView.setBackgroundResource(icons[position])
                         SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
-
-                        showMessageDialog(position)
                     }
                 }).build().show()
         }
@@ -281,21 +278,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             putExtra("data", data)
             startForegroundService(this)
         }
-    }
-
-    private fun showMessageDialog(position: Int) {
-        val message = if (position == 0) {
-            SaveKeyValues.putValue(Constant.NEED_NOTICE_MONITOR_KEY, true)
-            "目标应用已切换为【${apps[position]}】，通知监听已启用！"
-        } else {
-            SaveKeyValues.putValue(Constant.NEED_NOTICE_MONITOR_KEY, false)
-            "目标应用已切换为【${apps[position]}】，通知监听已失效，虽不影响打卡，但无法获取打卡结果，请注意！"
-        }
-        MaterialAlertDialogBuilder(this)
-            .setTitle("目标应用切换")
-            .setMessage(message)
-            .setCancelable(false)
-            .setPositiveButton("知道了", null).show()
     }
 
     private val notificationSettingLauncher =

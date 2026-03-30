@@ -46,7 +46,6 @@ fun Context.openApplication(needCountDown: Boolean) {
     Log.d("Ex-Context", "openApplication: $targetApp")
     if (!isApplicationExist(targetApp)) {
         "未安装指定的目标软件，无法执行任务".show(this)
-        // 停止任务
         EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
         return
     }
@@ -57,15 +56,22 @@ fun Context.openApplication(needCountDown: Boolean) {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         setPackage(targetApp)
     }
-    val activities = packageManager.queryIntentActivities(intent, 0)
+    val activities = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.queryIntentActivities(intent, PackageManager.ResolveInfoFlags.of(0))
+    } else {
+        packageManager.queryIntentActivities(intent, 0)
+    }
     if (activities.isNotEmpty()) {
         val info = activities.first()
         intent.component = ComponentName(info.activityInfo.packageName, info.activityInfo.name)
         startActivity(intent)
-    }
 
-    // 在目标应用界面更新悬浮窗倒计时
-    if (needCountDown) {
-        EventBus.getDefault().post(ApplicationEvent.StartCountdownTime)
+        // 在目标应用界面更新悬浮窗倒计时
+        if (needCountDown) {
+            EventBus.getDefault().post(ApplicationEvent.StartCountdownTime)
+        }
+    } else {
+        Log.w("Ex-Context", "openApplication: 未找到目标应用的 Launcher Activity，包名：$targetApp")
+        EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
     }
 }

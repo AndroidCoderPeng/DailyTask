@@ -23,7 +23,6 @@ object Constant {
     const val MESSAGE_TITLE_KEY = "MESSAGE_TITLE_KEY"
     const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY"
     const val CHANNEL_TYPE_KEY = "CHANNEL_TYPE_KEY"
-    const val NEED_NOTICE_MONITOR_KEY = "NEED_NOTICE_MONITOR_KEY"
     const val RESULT_SOURCE_KEY = "RESULT_SOURCE_KEY"
 
     // ============================================================

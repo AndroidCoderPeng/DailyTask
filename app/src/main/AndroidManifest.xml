@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.pengxh.daily.app">
 
     <uses-permission android:name="android.permission.INTERNET" />
@@ -16,7 +17,8 @@
     <!-- 此权限在适用于Android 10以下（包含），Android 11 引入queries，但勉强能用，再往上就不行了，只能通过queries查询指定的应用 -->
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
-        android:maxSdkVersion="30" />
+        android:maxSdkVersion="30"
+        tools:ignore="QueryAllPackagesPermission" />
 
     <application
         android:name=".DailyTaskApplication"

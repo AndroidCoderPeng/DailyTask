@@ -26,7 +26,7 @@ fun DailyTaskBean.diffCurrent(): Pair<String, Int> {
     if (needRandom) {
         val minuteRange = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
 
-        val seedMinute = (0 until minuteRange).random() // [0,minuteRange)
+        val seedMinute = if (minuteRange > 0) (0 until minuteRange).random() else 0
         val seedSeconds = (0 until 60).random() // [0,60)
         totalSeconds += seedMinute * 60 + seedSeconds
 
