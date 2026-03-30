@@ -335,7 +335,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 binding.captureRadioButton.isChecked = true
                 binding.noticeRadioButton.isChecked = false
             } else {
-                "截屏服务未开启，切换为通知监听".show(this)
                 binding.captureRadioButton.isChecked = false
                 binding.noticeRadioButton.isChecked = true
             }
