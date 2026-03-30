@@ -316,21 +316,12 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     override fun onResume() {
         super.onResume()
         val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
-        when (type) {
-            0 -> {
-                binding.channelView.text = channels[type]
-                binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
-            }
-
-            1 -> {
-                binding.channelView.text = channels[type]
-                binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
-            }
-
-            else -> {
-                binding.channelView.text = "未配置"
-                binding.channelView.setTextColor(R.color.red.convertColor(this))
-            }
+        if (type in 0..channels.lastIndex) {
+            binding.channelView.text = channels[type]
+            binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
+        } else {
+            binding.channelView.text = "未配置"
+            binding.channelView.setTextColor(R.color.red.convertColor(this))
         }
 
         val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
