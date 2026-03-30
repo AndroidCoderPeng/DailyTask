@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.ui
 
-import android.os.Build
 import android.os.Bundle
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -12,7 +11,6 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
@@ -161,10 +159,10 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     private fun sendTestMessage() {
-        val message = """
-                        标题：你好！
-                        内容：这是来自 DailyTask 的测试消息 🎉
-                      """.trimIndent()
+        val message = buildString {
+            appendLine("你好！")
+            append("这是来自 DailyTask 的测试消息 🎉")
+        }
         messageViewModel.sendMessage(
             message,
             onLoading = {
