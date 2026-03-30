@@ -7,13 +7,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.Date
 import java.util.Properties
+import javax.activation.DataHandler
+import javax.activation.FileDataSource
 import javax.mail.Message
 import javax.mail.Session
 import javax.mail.Transport
 import javax.mail.internet.InternetAddress
+import javax.mail.internet.MimeBodyPart
 import javax.mail.internet.MimeMessage
+import javax.mail.internet.MimeMultipart
 
 class EmailManager() {
     private val kTag = "EmailManager"
@@ -31,6 +36,9 @@ class EmailManager() {
         return props
     }
 
+    /**
+     * 发送普通邮件
+     */
     fun sendEmail(
         title: String,
         content: String,
@@ -49,8 +57,8 @@ class EmailManager() {
 
         val authenticator = EmailAuthenticator(config.outbox, config.authCode)
         val props = createSmtpProperties()
-
         val session = Session.getInstance(props, authenticator)
+
         val message = MimeMessage(session).apply {
             setFrom(InternetAddress(config.outbox))
             setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
@@ -58,6 +66,72 @@ class EmailManager() {
             sentDate = Date()
             setText(content)
         }
+
+        sendAsync(message, isTest, onSuccess, onFailure)
+    }
+
+    /**
+     * 发送带附件的邮件
+     */
+    fun sendAttachmentEmail(
+        title: String,
+        content: String,
+        filePath: String,
+        isTest: Boolean,
+        onSuccess: (() -> Unit)? = null,
+        onFailure: ((String) -> Unit)? = null
+    ) {
+        val configs = DatabaseWrapper.loadAll()
+        if (configs.isEmpty()) {
+            onFailure?.invoke("邮箱未配置，无法发送邮件")
+            return
+        }
+
+        val config = configs.last()
+        Log.d(kTag, "邮箱配置: ${config.toJson()}")
+
+        val authenticator = EmailAuthenticator(config.outbox, config.authCode)
+        val props = createSmtpProperties()
+        val session = Session.getInstance(props, authenticator)
+
+        // 正文部分
+        val textPart = MimeBodyPart().apply {
+            setText(content)
+        }
+
+        // 附件部分
+        val attachmentPart = MimeBodyPart().apply {
+            val file = File(filePath)
+            dataHandler = DataHandler(FileDataSource(file))
+            fileName = file.name
+        }
+
+        // 组合 multipart
+        val multipart = MimeMultipart().apply {
+            addBodyPart(textPart)
+            addBodyPart(attachmentPart)
+        }
+
+        val message = MimeMessage(session).apply {
+            setFrom(InternetAddress(config.outbox))
+            setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
+            subject = title
+            sentDate = Date()
+            setContent(multipart)
+        }
+
+        sendAsync(message, isTest, onSuccess, onFailure)
+    }
+
+    /**
+     * 异步发送邮件
+     */
+    private fun sendAsync(
+        message: MimeMessage,
+        isTest: Boolean,
+        onSuccess: (() -> Unit)? = null,
+        onFailure: ((String) -> Unit)? = null
+    ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 Transport.send(message)

@@ -24,6 +24,7 @@ import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
+import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
@@ -64,6 +65,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
+    private val emailManager by lazy { EmailManager() }
 
     override fun initViewBinding(): ActivitySettingsBinding {
         return ActivitySettingsBinding.inflate(layoutInflater)
@@ -121,20 +123,45 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
 
             is ApplicationEvent.CaptureCompleted -> {
-                messageViewModel.sendImageMessage(
-                    event.imagePath, onLoading = {
-                        if (isFinishing || isDestroyed) return@sendImageMessage
-                        LoadingDialog.show(context, "消息发送中，请稍后...")
-                    },
-                    onSuccess = {
-                        if (isFinishing || isDestroyed) return@sendImageMessage
-                        LoadingDialog.dismiss()
-                    },
-                    onFailed = {
-                        if (isFinishing || isDestroyed) return@sendImageMessage
-                        LoadingDialog.dismiss()
-                        it.show(context)
-                    })
+                val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+                when (type) {
+                    0 -> {
+                        // 企业微信
+                        messageViewModel.sendImageMessage(
+                            event.imagePath, onLoading = {
+                                if (isFinishing || isDestroyed) return@sendImageMessage
+                                LoadingDialog.show(this, "消息发送中，请稍后...")
+                            },
+                            onSuccess = {
+                                if (isFinishing || isDestroyed) return@sendImageMessage
+                                LoadingDialog.dismiss()
+                            },
+                            onFailed = {
+                                if (isFinishing || isDestroyed) return@sendImageMessage
+                                LoadingDialog.dismiss()
+                                it.show(this)
+                            })
+                    }
+
+                    1 -> {
+                        // QQ邮箱
+                        LoadingDialog.show(this, "邮件发送中，请稍后....")
+                        emailManager.sendAttachmentEmail(
+                            "邮箱测试", "这是一封测试邮件，不必关注", event.imagePath, true,
+                            onSuccess = {
+                                if (isFinishing || isDestroyed) return@sendAttachmentEmail
+                                LoadingDialog.dismiss()
+                                "发送成功，请注意查收".show(this)
+                            },
+                            onFailure = {
+                                if (isFinishing || isDestroyed) return@sendAttachmentEmail
+                                LoadingDialog.dismiss()
+                                "发送失败：${it}".show(this)
+                            })
+                    }
+
+                    else -> "消息渠道不支持".show(this)
+                }
             }
 
             else -> {}
