@@ -57,7 +57,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             setVibrate(null)
         }
     }
-    private val notificationId = 1002
     private val dateTimeFormat by lazy { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA) }
     private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager() }
@@ -79,12 +78,12 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
-                notificationId,
+                Constant.CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID,
                 notification,
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
             )
         } else {
-            startForeground(notificationId, notification)
+            startForeground(Constant.CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID, notification)
         }
 
         EventBus.getDefault().register(this)

@@ -51,6 +51,9 @@ object Constant {
     // ============================================================
     const val DEFAULT_RESET_HOUR = 0
     const val DEFAULT_OVER_TIME = 30
+    const val CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID = 1001
+    const val COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID = 1002
+    const val FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID = 1003
 
     // 目标APP
     fun getTargetApp(): String {

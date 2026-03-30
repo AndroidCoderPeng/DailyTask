@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
+import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
 
 /**
@@ -36,7 +37,6 @@ class CountDownTimerService : Service() {
             setVibrate(null)
         }
     }
-    private val notificationId = 1001
     private val timerLock = Any()
     private var countDownTimer: CountDownTimer? = null
 
@@ -62,7 +62,7 @@ class CountDownTimerService : Service() {
         }
         notificationManager.createNotificationChannel(channel)
         val notification = notificationBuilder.build()
-        startForeground(notificationId, notification)
+        startForeground(Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -93,7 +93,10 @@ class CountDownTimerService : Service() {
                     val notification = notificationBuilder.apply {
                         setContentText("${seconds.formatTime()}后执行第${taskIndex}个任务")
                     }.build()
-                    notificationManager.notify(notificationId, notification)
+                    notificationManager.notify(
+                        Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID,
+                        notification
+                    )
                 }
 
                 override fun onFinish() {
@@ -114,7 +117,7 @@ class CountDownTimerService : Service() {
         val notification = notificationBuilder.apply {
             setContentText("当天所有任务已执行完毕")
         }.build()
-        notificationManager.notify(notificationId, notification)
+        notificationManager.notify(Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification)
         isTimerRunning = false
     }
 
@@ -126,7 +129,10 @@ class CountDownTimerService : Service() {
                 val notification = notificationBuilder.apply {
                     setContentText("倒计时任务已停止")
                 }.build()
-                notificationManager.notify(notificationId, notification)
+                notificationManager.notify(
+                    Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID,
+                    notification
+                )
                 isTimerRunning = false
                 currentTaskIndex = -1
             }

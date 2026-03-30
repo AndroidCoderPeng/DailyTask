@@ -67,7 +67,7 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
                 setVibrate(null) // 禁用振动
             }
         val notification = notificationBuilder.build()
-        startForeground(1002, notification)
+        startForeground(Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification)
 
         val filter = IntentFilter(Intent.ACTION_TIME_TICK)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
