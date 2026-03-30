@@ -85,6 +85,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     private lateinit var taskScheduler: TaskScheduler
     private lateinit var timeoutTimerManager: TimeoutTimerManager
     private var taskBeans = mutableListOf<DailyTaskBean>()
+    private var imagePath = ""
 
     override fun observeRequestState() {
 
@@ -265,9 +266,27 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             is ApplicationEvent.StartCountdownTime -> {
                 timeoutTimerManager.startTimeoutTimer {
                     backToMainActivity()
-                    //如果倒计时结束，那么表明没有收到打卡成功的通知
-                    messageDispatcher.sendMessage("", "")
+
+                    val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+                    if (resultSource == 0) {
+                        // 如果倒计时结束，那么表明没有收到打卡成功的通知
+                        messageDispatcher.sendMessage("", "")
+                    } else {
+                        if (imagePath == "") {
+                            messageDispatcher.sendMessage(
+                                "", "打卡完成，但是无法获取截图，请手动查看结果"
+                            )
+                        } else {
+                            messageDispatcher.sendAttachmentMessage(
+                                "", "打卡完成，结果请查看附件", imagePath
+                            )
+                        }
+                    }
                 }
+            }
+
+            is ApplicationEvent.CaptureCompleted -> {
+                imagePath = event.imagePath
             }
 
             else -> {}

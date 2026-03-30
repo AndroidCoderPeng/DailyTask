@@ -46,4 +46,44 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
             }
         }
     }
+
+    fun sendAttachmentMessage(title: String, content: String, filePath: String) {
+        val messageTitle =
+            SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
+
+        val batteryCapacity =
+            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val date = System.currentTimeMillis().timestampToDate()
+
+        val channelType = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        when (channelType) {
+            0 -> {
+                // 企业微信（图文消息暂不支持）
+//                val content = """
+//                               标题：${title.ifBlank { messageTitle }}
+//                               内容：${content}
+//                               日期：$date
+//                               版本号：${BuildConfig.VERSION_NAME}
+//                               当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}
+//                              """.trimIndent()
+                viewModel.sendImageMessage(filePath, {}, {}, {})
+            }
+
+            1 -> {
+                // QQ邮箱
+                val content = """
+                               内容：${content}
+                               日期：$date
+                               版本号：${BuildConfig.VERSION_NAME}
+                               当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}
+                              """.trimIndent()
+                emailManager.sendAttachmentEmail(
+                    title.ifBlank { messageTitle },
+                    content,
+                    filePath,
+                    false
+                )
+            }
+        }
+    }
 }
