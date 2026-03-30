@@ -220,37 +220,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
                         when (position) {
-                            0 -> {
-                                // QQ
-                            }
-
-                            1 -> {
-                                // 微信
-                                if (isApplicationExist(Constant.WECHAT)) {
-                                    val intent = Intent(Intent.ACTION_SEND).apply {
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, json)
-                                        setPackage(Constant.WECHAT)
-                                    }
-                                    try {
-                                        startActivity(intent)
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                        "分享失败".show(context)
-                                    }
-                                } else {
-                                    "请先安装微信".show(context)
-                                }
-                            }
-
-                            2 -> {
-                                // TIM
-                            }
-
-                            3 -> {
-                                // 支付宝
-                            }
-
+                            0 -> shareTextTo(Constant.QQ, "QQ", json)
+                            1 -> shareTextTo(Constant.WECHAT, "微信", json)
+                            2 -> shareTextTo(Constant.TIM, "TIM", json)
+                            3 -> shareTextTo(Constant.ZFB, "支付宝", json)
                             4 -> {
                                 val cipData = ClipData.newPlainText("TaskConfig", json)
                                 clipboard.setPrimaryClip(cipData)
@@ -323,6 +296,24 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val time = timeArray[position].toInt()
             binding.timeoutTextView.text = "${time}s"
             updateDingDingTimeout(time)
+        }
+    }
+
+    private fun shareTextTo(packageName: String, appName: String, text: String) {
+        if (!isApplicationExist(packageName)) {
+            "请先安装${appName}".show(this)
+            return
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+            setPackage(packageName)
+        }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "分享失败".show(this)
         }
     }
 
