@@ -3,6 +3,8 @@ package com.pengxh.daily.app.ui
 import android.os.Build
 import android.os.Bundle
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.R
@@ -60,8 +62,10 @@ class QuestionAndAnswerActivity : KotlinBaseActivity<ActivityQuestionAndAnswerBi
     }
 
     override fun setupTopBarLayout() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
-            binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            view.setPadding(0, statusBarHeight, 0, 0)
+            insets
         }
         binding.toolbar.setNavigationOnClickListener { finish() }
     }

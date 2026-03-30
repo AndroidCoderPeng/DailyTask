@@ -5,12 +5,13 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.media.projection.MediaProjectionManager
-import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
@@ -29,7 +30,6 @@ import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
-import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
@@ -71,8 +71,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun setupTopBarLayout() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) { // 16
-            binding.toolbar.setPadding(0, getStatusBarHeight(), 0, 0)
+        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
+            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            view.setPadding(0, statusBarHeight, 0, 0)
+            insets
         }
         binding.toolbar.setNavigationOnClickListener { finish() }
     }
@@ -224,7 +226,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
                 binding.captureRadioButton.isChecked = false
             } else {
-                "请先打开通知监听".show(context)
+                "请先打开通知监听".show(this)
                 binding.noticeRadioButton.isChecked = false
             }
         }
@@ -235,7 +237,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
                 binding.noticeRadioButton.isChecked = false
             } else {
-                "请先打开截屏服务".show(context)
+                "请先打开截屏服务".show(this)
                 binding.captureRadioButton.isChecked = false
             }
         }
@@ -257,6 +259,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.captureTestLayout.setOnClickListener {
+            if (!binding.captureSwitch.isChecked) {
+                "请先打开截屏服务".show(this)
+                return@setOnClickListener
+            }
             EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
         }
 
