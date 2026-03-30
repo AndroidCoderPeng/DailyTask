@@ -187,6 +187,19 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                             return
                         }
 
+                        if (position == 1 || position == 2) {
+                            // 企业微信或者飞书只能采用截屏获取打卡结果
+                            if (binding.captureSwitch.isChecked) {
+                                binding.captureRadioButton.isChecked = true
+                                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
+                                binding.noticeRadioButton.isChecked = false
+                            } else {
+                                "请先打开截屏服务".show(context)
+                                binding.captureRadioButton.isChecked = false
+                                return
+                            }
+                        }
+
                         // 更新配置
                         binding.iconView.setBackgroundResource(icons[position])
                         SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
@@ -199,6 +212,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.noticeRadioButton.setOnClickListener {
+            val index = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
+            if (index != 0) {
+                "通知监听仅支持钉钉打卡".show(this)
+                binding.noticeRadioButton.isChecked = false
+                return@setOnClickListener
+            }
+
             if (binding.noticeSwitch.isChecked) {
                 binding.noticeRadioButton.isChecked = true
                 SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
