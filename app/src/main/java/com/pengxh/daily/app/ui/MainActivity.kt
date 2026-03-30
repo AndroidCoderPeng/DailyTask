@@ -300,7 +300,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         if (SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean) {
             //模拟点击Home键
             val home = Intent(Intent.ACTION_MAIN).apply {
-                flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 addCategory(Intent.CATEGORY_HOME)
             }
             startActivity(home)
@@ -308,19 +307,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             lifecycleScope.launch(Dispatchers.IO) {
                 delay(2000)
                 withContext(Dispatchers.Main) {
-                    launchMainActivity()
+                    navigatePageTo<MainActivity>()
                 }
             }
         } else {
-            launchMainActivity()
+            navigatePageTo<MainActivity>()
         }
-    }
-
-    private fun launchMainActivity() {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
     }
 
     override fun onTaskStarted() {
