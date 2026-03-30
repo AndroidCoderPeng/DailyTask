@@ -38,7 +38,6 @@ import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
-import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.TaskDataManager
@@ -269,6 +268,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             is ApplicationEvent.GoBackMainActivity -> { // 打卡成功发送的消息，回到主界面
                 timeoutTimerManager.cancelTimeoutTimer()
                 backToMainActivity()
+                taskScheduler.executeNextTask()
             }
 
             is ApplicationEvent.StartCountdownTime -> {
@@ -320,6 +320,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                                 )
                             }
                         }
+
+                        taskScheduler.executeNextTask()
                     }
                 }
             }
@@ -333,9 +335,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     private fun backToMainActivity() {
-        LogFileManager.writeLog("执行下一个任务")
-        taskScheduler.executeNextTask()
-
         if (SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean) {
             //模拟点击Home键
             val home = Intent(Intent.ACTION_MAIN).apply {
