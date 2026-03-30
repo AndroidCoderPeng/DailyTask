@@ -246,23 +246,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             }
 
             is ApplicationEvent.StartDailyTask -> {
-                if (!taskScheduler.isTaskStarted()) {
-                    taskScheduler.startTask()
-                } else {
-                    messageDispatcher.sendMessage(
-                        "启动任务通知", "任务启动失败，任务已在运行中，请勿重复启动",
-                    )
+                if (taskScheduler.isTaskStarted()) {
+                    return
                 }
+                taskScheduler.startTask()
             }
 
             is ApplicationEvent.StopDailyTask -> {
-                if (taskScheduler.isTaskStarted()) {
-                    taskScheduler.stopTask()
-                } else {
-                    messageDispatcher.sendMessage(
-                        "停止任务通知", "任务停止失败，任务已经停止，请勿重复停止",
-                    )
+                if (!taskScheduler.isTaskStarted()) {
+                    return
                 }
+                taskScheduler.stopTask()
             }
 
             is ApplicationEvent.GoBackMainActivity -> { // 打卡成功发送的消息，回到主界面

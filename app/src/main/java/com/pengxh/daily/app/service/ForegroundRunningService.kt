@@ -10,14 +10,10 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.CountDownTimer
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailManager
-import com.pengxh.daily.app.utils.HttpRequestManager
-import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
@@ -32,9 +28,6 @@ import java.util.Locale
  * APP前台服务，降低APP被系统杀死的可能性
  * */
 class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
-    private val kTag = "ForegroundRunningService"
-    private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager(this) }
 
     @Volatile
     private var isTaskReset = false
@@ -108,29 +101,8 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
     private fun resetTask() {
         if (!isTaskReset) {
             val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
-            val message = if (autoStart) {
+            if (autoStart) {
                 EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
-                "到达任务计划时间，重置每日任务"
-            } else {
-                "任务已手动停止，不再自动重置！如需恢复，可通过远程消息发送【开始循环】指令"
-            }
-            LogFileManager.writeLog(message)
-
-            val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
-            when (type) {
-                0 -> {
-                    // 企业微信
-                    httpRequestManager.sendMessage("循环任务状态通知", message)
-                }
-
-                1 -> {
-                    // QQ邮箱
-                    emailManager.sendEmail("循环任务状态通知", message, false)
-                }
-
-                else -> {
-                    Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
-                }
             }
 
             isTaskReset = true
