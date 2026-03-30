@@ -203,9 +203,10 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     Bitmap.createBitmap(bitmap, 0, 0, width, height)
                 } else bitmap
 
-                // 只取上半截（50%高度）
-                val halfHeight = cropped.height / 2
-                val topHalf = Bitmap.createBitmap(cropped, 0, 0, cropped.width, halfHeight)
+                // 只取中间那部分截图
+                val y = (cropped.height * 0.2f).toInt()
+                val halfHeight = y + cropped.height / 2
+                val topHalf = Bitmap.createBitmap(cropped, 0, y, cropped.width, halfHeight)
 
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
                 topHalf.saveImage(imagePath)

@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
@@ -90,6 +91,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     private lateinit var timeoutTimerManager: TimeoutTimerManager
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private var imagePath = ""
+    private var hasCaptured = false
 
     override fun observeRequestState() {
 
@@ -270,22 +272,53 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             }
 
             is ApplicationEvent.StartCountdownTime -> {
-                timeoutTimerManager.startTimeoutTimer {
-                    backToMainActivity()
+                if (event.isRemoteCommand) {
+                    imagePath = ""
+                    // 先跳转到目标应用，等待加载，然后截屏
+                    object : CountDownTimer(5000, 1000) {
+                        override fun onTick(millisUntilFinished: Long) {
+                            val tick = (millisUntilFinished / 1000).toInt()
+                            // 更新悬浮窗倒计时
+                            EventBus.getDefault().post(ApplicationEvent.UpdateFloatingViewTime(tick))
+                            if (tick <= 2 && !hasCaptured) {
+                                hasCaptured = true
+                                EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+                            }
+                        }
 
-                    val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
-                    if (resultSource == 0) {
-                        // 如果倒计时结束，那么表明没有收到打卡成功的通知
-                        messageDispatcher.sendMessage("", "")
-                    } else {
-                        if (imagePath == "") {
-                            messageDispatcher.sendMessage(
-                                "", "打卡完成，但是无法获取截图，请手动查看结果"
-                            )
+                        override fun onFinish() {
+                            backToMainActivity()
+                            if (imagePath == "") {
+                                messageDispatcher.sendMessage(
+                                    "截屏状态通知", "截图完成，但是无法获取截图，请手动查看结果"
+                                )
+                            } else {
+                                messageDispatcher.sendAttachmentMessage(
+                                    "截屏状态通知", "截图完成，结果请查看附件", imagePath
+                                )
+                            }
+                            hasCaptured = false
+                        }
+                    }.start()
+                } else {
+                    timeoutTimerManager.startTimeoutTimer {
+                        backToMainActivity()
+
+                        val resultSource =
+                            SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+                        if (resultSource == 0) {
+                            // 如果倒计时结束，那么表明没有收到打卡成功的通知
+                            messageDispatcher.sendMessage("", "")
                         } else {
-                            messageDispatcher.sendAttachmentMessage(
-                                "", "打卡完成，结果请查看附件", imagePath
-                            )
+                            if (imagePath == "") {
+                                messageDispatcher.sendMessage(
+                                    "", "打卡完成，但是无法获取截图，请手动查看结果"
+                                )
+                            } else {
+                                messageDispatcher.sendAttachmentMessage(
+                                    "", "打卡完成，结果请查看附件", imagePath
+                                )
+                            }
                         }
                     }
                 }

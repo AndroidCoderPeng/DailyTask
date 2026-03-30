@@ -179,6 +179,14 @@ class NotificationMonitorService : NotificationListenerService() {
                     sendChannelMessage("状态查询通知", content)
                 }
 
+                notice.contains("截屏") -> {
+                    if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+                        openApplication()
+                    } else {
+                        sendChannelMessage("截屏状态通知", "截屏服务已断开，截屏失败")
+                    }
+                }
+
                 else -> {
                     val key = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
                     if (notice.contains(key)) {

@@ -31,7 +31,7 @@ sealed class ApplicationEvent {
      */
     object ShowFloatingWindow : ApplicationEvent()
     object HideFloatingWindow : ApplicationEvent()
-    object StartCountdownTime : ApplicationEvent()
+    data class StartCountdownTime(val isRemoteCommand: Boolean) : ApplicationEvent()
     data class UpdateFloatingViewTime(val tick: Int) : ApplicationEvent()
     data class SetTaskOvertime(val time: Int) : ApplicationEvent()
 
