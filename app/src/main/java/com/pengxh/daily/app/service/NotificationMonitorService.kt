@@ -82,23 +82,21 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun saveTargetNotice(pkg: String, targetApp: String, title: String, notice: String) {
-        if (pkg == targetApp || pkg in auxiliaryApp) {
-            NotificationBean().apply {
-                packageName = pkg
-                noticeTitle = title
-                noticeMessage = notice
-                postTime = System.currentTimeMillis().timestampToCompleteDate()
-            }.also {
-                serviceScope.launch {
-                    try {
-                        DatabaseWrapper.insertNotice(it)
-                    } catch (e: Exception) {
-                        Log.e(kTag, "Insert notice failed", e)
-                    }
+        if (pkg != targetApp && pkg !in auxiliaryApp) return
+
+        NotificationBean().apply {
+            packageName = pkg
+            noticeTitle = title
+            noticeMessage = notice
+            postTime = System.currentTimeMillis().timestampToCompleteDate()
+        }.also {
+            serviceScope.launch {
+                try {
+                    DatabaseWrapper.insertNotice(it)
+                } catch (e: Exception) {
+                    Log.e(kTag, "Insert notice failed", e)
                 }
             }
-        } else {
-            Log.d(kTag, "saveTagetNotice: 其他应用通知不处理")
         }
     }
 

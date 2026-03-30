@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
@@ -53,6 +54,10 @@ import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -68,6 +73,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.CHINA)
     }
     private val marginOffset by lazy { 16.dp2px(this) }
+    private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val taskDataManager by lazy { TaskDataManager() }
     private val mainHandler = Handler(Looper.getMainLooper())
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
@@ -253,22 +259,49 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
             is ApplicationEvent.GoBackMainActivity -> { // 打卡成功发送的消息，回到主界面
                 timeoutTimerManager.cancelTimeoutTimer()
-                maskViewController.showMaskView(mainHandler)
                 backToMainActivity()
             }
 
             is ApplicationEvent.StartCountdownTime -> {
                 timeoutTimerManager.startTimeoutTimer {
-                    //如果倒计时结束，那么表明没有收到打卡成功的通知
                     backToMainActivity()
-
-                    LogFileManager.writeLog("未收到打卡成功通知，发送异常日志邮件")
+                    //如果倒计时结束，那么表明没有收到打卡成功的通知
                     messageDispatcher.sendMessage("", "")
                 }
             }
 
             else -> {}
         }
+    }
+
+    private fun backToMainActivity() {
+        LogFileManager.writeLog("执行下一个任务")
+        taskScheduler.executeNextTask()
+
+        if (SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean) {
+            //模拟点击Home键
+            val home = Intent(Intent.ACTION_MAIN).apply {
+                flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                addCategory(Intent.CATEGORY_HOME)
+            }
+            startActivity(home)
+
+            lifecycleScope.launch(Dispatchers.IO) {
+                delay(2000)
+                withContext(Dispatchers.Main) {
+                    launchMainActivity()
+                }
+            }
+        } else {
+            launchMainActivity()
+        }
+    }
+
+    private fun launchMainActivity() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        startActivity(intent)
     }
 
     override fun onTaskStarted() {
@@ -316,14 +349,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         Log.e(kTag, message)
     }
 
-    private val overlayPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (Settings.canDrawOverlays(this)) {
-                Intent(this, FloatingWindowService::class.java).apply {
-                    startService(this)
-                }
+    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
+        if (Settings.canDrawOverlays(this)) {
+            Intent(this, FloatingWindowService::class.java).apply {
+                startService(this)
             }
         }
+    }
 
     /**
      * 服务绑定
@@ -524,31 +556,5 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         } catch (e: Exception) {
             e.printStackTrace()
         }
-    }
-
-    fun backToMainActivity() {
-        LogFileManager.writeLog("取消超时定时器，执行下一个任务")
-        taskScheduler.cancelTimeoutAndExecuteNext()
-
-        if (SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean) {
-            //模拟点击Home键
-            val home = Intent(Intent.ACTION_MAIN).apply {
-                flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                addCategory(Intent.CATEGORY_HOME)
-            }
-            startActivity(home)
-            Handler(Looper.getMainLooper()).postDelayed({
-                launchMainActivity()
-            }, 2000)
-        } else {
-            launchMainActivity()
-        }
-    }
-
-    private fun launchMainActivity() {
-        val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        startActivity(intent)
     }
 }

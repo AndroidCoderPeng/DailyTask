@@ -79,7 +79,7 @@ class TaskScheduler(
      * 取消超时定时器并执行下一个任务
      * 此方法由外部调用，在收到打卡成功广播时
      */
-    fun cancelTimeoutAndExecuteNext() {
+    fun executeNextTask() {
         // 先移除所有未执行的 Runnable，避免重复投递
         mainHandler.removeCallbacks(dailyTaskRunnable)
         mainHandler.post(dailyTaskRunnable)
