@@ -429,12 +429,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     /**
      * 列表项单击
      * */
-    private fun itemClick(adapterPosition: Int) {
+    private fun itemClick(position: Int) {
         if (taskScheduler.isTaskStarted()) {
             "任务进行中，无法修改".show(this)
             return
         }
-        val item = taskBeans[adapterPosition]
+        val item = taskBeans[position]
         val view = layoutInflater.inflate(R.layout.bottom_sheet_layout_select_time, null)
         val dialog = BottomSheetDialog(this)
         dialog.setContentView(view)
@@ -462,7 +462,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     /**
      * 列表项长按
      * */
-    private fun itemLongClick(adapterPosition: Int) {
+    private fun itemLongClick(position: Int) {
         if (taskScheduler.isTaskStarted()) {
             "任务进行中，无法删除".show(this)
             return
@@ -473,14 +473,16 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             .setCancelable(false) // 禁止点击外部关闭
             .setPositiveButton("确定") { _, _ ->
                 try {
-                    val item = taskBeans[adapterPosition]
+                    val item = taskBeans[position]
                     DatabaseWrapper.deleteTask(item)
-                    taskBeans.removeAt(adapterPosition)
-                    dailyTaskAdapter.refresh(taskBeans)
+                    taskBeans.removeAt(position)
+
                     if (taskBeans.isEmpty()) {
                         binding.recyclerView.visibility = View.GONE
                         binding.emptyView.visibility = View.VISIBLE
+                        dailyTaskAdapter.refresh(taskBeans)
                     } else {
+                        dailyTaskAdapter.refresh(taskBeans)
                         binding.recyclerView.visibility = View.VISIBLE
                         binding.emptyView.visibility = View.GONE
                     }
