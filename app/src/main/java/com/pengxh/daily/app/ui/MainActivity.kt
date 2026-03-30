@@ -3,7 +3,6 @@ package com.pengxh.daily.app.ui
 import android.content.ComponentName
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -50,7 +49,6 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
-import com.pengxh.kt.lite.extensions.getStatusBarHeight
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -360,10 +358,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         binding.tipsView.setTextColor(R.color.theme_color.convertColor(context))
         dailyTaskAdapter.updateCurrentTaskState(taskIndex - 1, realTime)
 
-        messageDispatcher.sendMessage(
-            "任务执行通知",
-            "准备执行第 $taskIndex 个任务，计划时间：${task.time}，实际时间: $realTime",
-        )
+        val content = buildString {
+            appendLine("准备执行第 $taskIndex 个任务")
+            appendLine("计划时间：${task.time}")
+            append("实际时间：$realTime")
+        }
+        messageDispatcher.sendMessage("任务执行通知", content)
     }
 
     override fun onTaskExecutionError(message: String) {
