@@ -34,7 +34,7 @@ import java.util.Locale
 class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
     private val kTag = "ForegroundRunningService"
     private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager() }
+    private val emailManager by lazy { EmailManager(this) }
 
     @Volatile
     private var isTaskReset = false

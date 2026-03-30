@@ -38,15 +38,14 @@ class HttpRequestManager(private val context: Context) {
 
             val url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=$webhookKey"
 
-            val batteryCapacity =
-                batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-            val content = """
-                           标题：$title
-                           内容：$message
-                           日期：${System.currentTimeMillis().timestampToDate()}
-                           版本号：${BuildConfig.VERSION_NAME}
-                           当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}
-                          """.trimIndent()
+            val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            val content = buildString {
+                appendLine(title)
+                appendLine(message)
+                appendLine("当前日期：${System.currentTimeMillis().timestampToDate()}")
+                appendLine("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                append("版本号：${BuildConfig.VERSION_NAME}")
+            }
 
             val jsonBody = JSONObject().apply {
                 put("msgtype", "text")

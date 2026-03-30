@@ -36,7 +36,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
     private val kTag = "MonitorService"
     private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager() }
+    private val emailManager by lazy { EmailManager(this) }
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())

@@ -59,7 +59,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     }
     private val dateTimeFormat by lazy { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA) }
     private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager() }
+    private val emailManager by lazy { EmailManager(this) }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
 
     override fun onCreate() {

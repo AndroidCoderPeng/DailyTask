@@ -64,7 +64,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val emailManager by lazy { EmailManager() }
+    private val emailManager by lazy { EmailManager(this) }
 
     override fun initViewBinding(): ActivitySettingsBinding {
         return ActivitySettingsBinding.inflate(layoutInflater)

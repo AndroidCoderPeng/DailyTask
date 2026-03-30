@@ -9,7 +9,7 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 
 class MessageDispatcher(private val context: Context, private val viewModel: MessageViewModel) {
 
-    private val emailManager by lazy { EmailManager() }
+    private val emailManager by lazy { EmailManager(context) }
     private val batteryManager by lazy { context.getSystemService(BatteryManager::class.java) }
 
     fun sendMessage(title: String, content: String) {
@@ -27,8 +27,8 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
                     appendLine(title.ifBlank { messageTitle })
                     appendLine(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
                     appendLine("当前日期：$date")
-                    appendLine("版本号：${BuildConfig.VERSION_NAME}")
-                    append("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                    appendLine("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                    append("版本号：${BuildConfig.VERSION_NAME}")
                 }
                 viewModel.sendMessage(content, {}, {}, {})
             }
@@ -38,8 +38,8 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
                 val content = buildString {
                     appendLine(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
                     appendLine("当前日期：$date")
-                    appendLine("版本号：${BuildConfig.VERSION_NAME}")
-                    append("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                    appendLine("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                    append("版本号：${BuildConfig.VERSION_NAME}")
                 }
                 emailManager.sendEmail(title.ifBlank { messageTitle }, content, false)
             }
@@ -50,8 +50,7 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
         val messageTitle =
             SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
 
-        val batteryCapacity =
-            batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val date = System.currentTimeMillis().timestampToDate()
 
         val channelType = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
@@ -63,7 +62,7 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
 //                               内容：${content}
 //                               日期：$date
 //                               版本号：${BuildConfig.VERSION_NAME}
-//                               当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}
+//                               当前手机电量：${if (battery >= 0) "battery%" else "未知"}
 //                              """.trimIndent()
                 viewModel.sendImageMessage(filePath, {}, {}, {})
             }
@@ -71,10 +70,10 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
             1 -> {
                 // QQ邮箱
                 val content = buildString {
-                    appendLine("内容：$content")
-                    appendLine("日期：$date")
-                    appendLine("版本号：${BuildConfig.VERSION_NAME}")
-                    append("当前手机电量：${if (batteryCapacity >= 0) "$batteryCapacity%" else "未知"}")
+                    appendLine(content)
+                    appendLine("当前日期：$date")
+                    appendLine("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
+                    append("版本号：${BuildConfig.VERSION_NAME}")
                 }
                 emailManager.sendAttachmentEmail(
                     title.ifBlank { messageTitle },

@@ -21,7 +21,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     private val kTag = "MessageChannelActivity"
     private val context = this
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val emailManager by lazy { EmailManager() }
+    private val emailManager by lazy { EmailManager(this) }
 
     override fun initViewBinding(): ActivityMessageChannelBinding {
         return ActivityMessageChannelBinding.inflate(layoutInflater)
