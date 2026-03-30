@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
-import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
@@ -39,7 +38,6 @@ import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -111,6 +109,34 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 binding.noticeTipsView.visibility = View.VISIBLE
             }
 
+            is ApplicationEvent.ProjectionReady -> {
+                binding.captureSwitch.isChecked = true
+                binding.captureTipsView.visibility = View.GONE
+            }
+
+            is ApplicationEvent.ProjectionFailed -> {
+                "截屏服务启动失败，请重试".show(this)
+                binding.captureSwitch.isChecked = false
+                binding.captureTipsView.visibility = View.VISIBLE
+            }
+
+            is ApplicationEvent.CaptureCompleted -> {
+                messageViewModel.sendImageMessage(
+                    event.imagePath, onLoading = {
+                        if (isFinishing || isDestroyed) return@sendImageMessage
+                        LoadingDialog.show(context, "消息发送中，请稍后...")
+                    },
+                    onSuccess = {
+                        if (isFinishing || isDestroyed) return@sendImageMessage
+                        LoadingDialog.dismiss()
+                    },
+                    onFailed = {
+                        if (isFinishing || isDestroyed) return@sendImageMessage
+                        LoadingDialog.dismiss()
+                        it.show(context)
+                    })
+            }
+
             else -> {}
         }
     }
@@ -165,29 +191,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.captureTestLayout.setOnClickListener {
-            lifecycleScope.launch(Dispatchers.IO) {
-                EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
-
-                delay(1000)
-
-                withContext(Dispatchers.Main) {
-                    val path = SaveKeyValues.getValue(Constant.CAPTURE_IMAGE_PATH_KEY, "") as String
-                    messageViewModel.sendImageMessage(
-                        path, onLoading = {
-                            if (isFinishing || isDestroyed) return@sendImageMessage
-                            LoadingDialog.show(context, "消息发送中，请稍后...")
-                        },
-                        onSuccess = {
-                            if (isFinishing || isDestroyed) return@sendImageMessage
-                            LoadingDialog.dismiss()
-                        },
-                        onFailed = {
-                            if (isFinishing || isDestroyed) return@sendImageMessage
-                            LoadingDialog.dismiss()
-                            it.show(context)
-                        })
-                }
-            }
+            EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
         }
 
         binding.gestureDetectorSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -223,37 +227,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             return@registerForActivityResult
         }
 
-        createMediaProjection(it.resultCode, data)
-    }
-
-    private fun createMediaProjection(resultCode: Int, data: Intent) {
-        try {
-            val projection = mpr.getMediaProjection(resultCode, data)
-            if (projection == null) {
-                "截屏服务启动失败：截屏API未初始化".show(this)
-                return
-            }
-
-            projection.registerCallback(object : MediaProjection.Callback() {
-                override fun onStop() {
-                    super.onStop()
-                    ProjectionSession.markStoppedNeedAuth()
-                    "截屏会话已中断，需要重新授权".show(context)
-                }
-            }, null)
-
-            ProjectionSession.setProjection(projection)
-
-            binding.captureSwitch.isChecked = true
-            binding.captureTipsView.visibility = View.GONE
-            Log.d(kTag, "MediaProjection created successfully")
-
-            // 启动截图服务
-            Intent(this, CaptureImageService::class.java).apply {
-                startForegroundService(this)
-            }
-        } catch (e: Exception) {
-            Log.w(kTag, "createMediaProjection: ", e)
+        Intent(this, CaptureImageService::class.java).apply {
+            putExtra("resultCode", it.resultCode)
+            putExtra("data", data)
+            startForegroundService(this)
         }
     }
 

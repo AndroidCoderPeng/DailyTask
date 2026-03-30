@@ -1,14 +1,19 @@
 package com.pengxh.daily.app.service
 
+import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -56,6 +61,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     private val dateTimeFormat by lazy { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA) }
     private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager() }
+    private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
 
     override fun onCreate() {
         super.onCreate()
@@ -67,12 +73,66 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         }
         notificationManager.createNotificationChannel(channel)
         val notification = notificationBuilder.build()
-        startForeground(notificationId, notification)
+
+        // 初始化图片文件目录
+        createImageFileDir()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                notificationId,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+            )
+        } else {
+            startForeground(notificationId, notification)
+        }
 
         EventBus.getDefault().register(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val resultCode = intent?.getIntExtra("resultCode", Activity.RESULT_CANCELED)
+            ?: return START_STICKY
+
+        // resultCode 为 RESULT_CANCELED 说明是服务重启（非用户授权触发），直接返回
+        if (resultCode == Activity.RESULT_CANCELED) return START_STICKY
+
+        val data: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra("data", Intent::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra("data")
+        }
+
+        if (data == null) {
+            Log.w(kTag, "onStartCommand: intent data is null")
+            EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+            return START_STICKY
+        }
+
+        try {
+            val projection = mpr.getMediaProjection(resultCode, data)
+            if (projection == null) {
+                Log.w(kTag, "getMediaProjection returned null")
+                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+                return START_STICKY
+            }
+
+            projection.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    super.onStop()
+                    ProjectionSession.markStoppedNeedAuth()
+                }
+            }, null)
+
+            ProjectionSession.setProjection(projection)
+            Log.d(kTag, "MediaProjection created successfully")
+            EventBus.getDefault().post(ApplicationEvent.ProjectionReady)
+        } catch (e: Exception) {
+            Log.w(kTag, "createMediaProjection failed: ${e.message}", e)
+            EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+        }
+
         return START_STICKY
     }
 
@@ -150,8 +210,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
                 topHalf.saveImage(imagePath)
-                Log.d(kTag, "完成截屏: $imagePath")
-                SaveKeyValues.putValue(Constant.CAPTURE_IMAGE_PATH_KEY, imagePath)
+                EventBus.getDefault().post(ApplicationEvent.CaptureCompleted(imagePath))
             } finally {
                 runCatching { virtualDisplay?.release() }
                 runCatching { imageReader.close() }
@@ -162,19 +221,9 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     private fun sendChannelMessage(content: String) {
         val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         when (type) {
-            0 -> {
-                // 企业微信
-                httpRequestManager.sendMessage("截屏失败", content)
-            }
-
-            1 -> {
-                // QQ邮箱
-                emailManager.sendEmail("截屏失败", content, false)
-            }
-
-            else -> {
-                Log.w(kTag, "消息渠道不支持: content => $content")
-            }
+            0 -> httpRequestManager.sendMessage("截屏失败", content)
+            1 -> emailManager.sendEmail("截屏失败", content, false)
+            else -> Log.w(kTag, "消息渠道不支持: content => $content")
         }
     }
 
