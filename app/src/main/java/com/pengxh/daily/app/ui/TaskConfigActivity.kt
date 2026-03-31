@@ -33,8 +33,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private val context = this
     private val hourArray = arrayListOf("0", "1", "2", "3", "4", "5", "6", "自定义（单位：时）")
     private val timeArray = arrayListOf("15", "30", "45", "自定义（单位：秒）")
-    private val optionsArray = arrayListOf("QQ", "微信", "TIM", "支付宝", "剪切板")
-    private val clipboard by lazy { getSystemService(CLIPBOARD_SERVICE) as ClipboardManager }
+    private val optionArray = arrayListOf("QQ", "微信", "TIM", "支付宝", "剪切板")
+    private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
         return ActivityTaskConfigBinding.inflate(layoutInflater)
@@ -217,7 +217,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             // 分享
             BottomActionSheet.Builder()
                 .setContext(this)
-                .setActionItemTitle(optionsArray)
+                .setActionItemTitle(optionArray)
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {

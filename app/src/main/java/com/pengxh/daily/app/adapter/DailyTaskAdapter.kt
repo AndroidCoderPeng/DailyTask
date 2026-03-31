@@ -82,11 +82,24 @@ class DailyTaskAdapter(
         dataBeans.clear()
         dataBeans.addAll(newRows)
 
-        // 新数据比旧数据少，需要通知删除部分 item ，否则会越界
-        if (newSize < oldSize) {
-            notifyItemRangeRemoved(newSize, oldSize - newSize)
+        when {
+            newSize < oldSize -> {
+                notifyItemRangeRemoved(newSize, oldSize - newSize)
+                if (newSize > 0) {
+                    notifyItemRangeChanged(0, newSize)
+                }
+            }
+
+            newSize > oldSize -> {
+                notifyItemRangeChanged(0, oldSize)
+                notifyItemRangeInserted(oldSize, newSize - oldSize)
+            }
+
+            else -> {
+                // 数量相同，只更新内容
+                notifyItemRangeChanged(0, newSize)
+            }
         }
-        notifyItemRangeChanged(0, newSize)
     }
 
     interface OnItemClickListener {
