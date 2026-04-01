@@ -191,12 +191,10 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                     "邮箱测试", "这是一封测试邮件，不必关注",
                     true,
                     onSuccess = {
-                        if (isFinishing || isDestroyed) return@sendEmail
                         LoadingDialog.dismiss()
                         "发送成功，请注意查收".show(context)
                     },
                     onFailure = {
-                        if (isFinishing || isDestroyed) return@sendEmail
                         LoadingDialog.dismiss()
                         "发送失败：${it}".show(context)
                     }

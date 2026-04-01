@@ -150,12 +150,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         emailManager.sendAttachmentEmail(
                             "邮箱测试", "这是一封测试邮件，不必关注", event.imagePath, true,
                             onSuccess = {
-                                if (isFinishing || isDestroyed) return@sendAttachmentEmail
                                 LoadingDialog.dismiss()
                                 "发送成功，请注意查收".show(this)
                             },
                             onFailure = {
-                                if (isFinishing || isDestroyed) return@sendAttachmentEmail
                                 LoadingDialog.dismiss()
                                 "发送失败：${it}".show(this)
                             })
