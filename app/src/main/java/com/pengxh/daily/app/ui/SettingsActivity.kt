@@ -61,6 +61,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         )
     }
     private val channels = arrayListOf("企业微信", "QQ邮箱")
+    private val notificationContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
@@ -311,12 +312,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
     }
 
-    private val notificationSettingLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (notificationEnable()) {
-                turnOnNotificationMonitorService()
-            }
+    private val notificationSettingLauncher = registerForActivityResult(notificationContract) {
+        if (notificationEnable()) {
+            turnOnNotificationMonitorService()
         }
+    }
 
     override fun onResume() {
         super.onResume()
