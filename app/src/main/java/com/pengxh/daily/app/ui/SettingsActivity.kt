@@ -271,7 +271,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
         }
 
-        binding.gestureDetectorSwitch.setOnCheckedChangeListener { _, isChecked ->
+        binding.gestureDetectSwitch.setOnCheckedChangeListener { _, isChecked ->
             SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, isChecked)
         }
 
@@ -329,12 +329,12 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.channelView.setTextColor(R.color.red.convertColor(this))
         }
 
-        val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
-        val isCaptureActive = ProjectionSession.state == ProjectionSession.State.ACTIVE
+        val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, -1) as Int
         if (resultSource == 0) {
             binding.noticeRadioButton.isChecked = true
+            binding.captureRadioButton.isChecked = false
         } else {
-            if (isCaptureActive) {
+            if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
                 binding.captureRadioButton.isChecked = true
                 binding.noticeRadioButton.isChecked = false
             } else {
@@ -343,10 +343,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
         }
 
-        binding.gestureDetectorSwitch.isChecked =
-            SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, false) as Boolean
+        binding.gestureDetectSwitch.isChecked =
+            SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
         binding.backToHomeSwitch.isChecked =
-            SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean
+            SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
 
         if (notificationEnable()) {
             binding.noticeTipsView.text = "通知监听服务状态查询中，请稍后"
