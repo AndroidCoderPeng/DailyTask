@@ -466,7 +466,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                 try {
                     val item = taskBeans[position]
                     DatabaseWrapper.deleteTask(item)
-                    taskBeans.removeAt(position)
+
+                    // 为了确保数据一致性，重新从数据库加载数据
+                    taskBeans = DatabaseWrapper.loadAllTask()
                     dailyTaskAdapter.refresh(taskBeans)
 
                     if (taskBeans.isEmpty()) {
