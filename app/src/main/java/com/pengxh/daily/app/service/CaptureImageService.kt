@@ -15,6 +15,7 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import android.os.RemoteException
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.createBitmap
@@ -211,6 +212,14 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
                 topHalf.saveImage(imagePath)
                 EventBus.getDefault().post(ApplicationEvent.CaptureCompleted(imagePath))
+            } catch (_: RemoteException) {
+                ProjectionSession.markStoppedNeedAuth()
+                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+            } catch (_: SecurityException) {
+                ProjectionSession.markStoppedNeedAuth()
+                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+            } catch (e: Exception) {
+                sendChannelMessage("截屏失败: ${e.message}")
             } finally {
                 runCatching { virtualDisplay?.release() }
                 runCatching { imageReader.close() }

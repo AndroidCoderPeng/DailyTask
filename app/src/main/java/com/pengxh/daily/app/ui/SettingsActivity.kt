@@ -261,6 +261,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 "请先打开截屏服务".show(this)
                 return@setOnClickListener
             }
+
+            // 再次确认 session 实际状态
+            if (ProjectionSession.state != ProjectionSession.State.ACTIVE) {
+                binding.captureSwitch.isChecked = false
+                "截屏授权已失效，请重新授权".show(this)
+                return@setOnClickListener
+            }
             EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
         }
 
