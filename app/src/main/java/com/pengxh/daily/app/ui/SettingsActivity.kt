@@ -325,10 +325,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+        val isCaptureActive = ProjectionSession.state == ProjectionSession.State.ACTIVE
         if (resultSource == 0) {
             binding.noticeRadioButton.isChecked = true
         } else {
-            if (binding.captureSwitch.isChecked) {
+            if (isCaptureActive) {
                 binding.captureRadioButton.isChecked = true
                 binding.noticeRadioButton.isChecked = false
             } else {
