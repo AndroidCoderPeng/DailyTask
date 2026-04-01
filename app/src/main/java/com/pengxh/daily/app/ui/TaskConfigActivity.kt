@@ -15,6 +15,7 @@ import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
+import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -268,7 +269,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun setTaskResetTime(hour: Int) {
         SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
-        // 重新开始重置每日任务计时
+        // 取消旧 Alarm，注册新时间点的 Alarm
+        AlarmScheduler.cancel(this)
+        AlarmScheduler.schedule(this, hour)
+        // 通知 Service 更新倒计时显示
         EventBus.getDefault().post(ApplicationEvent.SetResetTaskTime)
     }
 

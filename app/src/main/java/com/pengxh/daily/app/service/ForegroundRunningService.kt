@@ -11,12 +11,10 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.cancel
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -26,10 +24,7 @@ import java.util.Locale
 /**
  * APP前台服务，降低APP被系统杀死的可能性
  * */
-class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
-
-    @Volatile
-    private var isTaskReset = false
+class ForegroundRunningService : Service() {
 
     override fun onCreate() {
         super.onCreate()
@@ -68,6 +63,12 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
 
         // 立即更新一次倒计时显示
         updateResetTimeView()
+
+        // 每次 Service 启动时重新注册 Alarm
+        val resetHour = SaveKeyValues.getValue(
+            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+        ) as Int
+        AlarmScheduler.schedule(this, resetHour)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -77,31 +78,9 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
     private val timeTickReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
-                // 监听时间，系统级广播，每分钟触发一次。
                 if (it == Intent.ACTION_TIME_TICK) {
-                    // 每分钟更新倒计时显示
+                    // 仅更新倒计时显示，重置任务由 AlarmManager 负责
                     updateResetTimeView()
-
-                    // 检查是否到达重置时间点
-                    val resetHour = SaveKeyValues.getValue(
-                        Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-                    ) as Int
-                    val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-                    val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
-
-                    if (currentHour == resetHour && currentMinute == 0 && !isTaskReset) {
-                        val autoStart = SaveKeyValues.getValue(
-                            Constant.TASK_AUTO_START_KEY, true
-                        ) as Boolean
-                        if (autoStart) {
-                            EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
-                        }
-
-                        isTaskReset = true
-                    } else if (currentHour != resetHour) {
-                        // 只在离开重置时间段时才清除标志位
-                        isTaskReset = false
-                    }
                 }
             }
         }
@@ -113,8 +92,6 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
         if (event is ApplicationEvent.SetResetTaskTime) {
             // 重新计算并更新倒计时显示
             updateResetTimeView()
-            // 重置标志位，允许在新的时间点再次触发重置
-            isTaskReset = false
         }
     }
 
@@ -171,7 +148,6 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
             e.printStackTrace()
         }
 
-        cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 

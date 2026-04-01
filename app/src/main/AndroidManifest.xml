@@ -6,8 +6,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <!-- 悬浮窗 -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.SYSTEM_OVERLAY_WINDOW" />
+
+    <!-- 前台通知（通知栏常驻） -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -19,6 +23,10 @@
         android:name="android.permission.QUERY_ALL_PACKAGES"
         android:maxSdkVersion="30"
         tools:ignore="QueryAllPackagesPermission" />
+
+    <!-- AlarmManager 精确闹钟权限（Android 12+） -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
 
     <application
         android:name=".DailyTaskApplication"
@@ -72,6 +80,10 @@
             android:name=".service.CaptureImageService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
+
+        <receiver
+            android:name=".utils.TaskResetReceiver"
+            android:exported="false" />
     </application>
 
     <queries>
