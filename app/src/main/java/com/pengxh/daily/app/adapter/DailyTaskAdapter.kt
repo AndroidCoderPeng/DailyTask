@@ -1,17 +1,22 @@
 package com.pengxh.daily.app.adapter
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import androidx.appcompat.widget.AppCompatImageView
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.extensions.collapse
+import com.pengxh.daily.app.extensions.expand
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.extensions.convertColor
 
+@SuppressLint("NotifyDataSetChanged")
 class DailyTaskAdapter(
     private val context: Context,
     private val dataBeans: MutableList<DailyTaskBean>
@@ -24,7 +29,7 @@ class DailyTaskAdapter(
 
     fun updateCurrentTaskState(position: Int) {
         this.mPosition = position
-        notifyItemRangeChanged(0, dataBeans.size)
+        notifyDataSetChanged()
     }
 
     fun updateCurrentTaskState(position: Int, actualTime: String) {
@@ -33,7 +38,7 @@ class DailyTaskAdapter(
         if (position < 0 || position >= dataBeans.size) {
             return
         }
-        notifyItemRangeChanged(0, mPosition + 1)
+        notifyDataSetChanged()
     }
 
     override fun getItemCount(): Int = dataBeans.size
@@ -50,19 +55,24 @@ class DailyTaskAdapter(
         val taskBean = dataBeans[position]
         holder.setText(R.id.taskTimeView, taskBean.time)
         val arrowView = holder.getView<AppCompatImageView>(R.id.arrowView)
+        val actualTimeCardView = holder.getView<LinearLayout>(R.id.actualTimeCardView)
         if (position == mPosition) {
             holder.itemView.isSelected = true
-            holder.setVisibility(R.id.actualTimeCardView, View.VISIBLE)
-                .setText(R.id.actualTimeView, actualTime)
+            holder.setText(R.id.actualTimeView, actualTime)
                 .setTextColor(R.id.actualTimeView, R.color.theme_color.convertColor(context))
                 .setTextColor(R.id.taskTimeView, R.color.text_hint_color.convertColor(context))
-            arrowView.animate().rotation(90f).setDuration(500).start()
+            arrowView.animate().rotation(90f).setDuration(350).start()
+            if (!actualTimeCardView.isVisible) {
+                actualTimeCardView.expand()
+            }
         } else {
             holder.itemView.isSelected = false
-            holder.setVisibility(R.id.actualTimeCardView, View.GONE)
-                .setText(R.id.actualTimeView, "--:--:--")
+            holder.setText(R.id.actualTimeView, "--:--:--")
                 .setTextColor(R.id.taskTimeView, Color.BLACK)
-            arrowView.animate().rotation(0f).setDuration(500).start()
+            arrowView.animate().rotation(0f).setDuration(350).start()
+            if (actualTimeCardView.isVisible) {
+                actualTimeCardView.collapse()
+            }
         }
 
         holder.itemView.setOnClickListener {
@@ -75,7 +85,6 @@ class DailyTaskAdapter(
         }
     }
 
-    @Suppress("all")
     fun refresh(newRows: MutableList<DailyTaskBean>) {
         dataBeans.clear()
         dataBeans.addAll(newRows)
