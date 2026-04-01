@@ -9,7 +9,6 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -38,6 +37,7 @@ import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.TaskDataManager
@@ -71,7 +71,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         var isTaskStarted = false
     }
 
-    private val kTag = "MainActivity"
     private val context = this
     private val dateFormat by lazy {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.CHINA)
@@ -237,7 +236,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             }
 
             is ApplicationEvent.ResetDailyTask -> {
-                Log.d(kTag, "onApplicationEvent: 重置每日任务")
                 taskScheduler.startTask()
             }
 
@@ -415,7 +413,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            Log.w(kTag, "Service disconnected: $name")
             taskScheduler.setCountDownTimerService(null)
         }
     }
@@ -585,7 +582,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Log.d(kTag, "onNewIntent: ${packageName}回到前台")
+        LogFileManager.writeLog("onNewIntent: ${packageName}回到前台")
         if (!maskViewController.isMaskVisible()) {
             maskViewController.showMaskView(mainHandler)
         }

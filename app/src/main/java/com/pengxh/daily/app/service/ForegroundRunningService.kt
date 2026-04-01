@@ -87,8 +87,9 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
                         Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
                     ) as Int
                     val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                    val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
 
-                    if (currentHour == resetHour && !isTaskReset) {
+                    if (currentHour == resetHour && currentMinute == 0 && !isTaskReset) {
                         val autoStart = SaveKeyValues.getValue(
                             Constant.TASK_AUTO_START_KEY, true
                         ) as Boolean
@@ -97,6 +98,9 @@ class ForegroundRunningService : Service(), CoroutineScope by MainScope() {
                         }
 
                         isTaskReset = true
+                    } else if (currentHour != resetHour) {
+                        // 只在离开重置时间段时才清除标志位
+                        isTaskReset = false
                     }
                 }
             }
