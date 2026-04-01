@@ -467,13 +467,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                     val item = taskBeans[position]
                     DatabaseWrapper.deleteTask(item)
                     taskBeans.removeAt(position)
+                    dailyTaskAdapter.refresh(taskBeans)
 
                     if (taskBeans.isEmpty()) {
                         binding.recyclerView.visibility = View.GONE
                         binding.emptyView.visibility = View.VISIBLE
-                        dailyTaskAdapter.refresh(taskBeans)
                     } else {
-                        dailyTaskAdapter.refresh(taskBeans)
                         binding.recyclerView.visibility = View.VISIBLE
                         binding.emptyView.visibility = View.GONE
                     }
@@ -562,10 +561,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                     when (val result = taskDataManager.importTasks(value)) {
                         is TaskDataManager.ImportResult.Success -> {
                             if (result.count > 0) {
-                                binding.recyclerView.visibility = View.VISIBLE
-                                binding.emptyView.visibility = View.GONE
                                 taskBeans = DatabaseWrapper.loadAllTask()
                                 dailyTaskAdapter.refresh(taskBeans)
+                                binding.recyclerView.visibility = View.VISIBLE
+                                binding.emptyView.visibility = View.GONE
                             }
                             "任务导入成功".show(context)
                         }

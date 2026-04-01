@@ -75,31 +75,11 @@ class DailyTaskAdapter(
         }
     }
 
+    @Suppress("all")
     fun refresh(newRows: MutableList<DailyTaskBean>) {
-        val oldSize = dataBeans.size
-        val newSize = newRows.size
-
         dataBeans.clear()
         dataBeans.addAll(newRows)
-
-        when {
-            newSize < oldSize -> {
-                notifyItemRangeRemoved(newSize, oldSize - newSize)
-                if (newSize > 0) {
-                    notifyItemRangeChanged(0, newSize)
-                }
-            }
-
-            newSize > oldSize -> {
-                notifyItemRangeChanged(0, oldSize)
-                notifyItemRangeInserted(oldSize, newSize - oldSize)
-            }
-
-            else -> {
-                // 数量相同，只更新内容
-                notifyItemRangeChanged(0, newSize)
-            }
-        }
+        notifyDataSetChanged()
     }
 
     interface OnItemClickListener {
