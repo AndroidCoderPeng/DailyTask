@@ -192,7 +192,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/dp_4"
-                            android:text="通知监听服务未开启，无法监听打卡通知"
+                            android:text="服务未开启，无法监听打卡结果和接收远程指令"
                             android:textColor="@color/red"
                             android:textSize="@dimen/sp_10" />
                     </LinearLayout>
@@ -235,7 +235,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="@dimen/dp_4"
-                            android:text="截屏服务未开启，无法获取打卡结果"
+                            android:text="服务未开启，无法获取打卡结果"
                             android:textColor="@color/red"
                             android:textSize="@dimen/sp_10" />
                     </LinearLayout>

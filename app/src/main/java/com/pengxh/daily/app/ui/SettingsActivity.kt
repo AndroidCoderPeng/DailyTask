@@ -100,14 +100,14 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     fun handleApplicationEvent(event: ApplicationEvent) {
         when (event) {
             is ApplicationEvent.ListenerConnected -> {
-                binding.noticeTipsView.text = "通知监听服务状态查询中，请稍后"
+                binding.noticeTipsView.text = "服务状态查询中，请稍后..."
                 binding.noticeTipsView.setTextColor(R.color.theme_color.convertColor(this))
                 binding.noticeSwitch.isChecked = true
                 binding.noticeTipsView.visibility = View.GONE
             }
 
             is ApplicationEvent.ListenerDisconnected -> {
-                binding.noticeTipsView.text = "通知监听服务未开启，无法监听打卡通知"
+                binding.noticeTipsView.text = "服务未开启，无法监听打卡结果和接收远程指令"
                 binding.noticeTipsView.setTextColor(Color.RED)
                 binding.noticeSwitch.isChecked = false
                 binding.noticeTipsView.visibility = View.VISIBLE
@@ -349,7 +349,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
 
         if (notificationEnable()) {
-            binding.noticeTipsView.text = "通知监听服务状态查询中，请稍后"
+            binding.noticeTipsView.text = "服务状态查询中，请稍后..."
             binding.noticeTipsView.setTextColor(R.color.theme_color.convertColor(this))
             lifecycleScope.launch(Dispatchers.Main) {
                 delay(500)
@@ -359,7 +359,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 }
             }
         } else {
-            binding.noticeTipsView.text = "通知监听服务未开启，无法监听打卡通知"
+            binding.noticeTipsView.text = "服务未开启，无法监听打卡结果和接收远程指令"
             binding.noticeTipsView.setTextColor(Color.RED)
             binding.noticeSwitch.isChecked = false
             binding.noticeTipsView.visibility = View.VISIBLE
