@@ -400,35 +400,6 @@
                     android:background="#CCC" />
 
                 <RelativeLayout
-                    android:id="@+id/notificationLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@color/white"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="通知记录"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1px"
-                    android:layout_marginHorizontal="@dimen/dp_16"
-                    android:background="#CCC" />
-
-                <RelativeLayout
                     android:id="@+id/introduceLayout"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/itemLayoutHeight"

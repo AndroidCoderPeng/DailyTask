@@ -280,10 +280,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, isChecked)
         }
 
-        binding.notificationLayout.setOnClickListener {
-            navigatePageTo<NoticeRecordActivity>()
-        }
-
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }

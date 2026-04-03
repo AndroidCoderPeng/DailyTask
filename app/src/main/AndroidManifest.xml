@@ -50,7 +50,6 @@
         <activity android:name=".ui.SettingsActivity" />
         <activity android:name=".ui.MessageChannelActivity" />
         <activity android:name=".ui.TaskConfigActivity" />
-        <activity android:name=".ui.NoticeRecordActivity" />
         <activity android:name=".ui.QuestionAndAnswerActivity" />
 
         <service android:name=".service.FloatingWindowService" />
