@@ -13,20 +13,20 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
     private val batteryManager by lazy { context.getSystemService(BatteryManager::class.java) }
 
     fun sendMessage(title: String, content: String) {
-        val messageTitle =
-            SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
-
-        val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-        val date = System.currentTimeMillis().timestampToDate()
-
+        val messageTitle = SaveKeyValues.getValue(
+            Constant.MESSAGE_TITLE_KEY, "打卡结果通知"
+        ) as String
         val channelType = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         when (channelType) {
             0 -> {
                 // 企业微信
+                val battery = batteryManager.getIntProperty(
+                    BatteryManager.BATTERY_PROPERTY_CAPACITY
+                )
                 val content = buildString {
                     appendLine(title.ifBlank { messageTitle })
                     appendLine(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
-                    appendLine("当前日期：$date")
+                    appendLine("当前日期：${System.currentTimeMillis().timestampToDate()}")
                     appendLine("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
                     append("版本号：${BuildConfig.VERSION_NAME}")
                 }
@@ -36,10 +36,7 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
             1 -> {
                 // QQ邮箱
                 val content = buildString {
-                    appendLine(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
-                    appendLine("当前日期：$date")
-                    appendLine("当前电量：${if (battery >= 0) "$battery%" else "未知"}")
-                    append("版本号：${BuildConfig.VERSION_NAME}")
+                    append(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
                 }
                 emailManager.sendEmail(title.ifBlank { messageTitle }, content, false)
             }
