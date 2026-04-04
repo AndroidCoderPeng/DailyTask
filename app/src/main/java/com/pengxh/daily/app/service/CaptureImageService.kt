@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
+import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -31,14 +32,16 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.coroutines.resume
 
 class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
@@ -179,10 +182,11 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     null
                 )
 
-                //必须延迟一下，因为生成图片需要时间缓冲，不能秒得
-                delay(1000)
+                // 最多等待2秒
+                val image = withTimeoutOrNull(2000) {
+                    waitForImageAvailable(imageReader)
+                }
 
-                val image = imageReader.acquireNextImage()
                 if (image == null) {
                     sendChannelMessage("获取图像失败: acquireNextImage返回null")
                     return@launch
@@ -224,6 +228,24 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 runCatching { virtualDisplay?.release() }
                 runCatching { imageReader.close() }
             }
+        }
+    }
+
+    private suspend fun waitForImageAvailable(imageReader: ImageReader): Image? {
+        return suspendCancellableCoroutine { continuation ->
+            val listener = ImageReader.OnImageAvailableListener { reader ->
+                val image = reader.acquireLatestImage()
+                if (image != null) {
+                    continuation.resume(image)
+                    imageReader.setOnImageAvailableListener(null, null)
+                }
+            }
+
+            continuation.invokeOnCancellation {
+                imageReader.setOnImageAvailableListener(null, null)
+            }
+
+            imageReader.setOnImageAvailableListener(listener, null)
         }
     }
 
