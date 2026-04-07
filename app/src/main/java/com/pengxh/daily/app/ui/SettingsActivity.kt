@@ -50,14 +50,16 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         listOf(
             "钉钉",
             "企业微信",
-            "飞书"
+            "飞书",
+            "移动办公M3"
         )
     }
     private val icons by lazy {
         listOf(
             R.drawable.ic_ding_ding,
             R.drawable.ic_wei_xin,
-            R.drawable.ic_fei_shu
+            R.drawable.ic_fei_shu,
+            R.mipmap.ic_mobile_m3
         )
     }
     private val channels = arrayListOf("企业微信", "QQ邮箱")

@@ -31,6 +31,7 @@ object Constant {
     const val DING_DING = "com.alibaba.android.rimet" // 钉钉
     const val WEWORK = "com.tencent.wework" // 企业微信
     const val FEI_SHU = "com.ss.android.lark" // 飞书
+    const val MOBILE_M3 = "com.seeyon.cmp" // 移动办公M3
 
     // ============================================================
     // 消息指令
@@ -60,6 +61,7 @@ object Constant {
             0 -> DING_DING
             1 -> WEWORK
             2 -> FEI_SHU
+            3 -> MOBILE_M3
             else -> DING_DING
         }
     }
