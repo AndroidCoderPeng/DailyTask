@@ -9,6 +9,7 @@ import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
+import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
@@ -64,6 +65,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager(this) }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
+    private var virtualDisplay: VirtualDisplay? = null
+    private var imageReader: ImageReader? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -163,23 +166,24 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         val height = metrics.heightPixels
         val density = metrics.densityDpi
 
-        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+        runCatching { imageReader?.close() }
+        imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
         launch {
             try {
-                projection.createVirtualDisplay(
+                virtualDisplay = projection.createVirtualDisplay(
                     "CaptureImageDisplay",
                     width,
                     height,
                     density,
                     DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-                    imageReader.surface,
+                    imageReader!!.surface,
                     null,
                     null
                 )
 
                 // 最多等待2秒
                 val image = withTimeoutOrNull(2000) {
-                    waitForImageAvailable(imageReader)
+                    waitForImageAvailable(imageReader!!)
                 }
 
                 if (image == null) {
@@ -254,6 +258,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         super.onDestroy()
         EventBus.getDefault().unregister(this)
         cancel()
+        runCatching { virtualDisplay?.release() }
+        runCatching { imageReader?.close() }
         ProjectionSession.clear()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
