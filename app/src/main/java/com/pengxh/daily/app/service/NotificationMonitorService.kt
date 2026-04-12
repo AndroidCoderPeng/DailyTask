@@ -163,6 +163,7 @@ class NotificationMonitorService : NotificationListenerService() {
                     val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
                     val content = buildString {
                         appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
+                        appendLine("悬浮权限：${if (MainActivity.isCanDrawOverlay) "已获取" else "被拒绝"}")
                         appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
                         appendLine("截图服务：${if (ProjectionSession.state == ProjectionSession.State.ACTIVE) "正常" else "断开"}")
                         append("消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}")

@@ -69,6 +69,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     companion object {
         var isTaskStarted = false
+        var isCanDrawOverlay = false;
     }
 
     private val context = this
@@ -168,6 +169,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             Intent(this, FloatingWindowService::class.java).apply {
                 startService(this)
             }
+            isCanDrawOverlay = true
         } else {
             // 悬浮窗权限并显示悬浮窗
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
@@ -271,7 +273,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                         override fun onTick(millisUntilFinished: Long) {
                             val tick = (millisUntilFinished / 1000).toInt()
                             // 更新悬浮窗倒计时
-                            EventBus.getDefault().post(ApplicationEvent.UpdateFloatingViewTime(tick))
+                            EventBus.getDefault()
+                                .post(ApplicationEvent.UpdateFloatingViewTime(tick))
                             if (tick <= 2 && !hasCaptured) {
                                 hasCaptured = true
                                 EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
@@ -399,6 +402,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             Intent(this, FloatingWindowService::class.java).apply {
                 startService(this)
             }
+            isCanDrawOverlay = true
+        } else {
+            isCanDrawOverlay = false
         }
     }
 
