@@ -20,6 +20,7 @@ import com.pengxh.daily.app.databinding.ActivitySettingsBinding
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.CaptureImageService
+import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
@@ -63,6 +64,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         )
     }
     private val channels = arrayListOf("企业微信", "QQ邮箱")
+    private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val notificationContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
@@ -247,6 +249,16 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             navigatePageTo<TaskConfigActivity>()
         }
 
+        binding.floatingSwitch.setOnClickListener {
+            if (Settings.canDrawOverlays(this)) {
+                "核心服务，无法关闭".show(this)
+                binding.floatingSwitch.isChecked = true
+                return@setOnClickListener
+            }
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+            overlayPermissionLauncher.launch(intent)
+        }
+
         binding.noticeSwitch.setOnClickListener {
             notificationSettingLauncher.launch(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
@@ -287,6 +299,20 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
     }
 
+    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
+        if (Settings.canDrawOverlays(this)) {
+            Intent(this, FloatingWindowService::class.java).apply {
+                startService(this)
+            }
+        }
+    }
+
+    private val notificationSettingLauncher = registerForActivityResult(notificationContract) {
+        if (notificationEnable()) {
+            turnOnNotificationMonitorService()
+        }
+    }
+
     private val projectionLauncher = registerForActivityResult(projectionContract) {
         if (it.resultCode != RESULT_OK) {
             "用户拒绝授权".show(this)
@@ -310,14 +336,18 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
     }
 
-    private val notificationSettingLauncher = registerForActivityResult(notificationContract) {
-        if (notificationEnable()) {
-            turnOnNotificationMonitorService()
-        }
-    }
-
     override fun onResume() {
         super.onResume()
+        if (Settings.canDrawOverlays(this)) {
+            binding.floatingSwitch.isChecked = true
+            binding.floatingTipsView.visibility = View.GONE
+
+        } else {
+            binding.floatingSwitch.isChecked = false
+            binding.floatingTipsView.visibility = View.VISIBLE
+            binding.floatingTipsView.text = "服务未开启，打完卡无法自动跳回本软件"
+        }
+
         val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         if (type in 0..channels.lastIndex) {
             binding.channelView.text = channels[type]
