@@ -260,7 +260,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.noticeSwitch.setOnClickListener {
-            notificationSettingLauncher.launch(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            if (notificationEnable()) {
+                "核心服务，无法关闭".show(this)
+                binding.noticeSwitch.isChecked = true
+                return@setOnClickListener
+            }
+            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            notificationSettingLauncher.launch(intent)
         }
 
         binding.captureSwitch.setOnClickListener {
