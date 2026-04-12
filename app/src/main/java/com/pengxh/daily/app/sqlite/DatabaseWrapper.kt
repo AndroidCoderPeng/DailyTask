@@ -33,14 +33,6 @@ object DatabaseWrapper {
     /*****************************************************************************************/
     private val noticeDao by lazy { DailyTaskApplication.get().dataBase.noticeDao() }
 
-    fun deleteAllNotice() {
-        noticeDao.deleteAll()
-    }
-
-    fun loadWeeklyNotice(startDate: String, endDate: String): MutableList<NotificationBean> {
-        return noticeDao.loadWeeklyNotice(startDate, endDate)
-    }
-
     fun loadCurrentDayNotice(): MutableList<NotificationBean> {
         return noticeDao.loadCurrentDayNotice(TimeKit.getTodayDate())
     }
