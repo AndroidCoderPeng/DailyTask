@@ -176,14 +176,14 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     height,
                     density,
                     DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-                    imageReader!!.surface,
+                    imageReader?.surface,
                     null,
                     null
                 )
 
                 // 最多等待2秒
                 val image = withTimeoutOrNull(2000) {
-                    waitForImageAvailable(imageReader!!)
+                    imageReader?.let { waitForImageAvailable(it) }
                 }
 
                 if (image == null) {
