@@ -161,7 +161,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         val metrics = resources.displayMetrics
         val width = metrics.widthPixels
         val height = metrics.heightPixels
-        val densityDpi = metrics.densityDpi
+        val density = metrics.densityDpi
 
         val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
         launch {
@@ -170,7 +170,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     "CaptureImageDisplay",
                     width,
                     height,
-                    densityDpi,
+                    density,
                     DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
                     imageReader.surface,
                     null,
