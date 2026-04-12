@@ -108,22 +108,22 @@ class NotificationMonitorService : NotificationListenerService() {
     private fun handleRemoteCommand(pkg: String, notice: String) {
         if (pkg in auxiliaryApp) {
             when {
-                notice.contains("启动") -> {
+                notice.contains("执行任务") -> {
                     EventBus.getDefault().post(ApplicationEvent.StartDailyTask)
                 }
 
-                notice.contains("停止") -> {
+                notice.contains("终止任务") -> {
                     EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
                 }
 
-                notice.contains("开始循环") -> {
+                notice.contains("开启循环") -> {
                     SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
                     sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：开启")
                 }
 
-                notice.contains("暂停循环") -> {
+                notice.contains("关闭循环") -> {
                     SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
-                    sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：暂停")
+                    sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
                 }
 
                 notice.contains("息屏") -> {
