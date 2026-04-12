@@ -36,7 +36,7 @@ class HttpRequestManager(private val context: Context) {
                 return@launch
             }
 
-            val url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=$webhookKey"
+            val url = "${Constant.WX_WEB_HOOK_URL}/cgi-bin/webhook/send?key=$webhookKey"
 
             val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
             val content = buildString {
