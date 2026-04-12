@@ -13,8 +13,8 @@ android {
         applicationId 'com.pengxh.daily.app'
         minSdk 26
         targetSdk 36
-        versionCode 2300
-        versionName '2.3.0.0'
+        versionCode 2310
+        versionName '2.3.1.0'
         ndkVersion '21.4.7075529'
 
         ndk {
