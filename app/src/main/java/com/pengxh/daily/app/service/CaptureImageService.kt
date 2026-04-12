@@ -9,7 +9,6 @@ import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
-import android.hardware.display.VirtualDisplay
 import android.media.Image
 import android.media.ImageReader
 import android.media.projection.MediaProjection
@@ -100,7 +99,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         // resultCode 为 RESULT_CANCELED 说明是服务重启（非用户授权触发），直接返回
         if (resultCode == Activity.RESULT_CANCELED) return START_STICKY
 
-        val data: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val data = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra("data", Intent::class.java)
         } else {
             @Suppress("DEPRECATION")
@@ -164,19 +163,15 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         val height = metrics.heightPixels
         val densityDpi = metrics.densityDpi
 
-        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 1)
-        val flags = DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or
-                DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC
-
+        val imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
         launch {
-            var virtualDisplay: VirtualDisplay? = null
             try {
-                virtualDisplay = projection.createVirtualDisplay(
+                projection.createVirtualDisplay(
                     "CaptureImageDisplay",
                     width,
                     height,
                     densityDpi,
-                    flags,
+                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
                     imageReader.surface,
                     null,
                     null
@@ -224,9 +219,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
             } catch (e: Exception) {
                 sendChannelMessage("截屏失败: ${e.message}")
-            } finally {
-                runCatching { virtualDisplay?.release() }
-                runCatching { imageReader.close() }
             }
         }
     }
