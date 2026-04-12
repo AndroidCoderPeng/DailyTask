@@ -270,6 +270,12 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.captureSwitch.setOnClickListener {
+            if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+                "核心服务，无法关闭".show(this)
+                binding.captureSwitch.isChecked = true
+                return@setOnClickListener
+            }
+            binding.captureSwitch.isChecked = false
             projectionLauncher.launch(mpr.createScreenCaptureIntent())
         }
 
