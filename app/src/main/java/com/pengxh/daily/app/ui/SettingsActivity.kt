@@ -89,6 +89,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         val index = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
         binding.iconView.setBackgroundResource(icons[index])
+        updateDirectAttendanceVisibility(index)
 
         binding.appVersion.text = BuildConfig.VERSION_NAME
         if (notificationEnable()) {
@@ -208,6 +209,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         // 更新配置
                         binding.iconView.setBackgroundResource(icons[position])
                         SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
+                        updateDirectAttendanceVisibility(position)
                     }
                 }).build().show()
         }
@@ -298,6 +300,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
         }
 
+        binding.directAttendanceCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            SaveKeyValues.putValue(Constant.DIRECT_ATTENDANCE_KEY, isChecked)
+        }
+
         binding.gestureDetectSwitch.setOnCheckedChangeListener { _, isChecked ->
             SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, isChecked)
         }
@@ -383,6 +389,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
         }
 
+        binding.directAttendanceCheckBox.isChecked =
+            SaveKeyValues.getValue(Constant.DIRECT_ATTENDANCE_KEY, false) as Boolean
         binding.gestureDetectSwitch.isChecked =
             SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
         binding.backToHomeSwitch.isChecked =
@@ -443,6 +451,15 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 e.printStackTrace()
             }
         }
+    }
+
+    /**
+     * 仅钉钉时显示"直接跳转打卡界面"选项
+     */
+    private fun updateDirectAttendanceVisibility(targetIndex: Int) {
+        val visibility = if (targetIndex == 0) View.VISIBLE else View.GONE
+        binding.directAttendanceLayout.visibility = visibility
+        binding.directAttendanceDivider.visibility = visibility
     }
 
     override fun onDestroy() {

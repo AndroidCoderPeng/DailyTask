@@ -72,3 +72,4 @@ lint/tmp/
 # lint/reports/
 
 /apk
+*.md

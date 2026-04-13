@@ -24,6 +24,7 @@ object Constant {
     const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY"
     const val CHANNEL_TYPE_KEY = "CHANNEL_TYPE_KEY"
     const val RESULT_SOURCE_KEY = "RESULT_SOURCE_KEY"
+    const val DIRECT_ATTENDANCE_KEY = "DIRECT_ATTENDANCE_KEY"
 
     // ============================================================
     // 目标应用

@@ -414,6 +414,38 @@
                     android:background="#CCC" />
 
                 <RelativeLayout
+                    android:id="@+id/directAttendanceLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/itemLayoutHeight"
+                    android:background="@drawable/bg_solid_layout_white_16"
+                    android:paddingHorizontal="@dimen/dp_16"
+                    android:visibility="gone">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="直接跳转钉钉考勤界面"
+                        android:textColor="@color/text_default_color"
+                        android:textSize="@dimen/sp_16" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/directAttendanceCheckBox"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+
+                <View
+                    android:id="@+id/directAttendanceDivider"
+                    android:layout_width="match_parent"
+                    android:layout_height="1px"
+                    android:layout_marginHorizontal="@dimen/dp_16"
+                    android:background="#CCC"
+                    android:visibility="gone" />
+
+                <RelativeLayout
                     android:id="@+id/captureTestLayout"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/itemLayoutHeight"

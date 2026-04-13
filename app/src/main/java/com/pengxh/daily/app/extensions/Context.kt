@@ -1,15 +1,19 @@
 package com.pengxh.daily.app.extensions
 
+import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.extensions.show
+import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 
 /**
@@ -50,7 +54,21 @@ fun Context.openApplication(needCountDown: Boolean) {
         return
     }
 
-    // 跳转目标应用
+    // 钉钉且用户开启了"直接跳转打卡界面"，走 scheme 落地到考勤 H5
+    val directAttendance = SaveKeyValues.getValue(Constant.DIRECT_ATTENDANCE_KEY, false) as Boolean
+    if (targetApp == Constant.DING_DING && directAttendance) {
+        val launched = tryOpenDingTalkAttendance()
+        if (launched) {
+            if (needCountDown) {
+                EventBus.getDefault().post(ApplicationEvent.StartCountdownTime(false))
+            }
+            return
+        }
+        // scheme 失败则 fallback 到 Launcher
+        Log.w("Ex-Context", "openApplication: 钉钉打卡 scheme 失败，回退到 Launcher")
+    }
+
+    // 通用：跳转目标应用 Launcher Activity
     val intent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -82,7 +100,18 @@ fun Context.openApplication() {
         return
     }
 
-    // 跳转目标应用
+    // 钉钉且用户开启了"直接跳转打卡界面"，走 scheme 落地到考勤 H5
+    val directAttendance = SaveKeyValues.getValue(Constant.DIRECT_ATTENDANCE_KEY, false) as Boolean
+    if (targetApp == Constant.DING_DING && directAttendance) {
+        val launched = tryOpenDingTalkAttendance()
+        if (launched) {
+            EventBus.getDefault().post(ApplicationEvent.StartCountdownTime(true))
+            return
+        }
+        Log.w("Ex-Context", "openApplication: 钉钉打卡 scheme 失败，回退到 Launcher")
+    }
+
+    // 通用：跳转目标应用 Launcher Activity
     val intent = Intent(Intent.ACTION_MAIN, null).apply {
         addCategory(Intent.CATEGORY_LAUNCHER)
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -102,5 +131,25 @@ fun Context.openApplication() {
         EventBus.getDefault().post(ApplicationEvent.StartCountdownTime(true))
     } else {
         Log.w("Ex-Context", "openApplication: 未找到目标应用的 Launcher Activity，包名：$targetApp")
+    }
+}
+
+/**
+ * 通过 scheme 直接跳转钉钉考勤打卡页
+ * @return true 表示 scheme 启动成功
+ */
+@SuppressLint("UseKtx")
+private fun Context.tryOpenDingTalkAttendance(): Boolean {
+    return try {
+        val uri = Uri.parse("dingtalk://dingtalkclient/page/link?url=https://attend.dingtalk.com/attend/index.html")
+        val intent = Intent(Intent.ACTION_VIEW, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivity(intent)
+        Log.d("Ex-Context", "tryOpenDingTalkAttendance: scheme 启动成功")
+        true
+    } catch (e: ActivityNotFoundException) {
+        Log.w("Ex-Context", "tryOpenDingTalkAttendance: scheme 不可用 -> ${e.message}")
+        false
     }
 }
