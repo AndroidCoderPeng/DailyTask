@@ -4,6 +4,7 @@ import android.os.Handler
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
+import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 
 /**
@@ -15,12 +16,10 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
  * 3. 协调倒计时服务和UI更新
  *
  * @param mainHandler 主线程Handler
- * @param taskBeans 任务列表
  * @param listener 任务状态回调
  */
 class TaskScheduler(
     private val mainHandler: Handler,
-    private val taskBeans: MutableList<DailyTaskBean>,
     private val listener: TaskStateListener
 ) {
     private var countDownTimerService: CountDownTimerService? = null
@@ -93,6 +92,7 @@ class TaskScheduler(
     private val dailyTaskRunnable = object : Runnable {
         override fun run() {
             try {
+                val taskBeans = DatabaseWrapper.loadAllTask()
                 val index = taskBeans.getTaskIndex()
                 if (index == -1) {
                     LogFileManager.writeLog("今日任务已全部执行完毕")

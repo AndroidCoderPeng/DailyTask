@@ -16,7 +16,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
@@ -79,16 +78,32 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     private val marginOffset by lazy { 16.dp2px(this) }
     private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val taskDataManager by lazy { TaskDataManager() }
-    private val mainHandler = Handler(Looper.getMainLooper())
+    private val insetsController by lazy {
+        WindowCompat.getInsetsController(window, binding.rootView)
+    }
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
-    private lateinit var insetsController: WindowInsetsControllerCompat
-    private lateinit var maskViewController: MaskViewController
-    private var gestureController: GestureController? = null
-    private lateinit var dailyTaskAdapter: DailyTaskAdapter
-    private lateinit var taskScheduler: TaskScheduler
-    private lateinit var timeoutTimerManager: TimeoutTimerManager
+    private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
+    private val gestureController by lazy {
+        GestureController(this, maskViewController, mainHandler)
+    }
+    private val taskScheduler by lazy { TaskScheduler(mainHandler, this) }
+    private val timeoutTimerManager by lazy { TimeoutTimerManager(mainHandler) }
     private var taskBeans = mutableListOf<DailyTaskBean>()
+    private val dailyTaskAdapter by lazy {
+        DailyTaskAdapter(this, taskBeans).apply {
+            setOnItemClickListener(object : DailyTaskAdapter.OnItemClickListener {
+                override fun onItemClick(position: Int) {
+                    itemClick(position)
+                }
+
+                override fun onItemLongClick(position: Int) {
+                    itemLongClick(position)
+                }
+            })
+        }
+    }
     private var imagePath = ""
     private var hasCaptured = false
 
@@ -176,8 +191,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             overlayPermissionLauncher.launch(intent)
         }
 
-        insetsController = WindowCompat.getInsetsController(window, binding.rootView)
-
         Intent(this, ForegroundRunningService::class.java).apply {
             startForegroundService(this)
         }
@@ -198,27 +211,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             binding.recyclerView.visibility = View.VISIBLE
             binding.emptyView.visibility = View.GONE
         }
-        dailyTaskAdapter = DailyTaskAdapter(this, taskBeans)
-        dailyTaskAdapter.setOnItemClickListener(object : DailyTaskAdapter.OnItemClickListener {
-            override fun onItemClick(position: Int) {
-                itemClick(position)
-            }
 
-            override fun onItemLongClick(position: Int) {
-                itemLongClick(position)
-            }
-        })
         binding.recyclerView.adapter = dailyTaskAdapter
         binding.recyclerView.addItemDecoration(
             RecyclerViewItemOffsets(
                 marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
-
-        maskViewController = MaskViewController(this, binding, insetsController)
-        gestureController = GestureController(this, maskViewController, mainHandler)
-        taskScheduler = TaskScheduler(mainHandler, taskBeans, this)
-        timeoutTimerManager = TimeoutTimerManager(mainHandler)
     }
 
     @Suppress("unused")
@@ -492,7 +491,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ev?.let {
-            gestureController?.onTouchEvent(it)
+            gestureController.onTouchEvent(it)
         }
         return super.dispatchTouchEvent(ev)
     }
