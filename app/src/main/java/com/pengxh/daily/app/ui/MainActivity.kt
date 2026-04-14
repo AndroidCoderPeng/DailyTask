@@ -84,7 +84,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private lateinit var insetsController: WindowInsetsControllerCompat
     private lateinit var maskViewController: MaskViewController
-    private lateinit var gestureController: GestureController
+    private var gestureController: GestureController? = null
     private lateinit var dailyTaskAdapter: DailyTaskAdapter
     private lateinit var taskScheduler: TaskScheduler
     private lateinit var timeoutTimerManager: TimeoutTimerManager
@@ -492,7 +492,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
         ev?.let {
-            gestureController.onTouchEvent(it)
+            gestureController?.onTouchEvent(it)
         }
         return super.dispatchTouchEvent(ev)
     }
