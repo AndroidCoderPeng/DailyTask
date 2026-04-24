@@ -137,8 +137,7 @@ class TaskScheduler(
                 // 二次验证索引是否在有效范围内
                 if (index < 0 || index >= taskBeans.size) {
                     val errorMsg = "任务索引超出范围: $index, 数组大小: ${taskBeans.size}"
-                    LogFileManager.writeLog(errorMsg)
-                    listener.onTaskExecutionError(errorMsg)
+                    failExecution(errorMsg)
                     return
                 }
 
@@ -156,14 +155,20 @@ class TaskScheduler(
                 countDownTimerService?.startCountDown(taskIndex, timeSeconds)
             } catch (e: IndexOutOfBoundsException) {
                 val errorMsg = "任务数组访问越界: ${e.message}"
-                LogFileManager.writeLog(errorMsg)
-                listener.onTaskExecutionError(errorMsg)
+                failExecution(errorMsg)
             } catch (e: Exception) {
                 val errorMsg = "执行任务时发生异常: ${e.message}"
-                LogFileManager.writeLog(errorMsg)
-                listener.onTaskExecutionError(errorMsg)
+                failExecution(errorMsg)
             }
         }
+    }
+
+    private fun failExecution(message: String) {
+        LogFileManager.writeLog(message)
+        isTaskStarted = false
+        mainHandler.removeCallbacks(dailyTaskRunnable)
+        countDownTimerService?.cancelCountDown()
+        listener.onTaskExecutionError(message)
     }
 
     fun destroy() {
