@@ -18,9 +18,13 @@ class TaskDataManager() {
             val config = gson.fromJson<ExportDataModel>(json, type)
 
             val importedTasks = mutableListOf<DailyTaskBean>()
-            for (task in config.tasks) {
+            for (task in config.tasks.orEmpty()) {
+                val taskTime = task.time
+                if (taskTime.isNullOrBlank()) continue
+
                 // 跳过已存在的任务时间点
-                if (!DatabaseWrapper.isTaskTimeExist(task.time)) {
+                if (!DatabaseWrapper.isTaskTimeExist(taskTime)) {
+                    task.id = 0
                     DatabaseWrapper.insert(task)
                     importedTasks.add(task)
                 }
@@ -46,7 +50,11 @@ class TaskDataManager() {
         SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, config.wxKey)
 
         val email = config.emailConfig
-        if (email != null) {
+        if (email != null &&
+            email.outbox.isNotBlank() &&
+            email.authCode.isNotBlank() &&
+            email.inbox.isNotBlank()
+        ) {
             DatabaseWrapper.insertConfig(email.outbox, email.authCode, email.inbox)
         }
 

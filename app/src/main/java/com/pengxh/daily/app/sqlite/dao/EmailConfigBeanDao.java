@@ -20,6 +20,6 @@ public interface EmailConfigBeanDao {
     @Query("SELECT * FROM email_config_table ORDER BY createTime DESC LIMIT 1")
     EmailConfigBean loadEmailConfig();
 
-    @Query("SELECT * FROM email_config_table")
+    @Query("SELECT * FROM email_config_table ORDER BY createTime ASC")
     List<EmailConfigBean> loadAll();
 }

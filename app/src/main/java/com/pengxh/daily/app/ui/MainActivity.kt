@@ -361,18 +361,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = ""
 
-        // 重置按钮状态
-        binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-        binding.executeTaskButton.setIconTintResource(R.color.ios_green)
-        binding.executeTaskButton.text = "启动"
+        resetExecuteButton()
         messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
     }
 
     override fun onTaskCompleted() {
         // 任务全部完成
+        isTaskStarted = false
         binding.tipsView.text = "当天所有任务已执行完毕"
         binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
         dailyTaskAdapter.updateCurrentTaskState(-1)
+        resetExecuteButton()
         messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
     }
 
@@ -393,7 +392,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     override fun onTaskExecutionError(message: String) {
+        isTaskStarted = false
+        resetExecuteButton()
+        binding.tipsView.text = message
+        binding.tipsView.setTextColor(R.color.red.convertColor(context))
         messageDispatcher.sendMessage("任务执行出错通知", message)
+    }
+
+    private fun resetExecuteButton() {
+        binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
+        binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+        binding.executeTaskButton.text = "启动"
     }
 
     private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {

@@ -56,4 +56,8 @@ object DatabaseWrapper {
     fun loadAll(): List<EmailConfigBean> {
         return emailConfigDao.loadAll()
     }
+
+    fun loadLatestEmailConfig(): EmailConfigBean? {
+        return emailConfigDao.loadEmailConfig()
+    }
 }

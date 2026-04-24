@@ -166,8 +166,9 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         val height = metrics.heightPixels
         val density = metrics.densityDpi
 
-        runCatching { imageReader?.close() }
-        imageReader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+        releaseCaptureResources()
+        val reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+        imageReader = reader
         launch {
             try {
                 virtualDisplay = projection.createVirtualDisplay(
@@ -176,14 +177,14 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     height,
                     density,
                     DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-                    imageReader?.surface,
+                    reader.surface,
                     null,
                     null
                 )
 
                 // 最多等待2秒
                 val image = withTimeoutOrNull(2000) {
-                    imageReader?.let { waitForImageAvailable(it) }
+                    waitForImageAvailable(reader)
                 }
 
                 if (image == null) {
@@ -223,6 +224,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
             } catch (e: Exception) {
                 sendChannelMessage("截屏失败: ${e.message}")
+            } finally {
+                releaseCaptureResources()
             }
         }
     }
@@ -232,8 +235,12 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             val listener = ImageReader.OnImageAvailableListener { reader ->
                 val image = reader.acquireLatestImage()
                 if (image != null) {
-                    continuation.resume(image)
-                    imageReader.setOnImageAvailableListener(null, null)
+                    reader.setOnImageAvailableListener(null, null)
+                    if (continuation.isActive) {
+                        continuation.resume(image)
+                    } else {
+                        image.close()
+                    }
                 }
             }
 
@@ -258,10 +265,16 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         super.onDestroy()
         EventBus.getDefault().unregister(this)
         cancel()
-        runCatching { virtualDisplay?.release() }
-        runCatching { imageReader?.close() }
+        releaseCaptureResources()
         ProjectionSession.clear()
         stopForeground(STOP_FOREGROUND_REMOVE)
+    }
+
+    private fun releaseCaptureResources() {
+        runCatching { virtualDisplay?.release() }
+        virtualDisplay = null
+        runCatching { imageReader?.close() }
+        imageReader = null
     }
 
     override fun onBind(p0: Intent?): IBinder? {

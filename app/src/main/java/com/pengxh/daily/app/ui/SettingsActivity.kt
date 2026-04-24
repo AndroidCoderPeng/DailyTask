@@ -87,7 +87,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     override fun initOnCreate(savedInstanceState: Bundle?) {
         EventBus.getDefault().register(this)
 
-        val index = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
+        val index = (SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int)
+            .coerceIn(0, icons.lastIndex)
         binding.iconView.setBackgroundResource(icons[index])
 
         binding.appVersion.text = BuildConfig.VERSION_NAME
