@@ -44,6 +44,29 @@ class TaskScheduler(
      * 启动任务
      */
     fun startTask() {
+        if (isTaskStarted) {
+            LogFileManager.writeLog("任务已在执行中，忽略重复启动")
+            return
+        }
+
+        val taskBeans = DatabaseWrapper.loadAllTask()
+        if (taskBeans.isEmpty()) {
+            listener.onTaskExecutionError("启动任务失败，请先添加任务时间点")
+            return
+        }
+
+        if (taskBeans.getTaskIndex() == -1) {
+            LogFileManager.writeLog("今日任务已全部执行完毕，忽略启动")
+            listener.onTaskCompleted()
+            countDownTimerService?.updateDailyTaskState()
+            return
+        }
+
+        if (countDownTimerService == null) {
+            listener.onTaskExecutionError("启动任务失败，倒计时服务未就绪，请稍后重试")
+            return
+        }
+
         LogFileManager.writeLog("开始执行每日任务")
 
         // 更新状态标志
@@ -79,6 +102,10 @@ class TaskScheduler(
      * 此方法由外部调用，在收到打卡成功广播时
      */
     fun executeNextTask() {
+        if (!isTaskStarted) {
+            LogFileManager.writeLog("任务未运行，忽略执行下一个任务")
+            return
+        }
         LogFileManager.writeLog("执行下一个任务")
         // 先移除所有未执行的 Runnable，避免重复投递
         mainHandler.removeCallbacks(dailyTaskRunnable)
@@ -97,6 +124,7 @@ class TaskScheduler(
                 if (index == -1) {
                     LogFileManager.writeLog("今日任务已全部执行完毕")
                     mainHandler.removeCallbacks(this)
+                    isTaskStarted = false
 
                     // 通知任务完成
                     listener.onTaskCompleted()

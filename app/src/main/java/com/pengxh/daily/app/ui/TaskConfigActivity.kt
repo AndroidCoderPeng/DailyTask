@@ -144,8 +144,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
-                            binding.minuteRangeView.text = "${value}分钟"
-                            SaveKeyValues.putValue(Constant.RANDOM_MINUTE_RANGE_KEY, value.toInt())
+                            updateRandomMinuteRange(value.toInt())
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -171,12 +170,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
             exportData.wxKey = key
 
-            val configs = DatabaseWrapper.loadAll()
-            if (configs.isNotEmpty()) {
-                exportData.emailConfig = configs.last()
-            } else {
-                exportData.emailConfig = EmailConfigBean()
-            }
+            exportData.emailConfig = DatabaseWrapper.loadLatestEmailConfig() ?: EmailConfigBean()
 
             val isDetectGesture = SaveKeyValues.getValue(
                 Constant.GESTURE_DETECTOR_KEY, false
@@ -250,9 +244,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
-                            val hour = value.toInt()
-                            binding.resetTimeView.text = "每天${hour}点"
-                            setTaskResetTime(hour)
+                            updateResetHour(value.toInt())
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -261,10 +253,17 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     override fun onCancelClick() {}
                 }).build().show()
         } else {
-            val hour = hourArray[position].toInt()
-            binding.resetTimeView.text = "每天${hour}点"
-            setTaskResetTime(hour)
+            updateResetHour(hourArray[position].toInt())
         }
+    }
+
+    private fun updateResetHour(hour: Int) {
+        if (hour !in 0..23) {
+            "重置时间必须在0到23点之间".show(context)
+            return
+        }
+        binding.resetTimeView.text = "每天${hour}点"
+        setTaskResetTime(hour)
     }
 
     private fun setTaskResetTime(hour: Int) {
@@ -288,9 +287,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         if (value.isNumber()) {
-                            val time = value.toInt()
-                            binding.timeoutTextView.text = "${time}s"
-                            updateDingDingTimeout(time)
+                            updateTimeout(value.toInt())
                         } else {
                             "直接输入整数时间即可".show(context)
                         }
@@ -299,10 +296,17 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     override fun onCancelClick() {}
                 }).build().show()
         } else {
-            val time = timeArray[position].toInt()
-            binding.timeoutTextView.text = "${time}s"
-            updateDingDingTimeout(time)
+            updateTimeout(timeArray[position].toInt())
         }
+    }
+
+    private fun updateTimeout(time: Int) {
+        if (time <= 0) {
+            "超时时间必须大于0秒".show(context)
+            return
+        }
+        binding.timeoutTextView.text = "${time}s"
+        updateDingDingTimeout(time)
     }
 
     private fun shareTextTo(packageName: String, appName: String, text: String) {
@@ -327,5 +331,14 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
         // 更新目标应用任务超时时间
         EventBus.getDefault().post(ApplicationEvent.SetTaskOvertime(time))
+    }
+
+    private fun updateRandomMinuteRange(value: Int) {
+        if (value < 0) {
+            "随机时间范围不能小于0分钟".show(context)
+            return
+        }
+        binding.minuteRangeView.text = "${value}分钟"
+        SaveKeyValues.putValue(Constant.RANDOM_MINUTE_RANGE_KEY, value)
     }
 }
