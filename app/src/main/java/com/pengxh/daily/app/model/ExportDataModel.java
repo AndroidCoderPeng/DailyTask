@@ -20,6 +20,9 @@ public class ExportDataModel {
     private String command; // 口令
     private boolean autoStart; // 自动启动
     private boolean randomTime; // 随机时间
+    private boolean skipChinaHoliday; // 跳过中国节假日
+    private boolean powerSaveMode; // 省电模式
+    private Boolean lowBatteryReminder; // 低电量提醒
     private int timeRange; // 时间范围
 
     public List<DailyTaskBean> getTasks() {
@@ -108,6 +111,30 @@ public class ExportDataModel {
 
     public void setRandomTime(boolean randomTime) {
         this.randomTime = randomTime;
+    }
+
+    public boolean isSkipChinaHoliday() {
+        return skipChinaHoliday;
+    }
+
+    public void setSkipChinaHoliday(boolean skipChinaHoliday) {
+        this.skipChinaHoliday = skipChinaHoliday;
+    }
+
+    public boolean isPowerSaveMode() {
+        return powerSaveMode;
+    }
+
+    public void setPowerSaveMode(boolean powerSaveMode) {
+        this.powerSaveMode = powerSaveMode;
+    }
+
+    public Boolean getLowBatteryReminder() {
+        return lowBatteryReminder;
+    }
+
+    public void setLowBatteryReminder(Boolean lowBatteryReminder) {
+        this.lowBatteryReminder = lowBatteryReminder;
     }
 
     public int getTimeRange() {

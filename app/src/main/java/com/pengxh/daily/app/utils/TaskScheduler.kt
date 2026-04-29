@@ -24,6 +24,8 @@ class TaskScheduler(
 ) {
     private var countDownTimerService: CountDownTimerService? = null
     private var isTaskStarted = false
+    private var scheduledTaskIndex = -1
+    private var scheduledTaskRealTime = ""
 
     // 任务状态回调
     interface TaskStateListener {
@@ -36,6 +38,18 @@ class TaskScheduler(
 
     fun setCountDownTimerService(service: CountDownTimerService?) {
         this.countDownTimerService = service
+    }
+
+    fun detachCountDownTimerService(service: CountDownTimerService) {
+        if (countDownTimerService !== service) {
+            return
+        }
+        countDownTimerService = null
+        clearScheduledTask()
+        mainHandler.removeCallbacks(dailyTaskRunnable)
+        if (isTaskStarted) {
+            LogFileManager.writeLog("倒计时服务已断开，清理已调度任务，等待服务重建后恢复")
+        }
     }
 
     fun isTaskStarted(): Boolean = isTaskStarted
@@ -86,6 +100,7 @@ class TaskScheduler(
     fun stopTask() {
         LogFileManager.writeLog("停止执行每日任务")
         isTaskStarted = false
+        clearScheduledTask()
 
         // 取消任务调度
         mainHandler.removeCallbacks(dailyTaskRunnable)
@@ -101,10 +116,19 @@ class TaskScheduler(
      * 取消超时定时器并执行下一个任务
      * 此方法由外部调用，在收到打卡成功广播时
      */
-    fun executeNextTask() {
+    fun executeNextTask(markCurrentFinished: Boolean = false) {
         if (!isTaskStarted) {
             LogFileManager.writeLog("任务未运行，忽略执行下一个任务")
             return
+        }
+        if (!markCurrentFinished && scheduledTaskIndex != -1) {
+            LogFileManager.writeLog(
+                "第${scheduledTaskIndex + 1}个任务已调度到$scheduledTaskRealTime，忽略重复推进"
+            )
+            return
+        }
+        if (markCurrentFinished) {
+            clearScheduledTask()
         }
         LogFileManager.writeLog("执行下一个任务")
         // 先移除所有未执行的 Runnable，避免重复投递
@@ -125,6 +149,7 @@ class TaskScheduler(
                     LogFileManager.writeLog("今日任务已全部执行完毕")
                     mainHandler.removeCallbacks(this)
                     isTaskStarted = false
+                    clearScheduledTask()
 
                     // 通知任务完成
                     listener.onTaskCompleted()
@@ -147,6 +172,8 @@ class TaskScheduler(
 
                 // 计算时间差
                 val (realTime, timeSeconds) = task.diffCurrent()
+                scheduledTaskIndex = index
+                scheduledTaskRealTime = realTime
 
                 // 通知UI更新
                 listener.onTaskExecuting(taskIndex, task, realTime)
@@ -166,13 +193,20 @@ class TaskScheduler(
     private fun failExecution(message: String) {
         LogFileManager.writeLog(message)
         isTaskStarted = false
+        clearScheduledTask()
         mainHandler.removeCallbacks(dailyTaskRunnable)
         countDownTimerService?.cancelCountDown()
         listener.onTaskExecutionError(message)
     }
 
+    private fun clearScheduledTask() {
+        scheduledTaskIndex = -1
+        scheduledTaskRealTime = ""
+    }
+
     fun destroy() {
         mainHandler.removeCallbacks(dailyTaskRunnable)
+        clearScheduledTask()
         countDownTimerService = null
     }
 }

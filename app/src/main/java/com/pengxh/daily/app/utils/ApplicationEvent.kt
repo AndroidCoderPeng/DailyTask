@@ -30,6 +30,13 @@ sealed class ApplicationEvent {
     object DailyTaskStarted : ApplicationEvent()
     object DailyTaskStopped : ApplicationEvent()
     object DailyTaskCompleted : ApplicationEvent()
+    data class DailyTaskSkipped(val message: String) : ApplicationEvent()
+    object HolidayDataStatusChanged : ApplicationEvent()
+    data class KeyguardDismissFinished(
+        val success: Boolean,
+        val message: String
+    ) : ApplicationEvent()
+
     data class DailyTaskExecuting(
         val taskIndex: Int,
         val task: DailyTaskBean,

@@ -198,6 +198,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         if (DailyTaskController.isTaskStarted()) {
             onTaskStarted()
         }
+        applyExpectedMaskState()
     }
 
     @Suppress("unused")
@@ -241,6 +242,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             is ApplicationEvent.DailyTaskStarted -> onTaskStarted()
             is ApplicationEvent.DailyTaskStopped -> onTaskStopped()
             is ApplicationEvent.DailyTaskCompleted -> onTaskCompleted()
+            is ApplicationEvent.DailyTaskSkipped -> onTaskSkipped(event.message)
             is ApplicationEvent.DailyTaskExecuting -> onTaskExecuting(
                 event.taskIndex,
                 event.task,
@@ -273,6 +275,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         // 任务全部完成
         isTaskStarted = false
         binding.tipsView.text = "当天所有任务已执行完毕"
+        binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
+        dailyTaskAdapter.updateCurrentTaskState(-1)
+        resetExecuteButton()
+    }
+
+    private fun onTaskSkipped(message: String) {
+        isTaskStarted = false
+        binding.tipsView.text = message
         binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
         dailyTaskAdapter.updateCurrentTaskState(-1)
         resetExecuteButton()
@@ -478,7 +488,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         LogFileManager.writeLog("onNewIntent: ${packageName}回到前台")
-        if (!maskViewController.isMaskVisible()) {
+        applyExpectedMaskState()
+    }
+
+    private fun applyExpectedMaskState() {
+        if (DailyTaskController.isMaskExpectedVisible() && !maskViewController.isMaskVisible()) {
             maskViewController.showMaskView(mainHandler)
         }
     }

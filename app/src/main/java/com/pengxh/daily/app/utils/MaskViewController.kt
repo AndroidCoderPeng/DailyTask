@@ -12,6 +12,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.kt.lite.extensions.setScreenBrightness
+import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 import java.util.Random
 
@@ -25,8 +26,12 @@ class MaskViewController(
     private var clockAnimationRunnable: Runnable? = null
 
     fun showMaskView(handler: Handler) {
+        SaveKeyValues.putValue(Constant.IN_APP_MASK_VISIBLE_KEY, true)
+
         // 隐藏悬浮窗
         EventBus.getDefault().post(ApplicationEvent.HideFloatingWindow)
+
+        activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         // 隐藏系统栏
         insetsController.apply {
@@ -54,6 +59,8 @@ class MaskViewController(
     }
 
     fun hideMaskView(handler: Handler) {
+        SaveKeyValues.putValue(Constant.IN_APP_MASK_VISIBLE_KEY, false)
+
         // 显示悬浮窗
         EventBus.getDefault().post(ApplicationEvent.ShowFloatingWindow)
 
@@ -76,6 +83,7 @@ class MaskViewController(
 
         // 恢复屏幕亮度
         activity.window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
+        activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
         binding.maskView.visibility = View.GONE
         binding.rootView.visibility = View.VISIBLE
@@ -109,10 +117,19 @@ class MaskViewController(
                         .start()
                 }
 
-                handler.postDelayed(this, 30000)
+                handler.postDelayed(this, getClockAnimationInterval())
             }
         }
-        handler.postDelayed(clockAnimationRunnable!!, 30000)
+        handler.postDelayed(clockAnimationRunnable!!, getClockAnimationInterval())
+    }
+
+    private fun getClockAnimationInterval(): Long {
+        val powerSaveMode = SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+        return if (powerSaveMode) {
+            120_000L
+        } else {
+            30_000L
+        }
     }
 
     private fun stopClockAnimation(handler: Handler) {
@@ -124,6 +141,8 @@ class MaskViewController(
 
     fun destroy(handler: Handler) {
         stopClockAnimation(handler)
+        activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        activity.window.setScreenBrightness(WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE)
         currentAnimation?.cancel()
         currentAnimation = null
     }

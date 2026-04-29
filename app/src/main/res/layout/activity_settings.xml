@@ -376,6 +376,92 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true" />
                 </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1px"
+                    android:layout_marginHorizontal="@dimen/dp_16"
+                    android:background="#CCC" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/itemLayoutHeight"
+                    android:background="@drawable/bg_solid_layout_white_16"
+                    android:paddingHorizontal="@dimen/dp_16">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="@dimen/dp_72"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="省电模式"
+                            android:textColor="@color/text_default_color"
+                            android:textSize="@dimen/sp_16" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/dp_4"
+                            android:singleLine="true"
+                            android:text="降低倒计时通知和息屏蒙层动画刷新频率"
+                            android:textSize="@dimen/sp_10" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/powerSaveSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1px"
+                    android:layout_marginHorizontal="@dimen/dp_16"
+                    android:background="#CCC" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/itemLayoutHeight"
+                    android:background="@drawable/bg_solid_layout_white_16"
+                    android:paddingHorizontal="@dimen/dp_16">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:layout_marginEnd="@dimen/dp_72"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="低电量提醒"
+                            android:textColor="@color/text_default_color"
+                            android:textSize="@dimen/sp_16" />
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/dp_4"
+                            android:singleLine="true"
+                            android:text="电量低于20%时发送远程告警"
+                            android:textSize="@dimen/sp_10" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/lowBatteryReminderSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true" />
+                </RelativeLayout>
             </LinearLayout>
 
             <LinearLayout
