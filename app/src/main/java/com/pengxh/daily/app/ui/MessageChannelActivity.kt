@@ -52,9 +52,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             binding.wxKeyView.setText(key)
         }
 
-        val configs = DatabaseWrapper.loadAll()
-        if (configs.isNotEmpty()) {
-            configs.last().run {
+        val config = DatabaseWrapper.loadLatestEmailConfig()
+        if (config != null) {
+            config.run {
                 val outbox = if (outbox.contains("@qq.com")) {
                     outbox.dropLast(7)
                 } else {
@@ -106,8 +106,8 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         }
 
         binding.qqRadioButton.setOnClickListener {
-            val configs = DatabaseWrapper.loadAll()
-            if (binding.qqRadioButton.isChecked && configs.isNotEmpty()) {
+            val config = DatabaseWrapper.loadLatestEmailConfig()
+            if (binding.qqRadioButton.isChecked && config != null) {
                 SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 1)
                 binding.wxRadioButton.isChecked = false
             } else {

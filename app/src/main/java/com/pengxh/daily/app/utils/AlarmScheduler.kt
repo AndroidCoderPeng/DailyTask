@@ -15,10 +15,11 @@ object AlarmScheduler {
     fun schedule(context: Context, hour: Int) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val pendingIntent = buildPendingIntent(context)
+        val safeHour = hour.coerceIn(0, 23)
 
         // 计算下一次触发时间
         val calendar = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, hour)
+            set(Calendar.HOUR_OF_DAY, safeHour)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
@@ -31,6 +32,13 @@ object AlarmScheduler {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.timeInMillis,
+                    pendingIntent
+                )
+            } else {
+                LogFileManager.writeLog("缺少精确闹钟权限，已降级注册非精确每日重置 Alarm")
+                alarmManager.setAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,
                     pendingIntent

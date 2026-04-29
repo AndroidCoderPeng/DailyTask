@@ -77,6 +77,10 @@ class TimeoutTimerManager(private val mainHandler: Handler) {
         timeoutTimer = null
     }
 
+    fun isRunning(): Boolean {
+        return timeoutTimer != null
+    }
+
     /**
      * 销毁资源
      */

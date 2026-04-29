@@ -3,7 +3,9 @@ package com.pengxh.daily.app.service
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Binder
 import android.os.CountDownTimer
 import android.os.IBinder
@@ -11,14 +13,45 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.extensions.formatTime
-import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.DailyTaskController
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
  * APP倒计时服务，解决手机灭屏后倒计时会出现延迟的问题
  * */
 class CountDownTimerService : Service() {
+
+    companion object {
+        private const val ACTION_START_DAILY_TASK =
+            "com.pengxh.daily.app.action.START_DAILY_TASK"
+        private const val ACTION_STOP_DAILY_TASK =
+            "com.pengxh.daily.app.action.STOP_DAILY_TASK"
+
+        fun startDailyTask(context: Context) {
+            startServiceAction(context, ACTION_START_DAILY_TASK)
+        }
+
+        fun stopDailyTask(context: Context) {
+            startServiceAction(context, ACTION_STOP_DAILY_TASK)
+        }
+
+        fun startService(context: Context) {
+            startServiceAction(context, null)
+        }
+
+        private fun startServiceAction(context: Context, action: String?) {
+            val intent = Intent(context, CountDownTimerService::class.java).apply {
+                this.action = action
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+    }
 
     private val kTag = "CountDownTimerService"
     private val binder by lazy { LocaleBinder() }
@@ -63,9 +96,20 @@ class CountDownTimerService : Service() {
         notificationManager.createNotificationChannel(channel)
         val notification = notificationBuilder.build()
         startForeground(Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification)
+        DailyTaskController.attachCountDownTimerService(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        DailyTaskController.attachCountDownTimerService(this)
+        when (intent?.action) {
+            ACTION_START_DAILY_TASK -> DailyTaskController.startTask(this)
+            ACTION_STOP_DAILY_TASK -> DailyTaskController.stopTask()
+            else -> {
+                if (DailyTaskController.isTaskStarted()) {
+                    DailyTaskController.startTask(this)
+                }
+            }
+        }
         return START_STICKY
     }
 
@@ -87,7 +131,26 @@ class CountDownTimerService : Service() {
 
             currentTaskIndex = taskIndex
             LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务")
-            countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
+            if (seconds <= 0) {
+                isTimerRunning = false
+                currentTaskIndex = -1
+                val notification = notificationBuilder.apply {
+                    setContentText("正在执行第${taskIndex}个任务")
+                }.build()
+                notificationManager.notify(
+                    Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID,
+                    notification
+                )
+                DailyTaskController.openTargetApplication(
+                    this,
+                    trackTaskResult = true,
+                    advanceSchedulerOnResult = true
+                )
+                return@synchronized
+            }
+
+            val tickInterval = getCountDownTickInterval(seconds)
+            countDownTimer = object : CountDownTimer(seconds * 1000L, tickInterval) {
                 override fun onTick(millisUntilFinished: Long) {
                     val seconds = (millisUntilFinished / 1000).toInt()
                     val notification = notificationBuilder.apply {
@@ -104,12 +167,25 @@ class CountDownTimerService : Service() {
                         isTimerRunning = false
                         currentTaskIndex = -1
                     }
-                    openApplication(true)
+                    DailyTaskController.openTargetApplication(
+                        this@CountDownTimerService,
+                        trackTaskResult = true,
+                        advanceSchedulerOnResult = true
+                    )
                 }
             }.apply {
                 start()
             }
             isTimerRunning = true
+        }
+    }
+
+    private fun getCountDownTickInterval(seconds: Int): Long {
+        val powerSaveMode = SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+        return if (powerSaveMode && seconds > 60) {
+            60_000L
+        } else {
+            1_000L
         }
     }
 
@@ -143,6 +219,7 @@ class CountDownTimerService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         cancelCountDown()
+        DailyTaskController.detachCountDownTimerService(this)
         stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d(kTag, "onDestroy: CountDownTimerService")
     }

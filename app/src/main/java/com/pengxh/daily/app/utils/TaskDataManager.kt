@@ -11,6 +11,9 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 class TaskDataManager() {
 
     private val gson by lazy { Gson() }
+    private val taskTimePattern by lazy {
+        Regex("""^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$""")
+    }
 
     fun importTasks(json: String): ImportResult {
         return try {
@@ -18,9 +21,13 @@ class TaskDataManager() {
             val config = gson.fromJson<ExportDataModel>(json, type)
 
             val importedTasks = mutableListOf<DailyTaskBean>()
-            for (task in config.tasks) {
+            for (task in config.tasks.orEmpty()) {
+                val taskTime = task.time
+                if (!isValidTaskTime(taskTime)) continue
+
                 // 跳过已存在的任务时间点
-                if (!DatabaseWrapper.isTaskTimeExist(task.time)) {
+                if (!DatabaseWrapper.isTaskTimeExist(taskTime)) {
+                    task.id = 0
                     DatabaseWrapper.insert(task)
                     importedTasks.add(task)
                 }
@@ -40,24 +47,53 @@ class TaskDataManager() {
     }
 
     private fun saveConfiguration(config: ExportDataModel) {
-        SaveKeyValues.putValue(Constant.MESSAGE_TITLE_KEY, config.messageTitle)
+        SaveKeyValues.putValue(
+            Constant.MESSAGE_TITLE_KEY,
+            config.messageTitle?.takeIf { it.isNotBlank() } ?: "打卡结果通知"
+        )
 
         // 保存企业微信 Key
-        SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, config.wxKey)
+        SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, config.wxKey ?: "")
 
         val email = config.emailConfig
-        if (email != null) {
-            DatabaseWrapper.insertConfig(email.outbox, email.authCode, email.inbox)
+        val outbox = email?.outbox
+        val authCode = email?.authCode
+        val inbox = email?.inbox
+        if (email != null &&
+            !outbox.isNullOrBlank() &&
+            !authCode.isNullOrBlank() &&
+            !inbox.isNullOrBlank()
+        ) {
+            DatabaseWrapper.insertConfig(outbox, authCode, inbox)
         }
 
         SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
         SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
-        SaveKeyValues.putValue(Constant.RESET_TIME_KEY, config.resetTime)
-        SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, config.overTime)
-        SaveKeyValues.putValue(Constant.TASK_COMMAND_KEY, config.command)
+        SaveKeyValues.putValue(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
+        SaveKeyValues.putValue(
+            Constant.STAY_DD_TIMEOUT_KEY,
+            config.overTime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
+        )
+        SaveKeyValues.putValue(
+            Constant.TASK_COMMAND_KEY,
+            config.command?.takeIf { it.isNotBlank() } ?: "打卡"
+        )
         SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, config.isAutoStart)
         SaveKeyValues.putValue(Constant.RANDOM_TIME_KEY, config.isRandomTime)
-        SaveKeyValues.putValue(Constant.RANDOM_MINUTE_RANGE_KEY, config.timeRange)
+        SaveKeyValues.putValue(Constant.SKIP_CHINA_HOLIDAY_KEY, config.isSkipChinaHoliday)
+        SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, config.isPowerSaveMode)
+        SaveKeyValues.putValue(
+            Constant.LOW_BATTERY_REMINDER_KEY,
+            config.lowBatteryReminder ?: true
+        )
+        SaveKeyValues.putValue(
+            Constant.RANDOM_MINUTE_RANGE_KEY,
+            config.timeRange.coerceAtLeast(0)
+        )
+    }
+
+    private fun isValidTaskTime(time: String?): Boolean {
+        return !time.isNullOrBlank() && taskTimePattern.matches(time)
     }
 
     sealed class ImportResult {

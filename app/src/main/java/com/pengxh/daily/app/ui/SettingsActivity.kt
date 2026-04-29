@@ -21,6 +21,7 @@ import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
+import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
@@ -70,6 +71,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val emailManager by lazy { EmailManager(this) }
+    private var syncingSwitchState = false
 
     override fun initViewBinding(): ActivitySettingsBinding {
         return ActivitySettingsBinding.inflate(layoutInflater)
@@ -87,7 +89,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     override fun initOnCreate(savedInstanceState: Bundle?) {
         EventBus.getDefault().register(this)
 
-        val index = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
+        val index = (SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int)
+            .coerceIn(0, icons.lastIndex)
         binding.iconView.setBackgroundResource(icons[index])
 
         binding.appVersion.text = BuildConfig.VERSION_NAME
@@ -306,6 +309,21 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, isChecked)
         }
 
+        binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
+            SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
+        }
+
+        binding.lowBatteryReminderSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            SaveKeyValues.putValue(Constant.LOW_BATTERY_REMINDER_KEY, isChecked)
+            SaveKeyValues.putValue(Constant.LOW_BATTERY_ALERT_ACTIVE_KEY, false)
+            Intent(this, ForegroundRunningService::class.java).apply {
+                startForegroundService(this)
+            }
+        }
+
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }
@@ -383,10 +401,19 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
         }
 
-        binding.gestureDetectSwitch.isChecked =
-            SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
-        binding.backToHomeSwitch.isChecked =
-            SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
+        syncingSwitchState = true
+        try {
+            binding.gestureDetectSwitch.isChecked =
+                SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
+            binding.backToHomeSwitch.isChecked =
+                SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
+            binding.powerSaveSwitch.isChecked =
+                SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+            binding.lowBatteryReminderSwitch.isChecked =
+                SaveKeyValues.getValue(Constant.LOW_BATTERY_REMINDER_KEY, true) as Boolean
+        } finally {
+            syncingSwitchState = false
+        }
 
         if (notificationEnable()) {
             binding.noticeTipsView.text = "服务状态查询中，请稍后..."

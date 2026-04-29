@@ -7,13 +7,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ApplicationEvent
+import com.pengxh.daily.app.utils.ChinaHolidayRemoteUpdater
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.HttpRequestManager
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -25,6 +30,10 @@ import java.util.Locale
  * APP前台服务，降低APP被系统杀死的可能性
  * */
 class ForegroundRunningService : Service() {
+
+    private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
+    private val httpRequestManager by lazy { HttpRequestManager(this) }
+    private val emailManager by lazy { EmailManager(this) }
 
     override fun onCreate() {
         super.onCreate()
@@ -59,6 +68,13 @@ class ForegroundRunningService : Service() {
             registerReceiver(timeTickReceiver, filter)
         }
 
+        val batteryFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(lowBatteryReceiver, batteryFilter, RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(lowBatteryReceiver, batteryFilter)
+        }
+
         EventBus.getDefault().register(this)
 
         // 立即更新一次倒计时显示
@@ -69,9 +85,12 @@ class ForegroundRunningService : Service() {
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         ) as Int
         AlarmScheduler.schedule(this, resetHour)
+        ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(this)
+        checkLowBattery(getBatteryIntent())
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        checkLowBattery(getBatteryIntent())
         return START_STICKY
     }
 
@@ -83,6 +102,12 @@ class ForegroundRunningService : Service() {
                     updateResetTimeView()
                 }
             }
+        }
+    }
+
+    private val lowBatteryReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            checkLowBattery(intent)
         }
     }
 
@@ -138,6 +163,81 @@ class ForegroundRunningService : Service() {
         return delta.toInt()
     }
 
+    private fun checkLowBattery(intent: Intent?) {
+        val enabled = SaveKeyValues.getValue(
+            Constant.LOW_BATTERY_REMINDER_KEY, true
+        ) as Boolean
+        if (!enabled) {
+            return
+        }
+
+        val batteryIntent = intent ?: getBatteryIntent()
+        val batteryPercent = getBatteryPercent(batteryIntent) ?: return
+        if (isCharging(batteryIntent) || batteryPercent > Constant.DEFAULT_LOW_BATTERY_THRESHOLD) {
+            resetLowBatteryAlertState()
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val alertActive = SaveKeyValues.getValue(
+            Constant.LOW_BATTERY_ALERT_ACTIVE_KEY, false
+        ) as Boolean
+        val lastAlertAt = SaveKeyValues.getValue(
+            Constant.LOW_BATTERY_LAST_ALERT_AT_KEY, 0L
+        ) as Long
+        val inCooldown = lastAlertAt > 0 &&
+            now >= lastAlertAt &&
+            now - lastAlertAt < LOW_BATTERY_ALERT_INTERVAL_MS
+        if (alertActive && inCooldown) {
+            return
+        }
+
+        sendLowBatteryAlert(batteryPercent)
+        SaveKeyValues.putValue(Constant.LOW_BATTERY_ALERT_ACTIVE_KEY, true)
+        SaveKeyValues.putValue(Constant.LOW_BATTERY_LAST_ALERT_AT_KEY, now)
+    }
+
+    private fun getBatteryIntent(): Intent? {
+        return registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+    }
+
+    private fun getBatteryPercent(intent: Intent?): Int? {
+        val level = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+        val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
+        if (level >= 0 && scale > 0) {
+            return (level * 100 / scale).coerceIn(0, 100)
+        }
+        val capacity = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        return capacity.takeIf { it >= 0 }?.coerceIn(0, 100)
+    }
+
+    private fun isCharging(intent: Intent?): Boolean {
+        val status = intent?.getIntExtra(BatteryManager.EXTRA_STATUS, -1) ?: -1
+        val plugged = intent?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
+        return status == BatteryManager.BATTERY_STATUS_CHARGING ||
+            status == BatteryManager.BATTERY_STATUS_FULL ||
+            plugged != 0
+    }
+
+    private fun resetLowBatteryAlertState() {
+        SaveKeyValues.putValue(Constant.LOW_BATTERY_ALERT_ACTIVE_KEY, false)
+    }
+
+    private fun sendLowBatteryAlert(batteryPercent: Int) {
+        val content = buildString {
+            append("当前电量仅剩 ")
+            append(batteryPercent)
+            append("%，已低于 ")
+            append(Constant.DEFAULT_LOW_BATTERY_THRESHOLD)
+            append("%。请及时充电，避免无人值守任务中断。")
+        }
+        when (SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int) {
+            0 -> httpRequestManager.sendMessage("低电量提醒", content)
+            1 -> emailManager.sendEmail("低电量提醒", content, false)
+            else -> LogFileManager.writeLog("低电量提醒未发送，消息渠道未配置，当前电量：$batteryPercent%")
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         EventBus.getDefault().unregister(this)
@@ -148,8 +248,18 @@ class ForegroundRunningService : Service() {
             e.printStackTrace()
         }
 
+        try {
+            unregisterReceiver(lowBatteryReceiver)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    companion object {
+        private const val LOW_BATTERY_ALERT_INTERVAL_MS = 6 * 60 * 60 * 1000L
+    }
 }
