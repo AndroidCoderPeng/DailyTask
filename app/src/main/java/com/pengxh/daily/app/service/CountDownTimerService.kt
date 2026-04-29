@@ -16,6 +16,7 @@ import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTaskController
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
  * APP倒计时服务，解决手机灭屏后倒计时会出现延迟的问题
@@ -140,11 +141,16 @@ class CountDownTimerService : Service() {
                     Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID,
                     notification
                 )
-                DailyTaskController.openTargetApplication(this, trackTaskResult = true)
+                DailyTaskController.openTargetApplication(
+                    this,
+                    trackTaskResult = true,
+                    advanceSchedulerOnResult = true
+                )
                 return@synchronized
             }
 
-            countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
+            val tickInterval = getCountDownTickInterval(seconds)
+            countDownTimer = object : CountDownTimer(seconds * 1000L, tickInterval) {
                 override fun onTick(millisUntilFinished: Long) {
                     val seconds = (millisUntilFinished / 1000).toInt()
                     val notification = notificationBuilder.apply {
@@ -163,13 +169,23 @@ class CountDownTimerService : Service() {
                     }
                     DailyTaskController.openTargetApplication(
                         this@CountDownTimerService,
-                        trackTaskResult = true
+                        trackTaskResult = true,
+                        advanceSchedulerOnResult = true
                     )
                 }
             }.apply {
                 start()
             }
             isTimerRunning = true
+        }
+    }
+
+    private fun getCountDownTickInterval(seconds: Int): Long {
+        val powerSaveMode = SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+        return if (powerSaveMode && seconds > 60) {
+            60_000L
+        } else {
+            1_000L
         }
     }
 

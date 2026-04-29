@@ -6,19 +6,21 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 /**
- * 找出任务中，第一个时间晚于当前时间的任务Index
+ * 找出任务中，实际执行时间最早且晚于当前时间的任务Index
  * */
 fun List<DailyTaskBean>.getTaskIndex(): Int {
     val timeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
     val currentMillis = System.currentTimeMillis()
+    var nextIndex = -1
+    var nextMillis = Long.MAX_VALUE
     for ((index, task) in this.withIndex()) {
         //获取当前日期，拼给任务时间，不然不好计算时间差
-        val taskTime = "${TimeKit.getTodayDate()} ${task.time}"
+        val taskTime = "${TimeKit.getTodayDate()} ${task.resolveExecutionTime()}"
         val taskDate = timeFormat.parse(taskTime) ?: continue
-        // 如果任务时间晚于当前时间，则返回该任务的索引
-        if (taskDate.time > currentMillis) {
-            return index
+        if (taskDate.time > currentMillis && taskDate.time < nextMillis) {
+            nextIndex = index
+            nextMillis = taskDate.time
         }
     }
-    return -1
+    return nextIndex
 }

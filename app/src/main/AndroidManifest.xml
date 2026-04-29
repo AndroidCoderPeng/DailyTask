@@ -50,6 +50,11 @@
         <activity android:name=".ui.MessageChannelActivity" />
         <activity android:name=".ui.TaskConfigActivity" />
         <activity android:name=".ui.QuestionAndAnswerActivity" />
+        <activity
+            android:name=".ui.KeyguardDismissActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:noHistory="true" />
 
         <service android:name=".service.FloatingWindowService" />
         <service

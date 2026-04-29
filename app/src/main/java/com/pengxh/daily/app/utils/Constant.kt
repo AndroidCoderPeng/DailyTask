@@ -25,6 +25,13 @@ object Constant {
     const val CHANNEL_TYPE_KEY = "CHANNEL_TYPE_KEY"
     const val RESULT_SOURCE_KEY = "RESULT_SOURCE_KEY"
     const val TASK_RUNNING_STATE_KEY = "TASK_RUNNING_STATE_KEY"
+    const val SKIP_CHINA_HOLIDAY_KEY = "SKIP_CHINA_HOLIDAY_KEY"
+    const val CHINA_HOLIDAY_CACHE_UPDATE_AT_KEY = "CHINA_HOLIDAY_CACHE_UPDATE_AT_KEY"
+    const val IN_APP_MASK_VISIBLE_KEY = "IN_APP_MASK_VISIBLE_KEY"
+    const val POWER_SAVE_MODE_KEY = "POWER_SAVE_MODE_KEY"
+    const val LOW_BATTERY_REMINDER_KEY = "LOW_BATTERY_REMINDER_KEY"
+    const val LOW_BATTERY_ALERT_ACTIVE_KEY = "LOW_BATTERY_ALERT_ACTIVE_KEY"
+    const val LOW_BATTERY_LAST_ALERT_AT_KEY = "LOW_BATTERY_LAST_ALERT_AT_KEY"
 
     // ============================================================
     // 目标应用
@@ -52,6 +59,7 @@ object Constant {
     // ============================================================
     const val DEFAULT_RESET_HOUR = 0
     const val DEFAULT_OVER_TIME = 30
+    const val DEFAULT_LOW_BATTERY_THRESHOLD = 20
     const val CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID = 1001
     const val COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID = 1002
     const val FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID = 1003

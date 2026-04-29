@@ -80,6 +80,12 @@ class TaskDataManager() {
         )
         SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, config.isAutoStart)
         SaveKeyValues.putValue(Constant.RANDOM_TIME_KEY, config.isRandomTime)
+        SaveKeyValues.putValue(Constant.SKIP_CHINA_HOLIDAY_KEY, config.isSkipChinaHoliday)
+        SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, config.isPowerSaveMode)
+        SaveKeyValues.putValue(
+            Constant.LOW_BATTERY_REMINDER_KEY,
+            config.lowBatteryReminder ?: true
+        )
         SaveKeyValues.putValue(
             Constant.RANDOM_MINUTE_RANGE_KEY,
             config.timeRange.coerceAtLeast(0)
