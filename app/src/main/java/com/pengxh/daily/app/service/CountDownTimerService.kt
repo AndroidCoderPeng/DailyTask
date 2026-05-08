@@ -5,8 +5,6 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.os.Binder
 import android.os.CountDownTimer
 import android.os.IBinder
 import android.util.Log
@@ -45,16 +43,11 @@ class CountDownTimerService : Service() {
             val intent = Intent(context, CountDownTimerService::class.java).apply {
                 this.action = action
             }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(intent)
-            } else {
-                context.startService(intent)
-            }
+            context.startForegroundService(intent)
         }
     }
 
     private val kTag = "CountDownTimerService"
-    private val binder by lazy { LocaleBinder() }
     private val notificationManager by lazy { getSystemService(NOTIFICATION_SERVICE) as NotificationManager }
     private val notificationBuilder by lazy {
         NotificationCompat.Builder(this, "countdown_timer_service_channel").apply {
@@ -77,12 +70,8 @@ class CountDownTimerService : Service() {
     private var isTimerRunning = false
     private var currentTaskIndex: Int = -1
 
-    inner class LocaleBinder : Binder() {
-        fun getService(): CountDownTimerService = this@CountDownTimerService
-    }
-
-    override fun onBind(intent: Intent?): IBinder {
-        return binder
+    override fun onBind(intent: Intent?): IBinder? {
+        return null
     }
 
     override fun onCreate() {
