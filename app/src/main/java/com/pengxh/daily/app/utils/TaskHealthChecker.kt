@@ -2,13 +2,13 @@ package com.pengxh.daily.app.utils
 
 import android.app.AlarmManager
 import android.app.KeyguardManager
+import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import androidx.core.app.NotificationManagerCompat
-import android.content.ComponentName
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.kt.lite.utils.SaveKeyValues
 
@@ -47,7 +47,7 @@ object TaskHealthChecker {
         }
 
         val needsScreenshotResult = remoteScreenshot || (trackTaskResult && resultSource == 1)
-        if (needsScreenshotResult && ProjectionSession.state != ProjectionSession.State.ACTIVE) {
+        if (needsScreenshotResult && !ProjectionSession.isStateActive()) {
             blockers += "截图服务未授权或已断开，无法获取执行结果截图"
         }
 

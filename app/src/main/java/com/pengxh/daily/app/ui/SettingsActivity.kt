@@ -273,7 +273,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.captureSwitch.setOnClickListener {
-            if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+            if (ProjectionSession.isStateActive()) {
                 "核心服务，无法关闭".show(this)
                 binding.captureSwitch.isChecked = true
                 return@setOnClickListener
@@ -293,7 +293,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
 
             // 再次确认 session 实际状态
-            if (ProjectionSession.state != ProjectionSession.State.ACTIVE) {
+            if (!ProjectionSession.isStateActive()) {
                 binding.captureSwitch.isChecked = false
                 "截屏授权已失效，请重新授权".show(this)
                 return@setOnClickListener
@@ -354,7 +354,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             return@registerForActivityResult
         }
 
-        if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+        if (ProjectionSession.isStateActive()) {
             Log.d(kTag, "MediaProjection already active, skipping creation")
             return@registerForActivityResult
         }
@@ -392,7 +392,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.noticeRadioButton.isChecked = true
             binding.captureRadioButton.isChecked = false
         } else {
-            if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+            if (ProjectionSession.isStateActive()) {
                 binding.captureRadioButton.isChecked = true
                 binding.noticeRadioButton.isChecked = false
             } else {
@@ -432,7 +432,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.noticeTipsView.visibility = View.VISIBLE
         }
 
-        if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+        if (ProjectionSession.isStateActive()) {
             binding.captureSwitch.isChecked = true
             binding.captureTipsView.visibility = View.GONE
         } else {

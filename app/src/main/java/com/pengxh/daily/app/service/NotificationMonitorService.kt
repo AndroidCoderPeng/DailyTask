@@ -189,7 +189,7 @@ class NotificationMonitorService : NotificationListenerService() {
                         )
                         appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
                         appendLine("通知监听：${if (TaskHealthChecker.isNotificationListenerReady(this@NotificationMonitorService)) "正常" else "断开"}")
-                        appendLine("截图服务：${if (ProjectionSession.state == ProjectionSession.State.ACTIVE) "正常" else "断开"}")
+                        appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
                         appendLine("无人值守自检：${if (healthItems.isEmpty()) "正常" else healthItems.joinToString("；")}")
                         append("消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}")
                     }
@@ -197,7 +197,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("截屏") -> {
-                    if (ProjectionSession.state == ProjectionSession.State.ACTIVE) {
+                    if (ProjectionSession.isStateActive()) {
                         DailyTaskController.openTargetApplication(
                             this,
                             trackTaskResult = false,

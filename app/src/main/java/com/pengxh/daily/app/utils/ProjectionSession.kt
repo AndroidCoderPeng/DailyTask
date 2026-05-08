@@ -16,9 +16,19 @@ object ProjectionSession {
 
     private val projectionRef = AtomicReference<MediaProjection?>(null)
 
-    @Volatile
-    var state: State = State.IDLE
-        private set
+    private var state = State.IDLE
+
+    fun isStateActive(): Boolean {
+        return synchronized(this) {
+            state == State.ACTIVE
+        }
+    }
+
+    fun getState(): State {
+        return synchronized(this) {
+            state
+        }
+    }
 
     fun setProjection(projection: MediaProjection) {
         projectionRef.getAndSet(projection)?.let {

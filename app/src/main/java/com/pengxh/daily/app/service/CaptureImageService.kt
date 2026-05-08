@@ -70,6 +70,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     override fun onCreate() {
         super.onCreate()
+        EventBus.getDefault().register(this)
         val name = "${resources.getString(R.string.app_name)}截屏服务"
         val channel = NotificationChannel(
             "capture_image_service_channel", name, NotificationManager.IMPORTANCE_LOW
@@ -91,8 +92,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         } else {
             startForeground(Constant.CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID, notification)
         }
-
-        EventBus.getDefault().register(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -150,8 +149,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     }
 
     private fun captureScreen() {
-        if (ProjectionSession.state != ProjectionSession.State.ACTIVE) {
-            sendChannelMessage("MediaProjection not active. state=${ProjectionSession.state}")
+        if (!ProjectionSession.isStateActive()) {
+            sendChannelMessage("MediaProjection not active. state=${ProjectionSession.getState()}")
             return
         }
 
@@ -211,7 +210,17 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 // 只取中间那部分截图
                 val y = (cropped.height * 0.2f).toInt()
                 val halfHeight = y + cropped.height / 2
-                val topHalf = Bitmap.createBitmap(cropped, 0, y, cropped.width, halfHeight)
+
+                // 边界检查
+                val validY = y.coerceAtLeast(0).coerceAtMost(cropped.height - 1)
+                val validHeight = halfHeight.coerceAtLeast(1).coerceAtMost(cropped.height - validY)
+                val topHalf = if (validY >= 0 && validHeight > 0
+                    && validY + validHeight <= cropped.height
+                ) {
+                    Bitmap.createBitmap(cropped, 0, validY, cropped.width, validHeight)
+                } else {
+                    cropped
+                }
 
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
                 topHalf.saveImage(imagePath)
@@ -263,11 +272,11 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     override fun onDestroy() {
         super.onDestroy()
-        EventBus.getDefault().unregister(this)
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()
         stopForeground(STOP_FOREGROUND_REMOVE)
+        EventBus.getDefault().unregister(this)
     }
 
     private fun releaseCaptureResources() {
