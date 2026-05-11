@@ -52,18 +52,15 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             binding.wxKeyView.setText(key)
         }
 
-        val config = DatabaseWrapper.loadLatestEmailConfig()
-        if (config != null) {
-            config.run {
-                val outbox = if (outbox.contains("@qq.com")) {
-                    outbox.dropLast(7)
-                } else {
-                    outbox
-                }
-                binding.emailSendAddressView.setText(outbox)
-                binding.emailSendCodeView.setText(authCode)
-                binding.emailInboxView.setText(inbox)
+        DatabaseWrapper.loadLatestEmailConfig()?.let {
+            val outbox = if (it.outbox.contains("@qq.com")) {
+                it.outbox.dropLast(7)
+            } else {
+                it.outbox
             }
+            binding.emailSendAddressView.setText(outbox)
+            binding.emailSendCodeView.setText(it.authCode)
+            binding.emailInboxView.setText(it.inbox)
         }
     }
 
@@ -78,7 +75,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 0)
                 binding.qqRadioButton.isChecked = false
             } else {
-                "请先配置企业微信消息 Webhook key".show(context)
+                "请先配置企业微信消息 Webhook key".show(this)
                 binding.wxRadioButton.isChecked = false
             }
         }
@@ -86,7 +83,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         binding.sendWxButton.setOnClickListener {
             val key = binding.wxKeyView.text.toString()
             if (key.isBlank()) {
-                "企业微信消息 Webhook key 为空".show(context)
+                "企业微信消息 Webhook key 为空".show(this)
                 return@setOnClickListener
             }
 
@@ -149,8 +146,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             }
 
             SaveKeyValues.putValue(
-                Constant.MESSAGE_TITLE_KEY,
-                binding.messageTitleView.text.toString().trim()
+                Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
             )
             DatabaseWrapper.insertConfig(outbox, authCode, inbox)
 

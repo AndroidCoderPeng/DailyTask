@@ -46,20 +46,19 @@ private fun DailyTaskBean.resolveExecutionSeconds(): Int {
     // 随机时间
     if (needRandom) {
         val minuteRange = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
-        val random = Random(buildDailyExecutionSeed(minuteRange))
+
+        // 生成随机种子, 保证每天的随机时间是一致的
+        val key = "${TimeKit.getTodayDate()}|$id|$time|$minuteRange"
+        val seed = key.hashCode().toLong()
+        val random = Random(seed)
 
         val seedMinute = if (minuteRange > 0) random.nextInt(minuteRange) else 0
         val seedSeconds = random.nextInt(60)
         totalSeconds += seedMinute * 60 + seedSeconds
 
         // 确保不超过当天23:59:59（86399秒）
-        totalSeconds = minOf(totalSeconds, 86399)
+        totalSeconds = minOf(totalSeconds, 86399) // 第一次边界检查
     }
 
-    return totalSeconds.coerceIn(0, 86399)
-}
-
-private fun DailyTaskBean.buildDailyExecutionSeed(minuteRange: Int): Long {
-    val key = "${TimeKit.getTodayDate()}|$id|$time|$minuteRange"
-    return key.hashCode().toLong()
+    return totalSeconds.coerceIn(0, 86399) // 第二次边界检查
 }

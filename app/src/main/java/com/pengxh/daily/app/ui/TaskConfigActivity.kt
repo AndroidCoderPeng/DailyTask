@@ -3,9 +3,11 @@ package com.pengxh.daily.app.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import androidx.core.graphics.toColorInt
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.pengxh.daily.app.R
@@ -151,18 +153,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         binding.skipHolidaySwitch.setOnCheckedChangeListener { _, isChecked ->
             SaveKeyValues.putValue(Constant.SKIP_CHINA_HOLIDAY_KEY, isChecked)
             updateHolidayDataStatus()
-            if (isChecked) {
-                ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(this, force = true)
-            }
-        }
-
-        binding.holidayDataStatusLayout.setOnClickListener {
-            if (binding.skipHolidaySwitch.isChecked) {
-                ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(this, force = true)
-                "正在刷新节假日数据".show(context)
-            } else {
-                "开启跳过休息日后会自动刷新节假日数据".show(context)
-            }
         }
 
         binding.minuteRangeLayout.setOnClickListener {
@@ -284,6 +274,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun updateHolidayDataStatus() {
         val enabled = binding.skipHolidaySwitch.isChecked
+        if (enabled) {
+            ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(this)
+        }
+
         val status = ChinaHolidayCalendar.getDataStatus()
         val todayAction = when {
             !enabled -> "未开启，不影响任务"
@@ -302,6 +296,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             append(" · 来源：")
             append(status.source)
         }
+        binding.holidayDataSourceView.setTextColor(if (enabled) "#4DDC64".toColorInt() else Color.RED)
+
         binding.holidayDataCoverageView.text = if (status.hasOfficialAdjustment) {
             "覆盖：${status.year}年 · 节假日${status.holidayCount}天 · 补班${status.workdayCount}天"
         } else {

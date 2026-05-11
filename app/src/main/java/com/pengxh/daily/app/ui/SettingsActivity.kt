@@ -21,7 +21,6 @@ import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
-import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
@@ -302,14 +301,23 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.gestureDetectSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
             SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, isChecked)
         }
 
         binding.backToHomeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
             SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, isChecked)
         }
 
         binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
             SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
         }
 
@@ -319,9 +327,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
             SaveKeyValues.putValue(Constant.LOW_BATTERY_REMINDER_KEY, isChecked)
             SaveKeyValues.putValue(Constant.LOW_BATTERY_ALERT_ACTIVE_KEY, false)
-            Intent(this, ForegroundRunningService::class.java).apply {
-                startForegroundService(this)
-            }
+
+            // 没必要在开关状态改变时候启动服务，因为服务已经存在
+//            Intent(this, ForegroundRunningService::class.java).apply {
+//                startForegroundService(this)
+//            }
         }
 
         binding.introduceLayout.setOnClickListener {
