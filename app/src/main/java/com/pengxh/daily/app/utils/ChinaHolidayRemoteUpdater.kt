@@ -1,8 +1,7 @@
 package com.pengxh.daily.app.utils
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
+import com.pengxh.kt.lite.extensions.isNetworkConnected
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +24,6 @@ object ChinaHolidayRemoteUpdater {
         "https://unpkg.com/chinese-days/dist/years/%d.json"
     )
 
-    private val chinaZone = ZoneId.of("Asia/Shanghai")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val refreshingYears = mutableSetOf<Int>()
     private val okHttpClient by lazy {
@@ -35,48 +33,52 @@ object ChinaHolidayRemoteUpdater {
             .build()
     }
 
-    fun refreshCurrentAndNextYearIfNeeded(context: Context, force: Boolean = false) {
-        val enabled = SaveKeyValues.getValue(
-            Constant.SKIP_CHINA_HOLIDAY_KEY, false
-        ) as Boolean
-        if (!enabled && !force) {
-            return
-        }
-        if (!isNetworkAvailable(context.applicationContext)) {
+    fun refreshIfNeeded(context: Context) {
+        if (!context.isNetworkConnected()) {
             LogFileManager.writeLog("当前网络不可用，跳过节假日远程更新")
             return
         }
 
-        val today = LocalDate.now(chinaZone)
-        val years = if (today.monthValue >= 10) {
-            listOf(today.year, today.year + 1)
-        } else {
-            listOf(today.year)
+        val enabled = SaveKeyValues.getValue(Constant.SKIP_CHINA_HOLIDAY_KEY, false) as Boolean
+        if (!enabled) {
+            return
         }
-        years.forEach { refreshYearIfNeeded(it, force) }
-    }
 
-    private fun refreshYearIfNeeded(year: Int, force: Boolean) {
-        if (!force && ChinaHolidayCacheStore.isFresh(year, UPDATE_INTERVAL_MS)) {
-            return
+        // 10月及以后，额外预取次年的数据；其余时间只取当年，并且指定时区，避免时区变化导致的数据不准确
+        val now = LocalDate.now(ZoneId.of("Asia/Shanghai"))
+        val years = if (now.monthValue >= 10) {
+            listOf(now.year, now.year + 1)
+        } else {
+            listOf(now.year)
         }
-        if (!markRefreshing(year)) {
-            return
-        }
-        scope.launch {
-            try {
-                refreshYear(year)
-            } finally {
-                clearRefreshing(year)
-                EventBus.getDefault().post(ApplicationEvent.HolidayDataStatusChanged)
+
+        for (year in years) {
+            if (ChinaHolidayCacheStore.isYearHolidayCached(year, UPDATE_INTERVAL_MS)) {
+                LogFileManager.writeLog("节假日缓存已存在，跳过远程更新：year=$year")
+                return
+            }
+
+            // 同步锁，避免重复刷新
+            if (!markRefreshing(year)) {
+                return
+            }
+
+            LogFileManager.writeLog("开始进行节假日远程更新：year=$year")
+            scope.launch {
+                try {
+                    refreshYearHoliday(year)
+                } finally {
+                    clearRefreshing(year)
+                    EventBus.getDefault().post(ApplicationEvent.HolidayDataStatusChanged)
+                }
             }
         }
     }
 
-    private fun refreshYear(year: Int) {
+    private fun refreshYearHoliday(year: Int) {
         var lastError = ""
         for (template in urlTemplates) {
-            val url = template.format(year)
+            val url = template.format(year) // 去掉占位符，生成完整的URL
             val request = Request.Builder().url(url).get().build()
             try {
                 okHttpClient.newCall(request).execute().use { response ->
@@ -113,12 +115,5 @@ object ChinaHolidayRemoteUpdater {
         synchronized(refreshingYears) {
             refreshingYears.remove(year)
         }
-    }
-
-    private fun isNetworkAvailable(context: Context): Boolean {
-        val manager = context.getSystemService(ConnectivityManager::class.java) ?: return false
-        val network = manager.activeNetwork ?: return false
-        val capabilities = manager.getNetworkCapabilities(network) ?: return false
-        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
     }
 }

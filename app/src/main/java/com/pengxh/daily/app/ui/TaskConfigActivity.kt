@@ -275,7 +275,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private fun updateHolidayDataStatus() {
         val enabled = binding.skipHolidaySwitch.isChecked
         if (enabled) {
-            ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(this)
+            ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
         }
 
         val status = ChinaHolidayCalendar.getDataStatus()

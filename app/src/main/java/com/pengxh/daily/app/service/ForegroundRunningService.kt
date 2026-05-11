@@ -85,7 +85,7 @@ class ForegroundRunningService : Service() {
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         ) as Int
         AlarmScheduler.schedule(this, resetHour)
-        ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(this)
+        ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
         checkLowBattery(getBatteryIntent())
     }
 

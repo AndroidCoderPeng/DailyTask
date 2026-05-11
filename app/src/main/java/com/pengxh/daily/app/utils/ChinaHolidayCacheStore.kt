@@ -50,7 +50,7 @@ object ChinaHolidayCacheStore {
         }
     }
 
-    fun isFresh(year: Int, maxAgeMillis: Long): Boolean {
+    fun isYearHolidayCached(year: Int, maxAgeMillis: Long): Boolean {
         val cached = loadYear(year) ?: return false
         val now = System.currentTimeMillis()
         return cached.updatedAt > 0 && now - cached.updatedAt in 0..maxAgeMillis

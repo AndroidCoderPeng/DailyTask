@@ -40,6 +40,6 @@ class DailyTaskApplication : Application() {
             .allowMainThreadQueries()
             .build()
 
-        ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(this)
+        ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
     }
 }

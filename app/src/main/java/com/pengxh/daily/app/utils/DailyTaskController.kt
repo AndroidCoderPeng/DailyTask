@@ -9,10 +9,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import com.pengxh.daily.app.BuildConfig
-import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.extensions.getTaskIndex
-import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.ui.KeyguardDismissActivity
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.kt.lite.extensions.timestampToDate
@@ -583,7 +583,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
         }
 
         appContext?.let {
-            ChinaHolidayRemoteUpdater.refreshCurrentAndNextYearIfNeeded(it)
+            ChinaHolidayRemoteUpdater.refreshIfNeeded(it)
         }
         val dayInfo = ChinaHolidayCalendar.evaluateToday()
         if (!dayInfo.shouldSkip) {
