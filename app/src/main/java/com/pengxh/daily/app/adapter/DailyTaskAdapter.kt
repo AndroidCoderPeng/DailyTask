@@ -1,7 +1,6 @@
 package com.pengxh.daily.app.adapter
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -17,13 +16,10 @@ import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.extensions.convertColor
 
 @SuppressLint("NotifyDataSetChanged")
-class DailyTaskAdapter(
-    private val context: Context,
-    private val dataBeans: MutableList<DailyTaskBean>
-) : RecyclerView.Adapter<ViewHolder>() {
+class DailyTaskAdapter(private val dataBeans: MutableList<DailyTaskBean>) :
+    RecyclerView.Adapter<ViewHolder>() {
 
-    private var layoutInflater = LayoutInflater.from(context)
-    private var mPosition = -1
+    var mPosition = -1
     private var actualTime = "--:--:--"
     private var onItemClickListener: OnItemClickListener? = null
 
@@ -46,9 +42,10 @@ class DailyTaskAdapter(
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        return ViewHolder(
-            layoutInflater.inflate(R.layout.item_daily_task_rv_l, parent, false)
+        val itemView = LayoutInflater.from(parent.context).inflate(
+            R.layout.item_daily_task_rv_l, parent, false
         )
+        return ViewHolder(itemView)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -58,6 +55,7 @@ class DailyTaskAdapter(
         val actualTimeCardView = holder.getView<LinearLayout>(R.id.actualTimeCardView)
         if (position == mPosition) {
             holder.itemView.isSelected = true
+            val context = holder.itemView.context
             holder.setText(R.id.actualTimeView, actualTime)
                 .setTextColor(R.id.actualTimeView, R.color.theme_color.convertColor(context))
                 .setTextColor(R.id.taskTimeView, R.color.text_hint_color.convertColor(context))

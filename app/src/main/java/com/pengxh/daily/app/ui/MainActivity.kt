@@ -53,7 +53,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     companion object {
         var isTaskStarted = false
-        var isCanDrawOverlay = false;
+        var isCanDrawOverlay = false
     }
 
     private val context = this
@@ -73,7 +73,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val dailyTaskAdapter by lazy {
-        DailyTaskAdapter(this, taskBeans).apply {
+        DailyTaskAdapter(taskBeans).apply {
             setOnItemClickListener(object : DailyTaskAdapter.OnItemClickListener {
                 override fun onItemClick(position: Int) {
                     itemClick(position)

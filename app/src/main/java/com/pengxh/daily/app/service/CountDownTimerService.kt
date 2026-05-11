@@ -70,9 +70,7 @@ class CountDownTimerService : Service() {
     private var isTimerRunning = false
     private var currentTaskIndex: Int = -1
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
-    }
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onCreate() {
         super.onCreate()
