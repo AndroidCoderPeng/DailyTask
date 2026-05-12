@@ -61,6 +61,7 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -72,9 +73,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     private val context = this
-    private val dateFormat by lazy {
+    private val dateTimeFormat by lazy {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.CHINA)
     }
+    private val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
     private val marginOffset by lazy { 16.dp2px(this) }
     private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val taskDataManager by lazy { TaskDataManager() }
@@ -125,7 +127,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         // 显示时间
         mainHandler.post(object : Runnable {
             override fun run() {
-                val currentTime = dateFormat.format(Date())
+                val currentTime = dateTimeFormat.format(Date())
                 val parts = currentTime.split(" ")
                 binding.toolbar.apply {
                     title = parts[2]
@@ -218,6 +220,36 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                 marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
+
+        // 检查是否需要执行错过的重置
+        checkMissedReset()
+    }
+
+    private fun checkMissedReset() {
+        val resetHour = SaveKeyValues.getValue(
+            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+        ) as Int
+
+        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+        // 如果当前时间在目标小时之后，且今天还未重置，则执行重置
+        if (currentHour >= resetHour) {
+            val lastResetDate = SaveKeyValues.getValue(
+                Constant.LAST_RESET_DATE_KEY, ""
+            ) as String
+            val today = dateFormat.format(Date())
+
+            if (lastResetDate != today) {
+                // 今天还未重置，执行重置
+                val autoStart =
+                    SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
+                if (autoStart) {
+                    taskScheduler.startTask()
+                }
+                // 标记今天已重置
+                SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
+            }
+        }
     }
 
     @Suppress("unused")

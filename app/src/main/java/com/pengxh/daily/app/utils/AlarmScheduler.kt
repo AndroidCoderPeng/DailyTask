@@ -10,19 +10,21 @@ import java.util.Calendar
 object AlarmScheduler {
 
     /**
-     * 注册下一次重置 Alarm（精确到整点）
+     * 注册下一次重置 Alarm（在目标小时内任意时刻触发，因为精确到整点，可能会因为不同的系统以及厂商定制，导致无法精确到整点）
      */
     fun schedule(context: Context, hour: Int) {
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val pendingIntent = buildPendingIntent(context)
         val safeHour = hour.coerceIn(0, 23)
 
-        // 计算下一次触发时间
+        // 计算下一次触发时间（目标小时的开始时刻）
         val calendar = Calendar.getInstance().apply {
+            timeInMillis = System.currentTimeMillis()
             set(Calendar.HOUR_OF_DAY, safeHour)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
+
             // 如果今天的时间点已过，则设为明天
             if (timeInMillis <= System.currentTimeMillis()) {
                 add(Calendar.DATE, 1)
@@ -32,22 +34,23 @@ object AlarmScheduler {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.timeInMillis,
-                    pendingIntent
+                    AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
                 )
             } else {
-                LogFileManager.writeLog("缺少精确闹钟权限，已降级注册非精确每日重置 Alarm")
-                alarmManager.setAndAllowWhileIdle(
+                // 使用 setWindow 而不是 setExact，允许系统在该小时内任意时刻触发
+                alarmManager.setWindow(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,
+                    AlarmManager.INTERVAL_HOUR,
                     pendingIntent
                 )
             }
         } else {
-            alarmManager.setExactAndAllowWhileIdle(
+            // Android 12 以下，使用 setWindow
+            alarmManager.setWindow(
                 AlarmManager.RTC_WAKEUP,
                 calendar.timeInMillis,
+                AlarmManager.INTERVAL_HOUR,
                 pendingIntent
             )
         }
