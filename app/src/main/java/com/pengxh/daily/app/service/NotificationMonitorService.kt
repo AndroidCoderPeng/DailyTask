@@ -2,16 +2,15 @@ package com.pengxh.daily.app.service
 
 import android.app.Notification
 import android.content.ComponentName
-import android.os.BatteryManager
-import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
+import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.DailyTaskController
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.ProjectionSession
@@ -53,8 +52,6 @@ class NotificationMonitorService : NotificationListenerService() {
      * 当有新通知到来时会回调
      */
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        listenerConnected = true
-
         val extras = sbn.notification.extras
         val pkg = sbn.packageName
         val title = extras.getString(Notification.EXTRA_TITLE) ?: ""
@@ -77,9 +74,7 @@ class NotificationMonitorService : NotificationListenerService() {
         val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
         if (resultSource == 0) {
             if (pkg == targetApp && notice.contains("成功")) {
-                if (!DailyTaskController.handleTaskSuccess(this, sbn.postTime)) {
-                    return
-                }
+                EventBus.getDefault().post(ApplicationEvent.GoBackMainActivity)
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
                     SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
@@ -114,11 +109,11 @@ class NotificationMonitorService : NotificationListenerService() {
         if (pkg in auxiliaryApp) {
             when {
                 notice.contains("执行任务") -> {
-                    CountDownTimerService.startDailyTask(this)
+                    EventBus.getDefault().post(ApplicationEvent.StartDailyTask)
                 }
 
                 notice.contains("终止任务") -> {
-                    CountDownTimerService.stopDailyTask(this)
+                    EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
                 }
 
                 notice.contains("开启循环") -> {
@@ -132,11 +127,11 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("息屏") -> {
-                    DailyTaskController.setMaskVisible(this, true)
+                    EventBus.getDefault().post(ApplicationEvent.ShowMaskView)
                 }
 
                 notice.contains("亮屏") -> {
-                    DailyTaskController.setMaskVisible(this, false)
+                    EventBus.getDefault().post(ApplicationEvent.HideMaskView)
                 }
 
                 notice.contains("考勤记录") -> {
@@ -166,21 +161,9 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("状态查询") -> {
                     val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
-
-                    val powerSaveMode =
-                        SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
-                    val lowBatteryReminder =
-                        SaveKeyValues.getValue(Constant.LOW_BATTERY_REMINDER_KEY, true) as Boolean
-                    val battery = getSystemService(BatteryManager::class.java)
-                        .getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
                     val content = buildString {
-                        appendLine("任务状态：${if (DailyTaskController.isTaskStarted()) "运行中" else "已停止"}")
-                        appendLine("省电模式：${if (powerSaveMode) "开启" else "关闭"}")
-                        appendLine(
-                            "低电量提醒：${if (lowBatteryReminder) "开启" else "关闭"}" +
-                                    "（阈值${Constant.DEFAULT_LOW_BATTERY_THRESHOLD}%，当前${if (battery >= 0) "$battery%" else "未知"}）"
-                        )
-                        appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
+                        appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
+                        appendLine("悬浮权限：${if (MainActivity.isCanDrawOverlay) "已获取" else "被拒绝"}")
                         appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
                         appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
                         append("消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}")
@@ -190,11 +173,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("截屏") -> {
                     if (ProjectionSession.isStateActive()) {
-                        DailyTaskController.openTargetApplication(
-                            this,
-                            trackTaskResult = false,
-                            remoteScreenshot = true
-                        )
+                        openApplication()
                     } else {
                         sendChannelMessage("截屏状态通知", "截屏服务已断开，截屏失败")
                     }
@@ -202,19 +181,8 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 else -> {
                     val key = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
-                    if (key.isNotBlank() && notice.contains(key)) {
-                        if (DailyTaskController.isExecutionWindowActive()) {
-                            sendChannelMessage(
-                                "远程执行状态通知",
-                                "已有任务正在执行或准备执行，请稍后再发送手动打卡口令"
-                            )
-                        } else {
-                            DailyTaskController.openTargetApplication(
-                                this,
-                                trackTaskResult = true,
-                                advanceSchedulerOnResult = false
-                            )
-                        }
+                    if (notice.contains(key)) {
+                        openApplication(true)
                     }
                 }
             }
@@ -254,7 +222,6 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        listenerConnected = false
         serviceScope.cancel()
     }
 }

@@ -1,7 +1,5 @@
 package com.pengxh.daily.app.utils
 
-import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-
 /**
  * 应用内事件定义
  * 统一使用EventBus进行应用内组件通信
@@ -27,21 +25,6 @@ sealed class ApplicationEvent {
     object SetResetTaskTime : ApplicationEvent()
     data class UpdateResetTickTime(val countDownTime: String) : ApplicationEvent()
     object ResetDailyTask : ApplicationEvent()
-
-    ///////////////////////////////////////////////////////////////////////////////
-
-    object DailyTaskStarted : ApplicationEvent()
-    data class DailyTaskExecuting(
-        val taskIndex: Int,
-        val task: DailyTaskBean,
-        val realTime: String
-    ) : ApplicationEvent()
-    data class DailyTaskExecutionError(val message: String) : ApplicationEvent()
-    object DailyTaskStopped : ApplicationEvent()
-    object DailyTaskCompleted : ApplicationEvent()
-    data class DailyTaskSkipped(val message: String) : ApplicationEvent()
-
-    ///////////////////////////////////////////////////////////////////////////////
 
     /**
      * 悬浮窗控制事件

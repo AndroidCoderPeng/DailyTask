@@ -314,25 +314,20 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, isChecked)
         }
 
-        binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (syncingSwitchState) {
-                return@setOnCheckedChangeListener
-            }
-            SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
-        }
-
-        binding.lowBatteryReminderSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (syncingSwitchState) {
-                return@setOnCheckedChangeListener
-            }
-            SaveKeyValues.putValue(Constant.LOW_BATTERY_REMINDER_KEY, isChecked)
-            SaveKeyValues.putValue(Constant.LOW_BATTERY_ALERT_ACTIVE_KEY, false)
-
-            // 没必要在开关状态改变时候启动服务，因为服务已经存在
-//            Intent(this, ForegroundRunningService::class.java).apply {
-//                startForegroundService(this)
+//        binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
+//            if (syncingSwitchState) {
+//                return@setOnCheckedChangeListener
 //            }
-        }
+//            SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
+//        }
+//
+//        binding.lowBatteryReminderSwitch.setOnCheckedChangeListener { _, isChecked ->
+//            if (syncingSwitchState) {
+//                return@setOnCheckedChangeListener
+//            }
+//            SaveKeyValues.putValue(Constant.LOW_BATTERY_REMINDER_KEY, isChecked)
+//            SaveKeyValues.putValue(Constant.LOW_BATTERY_ALERT_ACTIVE_KEY, false)
+//        }
 
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
@@ -417,10 +412,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
             binding.backToHomeSwitch.isChecked =
                 SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
-            binding.powerSaveSwitch.isChecked =
-                SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
-            binding.lowBatteryReminderSwitch.isChecked =
-                SaveKeyValues.getValue(Constant.LOW_BATTERY_REMINDER_KEY, true) as Boolean
+//            binding.powerSaveSwitch.isChecked =
+//                SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+//            binding.lowBatteryReminderSwitch.isChecked =
+//                SaveKeyValues.getValue(Constant.LOW_BATTERY_REMINDER_KEY, true) as Boolean
         } finally {
             syncingSwitchState = false
         }
