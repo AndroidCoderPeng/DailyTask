@@ -1,12 +1,9 @@
 package com.pengxh.daily.app.ui
 
-import android.content.ComponentName
 import android.content.Intent
-import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.os.Handler
-import android.os.IBinder
 import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
@@ -90,7 +87,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     private val gestureController by lazy {
         GestureController(this, maskViewController, mainHandler)
     }
-    private val taskScheduler by lazy { TaskScheduler(mainHandler, this) }
+    private val taskScheduler by lazy { TaskScheduler(this, mainHandler, this) }
     private val timeoutTimerManager by lazy { TimeoutTimerManager(mainHandler) }
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val dailyTaskAdapter by lazy {
@@ -193,12 +190,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             overlayPermissionLauncher.launch(intent)
         }
 
+        // 启动常驻前台服务——保活+任务重置
         Intent(this, ForegroundRunningService::class.java).apply {
             startForegroundService(this)
         }
 
+        // 启动倒计时服务——任务执行
         Intent(this, CountDownTimerService::class.java).apply {
-            bindService(this, serviceConnection, BIND_AUTO_CREATE)
+            startForegroundService(this)
         }
 
         val watermark = DailyTask.getWatermarkText()
@@ -449,21 +448,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     /**
-     * 服务绑定
-     * */
-    private val serviceConnection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            val binder = service as CountDownTimerService.LocaleBinder
-            val serviceInstance = binder.getService()
-            taskScheduler.setCountDownTimerService(serviceInstance)
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            taskScheduler.setCountDownTimerService(null)
-        }
-    }
-
-    /**
      * 列表项单击
      * */
     private fun itemClick(position: Int) {
@@ -644,10 +628,5 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         mainHandler.removeCallbacksAndMessages(null)
 
         EventBus.getDefault().unregister(this)
-        try {
-            unbindService(serviceConnection)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
     }
 }

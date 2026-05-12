@@ -1,5 +1,7 @@
 package com.pengxh.daily.app.utils
 
+import android.content.Context
+import android.content.Intent
 import android.os.Handler
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.getTaskIndex
@@ -19,10 +21,10 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
  * @param listener 任务状态回调
  */
 class TaskScheduler(
+    private val context: Context,
     private val mainHandler: Handler,
     private val listener: TaskStateListener
 ) {
-    private var countDownTimerService: CountDownTimerService? = null
     private var isTaskStarted = false
 
     // 任务状态回调
@@ -34,11 +36,22 @@ class TaskScheduler(
         fun onTaskExecutionError(message: String)
     }
 
-    fun setCountDownTimerService(service: CountDownTimerService?) {
-        this.countDownTimerService = service
-    }
-
     fun isTaskStarted(): Boolean = isTaskStarted
+
+    private fun startIntentService(action: String, taskIndex: Int = -1, seconds: Int = 0) {
+        Intent(context, CountDownTimerService::class.java).apply {
+            this.action = action
+            if (taskIndex != -1) {
+                putExtra(CountDownTimerService.EXTRA_TASK_INDEX, taskIndex)
+            }
+            if (seconds > 0) {
+                putExtra(CountDownTimerService.EXTRA_SECONDS, seconds)
+            }
+
+            // 使用startService，不是startForegroundService，不会触发onCreate，不会要求重新startForeground
+            context.startService(this)
+        }
+    }
 
     /**
      * 启动任务
@@ -58,12 +71,7 @@ class TaskScheduler(
         if (taskBeans.getTaskIndex() == -1) {
             LogFileManager.writeLog("今日任务已全部执行完毕，忽略启动")
             listener.onTaskCompleted()
-            countDownTimerService?.updateDailyTaskState()
-            return
-        }
-
-        if (countDownTimerService == null) {
-            listener.onTaskExecutionError("启动任务失败，倒计时服务未就绪，请稍后重试")
+            startIntentService(CountDownTimerService.ACTION_COMPLETED_DAILY_TASK)
             return
         }
 
@@ -91,7 +99,7 @@ class TaskScheduler(
         mainHandler.removeCallbacks(dailyTaskRunnable)
 
         // 取消服务中的倒计时
-        countDownTimerService?.cancelCountDown()
+        startIntentService(CountDownTimerService.ACTION_CANCEL_COUNTDOWN)
 
         // 通知状态变更
         listener.onTaskStopped()
@@ -130,7 +138,7 @@ class TaskScheduler(
                     listener.onTaskCompleted()
 
                     // 更新服务状态
-                    countDownTimerService?.updateDailyTaskState()
+                    startIntentService(CountDownTimerService.ACTION_COMPLETED_DAILY_TASK)
                     return
                 }
 
@@ -152,7 +160,7 @@ class TaskScheduler(
                 listener.onTaskExecuting(taskIndex, task, realTime)
 
                 // 启动倒计时
-                countDownTimerService?.startCountDown(taskIndex, timeSeconds)
+                startIntentService(CountDownTimerService.ACTION_START_COUNTDOWN, taskIndex, timeSeconds)
             } catch (e: IndexOutOfBoundsException) {
                 val errorMsg = "任务数组访问越界: ${e.message}"
                 failExecution(errorMsg)
@@ -167,12 +175,11 @@ class TaskScheduler(
         LogFileManager.writeLog(message)
         isTaskStarted = false
         mainHandler.removeCallbacks(dailyTaskRunnable)
-        countDownTimerService?.cancelCountDown()
+        startIntentService(CountDownTimerService.ACTION_CANCEL_COUNTDOWN)
         listener.onTaskExecutionError(message)
     }
 
     fun destroy() {
         mainHandler.removeCallbacks(dailyTaskRunnable)
-        countDownTimerService = null
     }
 }
