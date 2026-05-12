@@ -9,13 +9,19 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import com.pengxh.daily.app.BuildConfig
+import com.pengxh.daily.app.extensions.getResponseHeader
 import com.pengxh.daily.app.extensions.getTaskIndex
+import com.pengxh.daily.app.retrofit.RetrofitServiceManager
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.kt.lite.extensions.timestampToDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -28,6 +34,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val timeoutTimerManager by lazy { TimeoutTimerManager(mainHandler) }
     private val taskScheduler by lazy { TaskScheduler(mainHandler, this) }
+    private val senderScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private var appContext: Context? = null
     private var eventRegistered = false
@@ -375,7 +382,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
 
     private fun consumeDeferredSchedulerAdvance(): Boolean {
         val shouldAdvance = deferredSchedulerAdvanceAfterManualExecution &&
-            taskScheduler.isTaskStarted()
+                taskScheduler.isTaskStarted()
         deferredSchedulerAdvanceAfterManualExecution = false
         return shouldAdvance
     }
@@ -412,7 +419,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
     private fun shouldSendHealthWarning(message: String): Boolean {
         val now = System.currentTimeMillis()
         val shouldSend = message != lastHealthWarningMessage ||
-            now - lastHealthWarningAt > HEALTH_WARNING_INTERVAL_MS
+                now - lastHealthWarningAt > HEALTH_WARNING_INTERVAL_MS
         if (shouldSend) {
             lastHealthWarningMessage = message
             lastHealthWarningAt = now
@@ -426,9 +433,9 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
         advanceSchedulerOnResult: Boolean
     ): Boolean {
         return advanceSchedulerOnResult &&
-            trackTaskResult &&
-            !remoteScreenshot &&
-            taskScheduler.isTaskStarted()
+                trackTaskResult &&
+                !remoteScreenshot &&
+                taskScheduler.isTaskStarted()
     }
 
     private fun hasPendingTaskForToday(): Boolean {
@@ -591,13 +598,30 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
         ) as String
         val channelType = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
         when (channelType) {
-            0 -> RetrofitImageSender.send(context, filePath)
-            1 -> EmailManager(context).sendAttachmentEmail(
-                title.ifBlank { messageTitle },
-                appendDeviceInfo(context, content),
-                filePath,
-                false
-            )
+            0 -> {
+                appContext?.let {
+                    senderScope.launch {
+                        try {
+                            val response = RetrofitServiceManager.sendImageMessage(imagePath)
+                            val header = response.getResponseHeader()
+                            if (header.first != 0) {
+                                HttpRequestManager(it).sendMessage("截屏失败", header.second)
+                            }
+                        } catch (e: Exception) {
+                            HttpRequestManager(it).sendMessage("截屏失败", "${e.message}")
+                        }
+                    }
+                }
+            }
+
+            1 -> {
+                EmailManager(context).sendAttachmentEmail(
+                    title.ifBlank { messageTitle },
+                    appendDeviceInfo(context, content),
+                    filePath,
+                    false
+                )
+            }
         }
     }
 
