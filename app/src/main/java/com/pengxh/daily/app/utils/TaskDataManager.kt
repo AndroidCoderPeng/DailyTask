@@ -70,7 +70,6 @@ class TaskDataManager() {
         SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
         SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
         SaveKeyValues.putValue(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
-        SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, config.isPowerSaveMode)
         SaveKeyValues.putValue(
             Constant.STAY_DD_TIMEOUT_KEY,
             config.overTime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
@@ -81,6 +80,8 @@ class TaskDataManager() {
         )
         SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, config.isAutoStart)
         SaveKeyValues.putValue(Constant.RANDOM_TIME_KEY, config.isRandomTime)
+        SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, config.isPowerSaveMode)
+        SaveKeyValues.putValue(Constant.LOW_BATTERY_REMINDER_KEY, config.lowBatteryReminder)
         SaveKeyValues.putValue(
             Constant.RANDOM_MINUTE_RANGE_KEY,
             config.timeRange.coerceAtLeast(0)
