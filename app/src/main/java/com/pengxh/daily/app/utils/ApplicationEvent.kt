@@ -27,23 +27,25 @@ sealed class ApplicationEvent {
     object SetResetTaskTime : ApplicationEvent()
     data class UpdateResetTickTime(val countDownTime: String) : ApplicationEvent()
     object ResetDailyTask : ApplicationEvent()
-    object DailyTaskStarted : ApplicationEvent()
-    object DailyTaskStopped : ApplicationEvent()
-    object DailyTaskCompleted : ApplicationEvent()
-    data class DailyTaskSkipped(val message: String) : ApplicationEvent()
-    object HolidayDataStatusChanged : ApplicationEvent()
-    data class KeyguardDismissFinished(
-        val success: Boolean,
-        val message: String
-    ) : ApplicationEvent()
 
+    ///////////////////////////////////////////////////////////////////////////////
+
+    object DailyTaskStarted : ApplicationEvent()
     data class DailyTaskExecuting(
         val taskIndex: Int,
         val task: DailyTaskBean,
         val realTime: String
     ) : ApplicationEvent()
-
     data class DailyTaskExecutionError(val message: String) : ApplicationEvent()
+    object DailyTaskStopped : ApplicationEvent()
+    object DailyTaskCompleted : ApplicationEvent()
+    data class DailyTaskSkipped(val message: String) : ApplicationEvent()
+
+    data class KeyguardDismissFinished(
+        val success: Boolean,
+        val message: String
+    ) : ApplicationEvent()
+    ///////////////////////////////////////////////////////////////////////////////
 
     /**
      * 悬浮窗控制事件
@@ -71,4 +73,9 @@ sealed class ApplicationEvent {
      */
     object ProjectionReady : ApplicationEvent()
     object ProjectionFailed : ApplicationEvent()
+
+    /**
+     * 中国节假日数据状态变化事件
+     */
+    object HolidayDataStatusChanged : ApplicationEvent()
 }

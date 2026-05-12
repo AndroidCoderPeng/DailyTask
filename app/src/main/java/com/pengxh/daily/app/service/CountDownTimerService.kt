@@ -48,7 +48,7 @@ class CountDownTimerService : Service() {
     }
 
     private val kTag = "CountDownTimerService"
-    private val notificationManager by lazy { getSystemService(NOTIFICATION_SERVICE) as NotificationManager }
+    private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
     private val notificationBuilder by lazy {
         NotificationCompat.Builder(this, "countdown_timer_service_channel").apply {
             setSmallIcon(R.mipmap.ic_launcher)
