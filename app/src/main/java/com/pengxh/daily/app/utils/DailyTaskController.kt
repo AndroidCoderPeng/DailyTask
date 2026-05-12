@@ -13,7 +13,6 @@ import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.daily.app.ui.KeyguardDismissActivity
 import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.kt.lite.extensions.timestampToDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -24,19 +23,11 @@ import org.greenrobot.eventbus.ThreadMode
 object DailyTaskController : TaskScheduler.TaskStateListener {
 
     private const val HEALTH_WARNING_INTERVAL_MS = 6 * 60 * 60 * 1000L
-    private const val KEYGUARD_DISMISS_WAIT_TIMEOUT_MS = 6000L
     private const val ACTIVE_WINDOW_RETRY_DELAY_MS = 3000L
 
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val timeoutTimerManager by lazy { TimeoutTimerManager(mainHandler) }
     private val taskScheduler by lazy { TaskScheduler(mainHandler, this) }
-
-    private data class PendingKeyguardDismissExecution(
-        val context: Context,
-        val trackTaskResult: Boolean,
-        val remoteScreenshot: Boolean,
-        val advanceSchedulerOnResult: Boolean
-    )
 
     private var appContext: Context? = null
     private var eventRegistered = false
@@ -44,9 +35,6 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
     private var hasCaptured = false
     private var lastHealthWarningMessage = ""
     private var lastHealthWarningAt = 0L
-    private var keyguardDismissRetryPending = false
-    private var keyguardDismissRetryRunnable: Runnable? = null
-    private var pendingKeyguardDismissExecution: PendingKeyguardDismissExecution? = null
     private var pendingDailyExecutionRetryRunnable: Runnable? = null
 
     @Volatile
@@ -84,9 +72,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
     }
 
     fun isExecutionWindowActive(): Boolean {
-        return timeoutTimerManager.isRunning() ||
-            keyguardDismissRetryPending ||
-            remoteScreenshotTimerRunning
+        return timeoutTimerManager.isRunning() || remoteScreenshotTimerRunning
     }
 
     fun startTask(context: Context) {
@@ -105,7 +91,6 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
     }
 
     fun stopTask() {
-        cancelPendingKeyguardDismissRetry()
         taskScheduler.stopTask()
     }
 
@@ -169,8 +154,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
             context,
             trackTaskResult,
             remoteScreenshot,
-            advanceSchedulerOnResult,
-            allowKeyguardDismissAttempt = true
+            advanceSchedulerOnResult
         )
     }
 
@@ -178,8 +162,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
         context: Context,
         trackTaskResult: Boolean,
         remoteScreenshot: Boolean,
-        advanceSchedulerOnResult: Boolean,
-        allowKeyguardDismissAttempt: Boolean
+        advanceSchedulerOnResult: Boolean
     ) {
         appContext = context.applicationContext
         ensureEventRegistered()
@@ -199,8 +182,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
                     context,
                     trackTaskResult,
                     remoteScreenshot,
-                    advanceSchedulerOnResult,
-                    allowKeyguardDismissAttempt
+                    advanceSchedulerOnResult
                 )
             }
             if (!advanceSchedulerOnResult) {
@@ -211,17 +193,6 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
         val targetApp = Constant.getTargetApp()
         if (!isApplicationExist(context, targetApp)) {
             handleOpenFailure("未安装指定的目标软件，无法执行任务", stopTaskOnFailure)
-            return
-        }
-
-        if (tryDismissKeyguardBeforeExecution(
-                context,
-                trackTaskResult,
-                remoteScreenshot,
-                advanceSchedulerOnResult,
-                allowKeyguardDismissAttempt
-            )
-        ) {
             return
         }
 
@@ -274,107 +245,6 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
         }
     }
 
-    private fun tryDismissKeyguardBeforeExecution(
-        context: Context,
-        trackTaskResult: Boolean,
-        remoteScreenshot: Boolean,
-        advanceSchedulerOnResult: Boolean,
-        allowKeyguardDismissAttempt: Boolean
-    ): Boolean {
-        if (!allowKeyguardDismissAttempt) {
-            return false
-        }
-        val retryContext = context.applicationContext
-        if (!TaskHealthChecker.canAttemptDismissKeyguard(retryContext)) {
-            return false
-        }
-        if (keyguardDismissRetryPending) {
-            LogFileManager.writeLog("锁屏唤醒解锁已在进行中，忽略重复请求")
-            return true
-        }
-
-        keyguardDismissRetryPending = true
-        pendingKeyguardDismissExecution = PendingKeyguardDismissExecution(
-            retryContext,
-            trackTaskResult,
-            remoteScreenshot,
-            advanceSchedulerOnResult
-        )
-        LogFileManager.writeLog("检测到无安全密码锁屏，先尝试唤醒解锁后再执行任务")
-        try {
-            Intent(retryContext, KeyguardDismissActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                retryContext.startActivity(this)
-            }
-        } catch (e: Exception) {
-            clearPendingKeyguardDismissRetry()
-            LogFileManager.writeLog("锁屏唤醒页面启动失败：${e.message ?: e.javaClass.simpleName}")
-            return false
-        }
-        val retryRunnable = Runnable {
-            continueAfterKeyguardDismiss(false, "锁屏唤醒结果未返回")
-        }
-        keyguardDismissRetryRunnable = retryRunnable
-        mainHandler.postDelayed(retryRunnable, KEYGUARD_DISMISS_WAIT_TIMEOUT_MS)
-        return true
-    }
-
-    private fun cancelPendingKeyguardDismissRetry() {
-        keyguardDismissRetryRunnable?.let { mainHandler.removeCallbacks(it) }
-        clearPendingKeyguardDismissRetry()
-    }
-
-    private fun clearPendingKeyguardDismissRetry() {
-        keyguardDismissRetryRunnable = null
-        keyguardDismissRetryPending = false
-        pendingKeyguardDismissExecution = null
-    }
-
-    private fun continueAfterKeyguardDismiss(success: Boolean, message: String) {
-        val pending = pendingKeyguardDismissExecution ?: return
-        keyguardDismissRetryRunnable?.let { mainHandler.removeCallbacks(it) }
-        keyguardDismissRetryRunnable = null
-        keyguardDismissRetryPending = false
-        pendingKeyguardDismissExecution = null
-
-        LogFileManager.writeLog(message)
-        if (!success) {
-            LogFileManager.writeLog("锁屏唤醒未确认成功，复查系统锁屏状态后再决定是否继续")
-        }
-        val stillLocked = TaskHealthChecker.isKeyguardLocked(pending.context)
-        if (stillLocked) {
-            val failureMessage = buildString {
-                append(message)
-                if (stillLocked) {
-                    append("；设备仍处于锁屏状态，已取消本次自动执行")
-                }
-            }
-            val stopTaskOnFailure = shouldStopTaskOnOpenFailure(
-                pending.trackTaskResult,
-                pending.remoteScreenshot,
-                pending.advanceSchedulerOnResult
-            )
-            handleOpenFailure(failureMessage, stopTaskOnFailure)
-            return
-        }
-        if (
-            pending.advanceSchedulerOnResult &&
-            pending.trackTaskResult &&
-            !pending.remoteScreenshot &&
-            !isTaskStarted()
-        ) {
-            LogFileManager.writeLog("每日任务已停止，取消锁屏唤醒后的执行重试")
-            return
-        }
-        openTargetApplicationInternal(
-            pending.context,
-            pending.trackTaskResult,
-            pending.remoteScreenshot,
-            pending.advanceSchedulerOnResult,
-            allowKeyguardDismissAttempt = false
-        )
-    }
-
     private fun startRemoteScreenshotTimer() {
         imagePath = ""
         hasCaptured = false
@@ -406,25 +276,18 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
         if (timeoutTimerManager.isRunning()) {
             return !activeExecutionAdvancesScheduler
         }
-        val pending = pendingKeyguardDismissExecution ?: return false
-        return keyguardDismissRetryPending &&
-            pending.trackTaskResult &&
-            !pending.remoteScreenshot &&
-            !pending.advanceSchedulerOnResult
+        return false
     }
 
     private fun shouldRetrySchedulerAfterActiveWindow(): Boolean {
-        val pending = pendingKeyguardDismissExecution
-        return remoteScreenshotTimerRunning ||
-            (keyguardDismissRetryPending && pending?.trackTaskResult == false)
+        return remoteScreenshotTimerRunning
     }
 
     private fun scheduleDailyExecutionRetry(
         context: Context,
         trackTaskResult: Boolean,
         remoteScreenshot: Boolean,
-        advanceSchedulerOnResult: Boolean,
-        allowKeyguardDismissAttempt: Boolean
+        advanceSchedulerOnResult: Boolean
     ) {
         pendingDailyExecutionRetryRunnable?.let { mainHandler.removeCallbacks(it) }
         val retryContext = context.applicationContext
@@ -439,8 +302,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
                 retryContext,
                 trackTaskResult,
                 remoteScreenshot,
-                advanceSchedulerOnResult,
-                allowKeyguardDismissAttempt
+                advanceSchedulerOnResult
             )
         }
         pendingDailyExecutionRetryRunnable = retryRunnable
@@ -655,7 +517,6 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
 
     override fun onTaskStopped() {
         updateTaskStartedState(false)
-        cancelPendingKeyguardDismissRetry()
         cancelPendingDailyExecutionRetry()
         clearTaskExecutionState()
         deferredSchedulerAdvanceAfterManualExecution = false
@@ -666,7 +527,6 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
 
     override fun onTaskCompleted() {
         updateTaskStartedState(false)
-        cancelPendingKeyguardDismissRetry()
         cancelPendingDailyExecutionRetry()
         clearTaskExecutionState()
         deferredSchedulerAdvanceAfterManualExecution = false
@@ -687,7 +547,6 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
 
     override fun onTaskExecutionError(message: String) {
         updateTaskStartedState(false)
-        cancelPendingKeyguardDismissRetry()
         cancelPendingDailyExecutionRetry()
         clearTaskExecutionState()
         deferredSchedulerAdvanceAfterManualExecution = false
@@ -698,14 +557,7 @@ object DailyTaskController : TaskScheduler.TaskStateListener {
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleApplicationEvent(event: ApplicationEvent) {
-        when (event) {
-            is ApplicationEvent.CaptureCompleted -> imagePath = event.imagePath
-            is ApplicationEvent.KeyguardDismissFinished -> {
-                continueAfterKeyguardDismiss(event.success, event.message)
-            }
-
-            else -> {}
-        }
+        if (event is ApplicationEvent.CaptureCompleted) imagePath = event.imagePath
     }
 
     private fun sendChannelMessage(title: String, content: String) {

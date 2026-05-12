@@ -41,10 +41,6 @@ sealed class ApplicationEvent {
     object DailyTaskCompleted : ApplicationEvent()
     data class DailyTaskSkipped(val message: String) : ApplicationEvent()
 
-    data class KeyguardDismissFinished(
-        val success: Boolean,
-        val message: String
-    ) : ApplicationEvent()
     ///////////////////////////////////////////////////////////////////////////////
 
     /**

@@ -14,9 +14,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTaskController
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
-import com.pengxh.daily.app.utils.NotificationListenerState
 import com.pengxh.daily.app.utils.ProjectionSession
-import com.pengxh.daily.app.utils.TaskHealthChecker
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -41,12 +39,13 @@ class NotificationMonitorService : NotificationListenerService() {
     private val emailManager by lazy { EmailManager(this) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var listenerConnected = false
 
     /**
      * 有可用的并且和通知管理器连接成功时回调
      */
     override fun onListenerConnected() {
-        NotificationListenerState.markConnected()
+        listenerConnected = true
         EventBus.getDefault().post(ApplicationEvent.ListenerConnected)
     }
 
@@ -54,7 +53,7 @@ class NotificationMonitorService : NotificationListenerService() {
      * 当有新通知到来时会回调
      */
     override fun onNotificationPosted(sbn: StatusBarNotification) {
-        NotificationListenerState.markConnected()
+        listenerConnected = true
 
         val extras = sbn.notification.extras
         val pkg = sbn.packageName
@@ -167,13 +166,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("状态查询") -> {
                     val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
-                    val health = TaskHealthChecker.checkBeforeExecution(
-                        this,
-                        trackTaskResult = true,
-                        remoteScreenshot = false,
-                        allowKeyguardDismissAttempt = true
-                    )
-                    val healthItems = health.blockers + health.warnings
+
                     val powerSaveMode =
                         SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
                     val lowBatteryReminder =
@@ -185,12 +178,11 @@ class NotificationMonitorService : NotificationListenerService() {
                         appendLine("省电模式：${if (powerSaveMode) "开启" else "关闭"}")
                         appendLine(
                             "低电量提醒：${if (lowBatteryReminder) "开启" else "关闭"}" +
-                                "（阈值${Constant.DEFAULT_LOW_BATTERY_THRESHOLD}%，当前${if (battery >= 0) "$battery%" else "未知"}）"
+                                    "（阈值${Constant.DEFAULT_LOW_BATTERY_THRESHOLD}%，当前${if (battery >= 0) "$battery%" else "未知"}）"
                         )
                         appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
-                        appendLine("通知监听：${if (TaskHealthChecker.isNotificationListenerReady(this@NotificationMonitorService)) "正常" else "断开"}")
+                        appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
                         appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
-                        appendLine("无人值守自检：${if (healthItems.isEmpty()) "正常" else healthItems.joinToString("；")}")
                         append("消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}")
                     }
                     sendChannelMessage("状态查询通知", content)
@@ -254,21 +246,15 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onNotificationRemoved(sbn: StatusBarNotification) {}
 
     override fun onListenerDisconnected() {
-        val wasConnected = NotificationListenerState.markDisconnected()
+        listenerConnected = false
         EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
-        if (wasConnected) {
-            sendChannelMessage(
-                "无人值守异常通知",
-                "通知监听服务已断开，系统已请求重新绑定；恢复前可能无法识别目标应用的打卡成功通知"
-            )
-        }
         // 主动请求系统重新绑定监听服务
         requestRebind(ComponentName(this, NotificationMonitorService::class.java))
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        NotificationListenerState.markDisconnected()
+        listenerConnected = false
         serviceScope.cancel()
     }
 }

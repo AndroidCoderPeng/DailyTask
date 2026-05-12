@@ -1,7 +1,6 @@
 package com.pengxh.daily.app.utils
 
 import android.app.AlarmManager
-import android.app.KeyguardManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
@@ -24,22 +23,12 @@ object TaskHealthChecker {
     fun checkBeforeExecution(
         context: Context,
         trackTaskResult: Boolean,
-        remoteScreenshot: Boolean,
-        allowKeyguardDismissAttempt: Boolean = false
+        remoteScreenshot: Boolean
     ): CheckResult {
         val blockers = mutableListOf<String>()
         val warnings = mutableListOf<String>()
         val appContext = context.applicationContext
         val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
-
-        val keyguardManager = appContext.getSystemService(KeyguardManager::class.java)
-        if (keyguardManager?.isKeyguardLocked == true) {
-            if (allowKeyguardDismissAttempt && canAttemptDismissKeyguard(appContext)) {
-                warnings += "设备处于无安全密码锁屏状态，执行时会先尝试唤醒解锁"
-            } else {
-                blockers += "设备处于系统锁屏状态，无法保证目标应用可被打开"
-            }
-        }
 
         val needsNotificationResult = trackTaskResult && !remoteScreenshot && resultSource == 0
         if (needsNotificationResult && !isNotificationListenerReady(appContext)) {
@@ -70,20 +59,6 @@ object TaskHealthChecker {
         return CheckResult(blockers, warnings)
     }
 
-    fun canAttemptDismissKeyguard(context: Context): Boolean {
-        val keyguardManager = context.applicationContext.getSystemService(KeyguardManager::class.java)
-            ?: return false
-        return keyguardManager.isKeyguardLocked &&
-            !keyguardManager.isDeviceSecure &&
-            !keyguardManager.isKeyguardSecure
-    }
-
-    fun isKeyguardLocked(context: Context): Boolean {
-        val keyguardManager = context.applicationContext.getSystemService(KeyguardManager::class.java)
-            ?: return false
-        return keyguardManager.isKeyguardLocked
-    }
-
     fun isNotificationListenerEnabled(context: Context): Boolean {
         val packages = NotificationManagerCompat.getEnabledListenerPackages(context)
         return packages.contains(context.packageName)
@@ -91,13 +66,12 @@ object TaskHealthChecker {
 
     fun isNotificationListenerReady(context: Context): Boolean {
         val enabled = isNotificationListenerEnabled(context)
-        val connected = NotificationListenerState.isConnected()
-        if (enabled && !connected) {
+        if (enabled) {
             NotificationListenerService.requestRebind(
                 ComponentName(context, NotificationMonitorService::class.java)
             )
         }
-        return enabled && connected
+        return enabled
     }
 
     fun formatBlockers(blockers: List<String>): String {
