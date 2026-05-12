@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ApplicationEvent
+import com.pengxh.daily.app.utils.ChinaHolidayRemoteUpdater
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
@@ -81,6 +82,8 @@ class ForegroundRunningService : Service() {
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         ) as Int
         AlarmScheduler.schedule(this, resetHour)
+
+        ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
 
         // 检查电量
         checkLowBattery()

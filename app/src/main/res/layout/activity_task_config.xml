@@ -16,182 +16,241 @@
         app:title="任务配置"
         app:titleTextColor="@color/white" />
 
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/contentScrollView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_margin="@dimen/dp_16"
-        android:background="@drawable/bg_solid_layout_white_16"
-        android:orientation="vertical">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
 
-        <RelativeLayout
-            android:id="@+id/resetTimeLayout"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
+            android:layout_height="wrap_content"
+            android:layout_margin="@dimen/dp_16"
             android:background="@drawable/bg_solid_layout_white_16"
-            android:paddingHorizontal="@dimen/dp_16">
+            android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:text="重置时间"
-                android:textColor="@color/text_default_color"
-                android:textSize="@dimen/sp_16" />
-
-            <TextView
-                android:id="@+id/resetTimeView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:textSize="@dimen/sp_16" />
-        </RelativeLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:layout_marginHorizontal="@dimen/dp_16"
-            android:background="#CCC" />
-
-        <RelativeLayout
-            android:id="@+id/timeoutLayout"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
-            android:background="@color/white"
-            android:paddingHorizontal="@dimen/dp_16">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:text="超时时间"
-                android:textColor="@color/text_default_color"
-                android:textSize="@dimen/sp_16" />
-
-            <TextView
-                android:id="@+id/timeoutTextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:textSize="@dimen/sp_16" />
-        </RelativeLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:layout_marginHorizontal="@dimen/dp_16"
-            android:background="#CCC" />
-
-        <RelativeLayout
-            android:id="@+id/keyLayout"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
-            android:background="@color/white"
-            android:paddingHorizontal="@dimen/dp_16">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:text="任务口令"
-                android:textColor="@color/text_default_color"
-                android:textSize="@dimen/sp_16" />
-
-            <TextView
-                android:id="@+id/keyTextView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:textSize="@dimen/sp_16" />
-        </RelativeLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:layout_marginHorizontal="@dimen/dp_16"
-            android:background="#CCC" />
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
-            android:background="@color/white"
-            android:paddingHorizontal="@dimen/dp_16">
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:orientation="vertical">
+            <RelativeLayout
+                android:id="@+id/resetTimeLayout"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/itemLayoutHeight"
+                android:background="@drawable/bg_solid_layout_white_16"
+                android:paddingHorizontal="@dimen/dp_16">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="循环任务"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:text="重置时间"
                     android:textColor="@color/text_default_color"
                     android:textSize="@dimen/sp_16" />
 
                 <TextView
+                    android:id="@+id/resetTimeView"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_gravity="end"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:textSize="@dimen/sp_16" />
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginHorizontal="@dimen/dp_16"
+                android:background="#CCC" />
+
+            <RelativeLayout
+                android:id="@+id/timeoutLayout"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/itemLayoutHeight"
+                android:background="@color/white"
+                android:paddingHorizontal="@dimen/dp_16">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:text="超时时间"
+                    android:textColor="@color/text_default_color"
+                    android:textSize="@dimen/sp_16" />
+
+                <TextView
+                    android:id="@+id/timeoutTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:textSize="@dimen/sp_16" />
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginHorizontal="@dimen/dp_16"
+                android:background="#CCC" />
+
+            <RelativeLayout
+                android:id="@+id/keyLayout"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/itemLayoutHeight"
+                android:background="@color/white"
+                android:paddingHorizontal="@dimen/dp_16">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:text="任务口令"
+                    android:textColor="@color/text_default_color"
+                    android:textSize="@dimen/sp_16" />
+
+                <TextView
+                    android:id="@+id/keyTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:textSize="@dimen/sp_16" />
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginHorizontal="@dimen/dp_16"
+                android:background="#CCC" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/itemLayoutHeight"
+                android:background="@color/white"
+                android:paddingHorizontal="@dimen/dp_16">
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="跳过休息日"
+                        android:textColor="@color/text_default_color"
+                        android:textSize="@dimen/sp_16" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/dp_4"
+                        android:singleLine="true"
+                        android:text="节假日/周末跳过，补班日执行"
+                        android:textColor="@color/text_hint_color"
+                        android:textSize="@dimen/sp_10" />
+                </LinearLayout>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/skipHolidaySwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginHorizontal="@dimen/dp_16"
+                android:background="#CCC" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/white"
+                android:orientation="vertical"
+                android:padding="@dimen/dp_16">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="节假日数据"
+                    android:textColor="@color/text_default_color"
+                    android:textSize="@dimen/sp_14" />
+
+                <TextView
+                    android:id="@+id/holidayDataSourceView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/dp_4"
-                    android:singleLine="true"
-                    android:text="注意：此开关只能通过远程指令修改"
-                    android:textColor="@color/red"
-                    android:textSize="@dimen/sp_10" />
+                    android:textColor="@color/text_default_color"
+                    android:textSize="@dimen/sp_12" />
+
+                <TextView
+                    android:id="@+id/holidayDataCoverageView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_hint_color"
+                    android:textSize="@dimen/sp_12" />
+
+                <TextView
+                    android:id="@+id/holidayDataTodayView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/text_hint_color"
+                    android:textSize="@dimen/sp_12" />
             </LinearLayout>
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/autoTaskSwitch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:clickable="false"
-                android:focusable="false" />
-        </RelativeLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginHorizontal="@dimen/dp_16"
+                android:background="#CCC" />
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:layout_marginHorizontal="@dimen/dp_16"
-            android:background="#CCC" />
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/itemLayoutHeight"
+                android:background="@color/white"
+                android:paddingHorizontal="@dimen/dp_16">
 
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
-            android:background="@color/white"
-            android:paddingHorizontal="@dimen/dp_16">
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:orientation="vertical">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:text="随机时间"
-                android:textColor="@color/text_default_color"
-                android:textSize="@dimen/sp_16" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="循环任务"
+                        android:textColor="@color/text_default_color"
+                        android:textSize="@dimen/sp_16" />
 
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                android:id="@+id/randomTimeSwitch"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true" />
-        </RelativeLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end"
+                        android:layout_marginTop="@dimen/dp_4"
+                        android:singleLine="true"
+                        android:text="注意：此开关只能通过远程指令修改"
+                        android:textColor="@color/red"
+                        android:textSize="@dimen/sp_10" />
+                </LinearLayout>
 
-        <LinearLayout
-            android:id="@+id/minuteRangeLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/autoTaskSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:clickable="false"
+                    android:focusable="false" />
+            </RelativeLayout>
 
             <View
                 android:layout_width="match_parent"
@@ -209,49 +268,84 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:text="时间范围"
+                    android:text="随机时间"
                     android:textColor="@color/text_default_color"
                     android:textSize="@dimen/sp_16" />
 
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                    android:id="@+id/randomTimeSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true" />
+            </RelativeLayout>
+
+            <LinearLayout
+                android:id="@+id/minuteRangeLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1px"
+                    android:layout_marginHorizontal="@dimen/dp_16"
+                    android:background="#CCC" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/itemLayoutHeight"
+                    android:background="@color/white"
+                    android:paddingHorizontal="@dimen/dp_16">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="时间范围"
+                        android:textColor="@color/text_default_color"
+                        android:textSize="@dimen/sp_16" />
+
+                    <TextView
+                        android:id="@+id/minuteRangeView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:gravity="center_vertical"
+                        android:textSize="@dimen/sp_16" />
+                </RelativeLayout>
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1px"
+                android:layout_marginHorizontal="@dimen/dp_16"
+                android:background="#CCC" />
+
+            <RelativeLayout
+                android:id="@+id/outputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/itemLayoutHeight"
+                android:background="@drawable/bg_solid_layout_white_16"
+                android:paddingHorizontal="@dimen/dp_16">
+
                 <TextView
-                    android:id="@+id/minuteRangeView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:gravity="center_vertical"
+                    android:text="导出配置"
+                    android:textColor="@color/text_default_color"
+                    android:textSize="@dimen/sp_16" />
+
+                <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_alignParentEnd="true"
                     android:layout_centerVertical="true"
-                    android:gravity="center_vertical"
-                    android:textSize="@dimen/sp_16" />
+                    android:background="@drawable/ic_arrow_right" />
             </RelativeLayout>
         </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:layout_marginHorizontal="@dimen/dp_16"
-            android:background="#CCC" />
-
-        <RelativeLayout
-            android:id="@+id/outputLayout"
-            android:layout_width="match_parent"
-            android:layout_height="@dimen/itemLayoutHeight"
-            android:background="@drawable/bg_solid_layout_white_16"
-            android:paddingHorizontal="@dimen/dp_16">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerVertical="true"
-                android:gravity="center_vertical"
-                android:text="导出配置"
-                android:textColor="@color/text_default_color"
-                android:textSize="@dimen/sp_16" />
-
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:background="@drawable/ic_arrow_right" />
-        </RelativeLayout>
-    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 </LinearLayout>
