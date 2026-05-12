@@ -314,13 +314,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, isChecked)
         }
 
-//        binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
-//            if (syncingSwitchState) {
-//                return@setOnCheckedChangeListener
-//            }
-//            SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
-//        }
-//
+        binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
+        }
+
 //        binding.lowBatteryReminderSwitch.setOnCheckedChangeListener { _, isChecked ->
 //            if (syncingSwitchState) {
 //                return@setOnCheckedChangeListener
@@ -412,8 +412,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
             binding.backToHomeSwitch.isChecked =
                 SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
-//            binding.powerSaveSwitch.isChecked =
-//                SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+            binding.powerSaveSwitch.isChecked =
+                SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
 //            binding.lowBatteryReminderSwitch.isChecked =
 //                SaveKeyValues.getValue(Constant.LOW_BATTERY_REMINDER_KEY, true) as Boolean
         } finally {
