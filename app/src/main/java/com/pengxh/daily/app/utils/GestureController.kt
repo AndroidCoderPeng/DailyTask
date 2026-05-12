@@ -1,7 +1,6 @@
 package com.pengxh.daily.app.utils
 
 import android.content.Context
-import android.os.Handler
 import android.view.GestureDetector
 import android.view.MotionEvent
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -16,12 +15,9 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
  *
  * @param context 上下文
  * @param maskViewController 蒙层视图控制器
- * @param mainHandler 主线程Handler
  */
 class GestureController(
-    private val context: Context,
-    private val maskViewController: MaskViewController,
-    private val mainHandler: Handler
+    private val context: Context, private val maskViewController: MaskViewController
 ) {
 
     private val minFlingDistance = 1000f
@@ -104,7 +100,7 @@ class GestureController(
      */
     private fun handleShowMask() {
         if (!maskViewController.isMaskVisible()) {
-            maskViewController.showMaskView(mainHandler)
+            maskViewController.showMaskView()
         }
     }
 
@@ -113,7 +109,7 @@ class GestureController(
      */
     private fun handleHideMask() {
         if (maskViewController.isMaskVisible()) {
-            maskViewController.hideMaskView(mainHandler)
+            maskViewController.hideMaskView()
         }
     }
 }

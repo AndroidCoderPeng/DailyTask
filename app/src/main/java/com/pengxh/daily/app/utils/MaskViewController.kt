@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.utils
 
 import android.os.Handler
+import android.os.Looper
 import android.view.View
 import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
@@ -20,11 +21,12 @@ class MaskViewController(
     private val binding: ActivityMainBinding,
     private val insetsController: WindowInsetsControllerCompat
 ) {
+    private val mainHandler = Handler(Looper.getMainLooper())
     private var currentAnimation: Animation? = null
     private val random = Random()
     private var clockAnimationRunnable: Runnable? = null
 
-    fun showMaskView(handler: Handler) {
+    fun showMaskView() {
         // 隐藏悬浮窗
         EventBus.getDefault().post(ApplicationEvent.HideFloatingWindow)
 
@@ -50,15 +52,15 @@ class MaskViewController(
         binding.rootView.visibility = View.GONE
 
         // 启动时钟动画
-        startClockAnimation(handler)
+        startClockAnimation()
     }
 
-    fun hideMaskView(handler: Handler) {
+    fun hideMaskView() {
         // 显示悬浮窗
         EventBus.getDefault().post(ApplicationEvent.ShowFloatingWindow)
 
         // 停止时钟动画
-        stopClockAnimation(handler)
+        stopClockAnimation()
 
         // 恢复系统栏
         insetsController.apply {
@@ -83,7 +85,7 @@ class MaskViewController(
 
     fun isMaskVisible(): Boolean = binding.maskView.isVisible
 
-    private fun startClockAnimation(handler: Handler) {
+    private fun startClockAnimation() {
         clockAnimationRunnable = object : Runnable {
             override fun run() {
                 if (binding.maskView.width == 0 || binding.maskView.height == 0) return
@@ -109,21 +111,21 @@ class MaskViewController(
                         .start()
                 }
 
-                handler.postDelayed(this, 30000)
+                mainHandler.postDelayed(this, 30000)
             }
         }
-        handler.postDelayed(clockAnimationRunnable!!, 30000)
+        mainHandler.postDelayed(clockAnimationRunnable!!, 30000)
     }
 
-    private fun stopClockAnimation(handler: Handler) {
+    private fun stopClockAnimation() {
         clockAnimationRunnable?.let {
-            handler.removeCallbacks(it)
+            mainHandler.removeCallbacks(it)
             clockAnimationRunnable = null
         }
     }
 
-    fun destroy(handler: Handler) {
-        stopClockAnimation(handler)
+    fun destroy() {
+        stopClockAnimation()
         currentAnimation?.cancel()
         currentAnimation = null
     }

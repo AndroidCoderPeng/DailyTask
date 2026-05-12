@@ -2,6 +2,7 @@ package com.pengxh.daily.app.utils
 
 import android.os.CountDownTimer
 import android.os.Handler
+import android.os.Looper
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 
@@ -13,11 +14,9 @@ import org.greenrobot.eventbus.EventBus
  * 2. 向悬浮窗广播倒计时更新
  * 3. 处理超时后的逻辑（返回主界面、发送异常邮件）
  * 4. 提供定时器取消接口
- *
- * @param mainHandler 主线程Handler
  */
-class TimeoutTimerManager(private val mainHandler: Handler) {
-
+class TimeoutTimerManager() {
+    private val mainHandler = Handler(Looper.getMainLooper())
     private var timeoutTimer: CountDownTimer? = null
     private var timeoutSeconds: Int = 0
     private var hasCaptured = false

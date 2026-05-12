@@ -73,22 +73,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     private val dateTimeFormat by lazy {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.CHINA)
     }
-    private val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    private val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd", Locale.CHINA) }
     private val marginOffset by lazy { 16.dp2px(this) }
     private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val taskDataManager by lazy { TaskDataManager() }
     private val insetsController by lazy {
         WindowCompat.getInsetsController(window, binding.rootView)
     }
-    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
+    private val gestureController by lazy { GestureController(this, maskViewController) }
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
-    private val gestureController by lazy {
-        GestureController(this, maskViewController, mainHandler)
-    }
-    private val taskScheduler by lazy { TaskScheduler(this, mainHandler, this) }
-    private val timeoutTimerManager by lazy { TimeoutTimerManager(mainHandler) }
+    private val taskScheduler by lazy { TaskScheduler(this, this) }
+    private val timeoutTimerManager by lazy { TimeoutTimerManager() }
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val dailyTaskAdapter by lazy {
         DailyTaskAdapter(taskBeans).apply {
@@ -257,13 +255,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         when (event) {
             is ApplicationEvent.ShowMaskView -> {
                 if (!maskViewController.isMaskVisible()) {
-                    maskViewController.showMaskView(mainHandler)
+                    maskViewController.showMaskView()
                 }
             }
 
             is ApplicationEvent.HideMaskView -> {
                 if (maskViewController.isMaskVisible()) {
-                    maskViewController.hideMaskView(mainHandler)
+                    maskViewController.hideMaskView()
                 }
             }
 
@@ -538,9 +536,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             if (maskViewController.isMaskVisible()) {
-                maskViewController.hideMaskView(mainHandler)
+                maskViewController.hideMaskView()
             } else {
-                maskViewController.showMaskView(mainHandler)
+                maskViewController.showMaskView()
             }
             return true
         }
@@ -615,18 +613,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         super.onNewIntent(intent)
         LogFileManager.writeLog("onNewIntent: ${packageName}回到前台")
         if (!maskViewController.isMaskVisible()) {
-            maskViewController.showMaskView(mainHandler)
+            maskViewController.showMaskView()
         }
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        maskViewController.destroy(mainHandler)
+        maskViewController.destroy()
         taskScheduler.destroy()
         timeoutTimerManager.destroy()
-
-        mainHandler.removeCallbacksAndMessages(null)
-
         EventBus.getDefault().unregister(this)
     }
 }

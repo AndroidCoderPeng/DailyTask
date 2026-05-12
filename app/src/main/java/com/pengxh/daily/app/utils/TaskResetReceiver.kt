@@ -11,7 +11,7 @@ import java.util.Locale
 
 class TaskResetReceiver : BroadcastReceiver() {
 
-    private val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    private val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd", Locale.CHINA) }
 
     override fun onReceive(context: Context, intent: Intent?) {
         if (hasResetToday()) {

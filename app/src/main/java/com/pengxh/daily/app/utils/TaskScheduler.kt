@@ -3,6 +3,7 @@ package com.pengxh.daily.app.utils
 import android.content.Context
 import android.content.Intent
 import android.os.Handler
+import android.os.Looper
 import com.pengxh.daily.app.extensions.diffCurrent
 import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
@@ -17,14 +18,13 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
  * 2. 执行每日任务调度逻辑
  * 3. 协调倒计时服务和UI更新
  *
- * @param mainHandler 主线程Handler
+ * @param context
  * @param listener 任务状态回调
  */
 class TaskScheduler(
-    private val context: Context,
-    private val mainHandler: Handler,
-    private val listener: TaskStateListener
+    private val context: Context, private val listener: TaskStateListener
 ) {
+    private val mainHandler = Handler(Looper.getMainLooper())
     private var isTaskStarted = false
 
     // 任务状态回调
@@ -160,7 +160,11 @@ class TaskScheduler(
                 listener.onTaskExecuting(taskIndex, task, realTime)
 
                 // 启动倒计时
-                startIntentService(CountDownTimerService.ACTION_START_COUNTDOWN, taskIndex, timeSeconds)
+                startIntentService(
+                    CountDownTimerService.ACTION_START_COUNTDOWN,
+                    taskIndex,
+                    timeSeconds
+                )
             } catch (e: IndexOutOfBoundsException) {
                 val errorMsg = "任务数组访问越界: ${e.message}"
                 failExecution(errorMsg)
