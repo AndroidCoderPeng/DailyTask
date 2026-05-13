@@ -274,6 +274,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     override fun onDestroy() {
         super.onDestroy()
+        Log.d(kTag, "CaptureImageService 被销毁，清理 MediaProjection")
+        EventBus.getDefault().post(ApplicationEvent.ProjectionDestroyed)
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()

@@ -36,6 +36,7 @@ import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
+import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.TaskDataManager
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.TimeoutTimerManager
@@ -353,6 +354,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                 imagePath = event.imagePath
             }
 
+            is ApplicationEvent.ProjectionDestroyed -> {
+                "截屏服务已停止，已切换到通知模式".show(this)
+                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+            }
+
             else -> {}
         }
     }
@@ -612,6 +618,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         LogFileManager.writeLog("onNewIntent: ${packageName}回到前台")
+
+        if (ProjectionSession.isStateActive()) {
+            LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")
+        } else {
+            LogFileManager.writeLog("截屏服务异常：MediaProjection 已失效")
+            if (SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int == 1) {
+                "截屏服务已断开，请重新授权".show(this)
+                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+            }
+        }
+
         if (!maskViewController.isMaskVisible()) {
             maskViewController.showMaskView()
         }
