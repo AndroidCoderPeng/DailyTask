@@ -9,6 +9,7 @@ import com.pengxh.daily.app.extensions.getTaskIndex
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
  * 任务调度器
@@ -57,6 +58,29 @@ class TaskScheduler(
      * 启动任务
      */
     fun startTask() {
+        val enabled = SaveKeyValues.getValue(Constant.SKIP_CHINA_HOLIDAY_KEY, false) as Boolean
+        if (enabled) {
+            val dayInfo = ChinaHolidayCalendar.evaluateToday()
+            if (dayInfo.shouldSkip) {
+                // 节假日，忽略启动任务
+                LogFileManager.writeLog("今日为节假日 ${dayInfo.date}，跳过任务执行")
+                listener.onTaskCompleted()
+                startIntentService(CountDownTimerService.ACTION_COMPLETED_DAILY_TASK)
+                return
+            } else {
+                if (!dayInfo.hasOfficialAdjustment) {
+                    listener.onTaskExecutionError("未配置中国节假日调休表，任务按正常工作日执行")
+                }
+
+                // 非节假日，继续执行任务启动逻辑
+                internalStartTask()
+            }
+        } else {
+            internalStartTask()
+        }
+    }
+
+    private fun internalStartTask() {
         if (isTaskStarted) {
             LogFileManager.writeLog("任务已在执行中，忽略重复启动")
             return
