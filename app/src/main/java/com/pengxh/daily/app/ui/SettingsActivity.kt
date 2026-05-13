@@ -38,6 +38,7 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -125,8 +126,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
 
             is ApplicationEvent.ProjectionFailed -> {
-                "截屏服务启动失败，请重试".show(this)
+                "截屏服务已断开，已切换到通知模式".show(this)
                 binding.captureSwitch.isChecked = false
+                binding.captureRadioButton.isChecked = false
+                binding.noticeRadioButton.isChecked = true
                 binding.captureTipsView.visibility = View.VISIBLE
             }
 
@@ -391,17 +394,20 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.channelView.setTextColor(R.color.red.convertColor(this))
         }
 
-        val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
-        if (resultSource == 0) {
+        val sourceType = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+        if (sourceType == 0) {
             binding.noticeRadioButton.isChecked = true
             binding.captureRadioButton.isChecked = false
         } else {
+            // == 1
             if (ProjectionSession.isStateActive()) {
                 binding.captureRadioButton.isChecked = true
                 binding.noticeRadioButton.isChecked = false
             } else {
                 binding.captureRadioButton.isChecked = false
                 binding.noticeRadioButton.isChecked = true
+                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                Log.w(kTag, "截屏服务未运行，已自动切换到通知模式")
             }
         }
 
@@ -450,18 +456,19 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private fun turnOnNotificationMonitorService() {
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val componentName = ComponentName(context, NotificationMonitorService::class.java)
+                if (!isActive) return@launch
 
-                // 检查当前组件状态
+                val componentName = ComponentName(context, NotificationMonitorService::class.java)
                 val currentState = context.packageManager.getComponentEnabledSetting(componentName)
+
                 if (currentState == PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
-                    // 如果已经启用，先禁用
                     context.packageManager.setComponentEnabledSetting(
                         componentName,
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                         PackageManager.DONT_KILL_APP
                     )
                     delay(500) // 短暂延迟
+                    if (!isActive) return@launch
                 }
 
                 // 重新启用

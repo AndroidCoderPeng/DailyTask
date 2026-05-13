@@ -126,12 +126,14 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 override fun onStop() {
                     super.onStop()
                     ProjectionSession.markStoppedNeedAuth()
+                    SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
                 }
             }, null)
 
             ProjectionSession.setProjection(projection)
             Log.d(kTag, "MediaProjection created successfully")
             EventBus.getDefault().post(ApplicationEvent.ProjectionReady)
+            SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
         } catch (e: Exception) {
             Log.w(kTag, "createMediaProjection failed: ${e.message}", e)
             EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
@@ -275,6 +277,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()
+        SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
         stopForeground(STOP_FOREGROUND_REMOVE)
         EventBus.getDefault().unregister(this)
     }
