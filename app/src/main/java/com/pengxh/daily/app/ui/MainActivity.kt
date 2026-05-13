@@ -358,7 +358,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     private fun backToMainActivity() {
-        if (SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, false) as Boolean) {
+        if (SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean) {
             //模拟点击Home键
             val home = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)

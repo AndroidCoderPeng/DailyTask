@@ -160,7 +160,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("状态查询") -> {
-                    val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+                    val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
                     val content = buildString {
                         appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
                         appendLine("悬浮权限：${if (MainActivity.isCanDrawOverlay) "已获取" else "被拒绝"}")
@@ -190,7 +190,7 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun sendChannelMessage(title: String, content: String) {
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
         when (type) {
             0 -> {
                 // 企业微信

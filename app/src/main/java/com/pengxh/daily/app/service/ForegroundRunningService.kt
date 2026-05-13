@@ -171,7 +171,7 @@ class ForegroundRunningService : Service() {
                 return
             }
 
-            when (SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int) {
+            when (SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int) {
                 0 -> httpRequestManager.sendMessage("低电量提醒", "")
                 1 -> emailManager.sendEmail("低电量提醒", "", false)
                 else -> LogFileManager.writeLog("低电量提醒未发送，消息渠道未配置，当前电量：$battery%")

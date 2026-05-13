@@ -40,7 +40,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         val title = SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
         binding.messageTitleView.setText(title)
 
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
         if (type == 0) {
             binding.wxRadioButton.isChecked = true
         } else if (type == 1) {

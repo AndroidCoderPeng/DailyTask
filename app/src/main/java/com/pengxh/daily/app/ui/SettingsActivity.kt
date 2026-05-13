@@ -131,7 +131,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
 
             is ApplicationEvent.CaptureCompleted -> {
-                val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+                val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
                 when (type) {
                     0 -> {
                         // 企业微信
@@ -382,7 +382,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.floatingTipsView.text = "服务未开启，打完卡无法自动跳回本软件"
         }
 
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, -1) as Int
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
         if (type in 0..channels.lastIndex) {
             binding.channelView.text = channels[type]
             binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
@@ -391,7 +391,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.channelView.setTextColor(R.color.red.convertColor(this))
         }
 
-        val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, -1) as Int
+        val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
         if (resultSource == 0) {
             binding.noticeRadioButton.isChecked = true
             binding.captureRadioButton.isChecked = false

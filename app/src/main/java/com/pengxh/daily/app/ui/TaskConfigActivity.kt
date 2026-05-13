@@ -198,12 +198,12 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             exportData.emailConfig = DatabaseWrapper.loadLatestEmailConfig() ?: EmailConfigBean()
 
             val isDetectGesture = SaveKeyValues.getValue(
-                Constant.GESTURE_DETECTOR_KEY, false
+                Constant.GESTURE_DETECTOR_KEY, true
             ) as Boolean
             exportData.isDetectGesture = isDetectGesture
 
             val isBackToHome = SaveKeyValues.getValue(
-                Constant.BACK_TO_HOME_KEY, false
+                Constant.BACK_TO_HOME_KEY, true
             ) as Boolean
             exportData.isBackToHome = isBackToHome
 
