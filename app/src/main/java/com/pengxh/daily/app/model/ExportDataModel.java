@@ -22,7 +22,6 @@ public class ExportDataModel {
     private boolean randomTime; // 随机时间
     private boolean skipChinaHoliday; // 跳过中国节假日
     private boolean powerSaveMode; // 省电模式
-    private Boolean lowBatteryReminder; // 低电量提醒
     private int timeRange; // 时间范围
 
     public List<DailyTaskBean> getTasks() {
@@ -127,14 +126,6 @@ public class ExportDataModel {
 
     public void setPowerSaveMode(boolean powerSaveMode) {
         this.powerSaveMode = powerSaveMode;
-    }
-
-    public Boolean getLowBatteryReminder() {
-        return lowBatteryReminder;
-    }
-
-    public void setLowBatteryReminder(Boolean lowBatteryReminder) {
-        this.lowBatteryReminder = lowBatteryReminder;
     }
 
     public int getTimeRange() {

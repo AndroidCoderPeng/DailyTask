@@ -26,7 +26,6 @@ object Constant {
     const val CHANNEL_TYPE_KEY = "CHANNEL_TYPE_KEY"
     const val RESULT_SOURCE_KEY = "RESULT_SOURCE_KEY"
     const val POWER_SAVE_MODE_KEY = "POWER_SAVE_MODE_KEY"
-    const val LOW_BATTERY_REMINDER_KEY = "LOW_BATTERY_REMINDER_KEY"
     const val SKIP_CHINA_HOLIDAY_KEY = "SKIP_CHINA_HOLIDAY_KEY"
 
     // ============================================================

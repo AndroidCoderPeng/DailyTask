@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.service
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
@@ -11,23 +12,39 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.WindowFloatingBinding
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.HttpRequestManager
+import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 
-class FloatingWindowService : Service() {
+class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Main) {
     private val kTag = "FloatingWindowService"
     private val windowManager by lazy { getSystemService(WindowManager::class.java) }
+    private val activityManager by lazy { getSystemService(ActivityManager::class.java) }
+    private val httpRequestManager by lazy { HttpRequestManager(this) }
+    private val emailManager by lazy { EmailManager(this) }
     private lateinit var binding: WindowFloatingBinding
     private var floatViewParams: WindowManager.LayoutParams? = null
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
     private var initialTouchY = 0f
+    private var memoryMonitorJob: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -59,6 +76,66 @@ class FloatingWindowService : Service() {
 
         // 移动悬浮窗
         onDragMove()
+
+        startMemoryMonitoring()
+    }
+
+    private fun startMemoryMonitoring() {
+        val mode = SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+        val interval = if (mode) {
+            60_000L
+        } else {
+            1_000L
+        }
+        memoryMonitorJob = launch {
+            // 立即更新一次
+            updateMemoryInfo()
+
+            while (isActive) {
+                delay(interval)
+                updateMemoryInfo()
+            }
+        }
+    }
+
+    private suspend fun updateMemoryInfo() {
+        withContext(Dispatchers.IO) {
+            val memoryInfo = ActivityManager.MemoryInfo()
+            activityManager.getMemoryInfo(memoryInfo)
+
+            val totalMem = memoryInfo.totalMem
+            val availMem = memoryInfo.availMem
+            val usedMem = totalMem - availMem
+            val usagePercent = ((usedMem * 100.0) / totalMem).toInt()
+
+            withContext(Dispatchers.Main) {
+                if (usagePercent >= 90) {
+                    sendChannelMessage()
+                }
+
+                /**
+                 * 当前可用内存 / 系统允许该应用使用的内存上限，非 已用/总物理内存，所以会有差异，如果想获取到已用/总物理内存，需要root或者adb
+                 * */
+                binding.percentView.text = "${usagePercent}%"
+                val color = when {
+                    usagePercent >= 90 -> R.color.red
+                    usagePercent >= 70 -> R.color.orange
+                    else -> R.color.ios_green
+                }
+                binding.percentView.setTextColor(color.convertColor(this@FloatingWindowService))
+            }
+        }
+    }
+
+    private fun sendChannelMessage() {
+        val title = "内存使用预警"
+        val content = "当前内存使用已超过90%，请关注设备运行情况"
+        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        when (type) {
+            0 -> httpRequestManager.sendMessage(title, content)
+            1 -> emailManager.sendEmail(title, content, false)
+            else -> Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
+        }
     }
 
     @Suppress("unused")
@@ -128,6 +205,8 @@ class FloatingWindowService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        memoryMonitorJob?.cancel()
+        cancel()
         EventBus.getDefault().unregister(this)
         if (::binding.isInitialized && binding.root.isAttachedToWindow) {
             try {

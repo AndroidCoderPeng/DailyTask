@@ -159,11 +159,6 @@ class ForegroundRunningService : Service() {
     }
 
     private fun checkLowBattery() {
-        val enabled = SaveKeyValues.getValue(Constant.LOW_BATTERY_REMINDER_KEY, true) as Boolean
-        if (!enabled) {
-            return
-        }
-
         val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         if (battery < 20) {
             val currentTime = System.currentTimeMillis()

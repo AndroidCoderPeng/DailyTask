@@ -324,13 +324,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
         }
 
-        binding.lowBatteryReminderSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (syncingSwitchState) {
-                return@setOnCheckedChangeListener
-            }
-            SaveKeyValues.putValue(Constant.LOW_BATTERY_REMINDER_KEY, isChecked)
-        }
-
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }
@@ -419,8 +412,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
             binding.powerSaveSwitch.isChecked =
                 SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
-            binding.lowBatteryReminderSwitch.isChecked =
-                SaveKeyValues.getValue(Constant.LOW_BATTERY_REMINDER_KEY, true) as Boolean
         } finally {
             syncingSwitchState = false
         }

@@ -9,30 +9,33 @@
 
     <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="@dimen/dp_32"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/dp_8"
+        android:paddingVertical="4dp">
 
-        <ImageView
-            android:id="@+id/backView"
-            android:layout_width="@dimen/dp_32"
-            android:layout_height="@dimen/dp_32"
-            android:padding="@dimen/dp_4"
-            android:src="@mipmap/ic_launcher_round" />
+        <TextView
+            android:id="@+id/percentView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="65%"
+            android:textColor="@color/ios_green"
+            android:textSize="@dimen/sp_16" />
 
         <View
             android:layout_width="@dimen/dividerLine"
             android:layout_height="match_parent"
-            android:layout_marginVertical="@dimen/dp_8"
+            android:layout_marginHorizontal="@dimen/dp_8"
+            android:layout_marginVertical="@dimen/dp_4"
             android:background="@color/white" />
 
         <TextView
             android:id="@+id/timeView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="@dimen/dp_8"
             android:text="30s"
             android:textColor="@color/white"
-            android:textSize="@dimen/sp_14" />
+            android:textSize="@dimen/sp_16" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

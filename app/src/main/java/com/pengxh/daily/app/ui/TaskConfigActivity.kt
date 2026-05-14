@@ -236,10 +236,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 Constant.POWER_SAVE_MODE_KEY, false
             ) as Boolean
 
-            exportData.lowBatteryReminder = SaveKeyValues.getValue(
-                Constant.LOW_BATTERY_REMINDER_KEY, true
-            ) as Boolean
-
             val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
             exportData.timeRange = value
 
