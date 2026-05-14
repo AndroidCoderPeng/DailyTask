@@ -12,13 +12,11 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.WindowFloatingBinding
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
-import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -109,20 +107,10 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             val usagePercent = ((usedMem * 100.0) / totalMem).toInt()
 
             withContext(Dispatchers.Main) {
+                binding.waveProgressView.setProgress(usagePercent)
                 if (usagePercent >= 90) {
                     sendChannelMessage()
                 }
-
-                /**
-                 * 当前可用内存 / 系统允许该应用使用的内存上限，非 已用/总物理内存，所以会有差异，如果想获取到已用/总物理内存，需要root或者adb
-                 * */
-                binding.percentView.text = "${usagePercent}%"
-                val color = when {
-                    usagePercent >= 90 -> R.color.red
-                    usagePercent >= 70 -> R.color.orange
-                    else -> R.color.ios_green
-                }
-                binding.percentView.setTextColor(color.convertColor(this@FloatingWindowService))
             }
         }
     }

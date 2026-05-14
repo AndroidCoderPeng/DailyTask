@@ -12,21 +12,18 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/dp_8"
-        android:paddingVertical="4dp">
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="@dimen/dp_4">
 
-        <TextView
-            android:id="@+id/percentView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="65%"
-            android:textColor="@color/ios_green"
-            android:textSize="@dimen/sp_16" />
+        <com.pengxh.daily.app.widget.WaveProgressView
+            android:id="@+id/waveProgressView"
+            android:layout_width="@dimen/dp_24"
+            android:layout_height="@dimen/dp_24" />
 
         <View
             android:layout_width="@dimen/dividerLine"
             android:layout_height="match_parent"
-            android:layout_marginHorizontal="@dimen/dp_8"
+            android:layout_marginHorizontal="6dp"
             android:layout_marginVertical="@dimen/dp_4"
             android:background="@color/white" />
 
