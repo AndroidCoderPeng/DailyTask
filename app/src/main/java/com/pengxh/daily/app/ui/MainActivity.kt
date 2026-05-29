@@ -136,7 +136,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.menu_add_task -> {
-                    if (taskScheduler.isTaskStarted()) {
+                    if (isTaskStarted) {
                         "任务进行中，无法添加".show(this)
                         return@setOnMenuItemClickListener true
                     }
@@ -176,6 +176,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
         EventBus.getDefault().register(this)
+
+        // 处理 Alarm 触发时 Activity 未注册导致的 ResetDailyTask 事件丢失
+        val stickyReset = EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
+        if (stickyReset != null) {
+            EventBus.getDefault().removeStickyEvent(stickyReset)
+            taskScheduler.startTask()
+        }
 
         // 显示悬浮窗
         if (Settings.canDrawOverlays(this)) {
@@ -221,6 +228,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
         // 检查是否需要执行错过的重置
         checkMissedReset()
+
+        // Activity 重建时，若任务之前在跑，重新启动调度器恢复真实运行状态
+        val wasRunning = SaveKeyValues.getValue(Constant.TASK_RUNNING_STATE_KEY, false) as Boolean
+        if (wasRunning) {
+            taskScheduler.startTask()
+        }
     }
 
     private fun checkMissedReset() {
@@ -267,6 +280,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             }
 
             is ApplicationEvent.ResetDailyTask -> {
+                EventBus.getDefault().removeStickyEvent(ApplicationEvent.ResetDailyTask)
                 taskScheduler.startTask()
             }
 
@@ -384,6 +398,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun onTaskStarted() {
         isTaskStarted = true
+        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, true)
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
@@ -392,7 +407,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun onTaskStopped() {
         isTaskStarted = false
-        // 重置UI状态
+        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = ""
 
@@ -401,12 +416,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     override fun onTaskCompleted() {
-        // 任务全部完成
-        isTaskStarted = false
+        // 今日完成不等于停止运行，明天还要继续，按钮保持"停止"
+        dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = "当天所有任务已执行完毕"
         binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
-        dailyTaskAdapter.updateCurrentTaskState(-1)
-        resetExecuteButton()
         messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
     }
 
@@ -428,6 +441,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun onTaskExecutionError(message: String) {
         isTaskStarted = false
+        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
         resetExecuteButton()
         binding.tipsView.text = message
         binding.tipsView.setTextColor(R.color.red.convertColor(context))
@@ -455,7 +469,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
      * 列表项单击
      * */
     private fun itemClick(position: Int) {
-        if (taskScheduler.isTaskStarted()) {
+        if (isTaskStarted) {
             "任务进行中，无法修改".show(this)
             return
         }
@@ -488,7 +502,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
      * 列表项长按
      * */
     private fun itemLongClick(position: Int) {
-        if (taskScheduler.isTaskStarted()) {
+        if (isTaskStarted) {
             "任务进行中，无法删除".show(this)
             return
         }
@@ -527,7 +541,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun initEvent() {
         binding.executeTaskButton.setOnClickListener {
-            if (taskScheduler.isTaskStarted()) {
+            // 用运行模式标志判断，而非调度器内部状态（任务当天完成后调度器已闲置但仍在运行模式）
+            if (isTaskStarted) {
                 taskScheduler.stopTask()
             } else {
                 if (DatabaseWrapper.loadAllTask().isEmpty()) {

@@ -21,8 +21,8 @@ class TaskResetReceiver : BroadcastReceiver() {
 
         val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
         if (autoStart) {
-            // 触发主界面重置任务
-            EventBus.getDefault().post(ApplicationEvent.ResetDailyTask)
+            // 用 postSticky 保证 MainActivity 未注册时事件不丢失，启动后仍可收到
+            EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
         }
 
         markTodayAsReset()
@@ -43,6 +43,8 @@ class TaskResetReceiver : BroadcastReceiver() {
     private fun markTodayAsReset() {
         val today = dateFormat.format(Date())
         SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
+        // 每日重置时清掉运行状态，防止第二天打开 app 还显示"停止"
+        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
         LogFileManager.writeLog("标记 $today 已重置")
     }
 }

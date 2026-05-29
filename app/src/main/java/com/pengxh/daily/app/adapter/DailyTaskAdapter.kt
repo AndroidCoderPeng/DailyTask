@@ -24,17 +24,21 @@ class DailyTaskAdapter(private val dataBeans: MutableList<DailyTaskBean>) :
     private var onItemClickListener: OnItemClickListener? = null
 
     fun updateCurrentTaskState(position: Int) {
-        this.mPosition = position
-        notifyDataSetChanged()
+        val oldPosition = mPosition
+        mPosition = position
+        if (oldPosition >= 0 && oldPosition < dataBeans.size) notifyItemChanged(oldPosition)
+        if (position >= 0 && position < dataBeans.size) notifyItemChanged(position)
     }
 
     fun updateCurrentTaskState(position: Int, actualTime: String) {
-        this.mPosition = position
+        if (position < 0 || position >= dataBeans.size) return
+        val oldPosition = mPosition
+        mPosition = position
         this.actualTime = actualTime
-        if (position < 0 || position >= dataBeans.size) {
-            return
+        if (oldPosition >= 0 && oldPosition < dataBeans.size && oldPosition != position) {
+            notifyItemChanged(oldPosition)
         }
-        notifyDataSetChanged()
+        notifyItemChanged(position)
     }
 
     override fun getItemCount(): Int = dataBeans.size
