@@ -27,6 +27,7 @@ object Constant {
     const val RESULT_SOURCE_KEY = "RESULT_SOURCE_KEY"
     const val POWER_SAVE_MODE_KEY = "POWER_SAVE_MODE_KEY"
     const val SKIP_CHINA_HOLIDAY_KEY = "SKIP_CHINA_HOLIDAY_KEY"
+    const val TASK_RUNNING_STATE_KEY = "TASK_RUNNING_STATE_KEY"
 
     // ============================================================
     // 目标应用
