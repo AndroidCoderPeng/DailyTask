@@ -66,11 +66,14 @@ import java.util.Locale
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.TaskStateListener {
 
     companion object {
+        @Volatile
         var isTaskStarted = false
+
+        @Volatile
         var isCanDrawOverlay = false;
     }
 
-    private val context = this
+    private val context by lazy { this }
     private val dateTimeFormat by lazy {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.CHINA)
     }
@@ -115,6 +118,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             mainHandler.postDelayed(this, 1000)
         }
     }
+    private var remoteCountDownTimer: CountDownTimer? = null
 
     override fun observeRequestState() {
 
@@ -312,9 +316,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
             is ApplicationEvent.StartCountdownTime -> {
                 if (event.isRemoteCommand) {
+                    // 先取消上一个计时器（如果存在）
+                    remoteCountDownTimer?.cancel()
                     imagePath = ""
                     // 先跳转到目标应用，等待加载，然后截屏
-                    object : CountDownTimer(5000, 1000) {
+                    remoteCountDownTimer = object : CountDownTimer(5000, 1000) {
                         override fun onTick(millisUntilFinished: Long) {
                             val tick = (millisUntilFinished / 1000).toInt()
                             // 更新悬浮窗倒计时
@@ -339,7 +345,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                             }
                             hasCaptured = false
                         }
-                    }.start()
+                    }
+                    remoteCountDownTimer?.start()
                 } else {
                     timeoutTimerManager.startTimeoutTimer {
                         backToMainActivity()
@@ -421,7 +428,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         // 今日完成不等于停止运行，明天还要继续，按钮保持"停止"
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = "当天所有任务已执行完毕"
-        binding.tipsView.setTextColor(R.color.ios_green.convertColor(context))
+        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
         messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
     }
 
@@ -430,7 +437,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         binding.tipsView.text = String.format(
             Locale.getDefault(), "准备执行第 %d 个任务", taskIndex
         )
-        binding.tipsView.setTextColor(R.color.theme_color.convertColor(context))
+        binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
         dailyTaskAdapter.updateCurrentTaskState(taskIndex - 1, realTime)
 
         val content = buildString {
@@ -442,11 +449,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     override fun onTaskExecutionError(message: String) {
+        taskScheduler.stopTask()
         isTaskStarted = false
         SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
         resetExecuteButton()
         binding.tipsView.text = message
-        binding.tipsView.setTextColor(R.color.red.convertColor(context))
+        binding.tipsView.setTextColor(R.color.red.convertColor(this))
         messageDispatcher.sendMessage("任务执行出错通知", message)
     }
 
@@ -654,6 +662,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     override fun onDestroy() {
         super.onDestroy()
         mainHandler.removeCallbacksAndMessages(null)
+        remoteCountDownTimer?.cancel()
+        remoteCountDownTimer = null
         maskViewController.destroy()
         taskScheduler.destroy()
         timeoutTimerManager.destroy()
