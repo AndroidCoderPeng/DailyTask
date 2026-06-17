@@ -25,10 +25,11 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 class TaskScheduler(
     private val context: Context, private val listener: TaskStateListener
 ) {
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private var isTaskStarted = false
+    companion object {
+        private const val INVALID_TASK_INDEX = -1
+        private const val NO_SECONDS_DELAY = 0
+    }
 
-    // 任务状态回调
     interface TaskStateListener {
         fun onTaskStarted()
         fun onTaskStopped()
@@ -37,91 +38,36 @@ class TaskScheduler(
         fun onTaskExecutionError(message: String)
     }
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var isTaskStarted = false
+
     fun isTaskStarted(): Boolean = isTaskStarted
-
-    private fun startIntentService(action: String, taskIndex: Int = -1, seconds: Int = 0) {
-        Intent(context, CountDownTimerService::class.java).apply {
-            this.action = action
-            if (taskIndex != -1) {
-                putExtra(CountDownTimerService.EXTRA_TASK_INDEX, taskIndex)
-            }
-            if (seconds > 0) {
-                putExtra(CountDownTimerService.EXTRA_SECONDS, seconds)
-            }
-
-            // 使用startService，不是startForegroundService，不会触发onCreate，不会要求重新startForeground
-            context.startService(this)
-        }
-    }
 
     /**
      * 启动任务
      */
     fun startTask() {
-        val enabled = SaveKeyValues.getValue(Constant.SKIP_CHINA_HOLIDAY_KEY, false) as Boolean
-        if (enabled) {
-            val dayInfo = ChinaHolidayCalendar.evaluateToday()
-            if (dayInfo.shouldSkip) {
-                // 节假日，忽略启动任务
-                LogFileManager.writeLog("今日为节假日 ${dayInfo.date}，跳过任务执行")
-                listener.onTaskCompleted()
-                startIntentService(CountDownTimerService.ACTION_COMPLETED_DAILY_TASK)
-                return
-            } else {
-                if (!dayInfo.hasOfficialAdjustment) {
-                    LogFileManager.writeLog("未配置中国节假日调休表，任务按正常工作日执行")
-                }
-            }
-        }
-        internalStartTask()
-    }
-
-    private fun internalStartTask() {
-        if (isTaskStarted) {
-            LogFileManager.writeLog("任务已在执行中，忽略重复启动")
+        if (shouldSkipDueToHoliday()) {
+            handleHolidaySkip()
             return
         }
 
-        val taskBeans = DatabaseWrapper.loadAllTask()
-        if (taskBeans.isEmpty()) {
-            listener.onTaskExecutionError("启动任务失败，请先添加任务时间点")
-            return
-        }
-
-        if (taskBeans.getTaskIndex() == -1) {
-            LogFileManager.writeLog("今日任务已全部执行完毕，忽略启动")
-            listener.onTaskCompleted()
-            startIntentService(CountDownTimerService.ACTION_COMPLETED_DAILY_TASK)
-            return
-        }
-
-        LogFileManager.writeLog("开始执行每日任务")
-
-        // 更新状态标志
-        isTaskStarted = true
-
-        // 启动任务调度，先移除所有未执行的 Runnable，避免重复投递
-        mainHandler.removeCallbacks(dailyTaskRunnable)
-        mainHandler.post(dailyTaskRunnable)
-
-        // 通知状态变更
-        listener.onTaskStarted()
+        executeStartTask()
     }
 
     /**
      * 停止任务
      */
     fun stopTask() {
+        if (!isTaskStarted) {
+            LogFileManager.writeLog("任务未运行，无需停止")
+            return
+        }
+
         LogFileManager.writeLog("停止执行每日任务")
-        isTaskStarted = false
-
-        // 取消任务调度
-        mainHandler.removeCallbacks(dailyTaskRunnable)
-
-        // 取消服务中的倒计时
-        startIntentService(CountDownTimerService.ACTION_CANCEL_COUNTDOWN)
-
-        // 通知状态变更
+        updateTaskState(false)
+        cancelScheduledTasks()
+        cancelCountdownService()
         listener.onTaskStopped()
     }
 
@@ -135,75 +81,217 @@ class TaskScheduler(
             return
         }
         LogFileManager.writeLog("执行下一个任务")
-        // 先移除所有未执行的 Runnable，避免重复投递
+        rescheduleNextTask()
+    }
+
+    fun destroy() {
         mainHandler.removeCallbacks(dailyTaskRunnable)
+    }
+
+    private fun shouldSkipDueToHoliday(): Boolean {
+        val skipHolidayEnabled = SaveKeyValues.getValue(
+            Constant.SKIP_CHINA_HOLIDAY_KEY,
+            false
+        ) as Boolean
+
+        if (!skipHolidayEnabled) {
+            return false
+        }
+
+        val dayInfo = ChinaHolidayCalendar.evaluateToday()
+        return dayInfo.shouldSkip
+    }
+
+    private fun handleHolidaySkip() {
+        val dayInfo = ChinaHolidayCalendar.evaluateToday()
+        LogFileManager.writeLog("今日为节假日 ${dayInfo.date}，跳过任务执行")
+
+        if (!dayInfo.hasOfficialAdjustment) {
+            LogFileManager.writeLog("未配置中国节假日调休表，任务按正常工作日执行")
+        }
+
+        listener.onTaskCompleted()
+        notifyServiceTaskCompleted()
+    }
+
+    // ============================================================
+    // 私有实现 - 任务启动核心逻辑
+    // ============================================================
+
+    private fun executeStartTask() {
+        if (isTaskStarted) {
+            LogFileManager.writeLog("任务已在执行中，忽略重复启动")
+            return
+        }
+
+        val taskList = DatabaseWrapper.loadAllTask()
+        if (!validateTaskListForStart(taskList)) {
+            return
+        }
+
+        LogFileManager.writeLog("开始执行每日任务")
+        updateTaskState(true)
+        scheduleFirstTask()
+        listener.onTaskStarted()
+    }
+
+    private fun validateTaskListForStart(taskList: List<DailyTaskBean>): Boolean {
+        if (taskList.isEmpty()) {
+            listener.onTaskExecutionError("启动任务失败，请先添加任务时间点")
+            return false
+        }
+
+        if (taskList.getTaskIndex() == INVALID_TASK_INDEX) {
+            LogFileManager.writeLog("今日任务已全部执行完毕，忽略启动")
+            listener.onTaskCompleted()
+            notifyServiceTaskCompleted()
+            return false
+        }
+
+        return true
+    }
+
+    /**
+     * 调度第一个任务
+     */
+    private fun scheduleFirstTask() {
+        cancelScheduledTasks()
         mainHandler.post(dailyTaskRunnable)
+    }
+
+    /**
+     * 重新调度下一个任务
+     */
+    private fun rescheduleNextTask() {
+        cancelScheduledTasks()
+        mainHandler.post(dailyTaskRunnable)
+    }
+
+    /**
+     * 取消所有已调度的任务
+     */
+    private fun cancelScheduledTasks() {
+        mainHandler.removeCallbacks(dailyTaskRunnable)
+    }
+
+    /**
+     * 向倒计时服务发送指令
+     */
+    private fun sendCommandToService(action: String, taskIndex: Int = -1, seconds: Int = 0) {
+        Intent(context, CountDownTimerService::class.java).apply {
+            this.action = action
+            if (taskIndex != INVALID_TASK_INDEX) {
+                putExtra(CountDownTimerService.EXTRA_TASK_INDEX, taskIndex)
+            }
+            if (seconds > NO_SECONDS_DELAY) {
+                putExtra(CountDownTimerService.EXTRA_SECONDS, seconds)
+            }
+
+            // 使用startService，不是startForegroundService，不会触发onCreate，不会要求重新startForeground
+            context.startService(this)
+        }
+    }
+
+    /**
+     * 通知服务任务已完成
+     */
+    private fun notifyServiceTaskCompleted() {
+        sendCommandToService(CountDownTimerService.ACTION_COMPLETED_DAILY_TASK)
+    }
+
+    /**
+     * 取消服务的倒计时
+     */
+    private fun cancelCountdownService() {
+        sendCommandToService(CountDownTimerService.ACTION_CANCEL_COUNTDOWN)
+    }
+
+    /**
+     * 启动倒计时服务
+     */
+    private fun startCountdownService(taskIndex: Int, seconds: Int) {
+        sendCommandToService(CountDownTimerService.ACTION_START_COUNTDOWN, taskIndex, seconds)
+    }
+
+    /**
+     * 更新任务状态
+     */
+    private fun updateTaskState(started: Boolean) {
+        isTaskStarted = started
     }
 
     /**
      * 当日串行任务Runnable
      * 负责按顺序执行每日任务
      */
-    private val dailyTaskRunnable = object : Runnable {
-        override fun run() {
-            try {
-                val taskBeans = DatabaseWrapper.loadAllTask()
-                val index = taskBeans.getTaskIndex()
-                if (index == -1) {
-                    LogFileManager.writeLog("今日任务已全部执行完毕")
-                    mainHandler.removeCallbacks(this)
-                    isTaskStarted = false
-
-                    // 通知任务完成
-                    listener.onTaskCompleted()
-
-                    // 更新服务状态
-                    startIntentService(CountDownTimerService.ACTION_COMPLETED_DAILY_TASK)
-                    return
-                }
-
-                // 二次验证索引是否在有效范围内
-                if (index < 0 || index >= taskBeans.size) {
-                    val errorMsg = "任务索引超出范围: $index, 数组大小: ${taskBeans.size}"
-                    failExecution(errorMsg)
-                    return
-                }
-
-                LogFileManager.writeLog("执行任务，任务index是: $index，时间是: ${taskBeans[index].time}")
-                val task = taskBeans[index]
-                val taskIndex = index + 1
-
-                // 计算时间差
-                val (realTime, timeSeconds) = task.diffCurrent()
-
-                // 通知UI更新
-                listener.onTaskExecuting(taskIndex, task, realTime)
-
-                // 启动倒计时
-                startIntentService(
-                    CountDownTimerService.ACTION_START_COUNTDOWN,
-                    taskIndex,
-                    timeSeconds
-                )
-            } catch (e: IndexOutOfBoundsException) {
-                val errorMsg = "任务数组访问越界: ${e.message}"
-                failExecution(errorMsg)
-            } catch (e: Exception) {
-                val errorMsg = "执行任务时发生异常: ${e.message}"
-                failExecution(errorMsg)
-            }
+    private val dailyTaskRunnable = Runnable {
+        try {
+            executeCurrentTask()
+        } catch (e: IndexOutOfBoundsException) {
+            handleTaskExecutionError("任务数组访问越界: ${e.message}")
+        } catch (e: Exception) {
+            handleTaskExecutionError("执行任务时发生异常: ${e.message}")
         }
     }
 
-    private fun failExecution(message: String) {
-        LogFileManager.writeLog(message)
-        isTaskStarted = false
-        mainHandler.removeCallbacks(dailyTaskRunnable)
-        startIntentService(CountDownTimerService.ACTION_CANCEL_COUNTDOWN)
-        listener.onTaskExecutionError(message)
+    /**
+     * 执行当前任务
+     */
+    private fun executeCurrentTask() {
+        val taskList = DatabaseWrapper.loadAllTask()
+        val currentIndex = taskList.getTaskIndex()
+
+        if (currentIndex == INVALID_TASK_INDEX) {
+            handleAllTasksCompleted()
+            return
+        }
+
+        if (!isIndexValid(currentIndex, taskList.size)) {
+            handleInvalidTaskIndex(currentIndex, taskList.size)
+            return
+        }
+
+        processTask(taskList, currentIndex)
     }
 
-    fun destroy() {
-        mainHandler.removeCallbacks(dailyTaskRunnable)
+    private fun handleAllTasksCompleted() {
+        LogFileManager.writeLog("今日任务已全部执行完毕")
+        cancelScheduledTasks()
+        updateTaskState(false)
+        listener.onTaskCompleted()
+        notifyServiceTaskCompleted()
+    }
+
+    private fun isIndexValid(index: Int, listSize: Int): Boolean {
+        return index in 0 until listSize
+    }
+
+    private fun handleInvalidTaskIndex(index: Int, listSize: Int) {
+        val errorMsg = "任务索引超出范围: $index, 数组大小: $listSize"
+        handleTaskExecutionError(errorMsg)
+    }
+
+    /**
+     * 处理单个任务的执行
+     */
+    private fun processTask(taskList: List<DailyTaskBean>, index: Int) {
+        val task = taskList[index]
+        val taskNumber = index + 1
+
+        LogFileManager.writeLog("执行任务，任务编号: $taskNumber，时间: ${task.time}")
+
+        val (realTime, timeSeconds) = task.diffCurrent()
+
+        listener.onTaskExecuting(taskNumber, task, realTime)
+
+        startCountdownService(taskNumber, timeSeconds)
+    }
+
+    private fun handleTaskExecutionError(message: String) {
+        LogFileManager.writeLog(message)
+        updateTaskState(false)
+        cancelScheduledTasks()
+        cancelCountdownService()
+        listener.onTaskExecutionError(message)
     }
 }
