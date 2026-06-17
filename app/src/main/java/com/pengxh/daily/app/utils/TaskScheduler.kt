@@ -69,15 +69,11 @@ class TaskScheduler(
                 return
             } else {
                 if (!dayInfo.hasOfficialAdjustment) {
-                    listener.onTaskExecutionError("未配置中国节假日调休表，任务按正常工作日执行")
+                    LogFileManager.writeLog("未配置中国节假日调休表，任务按正常工作日执行")
                 }
-
-                // 非节假日，继续执行任务启动逻辑
-                internalStartTask()
             }
-        } else {
-            internalStartTask()
         }
+        internalStartTask()
     }
 
     private fun internalStartTask() {
