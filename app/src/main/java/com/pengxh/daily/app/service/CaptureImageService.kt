@@ -67,6 +67,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
+    private var isCapturingInitialized = false
 
     override fun onCreate() {
         super.onCreate()
@@ -125,13 +126,20 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             projection.registerCallback(object : MediaProjection.Callback() {
                 override fun onStop() {
                     super.onStop()
+                    Log.w(kTag, "MediaProjection stopped by system")
                     ProjectionSession.markStoppedNeedAuth()
                     SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                    releaseCaptureResources()
+                    isCapturingInitialized = false
                 }
             }, null)
 
             ProjectionSession.setProjection(projection)
             Log.d(kTag, "MediaProjection created successfully")
+
+            // 初始化截屏资源（只执行一次）
+            initializeCaptureResources(projection)
+
             EventBus.getDefault().post(ApplicationEvent.ProjectionReady)
             SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
         } catch (e: Exception) {
@@ -150,6 +158,41 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         }
     }
 
+    private fun initializeCaptureResources(projection: MediaProjection) {
+        if (isCapturingInitialized) {
+            Log.d(kTag, "Capture resources already initialized")
+            return
+        }
+
+        val metrics = resources.displayMetrics
+        val width = metrics.widthPixels
+        val height = metrics.heightPixels
+        val density = metrics.densityDpi
+
+        try {
+            val reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
+            imageReader = reader
+
+            virtualDisplay = projection.createVirtualDisplay(
+                "CaptureImageDisplay",
+                width,
+                height,
+                density,
+                DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
+                reader.surface,
+                null,
+                null
+            )
+
+            isCapturingInitialized = true
+            Log.d(kTag, "Capture resources initialized successfully")
+        } catch (e: Exception) {
+            Log.e(kTag, "Failed to initialize capture resources", e)
+            releaseCaptureResources()
+            isCapturingInitialized = false
+        }
+    }
+
     private fun captureScreen() {
         if (!ProjectionSession.isStateActive()) {
             sendChannelMessage("MediaProjection not active. state=${ProjectionSession.getState()}")
@@ -162,26 +205,22 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             return
         }
 
-        val metrics = resources.displayMetrics
-        val width = metrics.widthPixels
-        val height = metrics.heightPixels
-        val density = metrics.densityDpi
+        // 如果资源未初始化，先初始化
+        if (!isCapturingInitialized || imageReader == null || virtualDisplay == null) {
+            Log.w(kTag, "Capture resources not initialized, reinitializing...")
+            initializeCaptureResources(projection)
+            if (!isCapturingInitialized) {
+                sendChannelMessage("截屏资源初始化失败")
+                return
+            }
+        }
 
-        releaseCaptureResources()
-        val reader = ImageReader.newInstance(width, height, PixelFormat.RGBA_8888, 2)
-        imageReader = reader
         launch {
             try {
-                virtualDisplay = projection.createVirtualDisplay(
-                    "CaptureImageDisplay",
-                    width,
-                    height,
-                    density,
-                    DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR or DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC,
-                    reader.surface,
-                    null,
-                    null
-                )
+                val reader = imageReader ?: run {
+                    sendChannelMessage("ImageReader 为空")
+                    return@launch
+                }
 
                 // 最多等待2秒
                 val image = withTimeoutOrNull(2000) {
@@ -228,15 +267,20 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 topHalf.saveImage(imagePath)
                 EventBus.getDefault().post(ApplicationEvent.CaptureCompleted(imagePath))
             } catch (_: RemoteException) {
+                Log.w(kTag, "RemoteException during capture")
                 ProjectionSession.markStoppedNeedAuth()
                 EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
-            } catch (_: SecurityException) {
-                ProjectionSession.markStoppedNeedAuth()
-                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
-            } catch (e: Exception) {
-                sendChannelMessage("截屏失败: ${e.message}")
-            } finally {
                 releaseCaptureResources()
+                isCapturingInitialized = false
+            } catch (_: SecurityException) {
+                Log.w(kTag, "SecurityException during capture")
+                ProjectionSession.markStoppedNeedAuth()
+                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+                releaseCaptureResources()
+                isCapturingInitialized = false
+            } catch (e: Exception) {
+                Log.e(kTag, "截屏失败: ${e.message}", e)
+                sendChannelMessage("截屏失败: ${e.message}")
             }
         }
     }
@@ -280,11 +324,13 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         releaseCaptureResources()
         ProjectionSession.clear()
         SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+        isCapturingInitialized = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         EventBus.getDefault().unregister(this)
     }
 
     private fun releaseCaptureResources() {
+        Log.d(kTag, "Releasing capture resources")
         runCatching { virtualDisplay?.release() }
         virtualDisplay = null
         runCatching { imageReader?.close() }
