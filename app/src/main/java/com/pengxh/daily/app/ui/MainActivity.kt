@@ -104,6 +104,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
     private var imagePath = ""
     private var hasCaptured = false
+    private val timeUpdateRunnable = object : Runnable {
+        override fun run() {
+            val currentTime = dateTimeFormat.format(Date())
+            val parts = currentTime.split(" ")
+            binding.toolbar.apply {
+                title = parts[2]
+                subtitle = "${parts[0]} ${parts[1]}"
+            }
+            mainHandler.postDelayed(this, 1000)
+        }
+    }
 
     override fun observeRequestState() {
 
@@ -121,17 +132,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         }
 
         // 显示时间
-        mainHandler.post(object : Runnable {
-            override fun run() {
-                val currentTime = dateTimeFormat.format(Date())
-                val parts = currentTime.split(" ")
-                binding.toolbar.apply {
-                    title = parts[2]
-                    subtitle = "${parts[0]} ${parts[1]}"
-                }
-                mainHandler.postDelayed(this, 1000)
-            }
-        })
+        mainHandler.post(timeUpdateRunnable)
 
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
@@ -178,7 +179,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         EventBus.getDefault().register(this)
 
         // 处理 Alarm 触发时 Activity 未注册导致的 ResetDailyTask 事件丢失
-        val stickyReset = EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
+        val stickyReset =
+            EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
         if (stickyReset != null) {
             EventBus.getDefault().removeStickyEvent(stickyReset)
             taskScheduler.startTask()
@@ -651,6 +653,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun onDestroy() {
         super.onDestroy()
+        mainHandler.removeCallbacksAndMessages(null)
         maskViewController.destroy()
         taskScheduler.destroy()
         timeoutTimerManager.destroy()
