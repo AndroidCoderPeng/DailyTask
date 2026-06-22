@@ -46,12 +46,12 @@ android {
         }
     }
 
-    GString id = "com.alibaba.android.${randomCode()}"
-    productFlavors {
-        daily {
-            applicationId = id
-        }
-    }
+//    GString id = "com.alibaba.android.${randomCode()}"
+//    productFlavors {
+//        daily {
+//            applicationId = id
+//        }
+//    }
 
     packagingOptions {
         exclude 'META-INF/NOTICE.md'
