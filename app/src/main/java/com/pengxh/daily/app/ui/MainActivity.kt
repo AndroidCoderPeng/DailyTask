@@ -59,7 +59,6 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -243,30 +242,24 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     private fun checkMissedReset() {
-        val resetHour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
+        val lastResetDate = SaveKeyValues.getValue(Constant.LAST_RESET_DATE_KEY, "") as String
+        val today = dateFormat.format(Date())
 
-        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-
-        // 如果当前时间在目标小时之后，且今天还未重置，则执行重置
-        if (currentHour >= resetHour) {
-            val lastResetDate = SaveKeyValues.getValue(
-                Constant.LAST_RESET_DATE_KEY, ""
-            ) as String
-            val today = dateFormat.format(Date())
-
-            if (lastResetDate != today) {
-                // 今天还未重置，执行重置
-                val autoStart =
-                    SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
-                if (autoStart) {
-                    taskScheduler.startTask()
-                }
-                // 标记今天已重置
-                SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
-            }
+        // 今天已重置，跳过（防止重复执行）
+        if (lastResetDate == today) {
+            return
         }
+
+        // 今天还未重置，执行重置（覆盖 Alarm 未触发的场景）
+        LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
+        val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
+        if (autoStart) {
+            taskScheduler.startTask()
+        }
+        // 标记今天已重置
+        SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
+        // 重置运行模式状态，等待用户手动启动或下次自动启动
+        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
     }
 
     @Suppress("unused")
@@ -425,11 +418,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     }
 
     override fun onTaskCompleted() {
-        // 今日完成不等于停止运行，明天还要继续，按钮保持"停止"
+        // 今日任务已全部完成，调度器已停止，同步状态
+        isTaskStarted = false
+        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = "当天所有任务已执行完毕"
         binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
         messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
+        resetExecuteButton() // 按钮重置为"启动"
     }
 
     override fun onTaskExecuting(taskIndex: Int, task: DailyTaskBean, realTime: String) {

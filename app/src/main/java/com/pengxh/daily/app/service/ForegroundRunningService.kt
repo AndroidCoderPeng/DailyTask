@@ -23,7 +23,9 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 
 /**
@@ -98,7 +100,10 @@ class ForegroundRunningService : Service() {
         override fun onReceive(context: Context?, intent: Intent?) {
             intent?.action?.let {
                 when (it) {
-                    Intent.ACTION_TIME_TICK -> updateResetTimeView()
+                    Intent.ACTION_TIME_TICK -> {
+                        updateResetTimeView()
+                        checkAndTriggerReset()
+                    }
 
                     Intent.ACTION_BATTERY_CHANGED -> checkLowBattery()
                 }
@@ -175,6 +180,44 @@ class ForegroundRunningService : Service() {
         } else {
             // 电量恢复到20%以上，重置提醒时间
             lastRemindTime = 0L
+        }
+    }
+
+    /**
+     * 每分钟检查是否需要触发任务重置
+     * 作为 AlarmManager 的兜底，防止部分机型 Alarm 不触发导致任务不重置
+     */
+    private fun checkAndTriggerReset() {
+        val resetHour = SaveKeyValues.getValue(
+            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+        ) as Int
+        val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+        // 只在 resetHour 这个小时内触发检查，避免每分钟都判断
+        if (currentHour != resetHour) {
+            return
+        }
+
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
+        val lastResetDate = SaveKeyValues.getValue(Constant.LAST_RESET_DATE_KEY, "") as String
+
+        // 今天已重置，跳过
+        if (lastResetDate == today) {
+            return
+        }
+
+        // 标记今天已重置，防止重复触发
+        LogFileManager.writeLog("ForegroundRunningService 触发任务重置（Alarm兜底）")
+        SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
+        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+
+        // 重新注册 Alarm，防止之前的 Alarm 失效
+        AlarmScheduler.schedule(this, resetHour)
+
+        // 发送 ResetDailyTask 事件，触发任务重置
+        val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
+        if (autoStart) {
+            EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
         }
     }
 
