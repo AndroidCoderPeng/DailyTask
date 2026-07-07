@@ -44,9 +44,8 @@
                     android:paddingBottom="@dimen/dp_12"
                     android:singleLine="true"
                     android:text="--分钟后刷新每日任务"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
                     android:textColor="@color/white"
-                    android:textSize="@dimen/sp_14"
-                    android:textStyle="bold"
                     app:drawableStartCompat="@drawable/ic_sand" />
 
                 <LinearLayout

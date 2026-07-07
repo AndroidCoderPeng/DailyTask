@@ -45,8 +45,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:text="目标应用"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/iconView"
@@ -76,8 +75,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:text="消息渠道"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/channelView"
@@ -85,8 +83,7 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
-                        android:textSize="@dimen/sp_16"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
                 </RelativeLayout>
 
                 <View
@@ -106,8 +103,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:text="结果来源"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -120,13 +116,15 @@
                             android:id="@+id/noticeRadioButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="通知监听" />
+                            android:text="通知监听"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.radiobutton.MaterialRadioButton
                             android:id="@+id/captureRadioButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="截屏服务" />
+                            android:text="截屏服务"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
                     </LinearLayout>
                 </RelativeLayout>
 
@@ -149,8 +147,7 @@
                         android:layout_centerVertical="true"
                         android:gravity="center_vertical"
                         android:text="任务配置"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -179,8 +176,7 @@
                         android:layout_centerVertical="true"
                         android:gravity="center_vertical"
                         android:text="更新节假日数据"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -214,8 +210,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="悬浮权限"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/floatingTipsView"
@@ -257,8 +252,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="通知监听"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/noticeTipsView"
@@ -300,8 +294,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="截屏服务"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:id="@+id/captureTipsView"
@@ -343,8 +336,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="手势辅助"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
@@ -387,8 +379,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="省电模式"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="match_parent"
@@ -429,8 +420,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="退回桌面"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
@@ -469,8 +459,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:text="唤起测试"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -498,8 +487,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:text="截屏测试"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -527,8 +515,7 @@
                         android:layout_height="wrap_content"
                         android:layout_centerVertical="true"
                         android:text="常见问题"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <ImageView
                         android:layout_width="wrap_content"
@@ -556,8 +543,7 @@
                         android:layout_centerVertical="true"
                         android:gravity="center_vertical"
                         android:text="当前版本"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/appVersion"
@@ -566,8 +552,7 @@
                         android:layout_alignParentEnd="true"
                         android:layout_centerVertical="true"
                         android:gravity="center_vertical"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
                 </RelativeLayout>
             </LinearLayout>
         </LinearLayout>

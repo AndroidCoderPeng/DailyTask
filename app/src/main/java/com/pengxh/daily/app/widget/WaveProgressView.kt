@@ -102,7 +102,7 @@ class WaveProgressView @JvmOverloads constructor(
         private const val DEFAULT_WAVE_COLOR2 = 0xFF42A5F5.toInt()     // 浅蓝色
         private const val DEFAULT_TEXT_COLOR = Color.WHITE
         private const val DEFAULT_BORDER_WIDTH = 4f
-        private const val DEFAULT_TEXT_SIZE = 22f
+        private const val DEFAULT_TEXT_SIZE = 18f
         private const val DEFAULT_WAVE_AMPLITUDE = 8f
         private const val ANIMATION_DURATION = 2000L  // 波浪动画周期（毫秒）
         private const val SEGMENTS_PER_WAVELENGTH = 24  // 每个波长的分段数（值越大波浪更平滑）

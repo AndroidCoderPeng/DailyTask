@@ -39,8 +39,7 @@
                     android:layout_height="36dp"
                     android:gravity="center_vertical"
                     android:text="消息标题"
-                    android:textColor="@color/text_default_color"
-                    android:textSize="@dimen/sp_16" />
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                 <com.pengxh.kt.lite.widget.DeleteEditText
                     android:id="@+id/messageTitleView"
@@ -68,8 +67,7 @@
                     android:layout_height="wrap_content"
                     android:padding="@dimen/dp_16"
                     android:text="企业微信"
-                    android:textColor="@color/text_default_color"
-                    android:textSize="@dimen/sp_16" />
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                 <View
                     android:layout_width="match_parent"
@@ -89,8 +87,7 @@
                         android:layout_height="36dp"
                         android:gravity="center_vertical"
                         android:text="key"
-                        android:textColor="@color/text_default_color"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                     <com.pengxh.kt.lite.widget.DeleteEditText
                         android:id="@+id/wxKeyView"
@@ -101,7 +98,7 @@
                         android:gravity="end|center_vertical"
                         android:padding="0dp"
                         android:singleLine="true"
-                        android:textSize="@dimen/sp_16" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -115,7 +112,8 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/dp_8"
                         android:layout_weight="1"
-                        android:text="选它" />
+                        android:text="选它"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/sendWxButton"
@@ -139,8 +137,7 @@
                     android:layout_height="wrap_content"
                     android:padding="@dimen/dp_16"
                     android:text="QQ邮箱"
-                    android:textColor="@color/text_default_color"
-                    android:textSize="@dimen/sp_16" />
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                 <View
                     android:layout_width="match_parent"
@@ -165,8 +162,7 @@
                             android:layout_height="36dp"
                             android:gravity="center_vertical"
                             android:text="发件箱"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                         <com.pengxh.kt.lite.widget.DeleteEditText
                             android:id="@+id/emailSendAddressView"
@@ -180,15 +176,14 @@
                             android:maxLength="15"
                             android:padding="0dp"
                             android:singleLine="true"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="36dp"
                             android:gravity="center_vertical"
                             android:text="\@qq.com"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -203,8 +198,7 @@
                             android:layout_height="36dp"
                             android:gravity="center_vertical"
                             android:text="授权码"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                         <com.pengxh.kt.lite.widget.DeleteEditText
                             android:id="@+id/emailSendCodeView"
@@ -230,8 +224,7 @@
                             android:layout_height="36dp"
                             android:gravity="center_vertical"
                             android:text="收件箱"
-                            android:textColor="@color/text_default_color"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
                         <com.pengxh.kt.lite.widget.DeleteEditText
                             android:id="@+id/emailInboxView"
@@ -244,7 +237,7 @@
                             android:inputType="textEmailAddress"
                             android:padding="0dp"
                             android:singleLine="true"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -258,7 +251,8 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="@dimen/dp_8"
                             android:layout_weight="1"
-                            android:text="选它" />
+                            android:text="选它"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/sendEmailButton"
