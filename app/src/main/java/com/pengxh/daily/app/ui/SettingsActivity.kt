@@ -23,6 +23,7 @@ import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.ApplicationEvent
+import com.pengxh.daily.app.utils.ChinaHolidayRemoteUpdater
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.EmailManager
@@ -252,6 +253,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         binding.taskConfigLayout.setOnClickListener {
             navigatePageTo<TaskConfigActivity>()
+        }
+
+        binding.updateHolidayLayout.setOnClickListener {
+            // TODO 改为回调，不必使用EventBus
+            ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
         }
 
         binding.floatingSwitch.setOnClickListener {
