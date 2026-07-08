@@ -23,18 +23,6 @@ object ChinaHolidayManager {
     private const val kTag = "ChinaHolidayManager"
     private const val CACHE_KEY = "holidayConfig"
 
-    private val scope = CoroutineScope(SupervisorJob())
-
-    @Volatile
-    var listener: OnSyncHolidayListener? = null
-
-    private sealed class DownloadResult {
-        data class Success(val content: String) : DownloadResult()
-        data class Error(val message: String) : DownloadResult()
-    }
-
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-
     /**
      * CDN 镜像源
      * */
@@ -43,11 +31,20 @@ object ChinaHolidayManager {
         "https://fastly.jsdelivr.net/npm/chinese-days/dist/years/%s.json",
         "https://registry.npmmirror.com/chinese-days/latest/files/dist/years/%s.json"
     )
+
+    private sealed class DownloadResult {
+        data class Success(val content: String) : DownloadResult()
+        data class Error(val message: String) : DownloadResult()
+    }
+
+    private val scope = CoroutineScope(SupervisorJob())
+    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
         .followRedirects(true)
         .build()
+    private var listener: OnUpdateListener? = null
 
     @Volatile
     private var holidayDates: Set<LocalDate> = emptySet()
@@ -58,15 +55,12 @@ object ChinaHolidayManager {
     private val isSyncing = AtomicBoolean(false)
     private val dataMutex = Mutex()
 
-    fun cancel() {
-        scope.cancel()
-    }
-
-    fun updateChinaHolidayData() {
+    fun updateChinaHolidayData(listener: OnUpdateListener?) {
         if (!isSyncing.compareAndSet(false, true)) {
             Log.w(kTag, "Already syncing, skip duplicate request")
             return
         }
+        this.listener = listener
         scope.launch {
             try {
                 tryLoadFromCache()
@@ -135,7 +129,7 @@ object ChinaHolidayManager {
                         try {
                             // 仅做Json格式校验，返回值不必处理
                             val element = JsonParser.parseString(body)
-                        } catch (e: Exception) {
+                        } catch (_: Exception) {
                             return@withContext DownloadResult.Error("Invalid JSON")
                         }
                         DownloadResult.Success(body)
@@ -204,6 +198,10 @@ object ChinaHolidayManager {
         return date in workdayDates
     }
 
+    fun cancel() {
+        scope.cancel()
+    }
+
     private suspend fun notifySuccess(message: String) {
         withContext(Dispatchers.Main) {
             listener?.onSyncSuccess(message)
@@ -216,7 +214,7 @@ object ChinaHolidayManager {
         }
     }
 
-    interface OnSyncHolidayListener {
+    interface OnUpdateListener {
         fun onSyncSuccess(message: String)
         fun onSyncError(message: String)
     }

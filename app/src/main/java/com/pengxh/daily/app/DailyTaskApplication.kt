@@ -1,11 +1,15 @@
 package com.pengxh.daily.app
 
 import android.app.Application
+import android.os.Environment
 import androidx.room.Room.databaseBuilder
 import com.pengxh.daily.app.sqlite.DailyTaskDataBase
+import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.tencent.bugly.crashreport.CrashReport
+import java.io.File
+import java.io.IOException
 
 
 /**
@@ -34,6 +38,18 @@ class DailyTaskApplication : Application() {
         LogFileManager.initLogFile(this)
 
         CrashReport.initCrashReport(this, "ecbdc9baf5", BuildConfig.DEBUG)
+
+        // 初始化配置文件
+        val dir = File(this.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "")
+        val file = File(dir.toString() + File.separator + "DailyTaskConfig.json")
+        if (!file.exists()) {
+            try {
+                file.createNewFile()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+        ConfigStore.init(file.absolutePath)
 
         dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db")
             .allowMainThreadQueries()
