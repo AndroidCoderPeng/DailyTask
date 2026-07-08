@@ -17,7 +17,6 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
 import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ApplicationEvent
-import com.pengxh.daily.app.utils.ChinaHolidayRemoteUpdater
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
@@ -28,8 +27,6 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -85,8 +82,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         } else {
             binding.minuteRangeLayout.visibility = View.GONE
         }
-
-        updateHolidayDataStatus()
     }
 
     override fun initEvent() {
@@ -145,10 +140,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.skipHolidaySwitch.setOnCheckedChangeListener { _, isChecked ->
             SaveKeyValues.putValue(Constant.SKIP_CHINA_HOLIDAY_KEY, isChecked)
-            updateHolidayDataStatus()
-            if (isChecked) {
-                ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
-            }
         }
 
         binding.minuteRangeLayout.setOnClickListener {
@@ -255,19 +246,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                         }
                     }
                 }).build().show()
-        }
-    }
-
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleApplicationEvent(event: ApplicationEvent.HolidayDataStatusChanged) {
-        updateHolidayDataStatus()
-    }
-
-    private fun updateHolidayDataStatus() {
-        val enabled = binding.skipHolidaySwitch.isChecked
-        if (enabled) {
-            ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
         }
     }
 

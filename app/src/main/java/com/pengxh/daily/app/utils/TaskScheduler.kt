@@ -10,6 +10,7 @@ import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import java.time.LocalDate
 
 /**
  * 任务调度器
@@ -98,17 +99,11 @@ class TaskScheduler(
             return false
         }
 
-        val dayInfo = ChinaHolidayCalendar.evaluateToday()
-        return dayInfo.shouldSkip
+        return ChinaHolidayManager.isHoliday(LocalDate.now())
     }
 
     private fun handleHolidaySkip() {
-        val dayInfo = ChinaHolidayCalendar.evaluateToday()
-        LogFileManager.writeLog("今日为节假日 ${dayInfo.date}，跳过任务执行")
-
-        if (!dayInfo.hasOfficialAdjustment) {
-            LogFileManager.writeLog("未配置中国节假日调休表，任务按正常工作日执行")
-        }
+        LogFileManager.writeLog("今日为节假日，跳过任务执行")
 
         listener.onTaskCompleted()
         notifyServiceTaskCompleted()

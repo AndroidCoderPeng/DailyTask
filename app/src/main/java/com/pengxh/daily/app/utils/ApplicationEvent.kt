@@ -53,9 +53,4 @@ sealed class ApplicationEvent {
     object ProjectionReady : ApplicationEvent()
     object ProjectionFailed : ApplicationEvent()
     object ProjectionDestroyed : ApplicationEvent()
-
-    /**
-     * 中国节假日数据状态变化事件
-     */
-    object HolidayDataStatusChanged : ApplicationEvent()
 }

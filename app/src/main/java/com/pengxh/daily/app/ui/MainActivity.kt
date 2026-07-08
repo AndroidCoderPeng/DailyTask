@@ -178,16 +178,45 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         }
     }
 
-    override fun initOnCreate(savedInstanceState: Bundle?) {
-        EventBus.getDefault().register(this)
-
-        // 处理 Alarm 触发时 Activity 未注册导致的 ResetDailyTask 事件丢失
-        val stickyReset =
-            EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
-        if (stickyReset != null) {
-            EventBus.getDefault().removeStickyEvent(stickyReset)
-            taskScheduler.startTask()
+    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
+        if (Settings.canDrawOverlays(this)) {
+            Intent(this, FloatingWindowService::class.java).apply {
+                startService(this)
+            }
+            isCanDrawOverlay = true
+        } else {
+            isCanDrawOverlay = false
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!Settings.canDrawOverlays(this)) {
+            isCanDrawOverlay = false
+            "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
+        }
+    }
+
+    override fun initOnCreate(savedInstanceState: Bundle?) {
+        val watermark = DailyTask.getWatermarkText()
+        binding.contentView.background = WatermarkDrawable(this, watermark)
+
+        // 数据
+        taskBeans = DatabaseWrapper.loadAllTask()
+        if (taskBeans.isEmpty()) {
+            binding.recyclerView.visibility = View.GONE
+            binding.emptyView.visibility = View.VISIBLE
+        } else {
+            binding.recyclerView.visibility = View.VISIBLE
+            binding.emptyView.visibility = View.GONE
+        }
+
+        binding.recyclerView.adapter = dailyTaskAdapter
+        binding.recyclerView.addItemDecoration(
+            RecyclerViewItemOffsets(
+                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
+            )
+        )
 
         // 显示悬浮窗
         if (Settings.canDrawOverlays(this)) {
@@ -211,25 +240,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             startForegroundService(this)
         }
 
-        val watermark = DailyTask.getWatermarkText()
-        binding.contentView.background = WatermarkDrawable(this, watermark)
-
-        // 数据
-        taskBeans = DatabaseWrapper.loadAllTask()
-        if (taskBeans.isEmpty()) {
-            binding.recyclerView.visibility = View.GONE
-            binding.emptyView.visibility = View.VISIBLE
-        } else {
-            binding.recyclerView.visibility = View.VISIBLE
-            binding.emptyView.visibility = View.GONE
+        EventBus.getDefault().register(this)
+        // 处理 Alarm 触发时 Activity 未注册导致的 ResetDailyTask 事件丢失
+        val stickyReset =
+            EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
+        if (stickyReset != null) {
+            EventBus.getDefault().removeStickyEvent(stickyReset)
+            taskScheduler.startTask()
         }
-
-        binding.recyclerView.adapter = dailyTaskAdapter
-        binding.recyclerView.addItemDecoration(
-            RecyclerViewItemOffsets(
-                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
-            )
-        )
 
         // 检查是否需要执行错过的重置
         checkMissedReset()
@@ -460,17 +478,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
         binding.executeTaskButton.setIconTintResource(R.color.ios_green)
         binding.executeTaskButton.text = "启动"
-    }
-
-    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
-        if (Settings.canDrawOverlays(this)) {
-            Intent(this, FloatingWindowService::class.java).apply {
-                startService(this)
-            }
-            isCanDrawOverlay = true
-        } else {
-            isCanDrawOverlay = false
-        }
     }
 
     /**
