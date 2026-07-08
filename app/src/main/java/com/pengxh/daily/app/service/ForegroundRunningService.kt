@@ -193,8 +193,8 @@ class ForegroundRunningService : Service() {
         ) as Int
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-        // 只在 resetHour 这个小时内触发检查，避免每分钟都判断
-        if (currentHour != resetHour) {
+        // 只在 resetHour ~ resetHour+1 这个范围触发检查
+        if (currentHour !in resetHour..(resetHour + 1)) {
             return
         }
 

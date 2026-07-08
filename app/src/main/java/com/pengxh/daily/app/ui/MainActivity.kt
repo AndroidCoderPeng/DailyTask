@@ -252,14 +252,16 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
         // 今天还未重置，执行重置（覆盖 Alarm 未触发的场景）
         LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
-        val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
-        if (autoStart) {
-            taskScheduler.startTask()
-        }
+
         // 标记今天已重置
         SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
         // 重置运行模式状态，等待用户手动启动或下次自动启动
         SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+
+        val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
+        if (autoStart) {
+            taskScheduler.startTask()
+        }
     }
 
     @Suppress("unused")

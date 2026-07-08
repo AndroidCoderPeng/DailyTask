@@ -19,13 +19,14 @@ class TaskResetReceiver : BroadcastReceiver() {
             return
         }
 
+        // 先标记已重置、清除运行状态，再发送事件
+        markTodayAsReset()
+
         val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
         if (autoStart) {
             // 用 postSticky 保证 MainActivity 未注册时事件不丢失，启动后仍可收到
             EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
         }
-
-        markTodayAsReset()
 
         // 重新注册明天同一时刻的 Alarm（循环触发）
         val resetHour = SaveKeyValues.getValue(
