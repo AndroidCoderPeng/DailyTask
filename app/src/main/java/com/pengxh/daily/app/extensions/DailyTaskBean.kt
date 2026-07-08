@@ -16,18 +16,6 @@ fun DailyTaskBean.convertToTimeEntity(): TimeEntity {
     return TimeEntity.target(date)
 }
 
-fun DailyTaskBean.diffCurrent(): Pair<String, Int> {
-    val newTime = resolveExecutionTime()
-
-    //获取当前日期，计算时间差
-    val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
-    val taskDateTime = "${TimeKit.getTodayDate()} $newTime"
-    val taskDate = simpleDateFormat.parse(taskDateTime) ?: return Pair(newTime, 0)
-    val currentMillis = System.currentTimeMillis()
-    val diffSeconds = (taskDate.time - currentMillis) / 1000
-    return Pair(newTime, diffSeconds.toInt())
-}
-
 fun DailyTaskBean.resolveExecutionTime(): String {
     val totalSeconds = resolveExecutionSeconds()
     val hour = totalSeconds / 3600
