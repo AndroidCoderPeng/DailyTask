@@ -166,45 +166,6 @@
                 android:layout_marginHorizontal="@dimen/dp_16"
                 android:background="#CCC" />
 
-            <!-- TODO 转移位置，此处不合适 -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/white"
-                android:orientation="vertical"
-                android:padding="@dimen/dp_16"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="节假日数据"
-                    android:textColor="@color/text_default_color"
-                    android:textSize="@dimen/sp_14" />
-
-                <TextView
-                    android:id="@+id/holidayDataSourceView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/dp_4"
-                    android:textColor="@color/text_default_color"
-                    android:textSize="@dimen/sp_12" />
-
-                <TextView
-                    android:id="@+id/holidayDataCoverageView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/text_hint_color"
-                    android:textSize="@dimen/sp_12" />
-
-                <TextView
-                    android:id="@+id/holidayDataTodayView"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textColor="@color/text_hint_color"
-                    android:textSize="@dimen/sp_12" />
-            </LinearLayout>
-
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/itemLayoutHeight"

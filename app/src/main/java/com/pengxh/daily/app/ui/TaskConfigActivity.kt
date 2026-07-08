@@ -3,11 +3,9 @@ package com.pengxh.daily.app.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.core.graphics.toColorInt
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.pengxh.daily.app.R
@@ -19,7 +17,6 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
 import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ApplicationEvent
-import com.pengxh.daily.app.utils.ChinaHolidayCalendar
 import com.pengxh.daily.app.utils.ChinaHolidayRemoteUpdater
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -33,9 +30,6 @@ import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -45,7 +39,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private val timeArray = arrayListOf("15", "30", "45", "自定义（单位：秒）")
     private val optionArray = arrayListOf("QQ", "微信", "TIM", "支付宝", "剪切板")
     private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
-    private val statusTimeFormat by lazy { SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA) }
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
         return ActivityTaskConfigBinding.inflate(layoutInflater)
@@ -276,34 +269,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         if (enabled) {
             ChinaHolidayRemoteUpdater.refreshIfNeeded(this)
         }
-
-        val status = ChinaHolidayCalendar.getDataStatus()
-        val todayAction = when {
-            !enabled -> "未开启，不影响任务"
-            status.todayInfo.shouldSkip -> "开启后今日会跳过"
-            else -> "开启后今日会执行"
-        }
-        val updatedAt = if (status.updatedAt > 0L) {
-            statusTimeFormat.format(Date(status.updatedAt))
-        } else {
-            "无远程缓存"
-        }
-
-        binding.holidayDataSourceView.text = buildString {
-            append("状态：")
-            append(if (enabled) "已开启" else "未开启")
-            append(" · 来源：")
-            append(status.source)
-        }
-        binding.holidayDataSourceView.setTextColor(if (enabled) "#4DDC64".toColorInt() else Color.RED)
-
-        binding.holidayDataCoverageView.text = if (status.hasOfficialAdjustment) {
-            "覆盖：${status.year}年 · 节假日${status.holidayCount}天 · 补班${status.workdayCount}天"
-        } else {
-            "覆盖：${status.year}年未配置官方调休表，仅按周末判断"
-        }
-        binding.holidayDataTodayView.text =
-            "今日：${status.todayInfo.reason} · $todayAction\n更新：$updatedAt"
     }
 
     private fun setHourByPosition(position: Int) {
