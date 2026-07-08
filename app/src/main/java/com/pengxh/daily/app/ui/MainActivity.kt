@@ -670,7 +670,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         remoteCountDownTimer?.cancel()
         remoteCountDownTimer = null
         maskViewController.destroy()
-        taskScheduler.destroy()
         timeoutTimerManager.destroy()
         EventBus.getDefault().unregister(this)
     }
