@@ -376,14 +376,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     }
 
     override fun onTaskCompleted() {
-        // 今日任务已全部完成，调度器已停止，同步状态
-        isTaskStarted = false
-        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+        // 今日任务已全部执行完毕，但保持"运行中"状态直到次日重置
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = "当天所有任务已执行完毕"
         binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
         messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
-        resetExecuteButton() // 按钮重置为"启动"
     }
 
     override fun onTaskExecuting(taskIndex: Int, task: DailyTaskBean, realTime: String) {

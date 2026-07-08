@@ -117,7 +117,7 @@ class TaskScheduler(
      * 停止任务调度
      */
     fun stopTask() {
-        if (currentState != State.EXECUTING) {
+        if (currentState != State.EXECUTING && currentState != State.COMPLETED) {
             LogFileManager.writeLog("任务未运行，无需停止")
             return
         }
