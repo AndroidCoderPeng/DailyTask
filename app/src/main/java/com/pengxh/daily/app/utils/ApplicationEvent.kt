@@ -6,12 +6,6 @@ package com.pengxh.daily.app.utils
  */
 sealed class ApplicationEvent {
     /**
-     * 蒙版视图控制事件
-     */
-    object ShowMaskView : ApplicationEvent()
-    object HideMaskView : ApplicationEvent()
-
-    /**
      * 监听器状态事件
      */
     object ListenerConnected : ApplicationEvent()
@@ -20,7 +14,6 @@ sealed class ApplicationEvent {
     /**
      * 任务控制事件
      */
-    object StartDailyTask : ApplicationEvent()
     object StopDailyTask : ApplicationEvent()
     object SetResetTaskTime : ApplicationEvent()
     data class UpdateResetTickTime(val countDownTime: String) : ApplicationEvent()
@@ -31,14 +24,8 @@ sealed class ApplicationEvent {
      */
     object ShowFloatingWindow : ApplicationEvent()
     object HideFloatingWindow : ApplicationEvent()
-    data class StartCountdownTime(val isRemoteCommand: Boolean) : ApplicationEvent()
     data class UpdateFloatingViewTime(val tick: Int) : ApplicationEvent()
     data class SetTaskOvertime(val time: Int) : ApplicationEvent()
-
-    /**
-     * 导航事件
-     */
-    object GoBackMainActivity : ApplicationEvent()
 
     /**
      * 截屏事件

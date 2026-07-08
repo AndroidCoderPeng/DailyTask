@@ -7,26 +7,29 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 
 /**
- * 超时定时器管理器
+ * 超时定时器管理器（单例）
  *
  * 职责：
  * 1. 管理打卡超时定时器的生命周期
  * 2. 向悬浮窗广播倒计时更新
- * 3. 处理超时后的逻辑（返回主界面、发送异常邮件）
+ * 3. 处理超时后的逻辑（回调给 MainActivity）
  * 4. 提供定时器取消接口
  */
-class TimeoutTimerManager() {
+object TimeoutTimerManager {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var timeoutTimer: CountDownTimer? = null
     private var timeoutSeconds: Int = 0
     private var hasCaptured = false
 
     /**
+     * 超时回调，由 MainActivity 在启动时注入
+     * */
+    var onTimeout: (() -> Unit)? = null
+
+    /**
      * 启动超时定时器
-     *
-     * @param onTimeout 超时回调，当倒计时结束时触发
      */
-    fun startTimeoutTimer(onTimeout: () -> Unit) {
+    fun startTimeoutTimer() {
         hasCaptured = false
         // 取消之前的定时器，防止重复创建
         cancelTimeoutTimer()
@@ -59,7 +62,7 @@ class TimeoutTimerManager() {
 
             override fun onFinish() {
                 mainHandler.post {
-                    onTimeout()
+                    onTimeout?.invoke()
                 }
                 timeoutTimer = null
                 hasCaptured = false
@@ -76,14 +79,11 @@ class TimeoutTimerManager() {
         timeoutTimer = null
     }
 
-    fun isRunning(): Boolean {
-        return timeoutTimer != null
-    }
-
     /**
      * 销毁资源
      */
     fun destroy() {
+        onTimeout = null
         cancelTimeoutTimer()
     }
 }

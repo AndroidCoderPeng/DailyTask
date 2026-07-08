@@ -91,7 +91,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
     private val taskScheduler by lazy { TaskScheduler(this, this) }
-    private val timeoutTimerManager by lazy { TimeoutTimerManager() }
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val dailyTaskAdapter by lazy {
         DailyTaskAdapter(taskBeans).apply {
@@ -245,6 +244,28 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         // 注册监听服务回调
         NotificationMonitorService.monitorCallback = this
 
+        // 注入超时回调，打开 App 后超时未打卡则自动推进链式任务
+        TimeoutTimerManager.onTimeout = {
+            backToMainActivity()
+
+            val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+            if (resultSource == 0) {
+                messageDispatcher.sendMessage("", "")
+            } else {
+                if (imagePath == "") {
+                    messageDispatcher.sendMessage("", "打卡完成，但是无法获取截图，请手动查看结果")
+                } else {
+                    messageDispatcher.sendAttachmentMessage(
+                        "",
+                        "打卡完成，结果请查看附件",
+                        imagePath
+                    )
+                }
+            }
+
+            taskScheduler.executeNextTask()
+        }
+
         EventBus.getDefault().register(this)
         // 处理 Alarm 触发时 Activity 未注册导致的 ResetDailyTask 事件丢失
         val stickyReset =
@@ -301,65 +322,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             }
 
             is ApplicationEvent.StopDailyTask -> doStopTask()
-
-            is ApplicationEvent.StartCountdownTime -> {
-                if (event.isRemoteCommand) {
-                    // 先取消上一个计时器（如果存在）
-                    remoteCountDownTimer?.cancel()
-                    imagePath = ""
-                    // 先跳转到目标应用，等待加载，然后截屏
-                    remoteCountDownTimer = object : CountDownTimer(5000, 1000) {
-                        override fun onTick(millisUntilFinished: Long) {
-                            val tick = (millisUntilFinished / 1000).toInt()
-                            // 更新悬浮窗倒计时
-                            EventBus.getDefault()
-                                .post(ApplicationEvent.UpdateFloatingViewTime(tick))
-                            if (tick <= 2 && !hasCaptured) {
-                                hasCaptured = true
-                                EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
-                            }
-                        }
-
-                        override fun onFinish() {
-                            backToMainActivity()
-                            if (imagePath == "") {
-                                messageDispatcher.sendMessage(
-                                    "截屏状态通知", "截图完成，但是无法获取截图，请手动查看结果"
-                                )
-                            } else {
-                                messageDispatcher.sendAttachmentMessage(
-                                    "截屏状态通知", "截图完成，结果请查看附件", imagePath
-                                )
-                            }
-                            hasCaptured = false
-                        }
-                    }
-                    remoteCountDownTimer?.start()
-                } else {
-                    timeoutTimerManager.startTimeoutTimer {
-                        backToMainActivity()
-
-                        val resultSource =
-                            SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
-                        if (resultSource == 0) {
-                            // 如果倒计时结束，那么表明没有收到打卡成功的通知
-                            messageDispatcher.sendMessage("", "")
-                        } else {
-                            if (imagePath == "") {
-                                messageDispatcher.sendMessage(
-                                    "", "打卡完成，但是无法获取截图，请手动查看结果"
-                                )
-                            } else {
-                                messageDispatcher.sendAttachmentMessage(
-                                    "", "打卡完成，结果请查看附件", imagePath
-                                )
-                            }
-                        }
-
-                        taskScheduler.executeNextTask()
-                    }
-                }
-            }
 
             is ApplicationEvent.CaptureCompleted -> {
                 imagePath = event.imagePath
@@ -453,7 +415,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     // MonitorCallback 实现
     // ============================================================
     override fun onClockInSuccess() {
-        timeoutTimerManager.cancelTimeoutTimer()
+        TimeoutTimerManager.cancelTimeoutTimer()
         backToMainActivity()
         taskScheduler.executeNextTask()
     }
@@ -476,6 +438,41 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         if (maskViewController.isMaskVisible()) {
             maskViewController.hideMaskView()
         }
+    }
+
+    override fun onAppOpenedForScreenshot() {
+        // 先取消上一个计时器（如果存在）
+        remoteCountDownTimer?.cancel()
+        imagePath = ""
+        // 跳转到目标应用后，等待加载，然后截屏
+        remoteCountDownTimer = object : CountDownTimer(5000, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val tick = (millisUntilFinished / 1000).toInt()
+                EventBus.getDefault().post(ApplicationEvent.UpdateFloatingViewTime(tick))
+                if (tick <= 2 && !hasCaptured) {
+                    hasCaptured = true
+                    EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+                }
+            }
+
+            override fun onFinish() {
+                backToMainActivity()
+                if (imagePath == "") {
+                    messageDispatcher.sendMessage(
+                        "截屏状态通知",
+                        "截图完成，但是无法获取截图，请手动查看结果"
+                    )
+                } else {
+                    messageDispatcher.sendAttachmentMessage(
+                        "截屏状态通知",
+                        "截图完成，结果请查看附件",
+                        imagePath
+                    )
+                }
+                hasCaptured = false
+            }
+        }
+        remoteCountDownTimer?.start()
     }
 
     private fun doStopTask() {
@@ -676,11 +673,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     override fun onDestroy() {
         super.onDestroy()
         NotificationMonitorService.monitorCallback = null
+        TimeoutTimerManager.destroy()
         mainHandler.removeCallbacksAndMessages(null)
         remoteCountDownTimer?.cancel()
         remoteCountDownTimer = null
         maskViewController.destroy()
-        timeoutTimerManager.destroy()
         EventBus.getDefault().unregister(this)
     }
 }

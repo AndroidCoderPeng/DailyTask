@@ -13,6 +13,7 @@ import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.TimeoutTimerManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
@@ -125,7 +126,9 @@ class CountDownTimerService : Service() {
                         isTimerRunning = false
                         currentTaskIndex = -1
                     }
-                    openApplication(true)
+                    openApplication {
+                        TimeoutTimerManager.startTimeoutTimer()
+                    }
                 }
             }.apply {
                 start()

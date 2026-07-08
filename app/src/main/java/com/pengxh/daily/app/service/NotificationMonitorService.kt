@@ -14,6 +14,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.ProjectionSession
+import com.pengxh.daily.app.utils.TimeoutTimerManager
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -177,7 +178,9 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("截屏") -> {
                     if (ProjectionSession.isStateActive()) {
-                        openApplication()
+                        openApplication {
+                            monitorCallback?.onAppOpenedForScreenshot()
+                        }
                     } else {
                         sendChannelMessage("截屏状态通知", "截屏服务已断开，截屏失败")
                     }
@@ -186,7 +189,9 @@ class NotificationMonitorService : NotificationListenerService() {
                 else -> {
                     val key = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
                     if (notice.contains(key)) {
-                        openApplication(true)
+                        openApplication {
+                            TimeoutTimerManager.startTimeoutTimer()
+                        }
                     }
                 }
             }
@@ -249,6 +254,11 @@ class NotificationMonitorService : NotificationListenerService() {
          * 远程"亮屏"指令
          * */
         fun onHideMaskCommand()
+
+        /**
+         * 远程"截屏"指令：目标 App 已打开，启动截屏倒计时
+         * */
+        fun onAppOpenedForScreenshot()
     }
 
     override fun onDestroy() {
