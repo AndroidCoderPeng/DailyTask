@@ -27,6 +27,7 @@ import com.pengxh.daily.app.extensions.convertToTimeEntity
 import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
+import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.ApplicationEvent
@@ -62,7 +63,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.TaskStateListener {
+class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
+    TaskScheduler.TaskStateListener, NotificationMonitorService.MonitorCallback {
 
     companion object {
         @Volatile
@@ -240,6 +242,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
             startForegroundService(this)
         }
 
+        // 注册监听服务回调
+        NotificationMonitorService.monitorCallback = this
+
         EventBus.getDefault().register(this)
         // 处理 Alarm 触发时 Activity 未注册导致的 ResetDailyTask 事件丢失
         val stickyReset =
@@ -286,18 +291,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleApplicationEvent(event: ApplicationEvent) {
         when (event) {
-            is ApplicationEvent.ShowMaskView -> {
-                if (!maskViewController.isMaskVisible()) {
-                    maskViewController.showMaskView()
-                }
-            }
-
-            is ApplicationEvent.HideMaskView -> {
-                if (maskViewController.isMaskVisible()) {
-                    maskViewController.hideMaskView()
-                }
-            }
-
             is ApplicationEvent.ResetDailyTask -> {
                 EventBus.getDefault().removeStickyEvent(ApplicationEvent.ResetDailyTask)
                 taskScheduler.startTask()
@@ -307,25 +300,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
                 binding.repeatTimeView.text = event.countDownTime
             }
 
-            is ApplicationEvent.StartDailyTask -> {
-                if (taskScheduler.isTaskStarted()) {
-                    return
-                }
-                taskScheduler.startTask()
-            }
-
-            is ApplicationEvent.StopDailyTask -> {
-                if (!taskScheduler.isTaskStarted()) {
-                    return
-                }
-                taskScheduler.stopTask()
-            }
-
-            is ApplicationEvent.GoBackMainActivity -> { // 打卡成功发送的消息，回到主界面
-                timeoutTimerManager.cancelTimeoutTimer()
-                backToMainActivity()
-                taskScheduler.executeNextTask()
-            }
+            is ApplicationEvent.StopDailyTask -> doStopTask()
 
             is ApplicationEvent.StartCountdownTime -> {
                 if (event.isRemoteCommand) {
@@ -472,6 +447,40 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
         binding.tipsView.text = message
         binding.tipsView.setTextColor(R.color.red.convertColor(this))
         messageDispatcher.sendMessage("任务执行出错通知", message)
+    }
+
+    // ============================================================
+    // MonitorCallback 实现
+    // ============================================================
+    override fun onClockInSuccess() {
+        timeoutTimerManager.cancelTimeoutTimer()
+        backToMainActivity()
+        taskScheduler.executeNextTask()
+    }
+
+    override fun onStartTaskCommand() {
+        if (!taskScheduler.isTaskStarted()) {
+            taskScheduler.startTask()
+        }
+    }
+
+    override fun onStopTaskCommand() = doStopTask()
+
+    override fun onShowMaskCommand() {
+        if (!maskViewController.isMaskVisible()) {
+            maskViewController.showMaskView()
+        }
+    }
+
+    override fun onHideMaskCommand() {
+        if (maskViewController.isMaskVisible()) {
+            maskViewController.hideMaskView()
+        }
+    }
+
+    private fun doStopTask() {
+        if (!taskScheduler.isTaskStarted()) return
+        taskScheduler.stopTask()
     }
 
     private fun resetExecuteButton() {
@@ -666,6 +675,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(), TaskScheduler.Ta
 
     override fun onDestroy() {
         super.onDestroy()
+        NotificationMonitorService.monitorCallback = null
         mainHandler.removeCallbacksAndMessages(null)
         remoteCountDownTimer?.cancel()
         remoteCountDownTimer = null

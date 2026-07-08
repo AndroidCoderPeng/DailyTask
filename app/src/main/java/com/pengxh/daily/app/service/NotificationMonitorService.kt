@@ -32,6 +32,10 @@ import org.greenrobot.eventbus.EventBus
  * @date: 2019/12/25 23:17
  */
 class NotificationMonitorService : NotificationListenerService() {
+    companion object {
+        @Volatile
+        var monitorCallback: MonitorCallback? = null
+    }
 
     private val kTag = "MonitorService"
     private val httpRequestManager by lazy { HttpRequestManager(this) }
@@ -74,7 +78,7 @@ class NotificationMonitorService : NotificationListenerService() {
         val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
         if (resultSource == 0) {
             if (pkg == targetApp && notice.contains("成功")) {
-                EventBus.getDefault().post(ApplicationEvent.GoBackMainActivity)
+                monitorCallback?.onClockInSuccess()
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
                     SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
@@ -109,11 +113,11 @@ class NotificationMonitorService : NotificationListenerService() {
         if (pkg in auxiliaryApp) {
             when {
                 notice.contains("执行任务") -> {
-                    EventBus.getDefault().post(ApplicationEvent.StartDailyTask)
+                    monitorCallback?.onStartTaskCommand()
                 }
 
                 notice.contains("终止任务") -> {
-                    EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
+                    monitorCallback?.onStopTaskCommand()
                 }
 
                 notice.contains("开启循环") -> {
@@ -127,11 +131,11 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("息屏") -> {
-                    EventBus.getDefault().post(ApplicationEvent.ShowMaskView)
+                    monitorCallback?.onShowMaskCommand()
                 }
 
                 notice.contains("亮屏") -> {
-                    EventBus.getDefault().post(ApplicationEvent.HideMaskView)
+                    monitorCallback?.onHideMaskCommand()
                 }
 
                 notice.contains("考勤记录") -> {
@@ -218,6 +222,33 @@ class NotificationMonitorService : NotificationListenerService() {
         EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
         // 主动请求系统重新绑定监听服务
         requestRebind(ComponentName(this, NotificationMonitorService::class.java))
+    }
+
+    interface MonitorCallback {
+        /**
+         * 打卡成功通知
+         * */
+        fun onClockInSuccess()
+
+        /**
+         * 远程"执行任务"指令
+         * */
+        fun onStartTaskCommand()
+
+        /**
+         * 远程"终止任务"指令
+         * */
+        fun onStopTaskCommand()
+
+        /**
+         * 远程"息屏"指令
+         * */
+        fun onShowMaskCommand()
+
+        /**
+         * 远程"亮屏"指令
+         * */
+        fun onHideMaskCommand()
     }
 
     override fun onDestroy() {
