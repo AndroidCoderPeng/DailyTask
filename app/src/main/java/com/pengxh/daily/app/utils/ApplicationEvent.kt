@@ -20,14 +20,6 @@ sealed class ApplicationEvent {
     object ResetDailyTask : ApplicationEvent()
 
     /**
-     * 悬浮窗控制事件
-     */
-    object ShowFloatingWindow : ApplicationEvent()
-    object HideFloatingWindow : ApplicationEvent()
-    data class UpdateFloatingViewTime(val tick: Int) : ApplicationEvent()
-    data class SetTaskOvertime(val time: Int) : ApplicationEvent()
-
-    /**
      * 截屏事件
      */
     object CaptureScreen : ApplicationEvent()

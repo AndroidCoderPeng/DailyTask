@@ -18,6 +18,7 @@ import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
 import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.isNumber
@@ -55,8 +56,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        EventBus.getDefault().register(this)
-
         val hour = SaveKeyValues.getValue(
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         ) as Int
@@ -346,8 +345,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun updateDingDingTimeout(time: Int) {
         SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
-        // 更新目标应用任务超时时间
-        EventBus.getDefault().post(ApplicationEvent.SetTaskOvertime(time))
+        FloatingWindowController.setOvertime(time)
     }
 
     private fun updateRandomMinuteRange(value: Int) {
@@ -359,8 +357,4 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         SaveKeyValues.putValue(Constant.RANDOM_MINUTE_RANGE_KEY, value)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        EventBus.getDefault().unregister(this)
-    }
 }

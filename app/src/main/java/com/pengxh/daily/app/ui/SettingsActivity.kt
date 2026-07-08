@@ -302,7 +302,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.openTestLayout.setOnClickListener {
-            openApplication(false)
+            openApplication()
         }
 
         binding.captureTestLayout.setOnClickListener {

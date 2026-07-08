@@ -33,6 +33,7 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
+import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
@@ -448,7 +449,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         remoteCountDownTimer = object : CountDownTimer(5000, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 val tick = (millisUntilFinished / 1000).toInt()
-                EventBus.getDefault().post(ApplicationEvent.UpdateFloatingViewTime(tick))
+                FloatingWindowController.updateTime(tick)
                 if (tick <= 2 && !hasCaptured) {
                     hasCaptured = true
                     EventBus.getDefault().post(ApplicationEvent.CaptureScreen)

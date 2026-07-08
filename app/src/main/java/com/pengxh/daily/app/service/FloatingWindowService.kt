@@ -13,9 +13,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import com.pengxh.daily.app.databinding.WindowFloatingBinding
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
@@ -26,11 +26,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 
-class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Main) {
+class FloatingWindowService : Service(),
+    CoroutineScope by CoroutineScope(Dispatchers.Main),
+    FloatingWindowController.OnFloatingWindowView {
+
     private val kTag = "FloatingWindowService"
     private val windowManager by lazy { getSystemService(WindowManager::class.java) }
     private val activityManager by lazy { getSystemService(ActivityManager::class.java) }
@@ -52,7 +52,8 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
         super.onCreate()
         binding = WindowFloatingBinding.inflate(LayoutInflater.from(this))
 
-        EventBus.getDefault().register(this)
+        // 注册到控制器
+        FloatingWindowController.register(this)
 
         floatViewParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -77,6 +78,36 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
 
         startMemoryMonitoring()
     }
+
+    // ============================================================
+    // FloatingWindowView 实现
+    // ============================================================
+
+    override fun updateTime(tick: Int) {
+        binding.timeView.text = "${tick}s"
+        binding.root.alpha = if (tick < 1) 0.0f else 1.0f
+    }
+
+    override fun setOvertime(seconds: Int) {
+        binding.timeView.text = "${seconds}s"
+    }
+
+    override fun setVisible(visible: Boolean) {
+        if (visible) {
+            binding.root.alpha = 1.0f
+            val time = SaveKeyValues.getValue(
+                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+            ) as Int
+            binding.timeView.text = "${time}s"
+        } else {
+            binding.root.alpha = 0.0f
+            binding.timeView.text = "0s"
+        }
+    }
+
+    // ============================================================
+    // 内存监控
+    // ============================================================
 
     private fun startMemoryMonitoring() {
         val mode = SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
@@ -126,42 +157,6 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
         }
     }
 
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleApplicationEvent(event: ApplicationEvent) {
-        when (event) {
-            is ApplicationEvent.ShowFloatingWindow -> {
-                binding.root.alpha = 1.0f
-                val time = SaveKeyValues.getValue(
-                    Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-                ) as Int
-                binding.timeView.text = "${time}s"
-            }
-
-            is ApplicationEvent.HideFloatingWindow -> {
-                binding.root.alpha = 0.0f
-                binding.timeView.text = "0s"
-            }
-
-            is ApplicationEvent.SetTaskOvertime -> {
-                // 更新目标应用任务超时时间
-                binding.timeView.text = "${event.time}s"
-            }
-
-            is ApplicationEvent.UpdateFloatingViewTime -> {
-                // 更新悬浮窗倒计时
-                binding.timeView.text = "${event.tick}s"
-                if (event.tick < 1) {
-                    binding.root.alpha = 0.0f
-                } else {
-                    binding.root.alpha = 1.0f
-                }
-            }
-
-            else -> {}
-        }
-    }
-
     @SuppressLint("ClickableViewAccessibility")
     private fun onDragMove() {
         binding.root.setOnTouchListener(object : View.OnTouchListener {
@@ -193,9 +188,9 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
 
     override fun onDestroy() {
         super.onDestroy()
+        FloatingWindowController.unregister()
         memoryMonitorJob?.cancel()
         cancel()
-        EventBus.getDefault().unregister(this)
         if (::binding.isInitialized && binding.root.isAttachedToWindow) {
             try {
                 windowManager.removeViewImmediate(binding.root)

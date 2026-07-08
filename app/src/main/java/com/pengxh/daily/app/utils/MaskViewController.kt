@@ -13,7 +13,6 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.kt.lite.extensions.setScreenBrightness
-import org.greenrobot.eventbus.EventBus
 import java.util.Random
 
 class MaskViewController(
@@ -28,7 +27,7 @@ class MaskViewController(
 
     fun showMaskView() {
         // 隐藏悬浮窗
-        EventBus.getDefault().post(ApplicationEvent.HideFloatingWindow)
+        FloatingWindowController.hide()
 
         // 隐藏系统栏
         insetsController.apply {
@@ -57,7 +56,7 @@ class MaskViewController(
 
     fun hideMaskView() {
         // 显示悬浮窗
-        EventBus.getDefault().post(ApplicationEvent.ShowFloatingWindow)
+        FloatingWindowController.show()
 
         // 停止时钟动画
         stopClockAnimation()

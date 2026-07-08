@@ -48,7 +48,7 @@ object TimeoutTimerManager {
             override fun onTick(millisUntilFinished: Long) {
                 val tick = (millisUntilFinished / 1000).toInt()
                 // 更新悬浮窗倒计时
-                EventBus.getDefault().post(ApplicationEvent.UpdateFloatingViewTime(tick))
+                FloatingWindowController.updateTime(tick)
 
                 // 启用截屏
                 val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
