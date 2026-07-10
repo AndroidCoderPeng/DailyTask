@@ -68,9 +68,7 @@ class FloatingWindowService : Service(),
         }
 
         // 获取目标应用任务超时时间
-        val time = SaveKeyValues.getValue(
-            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-        ) as Int
+        val time = SaveKeyValues.loadInt(Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME)
         binding.timeView.text = "${time}s"
 
         // 移动悬浮窗
@@ -95,9 +93,9 @@ class FloatingWindowService : Service(),
     override fun setVisible(visible: Boolean) {
         if (visible) {
             binding.root.alpha = 1.0f
-            val time = SaveKeyValues.getValue(
+            val time = SaveKeyValues.loadInt(
                 Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-            ) as Int
+            )
             binding.timeView.text = "${time}s"
         } else {
             binding.root.alpha = 0.0f
@@ -110,7 +108,7 @@ class FloatingWindowService : Service(),
     // ============================================================
 
     private fun startMemoryMonitoring() {
-        val mode = SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+        val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
         val interval = if (mode) {
             60_000L
         } else {
@@ -149,7 +147,7 @@ class FloatingWindowService : Service(),
     private fun sendChannelMessage() {
         val title = "内存使用预警"
         val content = "当前内存使用已超过90%，请关注设备运行情况"
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
         when (type) {
             0 -> httpRequestManager.sendMessage(title, content)
             1 -> emailManager.sendEmail(title, content, false)

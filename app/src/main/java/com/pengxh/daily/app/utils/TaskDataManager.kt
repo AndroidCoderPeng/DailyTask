@@ -47,13 +47,13 @@ class TaskDataManager() {
     }
 
     private fun saveConfiguration(config: ExportDataModel) {
-        SaveKeyValues.putValue(
+        SaveKeyValues.saveString(
             Constant.MESSAGE_TITLE_KEY,
             config.messageTitle?.takeIf { it.isNotBlank() } ?: "打卡结果通知"
         )
 
         // 保存企业微信 Key
-        SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, config.wxKey ?: "")
+        SaveKeyValues.saveString(Constant.WX_WEB_HOOK_KEY, config.wxKey ?: "")
 
         val email = config.emailConfig
         val outbox = email?.outbox
@@ -67,22 +67,22 @@ class TaskDataManager() {
             DatabaseWrapper.insertConfig(outbox, authCode, inbox)
         }
 
-        SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
-        SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
-        SaveKeyValues.putValue(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
-        SaveKeyValues.putValue(
+        SaveKeyValues.saveBoolean(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
+        SaveKeyValues.saveBoolean(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
+        SaveKeyValues.saveInt(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
+        SaveKeyValues.saveInt(
             Constant.STAY_DD_TIMEOUT_KEY,
             config.overTime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
         )
-        SaveKeyValues.putValue(
+        SaveKeyValues.saveString(
             Constant.TASK_COMMAND_KEY,
             config.command?.takeIf { it.isNotBlank() } ?: "打卡"
         )
-        SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, config.isAutoStart)
-        SaveKeyValues.putValue(Constant.RANDOM_TIME_KEY, config.isRandomTime)
-        SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, config.isPowerSaveMode)
-        SaveKeyValues.putValue(Constant.SKIP_CHINA_HOLIDAY_KEY, config.isSkipChinaHoliday)
-        SaveKeyValues.putValue(
+        SaveKeyValues.saveBoolean(Constant.TASK_AUTO_START_KEY, config.isAutoStart)
+        SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
+        SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isPowerSaveMode)
+        SaveKeyValues.saveBoolean(Constant.SKIP_CHINA_HOLIDAY_KEY, config.isSkipChinaHoliday)
+        SaveKeyValues.saveInt(
             Constant.RANDOM_MINUTE_RANGE_KEY,
             config.timeRange.coerceAtLeast(0)
         )

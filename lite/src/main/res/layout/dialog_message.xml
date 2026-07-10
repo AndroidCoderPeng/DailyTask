@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/lib_dp_5"
+    app:cardCornerRadius="@dimen/lib_dp_10">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/dialogTitleView"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_dp_45"
+            android:fontFamily="sans-serif-medium"
+            android:gravity="center"
+            android:text="请设置标题"
+            android:textColor="@color/black"
+            android:textSize="@dimen/lib_sp_16" />
+
+        <TextView
+            android:id="@+id/dialogMessageView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingHorizontal="@dimen/lib_dp_20"
+            android:text="请设置弹窗信息"
+            android:textColor="@color/lib_text_color" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_px_1"
+            android:layout_marginTop="@dimen/lib_dp_20"
+            android:background="@color/lib_line_color" />
+
+        <Button
+            android:id="@+id/dialogConfirmButton"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_dp_45"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="保存"
+            android:textColor="@color/blue"
+            android:textSize="@dimen/lib_sp_14" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

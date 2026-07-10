@@ -128,7 +128,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     super.onStop()
                     Log.w(kTag, "MediaProjection stopped by system")
                     ProjectionSession.markStoppedNeedAuth()
-                    SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                     releaseCaptureResources()
                     isCapturingInitialized = false
                 }
@@ -141,7 +141,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             initializeCaptureResources(projection)
 
             EventBus.getDefault().post(ApplicationEvent.ProjectionReady)
-            SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
+            SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
         } catch (e: Exception) {
             Log.w(kTag, "createMediaProjection failed: ${e.message}", e)
             EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
@@ -308,7 +308,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     }
 
     private fun sendChannelMessage(content: String) {
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
         when (type) {
             0 -> httpRequestManager.sendMessage("截屏失败", content)
             1 -> emailManager.sendEmail("截屏失败", content, false)
@@ -323,7 +323,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()
-        SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+        SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
         isCapturingInitialized = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         EventBus.getDefault().unregister(this)

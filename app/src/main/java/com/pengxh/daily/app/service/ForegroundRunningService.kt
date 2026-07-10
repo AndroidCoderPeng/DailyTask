@@ -79,9 +79,7 @@ class ForegroundRunningService : Service() {
         updateResetTimeView()
 
         // 每次 Service 启动时重新注册 Alarm
-        val resetHour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
+        val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         AlarmScheduler.schedule(this, resetHour)
 
         // 检查电量
@@ -118,9 +116,7 @@ class ForegroundRunningService : Service() {
     }
 
     private fun updateResetTimeView() {
-        val resetHour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
+        val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         val seconds = resetTaskSeconds(resetHour)
 
         val hours = seconds / 3600
@@ -168,7 +164,7 @@ class ForegroundRunningService : Service() {
                 return
             }
 
-            when (SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int) {
+            when (SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)) {
                 0 -> httpRequestManager.sendMessage("低电量提醒", "")
                 1 -> emailManager.sendEmail("低电量提醒", "", false)
                 else -> LogFileManager.writeLog("低电量提醒未发送，消息渠道未配置，当前电量：$battery%")
@@ -185,9 +181,7 @@ class ForegroundRunningService : Service() {
      * 作为 AlarmManager 的兜底，防止部分机型 Alarm 不触发导致任务不重置
      */
     private fun checkAndTriggerReset() {
-        val resetHour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
+        val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
         // 只在 resetHour ~ resetHour+1 这个范围触发检查
@@ -196,7 +190,7 @@ class ForegroundRunningService : Service() {
         }
 
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
-        val lastResetDate = SaveKeyValues.getValue(Constant.LAST_RESET_DATE_KEY, "") as String
+        val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
 
         // 今天已重置，跳过
         if (lastResetDate == today) {
@@ -205,15 +199,14 @@ class ForegroundRunningService : Service() {
 
         // 标记今天已重置，防止重复触发
         LogFileManager.writeLog("ForegroundRunningService 触发任务重置（Alarm兜底）")
-        SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
-        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+        SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
+        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
 
         // 重新注册 Alarm，防止之前的 Alarm 失效
         AlarmScheduler.schedule(this, resetHour)
 
         // 发送 ResetDailyTask 事件，触发任务重置
-        val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
-        if (autoStart) {
+        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)) {
             EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
         }
     }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ActionSheet进出动画 -->
+    <style name="ActionSheetDialogAnimation" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/action_sheet_in</item>
+        <item name="android:windowExitAnimation">@anim/action_sheet_out</item>
+    </style>
+
+    <style name="PopupAnimation">
+        <item name="android:windowEnterAnimation">@anim/popup_show</item>
+        <item name="android:windowExitAnimation">@anim/popup_hide</item>
+    </style>
+
+    <style name="EasyPopupAnimation">
+        <item name="android:windowEnterAnimation">@anim/easy_popup_show</item>
+        <item name="android:windowExitAnimation">@anim/easy_popup_hide</item>
+    </style>
+
+    <style name="UserDefinedAnimation" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/action_dialog_show</item>
+        <item name="android:windowExitAnimation">@anim/action_dialog_hide</item>
+    </style>
+
+    <style name="TopRoundedStyle">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSizeTopLeft">10dp</item>
+        <item name="cornerSizeTopRight">10dp</item>
+    </style>
+</resources>

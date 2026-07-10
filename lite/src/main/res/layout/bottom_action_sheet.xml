@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="@dimen/lib_dp_7">
+
+    <ListView
+        android:id="@+id/itemListView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginBottom="@dimen/lib_dp_5"
+        android:layout_weight="1"
+        android:background="@drawable/sheet_bg_white_layout"
+        android:dividerHeight="@dimen/lib_px_1"
+        android:listSelector="@android:color/transparent"
+        android:scrollbars="none" />
+
+    <TextView
+        android:id="@+id/sheetCancelView"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/lib_dp_45"
+        android:layout_marginVertical="@dimen/lib_dp_10"
+        android:background="@drawable/sheet_item_cancel_selector"
+        android:fontFamily="sans-serif-black"
+        android:gravity="center"
+        android:text="取消"
+        android:textColor="@color/blue"
+        android:textSize="@dimen/lib_sp_16" />
+</LinearLayout>

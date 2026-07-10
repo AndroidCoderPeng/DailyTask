@@ -45,7 +45,7 @@ import com.pengxh.daily.app.utils.TimeoutTimerManager
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.divider.RecyclerViewItemOffsets
+import com.pengxh.kt.lite.divider.RecyclerViewItemBorder
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.navigatePageTo
@@ -70,9 +70,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     companion object {
         @Volatile
         var isTaskStarted = false
-
-        @Volatile
-        var isCanDrawOverlay = false;
     }
 
     private val context by lazy { this }
@@ -185,16 +182,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             Intent(this, FloatingWindowService::class.java).apply {
                 startService(this)
             }
-            isCanDrawOverlay = true
-        } else {
-            isCanDrawOverlay = false
         }
     }
 
     override fun onResume() {
         super.onResume()
         if (!Settings.canDrawOverlays(this)) {
-            isCanDrawOverlay = false
             "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
         }
     }
@@ -215,7 +208,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
         binding.recyclerView.adapter = dailyTaskAdapter
         binding.recyclerView.addItemDecoration(
-            RecyclerViewItemOffsets(
+            RecyclerViewItemBorder(
                 marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
@@ -225,7 +218,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             Intent(this, FloatingWindowService::class.java).apply {
                 startService(this)
             }
-            isCanDrawOverlay = true
         } else {
             // 悬浮窗权限并显示悬浮窗
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
@@ -249,8 +241,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         TimeoutTimerManager.onTimeout = {
             backToMainActivity()
 
-            val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
-            if (resultSource == 0) {
+            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0) == 0) {
                 messageDispatcher.sendMessage("", "")
             } else {
                 if (imagePath == "") {
@@ -280,14 +271,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         checkMissedReset()
 
         // Activity 重建时，若任务之前在跑，重新启动调度器恢复真实运行状态
-        val wasRunning = SaveKeyValues.getValue(Constant.TASK_RUNNING_STATE_KEY, false) as Boolean
-        if (wasRunning) {
+        if (SaveKeyValues.loadBoolean(Constant.TASK_RUNNING_STATE_KEY, false)) {
             taskScheduler.startTask()
         }
     }
 
     private fun checkMissedReset() {
-        val lastResetDate = SaveKeyValues.getValue(Constant.LAST_RESET_DATE_KEY, "") as String
+        val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
         val today = dateFormat.format(Date())
 
         // 今天已重置，跳过（防止重复执行）
@@ -299,12 +289,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
 
         // 标记今天已重置
-        SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
+        SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
         // 重置运行模式状态，等待用户手动启动或下次自动启动
-        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
 
-        val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
-        if (autoStart) {
+        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)) {
             taskScheduler.startTask()
         }
     }
@@ -330,7 +319,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
             is ApplicationEvent.ProjectionDestroyed -> {
                 "截屏服务已停止，已切换到通知模式".show(this)
-                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
             }
 
             else -> {}
@@ -338,7 +327,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     }
 
     private fun backToMainActivity() {
-        if (SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean) {
+        if (SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, true)) {
             //模拟点击Home键
             val home = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
@@ -358,7 +347,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
     override fun onTaskStarted() {
         isTaskStarted = true
-        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, true)
+        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, true)
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
@@ -367,7 +356,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
     override fun onTaskStopped() {
         isTaskStarted = false
-        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = ""
 
@@ -402,7 +391,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     override fun onTaskExecutionError(message: String) {
         taskScheduler.stopTask()
         isTaskStarted = false
-        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
         resetExecuteButton()
         binding.tipsView.text = message
         binding.tipsView.setTextColor(R.color.red.convertColor(this))
@@ -657,9 +646,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")
         } else {
             LogFileManager.writeLog("截屏服务异常：MediaProjection 已失效")
-            if (SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int == 1) {
+            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0) == 1) {
                 "截屏服务已断开，请重新授权".show(this)
-                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
             }
         }
 

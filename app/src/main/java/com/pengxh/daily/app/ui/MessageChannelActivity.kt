@@ -37,17 +37,17 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val title = SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
+        val title = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         binding.messageTitleView.setText(title)
 
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
         if (type == 0) {
             binding.wxRadioButton.isChecked = true
         } else if (type == 1) {
             binding.qqRadioButton.isChecked = true
         }
 
-        val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
+        val key = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
         if (!key.isBlank()) {
             binding.wxKeyView.setText(key)
         }
@@ -70,9 +70,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
     override fun initEvent() {
         binding.wxRadioButton.setOnClickListener {
-            val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
+            val key = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
             if (binding.wxRadioButton.isChecked && key.isNotBlank()) {
-                SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 0)
+                SaveKeyValues.saveInt(Constant.CHANNEL_TYPE_KEY, 0)
                 binding.qqRadioButton.isChecked = false
             } else {
                 "请先配置企业微信消息 Webhook key".show(this)
@@ -87,11 +87,11 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 return@setOnClickListener
             }
 
-            SaveKeyValues.putValue(
+            SaveKeyValues.saveString(
                 Constant.MESSAGE_TITLE_KEY,
                 binding.messageTitleView.text.toString().trim()
             )
-            SaveKeyValues.putValue(Constant.WX_WEB_HOOK_KEY, key)
+            SaveKeyValues.saveString(Constant.WX_WEB_HOOK_KEY, key)
 
             MaterialAlertDialogBuilder(this)
                 .setTitle("测试消息")
@@ -105,7 +105,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         binding.qqRadioButton.setOnClickListener {
             val config = DatabaseWrapper.loadLatestEmailConfig()
             if (binding.qqRadioButton.isChecked && config != null) {
-                SaveKeyValues.putValue(Constant.CHANNEL_TYPE_KEY, 1)
+                SaveKeyValues.saveInt(Constant.CHANNEL_TYPE_KEY, 1)
                 binding.wxRadioButton.isChecked = false
             } else {
                 "请先配置QQ邮箱".show(context)
@@ -145,7 +145,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 return@setOnClickListener
             }
 
-            SaveKeyValues.putValue(
+            SaveKeyValues.saveString(
                 Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
             )
             DatabaseWrapper.insertConfig(outbox, authCode, inbox)

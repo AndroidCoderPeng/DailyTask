@@ -164,7 +164,7 @@ class CountDownTimerService : Service() {
     }
 
     private fun Int.getCountDownTickInterval(): Long {
-        val mode = SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+        val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
         return if (mode && this > 60) {
             60_000L
         } else {

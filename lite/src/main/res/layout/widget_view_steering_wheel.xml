@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootView"
+    android:layout_width="250dp"
+    android:layout_height="250dp"
+    android:layout_margin="@dimen/lib_dp_10"
+    android:background="@drawable/bg_solid_layout_dark_blue_10">
+
+    <ImageButton
+        android:id="@+id/leftButton"
+        android:layout_width="@dimen/lib_dp_50"
+        android:layout_height="@dimen/lib_dp_50"
+        android:layout_margin="@dimen/lib_dp_7"
+        android:background="@drawable/selector_direction_button"
+        android:rotation="-90"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/topButton"
+        android:layout_width="@dimen/lib_dp_50"
+        android:layout_height="@dimen/lib_dp_50"
+        android:layout_margin="@dimen/lib_dp_7"
+        android:background="@drawable/selector_direction_button"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/centerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:background="@drawable/center_circle_selector"
+        android:padding="@dimen/lib_dp_10"
+        android:src="@drawable/ic_power_off"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/rightButton"
+        android:layout_width="@dimen/lib_dp_50"
+        android:layout_height="@dimen/lib_dp_50"
+        android:layout_margin="@dimen/lib_dp_7"
+        android:background="@drawable/selector_direction_button"
+        android:rotation="90"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <ImageButton
+        android:id="@+id/bottomButton"
+        android:layout_width="@dimen/lib_dp_50"
+        android:layout_height="@dimen/lib_dp_50"
+        android:layout_margin="@dimen/lib_dp_7"
+        android:background="@drawable/selector_direction_button"
+        android:rotation="180"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

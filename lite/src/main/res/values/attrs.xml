@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="SteeringWheelView">
+        <attr name="ctrl_diameter" format="dimension" />
+    </declare-styleable>
+
+    <declare-styleable name="EmptyView">
+        <attr name="show_reload_button" format="boolean" />
+    </declare-styleable>
+</resources>

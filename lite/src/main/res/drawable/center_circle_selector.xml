@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:state_pressed="false">
+        <shape android:shape="oval">
+            <solid android:color="#64BFEB" />
+        </shape>
+    </item>
+
+    <item android:state_pressed="true">
+        <shape android:shape="oval">
+            <!-- 点击按钮时候改变背景色50% -->
+            <solid android:color="#8064BFEB" />
+        </shape>
+    </item>
+</selector>

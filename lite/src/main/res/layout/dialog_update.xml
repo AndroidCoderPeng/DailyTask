@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#00000000"
+    android:orientation="vertical"
+    android:paddingVertical="@dimen/lib_dp_15">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/lib_dp_30"
+        android:background="@drawable/bg_solid_layout_white_10"
+        android:orientation="vertical">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@mipmap/bg_update"
+            app:shapeAppearance="@style/TopRoundedStyle" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="@dimen/lib_dp_10">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="发现新版本可以下载了！"
+                android:textColor="@color/black"
+                android:textSize="@dimen/lib_sp_16" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/lib_dp_10"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <Button
+                android:id="@+id/updateVersionButton"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/lib_dp_45"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="立即更新"
+                android:textSize="@dimen/lib_sp_14" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <View
+        android:layout_width="@dimen/lib_dp_1"
+        android:layout_height="30dp"
+        android:layout_gravity="center"
+        android:background="@color/white" />
+
+    <ImageView
+        android:id="@+id/cancelVersionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_update_cancel" />
+</LinearLayout>
+

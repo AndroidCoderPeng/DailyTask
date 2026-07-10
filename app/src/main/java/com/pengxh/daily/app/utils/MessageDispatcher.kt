@@ -13,10 +13,10 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
     private val batteryManager by lazy { context.getSystemService(BatteryManager::class.java) }
 
     fun sendMessage(title: String, content: String) {
-        val messageTitle = SaveKeyValues.getValue(
+        val messageTitle = SaveKeyValues.loadString(
             Constant.MESSAGE_TITLE_KEY, "打卡结果通知"
-        ) as String
-        val channelType = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        )
+        val channelType = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
         when (channelType) {
             0 -> {
                 // 企业微信
@@ -44,13 +44,11 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
     }
 
     fun sendAttachmentMessage(title: String, content: String, filePath: String) {
-        val messageTitle =
-            SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
-
+        val messageTitle = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val date = System.currentTimeMillis().timestampToDate()
 
-        val channelType = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        val channelType = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
         when (channelType) {
             0 -> {
                 // 企业微信（图文消息暂不支持）

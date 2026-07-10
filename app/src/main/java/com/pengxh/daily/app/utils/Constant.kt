@@ -61,7 +61,7 @@ object Constant {
 
     // 目标APP
     fun getTargetApp(): String {
-        return when (SaveKeyValues.getValue(TARGET_APP_KEY, 0) as Int) {
+        return when (SaveKeyValues.loadInt(TARGET_APP_KEY, 0)) {
             0 -> DING_DING
             1 -> WEWORK
             2 -> FEI_SHU

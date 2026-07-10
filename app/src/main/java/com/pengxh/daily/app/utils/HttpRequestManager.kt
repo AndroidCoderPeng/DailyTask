@@ -30,7 +30,7 @@ class HttpRequestManager(private val context: Context) {
 
     fun sendMessage(title: String, message: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            val webhookKey = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
+            val webhookKey = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
             if (webhookKey.isBlank()) {
                 Log.e(kTag, "企业微信 Webhook Key 未配置")
                 return@launch

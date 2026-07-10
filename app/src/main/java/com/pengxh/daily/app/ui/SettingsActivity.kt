@@ -90,8 +90,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     override fun initOnCreate(savedInstanceState: Bundle?) {
         EventBus.getDefault().register(this)
 
-        val index = (SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int)
-            .coerceIn(0, icons.lastIndex)
+        val index = (SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)).coerceIn(0, icons.lastIndex)
         binding.iconView.setBackgroundResource(icons[index])
 
         binding.appVersion.text = BuildConfig.VERSION_NAME
@@ -135,8 +134,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
 
             is ApplicationEvent.CaptureCompleted -> {
-                val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
-                when (type) {
+                when (SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)) {
                     0 -> {
                         // 企业微信
                         messageViewModel.sendImageMessage(
@@ -190,7 +188,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
-                        val oldPosition = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
+                        val oldPosition = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
 
                         // 如果 position 没有变化，直接返回
                         if (oldPosition == position) {
@@ -202,7 +200,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                             // 企业微信或者飞书只能采用截屏获取打卡结果
                             if (binding.captureSwitch.isChecked) {
                                 binding.captureRadioButton.isChecked = true
-                                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
+                                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
                                 binding.noticeRadioButton.isChecked = false
                             } else {
                                 "请先打开截屏服务".show(context)
@@ -213,7 +211,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
                         // 更新配置
                         binding.iconView.setBackgroundResource(icons[position])
-                        SaveKeyValues.putValue(Constant.TARGET_APP_KEY, position)
+                        SaveKeyValues.saveInt(Constant.TARGET_APP_KEY, position)
                     }
                 }).build().show()
         }
@@ -223,7 +221,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.noticeRadioButton.setOnClickListener {
-            val index = SaveKeyValues.getValue(Constant.TARGET_APP_KEY, 0) as Int
+            val index = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
             if (index != 0) {
                 "通知监听仅支持钉钉打卡".show(this)
                 binding.noticeRadioButton.isChecked = false
@@ -232,7 +230,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
             if (binding.noticeSwitch.isChecked) {
                 binding.noticeRadioButton.isChecked = true
-                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                 binding.captureRadioButton.isChecked = false
             } else {
                 "请先打开通知监听".show(this)
@@ -243,7 +241,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         binding.captureRadioButton.setOnClickListener {
             if (binding.captureSwitch.isChecked) {
                 binding.captureRadioButton.isChecked = true
-                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 1)
+                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
                 binding.noticeRadioButton.isChecked = false
             } else {
                 "请先打开截屏服务".show(this)
@@ -324,21 +322,21 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             if (syncingSwitchState) {
                 return@setOnCheckedChangeListener
             }
-            SaveKeyValues.putValue(Constant.GESTURE_DETECTOR_KEY, isChecked)
+            SaveKeyValues.saveBoolean(Constant.GESTURE_DETECTOR_KEY, isChecked)
         }
 
         binding.backToHomeSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (syncingSwitchState) {
                 return@setOnCheckedChangeListener
             }
-            SaveKeyValues.putValue(Constant.BACK_TO_HOME_KEY, isChecked)
+            SaveKeyValues.saveBoolean(Constant.BACK_TO_HOME_KEY, isChecked)
         }
 
         binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (syncingSwitchState) {
                 return@setOnCheckedChangeListener
             }
-            SaveKeyValues.putValue(Constant.POWER_SAVE_MODE_KEY, isChecked)
+            SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
         }
 
         binding.introduceLayout.setOnClickListener {
@@ -395,7 +393,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.floatingTipsView.text = "服务未开启，打完卡无法自动跳回本软件"
         }
 
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
         if (type in 0..channels.lastIndex) {
             binding.channelView.text = channels[type]
             binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
@@ -404,7 +402,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.channelView.setTextColor(R.color.red.convertColor(this))
         }
 
-        val sourceType = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+        val sourceType = SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0)
         if (sourceType == 0) {
             binding.noticeRadioButton.isChecked = true
             binding.captureRadioButton.isChecked = false
@@ -416,7 +414,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             } else {
                 binding.captureRadioButton.isChecked = false
                 binding.noticeRadioButton.isChecked = true
-                SaveKeyValues.putValue(Constant.RESULT_SOURCE_KEY, 0)
+                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                 Log.w(kTag, "截屏服务未运行，已自动切换到通知模式")
             }
         }
@@ -424,11 +422,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         syncingSwitchState = true
         try {
             binding.gestureDetectSwitch.isChecked =
-                SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
+                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
             binding.backToHomeSwitch.isChecked =
-                SaveKeyValues.getValue(Constant.BACK_TO_HOME_KEY, true) as Boolean
+                SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, true)
             binding.powerSaveSwitch.isChecked =
-                SaveKeyValues.getValue(Constant.POWER_SAVE_MODE_KEY, false) as Boolean
+                SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
         } finally {
             syncingSwitchState = false
         }

@@ -41,7 +41,7 @@
                     android:text="消息标题"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                <com.pengxh.kt.lite.widget.DeleteEditText
+                <com.pengxh.kt.lite.widget.DeletableEditText
                     android:id="@+id/messageTitleView"
                     android:layout_width="0dp"
                     android:layout_height="36dp"
@@ -89,7 +89,7 @@
                         android:text="key"
                         android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                    <com.pengxh.kt.lite.widget.DeleteEditText
+                    <com.pengxh.kt.lite.widget.DeletableEditText
                         android:id="@+id/wxKeyView"
                         android:layout_width="0dp"
                         android:layout_height="36dp"
@@ -164,7 +164,7 @@
                             android:text="发件箱"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                        <com.pengxh.kt.lite.widget.DeleteEditText
+                        <com.pengxh.kt.lite.widget.DeletableEditText
                             android:id="@+id/emailSendAddressView"
                             android:layout_width="0dp"
                             android:layout_height="36dp"
@@ -200,7 +200,7 @@
                             android:text="授权码"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                        <com.pengxh.kt.lite.widget.DeleteEditText
+                        <com.pengxh.kt.lite.widget.DeletableEditText
                             android:id="@+id/emailSendCodeView"
                             android:layout_width="0dp"
                             android:layout_height="36dp"
@@ -226,7 +226,7 @@
                             android:text="收件箱"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
-                        <com.pengxh.kt.lite.widget.DeleteEditText
+                        <com.pengxh.kt.lite.widget.DeletableEditText
                             android:id="@+id/emailInboxView"
                             android:layout_width="0dp"
                             android:layout_height="36dp"

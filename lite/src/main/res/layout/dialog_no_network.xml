@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="@dimen/lib_dp_10"
+    app:cardCornerRadius="@dimen/lib_dp_10">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/dialogTitleView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center_horizontal"
+                android:paddingVertical="@dimen/lib_dp_10"
+                android:text="温馨提示"
+                android:textColor="@color/black"
+                android:textSize="@dimen/lib_sp_16" />
+
+            <ImageView
+                android:id="@+id/dismissView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:layout_marginEnd="@dimen/lib_dp_10"
+                android:src="@drawable/ic_cancel" />
+        </RelativeLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_px_1"
+            android:background="@color/lib_line_color" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/lib_dp_10"
+            android:src="@drawable/ic_no_network" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingVertical="@dimen/lib_dp_10"
+            android:text="未发现网络，内容走丢了..."
+            android:textColor="@color/lib_hint_color" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_px_1"
+            android:background="@color/lib_line_color" />
+
+        <Button
+            android:id="@+id/dialogButton"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_dp_45"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="去设置网络"
+            android:textColor="@color/blue"
+            android:textSize="@dimen/lib_sp_14" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

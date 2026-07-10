@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#000000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="blue">#0000FF</color>
+    <color name="red">#FF0000</color>
+    <color name="green">#FF09BB07</color>
+
+    <color name="lib_text_color">#323232</color>
+    <color name="lib_hint_color">#CCCCCC</color>
+    <color name="lib_line_color">#D3D3D3</color>
+</resources>

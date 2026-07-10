@@ -22,30 +22,28 @@ class TaskResetReceiver : BroadcastReceiver() {
         // 先标记已重置、清除运行状态，再发送事件
         markTodayAsReset()
 
-        val autoStart = SaveKeyValues.getValue(Constant.TASK_AUTO_START_KEY, true) as Boolean
+        val autoStart = SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)
         if (autoStart) {
             // 用 postSticky 保证 MainActivity 未注册时事件不丢失，启动后仍可收到
             EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
         }
 
         // 重新注册明天同一时刻的 Alarm（循环触发）
-        val resetHour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
+        val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         AlarmScheduler.schedule(context, resetHour)
     }
 
     private fun hasResetToday(): Boolean {
         val today = dateFormat.format(Date())
-        val lastResetDate = SaveKeyValues.getValue(Constant.LAST_RESET_DATE_KEY, "") as String
+        val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
         return today == lastResetDate
     }
 
     private fun markTodayAsReset() {
         val today = dateFormat.format(Date())
-        SaveKeyValues.putValue(Constant.LAST_RESET_DATE_KEY, today)
+        SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
         // 每日重置时清掉运行状态，防止第二天打开 app 还显示"停止"
-        SaveKeyValues.putValue(Constant.TASK_RUNNING_STATE_KEY, false)
+        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
         LogFileManager.writeLog("标记 $today 已重置")
     }
 }

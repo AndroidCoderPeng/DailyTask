@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:elevation="@dimen/lib_dp_10"
+    app:cardCornerRadius="@dimen/lib_dp_10">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingVertical="@dimen/lib_dp_10"
+            android:text="修改密码"
+            android:textColor="@color/lib_text_color"
+            android:textSize="@dimen/lib_sp_16" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_dp_45"
+            android:layout_marginHorizontal="@dimen/lib_dp_10"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="@dimen/lib_dp_5">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="@dimen/lib_dp_5"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:text="原密码"
+                android:textColor="@color/lib_text_color"
+                android:textSize="@dimen/lib_sp_14" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2.95"
+                android:background="@drawable/dialog_bg_hint_layout">
+
+                <com.pengxh.kt.lite.widget.DeletableEditText
+                    android:id="@+id/oldPwdView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="请输入原密码"
+                    android:inputType="textPassword"
+                    android:paddingHorizontal="@dimen/lib_dp_5"
+                    android:paddingVertical="@dimen/lib_dp_7"
+                    android:singleLine="true"
+                    android:textColor="@color/lib_text_color"
+                    android:textColorHint="@color/lib_hint_color"
+                    android:textSize="@dimen/lib_sp_14" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_dp_45"
+            android:layout_marginHorizontal="@dimen/lib_dp_10"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="@dimen/lib_dp_5">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="@dimen/lib_dp_5"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:text="新密码"
+                android:textColor="@color/lib_text_color"
+                android:textSize="@dimen/lib_sp_14" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2.95"
+                android:background="@drawable/dialog_bg_hint_layout">
+
+                <com.pengxh.kt.lite.widget.DeletableEditText
+                    android:id="@+id/newPwdView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="请输入新密码"
+                    android:inputType="textPassword"
+                    android:paddingHorizontal="@dimen/lib_dp_5"
+                    android:paddingVertical="@dimen/lib_dp_7"
+                    android:singleLine="true"
+                    android:textColor="@color/lib_text_color"
+                    android:textColorHint="@color/lib_hint_color"
+                    android:textSize="@dimen/lib_sp_14" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_dp_45"
+            android:layout_marginHorizontal="@dimen/lib_dp_10"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="@dimen/lib_dp_5">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="@dimen/lib_dp_5"
+                android:layout_weight="1"
+                android:gravity="center_vertical"
+                android:text="确认密码"
+                android:textColor="@color/lib_text_color"
+                android:textSize="@dimen/lib_sp_14" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2.95"
+                android:background="@drawable/dialog_bg_hint_layout">
+
+                <com.pengxh.kt.lite.widget.DeletableEditText
+                    android:id="@+id/confirmPwdView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@null"
+                    android:hint="请再次确认密码"
+                    android:inputType="textPassword"
+                    android:paddingHorizontal="@dimen/lib_dp_5"
+                    android:paddingVertical="@dimen/lib_dp_7"
+                    android:singleLine="true"
+                    android:textColor="@color/lib_text_color"
+                    android:textColorHint="@color/lib_hint_color"
+                    android:textSize="@dimen/lib_sp_14" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_px_1"
+            android:layout_marginTop="@dimen/lib_dp_10"
+            android:background="@color/lib_line_color" />
+
+        <Button
+            android:id="@+id/confirmButton"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/lib_dp_45"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="保存"
+            android:textColor="@color/blue"
+            android:textSize="@dimen/lib_sp_14" />
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

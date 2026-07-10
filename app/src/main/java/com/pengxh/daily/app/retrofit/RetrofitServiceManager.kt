@@ -27,8 +27,8 @@ object RetrofitServiceManager {
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val keyMap = HashMap<String, String>()
-        keyMap["key"] = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
-        return api.sendMessage(requestBody, keyMap)
+        keyMap["key"] = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
+        return api.sendMessage(requestBody, keyMap).string()
     }
 
     suspend fun sendImageMessage(imagePath: String): String {
@@ -63,7 +63,7 @@ object RetrofitServiceManager {
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val keyMap = HashMap<String, String>()
-        keyMap["key"] = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
-        return api.sendMessage(requestBody, keyMap)
+        keyMap["key"] = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
+        return api.sendMessage(requestBody, keyMap).string()
     }
 }

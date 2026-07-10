@@ -45,7 +45,7 @@ class GestureController(
             e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float
         ): Boolean {
             val isGestureEnabled =
-                SaveKeyValues.getValue(Constant.GESTURE_DETECTOR_KEY, true) as Boolean
+                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
             // 如果手势未启用，则不处理
             if (!isGestureEnabled) {
                 return false

@@ -9,6 +9,11 @@ android {
     namespace 'com.pengxh.daily.app'
     compileSdk 36
 
+    lint {
+        disable 'NewerVersionAvailable'
+        disable 'GradleDependency'
+    }
+
     defaultConfig {
         applicationId 'com.pengxh.daily.app'
         minSdk 26
@@ -20,10 +25,18 @@ android {
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
         }
+
         externalNativeBuild {
             cmake {
                 cppFlags "-std=c++14"
             }
+        }
+    }
+
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
         }
     }
 
@@ -60,19 +73,14 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
-    externalNativeBuild {
-        cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.22.1"
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
         }
-    }
-
-    kotlinOptions {
-        jvmTarget = '1.8'
     }
 
     buildFeatures {
@@ -103,8 +111,8 @@ static def getBuildDate() {
 }
 
 dependencies {
+    implementation project(':lite')
     implementation 'androidx.core:core-ktx:1.17.0'
-    implementation 'com.github.AndroidCoderPeng:Kotlin-lite-lib:1.1.7'
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
@@ -122,11 +130,10 @@ dependencies {
     //异常日志记录
     implementation 'com.tencent.bugly:crashreport:4.1.9.3'
     //返回值转换器
-    implementation 'com.jakewharton.retrofit:retrofit2-kotlin-coroutines-adapter:0.9.2'
     implementation 'com.squareup.retrofit2:converter-gson:3.0.0'
     //okhttp3日志拦截器
-    implementation 'com.squareup.okhttp3:logging-interceptor:5.3.2'
+    implementation 'com.squareup.okhttp3:logging-interceptor:5.4.0'
     //网络请求和接口封装
     implementation 'com.squareup.retrofit2:retrofit:3.0.0'
-    implementation 'com.squareup.okhttp3:okhttp:5.3.2'
+    implementation 'com.squareup.okhttp3:okhttp:5.4.0'
 }

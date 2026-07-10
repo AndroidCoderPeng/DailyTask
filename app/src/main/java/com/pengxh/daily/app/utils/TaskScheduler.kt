@@ -154,7 +154,7 @@ class TaskScheduler(
      *   2. 调休补班日（虽然是周末，但需要上班）
      */
     private fun shouldSkipToday(): Boolean {
-        val skipEnabled = SaveKeyValues.getValue(Constant.SKIP_CHINA_HOLIDAY_KEY, false) as Boolean
+        val skipEnabled = SaveKeyValues.loadBoolean(Constant.SKIP_CHINA_HOLIDAY_KEY, false)
         if (!skipEnabled) return false
 
         val today = LocalDate.now()

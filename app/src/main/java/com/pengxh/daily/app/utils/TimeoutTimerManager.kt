@@ -36,10 +36,7 @@ object TimeoutTimerManager {
 
         // 获取超时时长配置（单位：秒）
         timeoutSeconds = try {
-            val value = SaveKeyValues.getValue(
-                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-            )
-            (value as? Int) ?: Constant.DEFAULT_OVER_TIME
+            SaveKeyValues.loadInt(Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME)
         } catch (_: Exception) {
             Constant.DEFAULT_OVER_TIME
         }
@@ -51,7 +48,7 @@ object TimeoutTimerManager {
                 FloatingWindowController.updateTime(tick)
 
                 // 启用截屏
-                val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
+                val resultSource = SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0)
                 if (resultSource == 1) {
                     if (tick <= 3 && !hasCaptured) {
                         hasCaptured = true

@@ -25,7 +25,7 @@ fun DailyTaskBean.resolveExecutionTime(): String {
 }
 
 private fun DailyTaskBean.resolveExecutionSeconds(): Int {
-    val needRandom = SaveKeyValues.getValue(Constant.RANDOM_TIME_KEY, true) as Boolean
+    val needRandom = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
 
     //18:00:59
     val array = this.time.split(":")
@@ -33,7 +33,7 @@ private fun DailyTaskBean.resolveExecutionSeconds(): Int {
 
     // 随机时间
     if (needRandom) {
-        val minuteRange = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+        val minuteRange = SaveKeyValues.loadInt(Constant.RANDOM_MINUTE_RANGE_KEY, 5)
 
         // 生成随机种子, 保证每天的随机时间是一致的
         val key = "${TimeKit.getTodayDate()}|$id|$time|$minuteRange"

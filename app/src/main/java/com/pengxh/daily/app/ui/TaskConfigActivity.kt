@@ -56,27 +56,25 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val hour = SaveKeyValues.getValue(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        ) as Int
+        val hour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         binding.resetTimeView.text = "每天${hour}点"
-        val time = SaveKeyValues.getValue(
-            Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-        ) as Int
+
+        val time = SaveKeyValues.loadInt(Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME)
         binding.timeoutTextView.text = "${time}s"
-        binding.keyTextView.text =
-            SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
-        binding.autoTaskSwitch.isChecked = SaveKeyValues.getValue(
-            Constant.TASK_AUTO_START_KEY, true
-        ) as Boolean
-        binding.skipHolidaySwitch.isChecked = SaveKeyValues.getValue(
-            Constant.SKIP_CHINA_HOLIDAY_KEY, false
-        ) as Boolean
-        val needRandom = SaveKeyValues.getValue(Constant.RANDOM_TIME_KEY, true) as Boolean
+
+        binding.keyTextView.text = SaveKeyValues.loadString(Constant.TASK_COMMAND_KEY, "打卡")
+
+        binding.autoTaskSwitch.isChecked =
+            SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)
+
+        binding.skipHolidaySwitch.isChecked =
+            SaveKeyValues.loadBoolean(Constant.SKIP_CHINA_HOLIDAY_KEY, false)
+
+        val needRandom = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
         binding.randomTimeSwitch.isChecked = needRandom
         if (needRandom) {
             binding.minuteRangeLayout.visibility = View.VISIBLE
-            val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+            val value = SaveKeyValues.loadInt(Constant.RANDOM_MINUTE_RANGE_KEY, 5)
             binding.minuteRangeView.text = "${value}分钟"
         } else {
             binding.minuteRangeLayout.visibility = View.GONE
@@ -118,7 +116,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 .setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
-                        SaveKeyValues.putValue(Constant.TASK_COMMAND_KEY, value)
+                        SaveKeyValues.saveString(Constant.TASK_COMMAND_KEY, value)
                         binding.keyTextView.text = value
                     }
 
@@ -127,10 +125,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.randomTimeSwitch.setOnCheckedChangeListener { _, isChecked ->
-            SaveKeyValues.putValue(Constant.RANDOM_TIME_KEY, isChecked)
+            SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, isChecked)
             if (isChecked) {
                 binding.minuteRangeLayout.visibility = View.VISIBLE
-                val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
+                val value = SaveKeyValues.loadInt(Constant.RANDOM_MINUTE_RANGE_KEY, 5)
                 binding.minuteRangeView.text = "${value}分钟"
             } else {
                 binding.minuteRangeLayout.visibility = View.GONE
@@ -138,7 +136,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.skipHolidaySwitch.setOnCheckedChangeListener { _, isChecked ->
-            SaveKeyValues.putValue(Constant.SKIP_CHINA_HOLIDAY_KEY, isChecked)
+            SaveKeyValues.saveBoolean(Constant.SKIP_CHINA_HOLIDAY_KEY, isChecked)
         }
 
         binding.minuteRangeLayout.setOnClickListener {
@@ -172,55 +170,37 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 exportData.tasks = ArrayList<DailyTaskBean>()
             }
 
-            val title = SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
-            exportData.messageTitle = title
+            exportData.messageTitle =
+                SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
 
-            val key = SaveKeyValues.getValue(Constant.WX_WEB_HOOK_KEY, "") as String
-            exportData.wxKey = key
+            exportData.wxKey = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
 
             exportData.emailConfig = DatabaseWrapper.loadLatestEmailConfig() ?: EmailConfigBean()
 
-            val isDetectGesture = SaveKeyValues.getValue(
-                Constant.GESTURE_DETECTOR_KEY, true
-            ) as Boolean
-            exportData.isDetectGesture = isDetectGesture
+            exportData.isDetectGesture =
+                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
 
-            val isBackToHome = SaveKeyValues.getValue(
-                Constant.BACK_TO_HOME_KEY, true
-            ) as Boolean
-            exportData.isBackToHome = isBackToHome
+            exportData.isBackToHome = SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, true)
 
-            val hour = SaveKeyValues.getValue(
-                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-            ) as Int
-            exportData.resetTime = hour
+            exportData.resetTime =
+                SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
 
-            val time = SaveKeyValues.getValue(
-                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
-            ) as Int
-            exportData.overTime = time
+            exportData.overTime =
+                SaveKeyValues.loadInt(Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME)
 
-            val command = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
-            exportData.command = command
+            exportData.command = SaveKeyValues.loadString(Constant.TASK_COMMAND_KEY, "打卡")
 
-            exportData.isAutoStart = SaveKeyValues.getValue(
-                Constant.TASK_AUTO_START_KEY, true
-            ) as Boolean
+            exportData.isAutoStart = SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)
 
-            exportData.isRandomTime = SaveKeyValues.getValue(
-                Constant.RANDOM_TIME_KEY, true
-            ) as Boolean
+            exportData.isRandomTime = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
 
-            exportData.isSkipChinaHoliday = SaveKeyValues.getValue(
-                Constant.SKIP_CHINA_HOLIDAY_KEY, false
-            ) as Boolean
+            exportData.isSkipChinaHoliday =
+                SaveKeyValues.loadBoolean(Constant.SKIP_CHINA_HOLIDAY_KEY, false)
 
-            exportData.isPowerSaveMode = SaveKeyValues.getValue(
-                Constant.POWER_SAVE_MODE_KEY, false
-            ) as Boolean
+            exportData.isPowerSaveMode =
+                SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
 
-            val value = SaveKeyValues.getValue(Constant.RANDOM_MINUTE_RANGE_KEY, 5) as Int
-            exportData.timeRange = value
+            exportData.timeRange = SaveKeyValues.loadInt(Constant.RANDOM_MINUTE_RANGE_KEY, 5)
 
             val json = exportData.toJson()
             Log.d(kTag, json)
@@ -283,7 +263,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     private fun setTaskResetTime(hour: Int) {
-        SaveKeyValues.putValue(Constant.RESET_TIME_KEY, hour)
+        SaveKeyValues.saveInt(Constant.RESET_TIME_KEY, hour)
         // 取消旧 Alarm，注册新时间点的 Alarm
         AlarmScheduler.cancel(this)
         AlarmScheduler.schedule(this, hour)
@@ -322,7 +302,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             return
         }
         binding.timeoutTextView.text = "${time}s"
-        updateDingDingTimeout(time)
+        SaveKeyValues.saveInt(Constant.STAY_DD_TIMEOUT_KEY, time)
+        FloatingWindowController.setOvertime(time)
     }
 
     private fun shareTextTo(packageName: String, appName: String, text: String) {
@@ -343,18 +324,12 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
     }
 
-    private fun updateDingDingTimeout(time: Int) {
-        SaveKeyValues.putValue(Constant.STAY_DD_TIMEOUT_KEY, time)
-        FloatingWindowController.setOvertime(time)
-    }
-
     private fun updateRandomMinuteRange(value: Int) {
         if (value < 0) {
             "随机时间范围不能小于0分钟".show(context)
             return
         }
         binding.minuteRangeView.text = "${value}分钟"
-        SaveKeyValues.putValue(Constant.RANDOM_MINUTE_RANGE_KEY, value)
+        SaveKeyValues.saveInt(Constant.RANDOM_MINUTE_RANGE_KEY, value)
     }
-
 }

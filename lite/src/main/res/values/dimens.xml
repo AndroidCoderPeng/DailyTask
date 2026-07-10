@@ -1,0 +1,26 @@
+<resources>
+    <!--字体大小-->
+    <dimen name="lib_sp_14">14sp</dimen>
+    <dimen name="lib_sp_16">16sp</dimen>
+
+    <!--内外间距-->
+    <dimen name="lib_dp_1">1dp</dimen>
+    <dimen name="lib_dp_3">3dp</dimen>
+    <dimen name="lib_dp_5">5dp</dimen>
+    <dimen name="lib_dp_7">7dp</dimen>
+    <dimen name="lib_dp_10">10dp</dimen>
+    <dimen name="lib_dp_15">15dp</dimen>
+    <dimen name="lib_dp_20">20dp</dimen>
+    <dimen name="lib_dp_25">25dp</dimen>
+    <dimen name="lib_dp_30">30dp</dimen>
+    <dimen name="lib_dp_35">35dp</dimen>
+    <dimen name="lib_dp_40">40dp</dimen>
+    <dimen name="lib_dp_45">45dp</dimen>
+    <dimen name="lib_dp_50">50dp</dimen>
+    <dimen name="lib_dp_60">60dp</dimen>
+    <dimen name="lib_dp_80">80dp</dimen>
+    <dimen name="lib_dp_100">100dp</dimen>
+
+    <!--分割线-->
+    <dimen name="lib_px_1">1px</dimen>
+</resources>

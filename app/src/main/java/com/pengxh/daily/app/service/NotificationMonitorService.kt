@@ -2,6 +2,7 @@ package com.pengxh.daily.app.service
 
 import android.app.Notification
 import android.content.ComponentName
+import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
@@ -76,13 +77,12 @@ class NotificationMonitorService : NotificationListenerService() {
         saveTargetNotice(pkg, targetApp, title, notice)
 
         // 目标应用打卡通知
-        val resultSource = SaveKeyValues.getValue(Constant.RESULT_SOURCE_KEY, 0) as Int
-        if (resultSource == 0) {
+        if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0) == 0) {
             if (pkg == targetApp && notice.contains("成功")) {
                 monitorCallback?.onClockInSuccess()
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
-                    SaveKeyValues.getValue(Constant.MESSAGE_TITLE_KEY, "打卡结果通知") as String
+                    SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
                 sendChannelMessage(title.ifBlank { messageTitle }, notice)
             }
         }
@@ -122,12 +122,12 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("开启循环") -> {
-                    SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, true)
+                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_START_KEY, true)
                     sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：开启")
                 }
 
                 notice.contains("关闭循环") -> {
-                    SaveKeyValues.putValue(Constant.TASK_AUTO_START_KEY, false)
+                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_START_KEY, false)
                     sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
                 }
 
@@ -165,10 +165,10 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("状态查询") -> {
-                    val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+                    val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
                     val content = buildString {
                         appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
-                        appendLine("悬浮权限：${if (MainActivity.isCanDrawOverlay) "已获取" else "被拒绝"}")
+                        appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
                         appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
                         appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
                         append("消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}")
@@ -187,7 +187,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 else -> {
-                    val key = SaveKeyValues.getValue(Constant.TASK_COMMAND_KEY, "打卡") as String
+                    val key = SaveKeyValues.loadString(Constant.TASK_COMMAND_KEY, "打卡")
                     if (notice.contains(key)) {
                         openApplication {
                             TimeoutTimerManager.startTimeoutTimer()
@@ -199,7 +199,7 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun sendChannelMessage(title: String, content: String) {
-        val type = SaveKeyValues.getValue(Constant.CHANNEL_TYPE_KEY, 0) as Int
+        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
         when (type) {
             0 -> {
                 // 企业微信
