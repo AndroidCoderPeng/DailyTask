@@ -293,7 +293,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         // 重置运行模式状态，等待用户手动启动或下次自动启动
         SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
 
-        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)) {
+        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
             taskScheduler.startTask()
         }
     }

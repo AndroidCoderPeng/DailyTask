@@ -68,7 +68,7 @@ class FloatingWindowService : Service(),
         }
 
         // 获取目标应用任务超时时间
-        val time = SaveKeyValues.loadInt(Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME)
+        val time = SaveKeyValues.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         binding.timeView.text = "${time}s"
 
         // 移动悬浮窗
@@ -94,7 +94,7 @@ class FloatingWindowService : Service(),
         if (visible) {
             binding.root.alpha = 1.0f
             val time = SaveKeyValues.loadInt(
-                Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME
+                Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
             )
             binding.timeView.text = "${time}s"
         } else {
@@ -147,10 +147,10 @@ class FloatingWindowService : Service(),
     private fun sendChannelMessage() {
         val title = "内存使用预警"
         val content = "当前内存使用已超过90%，请关注设备运行情况"
-        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
         when (type) {
-            0 -> httpRequestManager.sendMessage(title, content)
-            1 -> emailManager.sendEmail(title, content, false)
+            0 -> emailManager.sendEmail(title, content, false)
+            1 -> httpRequestManager.sendMessage(title, content)
             else -> Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
         }
     }

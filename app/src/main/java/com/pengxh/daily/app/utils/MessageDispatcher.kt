@@ -16,9 +16,17 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
         val messageTitle = SaveKeyValues.loadString(
             Constant.MESSAGE_TITLE_KEY, "打卡结果通知"
         )
-        val channelType = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
+        val channelType = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
         when (channelType) {
             0 -> {
+                // QQ邮箱
+                val content = buildString {
+                    append(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
+                }
+                emailManager.sendEmail(title.ifBlank { messageTitle }, content, false)
+            }
+
+            1 -> {
                 // 企业微信
                 val battery = batteryManager.getIntProperty(
                     BatteryManager.BATTERY_PROPERTY_CAPACITY
@@ -32,14 +40,6 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
                 }
                 viewModel.sendMessage(content, {}, {}, {})
             }
-
-            1 -> {
-                // QQ邮箱
-                val content = buildString {
-                    append(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
-                }
-                emailManager.sendEmail(title.ifBlank { messageTitle }, content, false)
-            }
         }
     }
 
@@ -48,21 +48,9 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
         val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val date = System.currentTimeMillis().timestampToDate()
 
-        val channelType = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
+        val channelType = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
         when (channelType) {
             0 -> {
-                // 企业微信（图文消息暂不支持）
-//                val content = """
-//                               标题：${title.ifBlank { messageTitle }}
-//                               内容：${content}
-//                               日期：$date
-//                               版本号：${BuildConfig.VERSION_NAME}
-//                               当前手机电量：${if (battery >= 0) "battery%" else "未知"}
-//                              """.trimIndent()
-                viewModel.sendImageMessage(filePath, {}, {}, {})
-            }
-
-            1 -> {
                 // QQ邮箱
                 val content = buildString {
                     appendLine(content)
@@ -76,6 +64,18 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
                     filePath,
                     false
                 )
+            }
+
+            1 -> {
+                // 企业微信（图文消息暂不支持）
+//                val content = """
+//                               标题：${title.ifBlank { messageTitle }}
+//                               内容：${content}
+//                               日期：$date
+//                               版本号：${BuildConfig.VERSION_NAME}
+//                               当前手机电量：${if (battery >= 0) "battery%" else "未知"}
+//                              """.trimIndent()
+                viewModel.sendImageMessage(filePath, {}, {}, {})
             }
         }
     }

@@ -36,7 +36,7 @@ object TimeoutTimerManager {
 
         // 获取超时时长配置（单位：秒）
         timeoutSeconds = try {
-            SaveKeyValues.loadInt(Constant.STAY_DD_TIMEOUT_KEY, Constant.DEFAULT_OVER_TIME)
+            SaveKeyValues.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         } catch (_: Exception) {
             Constant.DEFAULT_OVER_TIME
         }

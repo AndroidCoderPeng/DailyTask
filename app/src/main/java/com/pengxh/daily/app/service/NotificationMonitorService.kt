@@ -122,12 +122,12 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("开启循环") -> {
-                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_START_KEY, true)
+                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
                     sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：开启")
                 }
 
                 notice.contains("关闭循环") -> {
-                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_START_KEY, false)
+                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
                     sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
                 }
 
@@ -165,13 +165,13 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("状态查询") -> {
-                    val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
+                    val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
                     val content = buildString {
                         appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
                         appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
                         appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
                         appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
-                        append("消息渠道：${if (type == 0) "企业微信" else "QQ邮箱"}")
+                        append("消息渠道：${if (type == 0) "QQ邮箱" else "企业微信"}")
                     }
                     sendChannelMessage("状态查询通知", content)
                 }
@@ -187,7 +187,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 else -> {
-                    val key = SaveKeyValues.loadString(Constant.TASK_COMMAND_KEY, "打卡")
+                    val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
                     if (notice.contains(key)) {
                         openApplication {
                             TimeoutTimerManager.startTimeoutTimer()
@@ -199,18 +199,10 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun sendChannelMessage(title: String, content: String) {
-        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
         when (type) {
-            0 -> {
-                // 企业微信
-                httpRequestManager.sendMessage(title, content)
-            }
-
-            1 -> {
-                // QQ邮箱
-                emailManager.sendEmail(title, content, false)
-            }
-
+            0 -> emailManager.sendEmail(title, content, false)
+            1 -> httpRequestManager.sendMessage(title, content)
             else -> {
                 Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
             }

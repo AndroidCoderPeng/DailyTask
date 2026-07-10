@@ -33,7 +33,7 @@ private fun DailyTaskBean.resolveExecutionSeconds(): Int {
 
     // 随机时间
     if (needRandom) {
-        val minuteRange = SaveKeyValues.loadInt(Constant.RANDOM_MINUTE_RANGE_KEY, 5)
+        val minuteRange = SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, 5)
 
         // 生成随机种子, 保证每天的随机时间是一致的
         val key = "${TimeKit.getTodayDate()}|$id|$time|$minuteRange"

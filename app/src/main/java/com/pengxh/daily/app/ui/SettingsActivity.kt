@@ -65,7 +65,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             R.mipmap.ic_mobile_m3
         )
     }
-    private val channels = arrayListOf("企业微信", "QQ邮箱")
+    private val channels = arrayListOf("QQ邮箱", "企业微信")
     private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val notificationContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
@@ -134,8 +134,23 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
 
             is ApplicationEvent.CaptureCompleted -> {
-                when (SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)) {
+                when (SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)) {
                     0 -> {
+                        // QQ邮箱
+                        LoadingDialog.show(this, "邮件发送中，请稍后....")
+                        emailManager.sendAttachmentEmail(
+                            "邮箱测试", "这是一封测试邮件，不必关注", event.imagePath, true,
+                            onSuccess = {
+                                LoadingDialog.dismiss()
+                                "发送成功，请注意查收".show(this)
+                            },
+                            onFailure = {
+                                LoadingDialog.dismiss()
+                                "发送失败：${it}".show(this)
+                            })
+                    }
+
+                    1 -> {
                         // 企业微信
                         messageViewModel.sendImageMessage(
                             event.imagePath, onLoading = {
@@ -150,21 +165,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                                 if (isFinishing || isDestroyed) return@sendImageMessage
                                 LoadingDialog.dismiss()
                                 it.show(this)
-                            })
-                    }
-
-                    1 -> {
-                        // QQ邮箱
-                        LoadingDialog.show(this, "邮件发送中，请稍后....")
-                        emailManager.sendAttachmentEmail(
-                            "邮箱测试", "这是一封测试邮件，不必关注", event.imagePath, true,
-                            onSuccess = {
-                                LoadingDialog.dismiss()
-                                "发送成功，请注意查收".show(this)
-                            },
-                            onFailure = {
-                                LoadingDialog.dismiss()
-                                "发送失败：${it}".show(this)
                             })
                     }
 
@@ -393,7 +393,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.floatingTipsView.text = "服务未开启，打完卡无法自动跳回本软件"
         }
 
-        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
         if (type in 0..channels.lastIndex) {
             binding.channelView.text = channels[type]
             binding.channelView.setTextColor(R.color.theme_color.convertColor(this))

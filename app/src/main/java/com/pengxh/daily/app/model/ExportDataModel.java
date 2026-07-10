@@ -15,19 +15,19 @@ public class ExportDataModel {
     private int timeRange; // 时间范围
     private int msgChannel; // 消息渠道
 
-    private String command; // 口令
+    private String remoteCommand; // 口令
     private String msgTitle; // 打卡消息标题
     private String wxKey; // 企业微信消息Key
     private String targetApp; // 目标应用   
 
     private boolean detectGesture; // 检测手势
     private boolean backToHome; // 返回桌面
-    private boolean autoStart; // 自动启动
+    private boolean autoRecycle; // 任务每日自动循环
     private boolean randomTime; // 随机时间
     private boolean skipHoliday; // 跳过节假日
     private boolean savePower; // 省电模式
 
-    private Triple<String, String, String> emailConfig; // 邮箱配置
+    private Triple<String, String, String> emailConfig; // 邮箱配置<发件箱、授权码、收件箱>
     private List<DailyTaskBean> tasks; // 任务列表
 
     public int getResetTime() {
@@ -62,12 +62,12 @@ public class ExportDataModel {
         this.msgChannel = msgChannel;
     }
 
-    public String getCommand() {
-        return command;
+    public String getRemoteCommand() {
+        return remoteCommand;
     }
 
-    public void setCommand(String command) {
-        this.command = command;
+    public void setRemoteCommand(String remoteCommand) {
+        this.remoteCommand = remoteCommand;
     }
 
     public String getMsgTitle() {
@@ -110,12 +110,12 @@ public class ExportDataModel {
         this.backToHome = backToHome;
     }
 
-    public boolean isAutoStart() {
-        return autoStart;
+    public boolean isAutoRecycle() {
+        return autoRecycle;
     }
 
-    public void setAutoStart(boolean autoStart) {
-        this.autoStart = autoStart;
+    public void setAutoRecycle(boolean autoRecycle) {
+        this.autoRecycle = autoRecycle;
     }
 
     public boolean isRandomTime() {

@@ -164,9 +164,9 @@ class ForegroundRunningService : Service() {
                 return
             }
 
-            when (SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)) {
-                0 -> httpRequestManager.sendMessage("低电量提醒", "")
-                1 -> emailManager.sendEmail("低电量提醒", "", false)
+            when (SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)) {
+                0 -> emailManager.sendEmail("低电量提醒", "", false)
+                1 -> httpRequestManager.sendMessage("低电量提醒", "")
                 else -> LogFileManager.writeLog("低电量提醒未发送，消息渠道未配置，当前电量：$battery%")
             }
             lastRemindTime = currentTime
@@ -206,7 +206,7 @@ class ForegroundRunningService : Service() {
         AlarmScheduler.schedule(this, resetHour)
 
         // 发送 ResetDailyTask 事件，触发任务重置
-        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)) {
+        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
             EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
         }
     }

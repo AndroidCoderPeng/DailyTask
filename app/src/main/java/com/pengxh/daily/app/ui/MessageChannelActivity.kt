@@ -5,8 +5,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.gson.JsonObject
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
-import com.pengxh.daily.app.sqlite.DatabaseWrapper
+import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.vm.MessageViewModel
@@ -40,11 +41,11 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         val title = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         binding.messageTitleView.setText(title)
 
-        val type = SaveKeyValues.loadInt(Constant.CHANNEL_TYPE_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
         if (type == 0) {
-            binding.wxRadioButton.isChecked = true
-        } else if (type == 1) {
             binding.qqRadioButton.isChecked = true
+        } else if (type == 1) {
+            binding.wxRadioButton.isChecked = true
         }
 
         val key = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
@@ -52,15 +53,14 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             binding.wxKeyView.setText(key)
         }
 
-        DatabaseWrapper.loadLatestEmailConfig()?.let {
-            val outbox = if (it.outbox.contains("@qq.com")) {
-                it.outbox.dropLast(7)
-            } else {
-                it.outbox
-            }
-            binding.emailSendAddressView.setText(outbox)
-            binding.emailSendCodeView.setText(it.authCode)
-            binding.emailInboxView.setText(it.inbox)
+        val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
+        if (!obj.isEmpty) {
+            val outbox = obj.get("outbox").asString
+            val authCode = obj.get("authCode").asString
+            val inbox = obj.get("inbox").asString
+            binding.emailSendAddressView.setText(if (outbox.contains("@qq.com")) outbox.dropLast(7) else outbox)
+            binding.emailSendCodeView.setText(authCode)
+            binding.emailInboxView.setText(inbox)
         }
     }
 
@@ -72,7 +72,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         binding.wxRadioButton.setOnClickListener {
             val key = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
             if (binding.wxRadioButton.isChecked && key.isNotBlank()) {
-                SaveKeyValues.saveInt(Constant.CHANNEL_TYPE_KEY, 0)
+                SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, 1)
                 binding.qqRadioButton.isChecked = false
             } else {
                 "请先配置企业微信消息 Webhook key".show(this)
@@ -91,7 +91,6 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 Constant.MESSAGE_TITLE_KEY,
                 binding.messageTitleView.text.toString().trim()
             )
-            SaveKeyValues.saveString(Constant.WX_WEB_HOOK_KEY, key)
 
             MaterialAlertDialogBuilder(this)
                 .setTitle("测试消息")
@@ -103,14 +102,14 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         }
 
         binding.qqRadioButton.setOnClickListener {
-            val config = DatabaseWrapper.loadLatestEmailConfig()
-            if (binding.qqRadioButton.isChecked && config != null) {
-                SaveKeyValues.saveInt(Constant.CHANNEL_TYPE_KEY, 1)
-                binding.wxRadioButton.isChecked = false
-            } else {
-                "请先配置QQ邮箱".show(context)
+            val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
+            if (obj.isEmpty) {
                 binding.qqRadioButton.isChecked = false
+                "请先配置QQ邮箱".show(context)
+                return@setOnClickListener
             }
+
+            SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, 0)
         }
 
         binding.sendEmailButton.setOnClickListener {
@@ -148,7 +147,6 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             SaveKeyValues.saveString(
                 Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
             )
-            DatabaseWrapper.insertConfig(outbox, authCode, inbox)
 
             sendTestEmail()
         }
@@ -168,6 +166,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             onSuccess = {
                 if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
+                SaveKeyValues.saveString(
+                    Constant.WX_WEB_HOOK_KEY, binding.wxKeyView.text.toString()
+                )
             },
             onFailed = {
                 if (isFinishing || isDestroyed) return@sendMessage
@@ -189,6 +190,19 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                     onSuccess = {
                         LoadingDialog.dismiss()
                         "发送成功，请注意查收".show(context)
+
+                        val address = binding.emailSendAddressView.text.toString()
+                        val outbox = if (address.contains("@qq.com")) {
+                            address
+                        } else {
+                            "${address}@qq.com"
+                        }
+                        val cacheObj = JsonObject().apply {
+                            addProperty("outbox", outbox)
+                            addProperty("authCode", binding.emailSendCodeView.text.toString())
+                            addProperty("inbox", binding.emailInboxView.text.toString())
+                        }
+                        ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, cacheObj)
                     },
                     onFailure = {
                         LoadingDialog.dismiss()

@@ -2,10 +2,8 @@ package com.pengxh.daily.app.sqlite
 
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.daily.app.sqlite.bean.EmailConfigBean
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.daily.app.utils.TimeKit
-import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 
 object DatabaseWrapper {
     private val dailyTaskDao by lazy { DailyTaskApplication.get().dataBase.dailyTaskDao() }
@@ -39,21 +37,5 @@ object DatabaseWrapper {
 
     fun insertNotice(bean: NotificationBean) {
         noticeDao.insert(bean)
-    }
-
-    /*****************************************************************************************/
-    private val emailConfigDao by lazy { DailyTaskApplication.get().dataBase.emailConfigDao() }
-
-    fun insertConfig(outbox: String, authCode: String, inbox: String) {
-        val bean = EmailConfigBean()
-        bean.outbox = outbox
-        bean.authCode = authCode
-        bean.inbox = inbox
-        bean.createTime = System.currentTimeMillis().timestampToCompleteDate()
-        emailConfigDao.insert(bean)
-    }
-
-    fun loadLatestEmailConfig(): EmailConfigBean? {
-        return emailConfigDao.loadEmailConfig()
     }
 }

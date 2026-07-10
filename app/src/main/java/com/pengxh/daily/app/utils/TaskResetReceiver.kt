@@ -22,7 +22,7 @@ class TaskResetReceiver : BroadcastReceiver() {
         // 先标记已重置、清除运行状态，再发送事件
         markTodayAsReset()
 
-        val autoStart = SaveKeyValues.loadBoolean(Constant.TASK_AUTO_START_KEY, true)
+        val autoStart = SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
         if (autoStart) {
             // 用 postSticky 保证 MainActivity 未注册时事件不丢失，启动后仍可收到
             EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)

@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.utils
 
 import com.google.gson.Gson
+import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.model.ExportDataModel
@@ -49,41 +50,46 @@ class TaskDataManager() {
     private fun saveConfiguration(config: ExportDataModel) {
         SaveKeyValues.saveString(
             Constant.MESSAGE_TITLE_KEY,
-            config.messageTitle?.takeIf { it.isNotBlank() } ?: "打卡结果通知"
+            config.msgTitle?.takeIf { it.isNotBlank() } ?: "打卡结果通知"
         )
 
         // 保存企业微信 Key
         SaveKeyValues.saveString(Constant.WX_WEB_HOOK_KEY, config.wxKey ?: "")
 
         val email = config.emailConfig
-        val outbox = email?.outbox
-        val authCode = email?.authCode
-        val inbox = email?.inbox
+        val outbox = email?.first
+        val authCode = email?.second
+        val inbox = email?.third
         if (email != null &&
             !outbox.isNullOrBlank() &&
             !authCode.isNullOrBlank() &&
             !inbox.isNullOrBlank()
         ) {
-            DatabaseWrapper.insertConfig(outbox, authCode, inbox)
+            val cacheObj = JsonObject().apply {
+                addProperty("outbox", outbox)
+                addProperty("authCode", authCode)
+                addProperty("inbox", inbox)
+            }
+            ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, cacheObj)
         }
 
         SaveKeyValues.saveBoolean(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
         SaveKeyValues.saveBoolean(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
         SaveKeyValues.saveInt(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
         SaveKeyValues.saveInt(
-            Constant.STAY_DD_TIMEOUT_KEY,
-            config.overTime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
+            Constant.STAY_OVERTIME_KEY,
+            config.overtime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
         )
         SaveKeyValues.saveString(
-            Constant.TASK_COMMAND_KEY,
-            config.command?.takeIf { it.isNotBlank() } ?: "打卡"
+            Constant.REMOTE_COMMAND_KEY,
+            config.remoteCommand?.takeIf { it.isNotBlank() } ?: "打卡"
         )
-        SaveKeyValues.saveBoolean(Constant.TASK_AUTO_START_KEY, config.isAutoStart)
+        SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, config.isAutoRecycle)
         SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
-        SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isPowerSaveMode)
-        SaveKeyValues.saveBoolean(Constant.SKIP_CHINA_HOLIDAY_KEY, config.isSkipChinaHoliday)
+        SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isSavePower)
+        SaveKeyValues.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
         SaveKeyValues.saveInt(
-            Constant.RANDOM_MINUTE_RANGE_KEY,
+            Constant.TIME_RANGE_KEY,
             config.timeRange.coerceAtLeast(0)
         )
     }

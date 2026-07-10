@@ -4,9 +4,7 @@ import android.content.Context
 import android.os.BatteryManager
 import android.util.Log
 import com.pengxh.daily.app.BuildConfig
-import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.kt.lite.extensions.timestampToDate
-import com.pengxh.kt.lite.extensions.toJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,15 +49,19 @@ class EmailManager(private val context: Context) {
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
-        val config = DatabaseWrapper.loadLatestEmailConfig()
-        if (config == null) {
+        val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
+        if (obj.isEmpty) {
             onFailure?.invoke("邮箱未配置，无法发送邮件")
             return
         }
 
-        Log.d(kTag, "邮箱配置: ${config.toJson()}")
+        Log.d(kTag, "邮箱配置: $obj")
 
-        val authenticator = EmailAuthenticator(config.outbox, config.authCode)
+        val outbox = obj.get("outbox").asString
+        val authCode = obj.get("authCode").asString
+        val inbox = obj.get("inbox").asString
+
+        val authenticator = EmailAuthenticator(outbox, authCode)
         val props = createSmtpProperties()
         val session = Session.getInstance(props, authenticator)
 
@@ -73,8 +75,8 @@ class EmailManager(private val context: Context) {
         }
 
         val message = MimeMessage(session).apply {
-            setFrom(InternetAddress(config.outbox))
-            setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
+            setFrom(InternetAddress(outbox))
+            setRecipient(Message.RecipientType.TO, InternetAddress(inbox))
             subject = title
             sentDate = Date()
             setText(content)
@@ -94,15 +96,19 @@ class EmailManager(private val context: Context) {
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
-        val config = DatabaseWrapper.loadLatestEmailConfig()
-        if (config == null) {
+        val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
+        if (obj.isEmpty) {
             onFailure?.invoke("邮箱未配置，无法发送邮件")
             return
         }
 
-        Log.d(kTag, "邮箱配置: ${config.toJson()}")
+        Log.d(kTag, "邮箱配置: $obj")
 
-        val authenticator = EmailAuthenticator(config.outbox, config.authCode)
+        val outbox = obj.get("outbox").asString
+        val authCode = obj.get("authCode").asString
+        val inbox = obj.get("inbox").asString
+
+        val authenticator = EmailAuthenticator(outbox, authCode)
         val props = createSmtpProperties()
         val session = Session.getInstance(props, authenticator)
 
@@ -125,8 +131,8 @@ class EmailManager(private val context: Context) {
         }
 
         val message = MimeMessage(session).apply {
-            setFrom(InternetAddress(config.outbox))
-            setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
+            setFrom(InternetAddress(outbox))
+            setRecipient(Message.RecipientType.TO, InternetAddress(inbox))
             subject = title
             sentDate = Date()
             setContent(multipart)
