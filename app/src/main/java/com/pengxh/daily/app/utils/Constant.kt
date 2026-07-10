@@ -15,11 +15,11 @@ object Constant {
     const val STAY_OVERTIME_KEY = "STAY_OVERTIME_KEY" // 打卡停留在目标APP的时间(Int)
     const val TIME_RANGE_KEY = "TIME_RANGE_KEY" // 随机时间范围[0,range](Int)
     const val MSG_CHANNEL_KEY = "MSG_CHANNEL_KEY" // 消息渠道：0-邮件，1-企业微信(Int)
+    const val TARGET_APP_KEY = "TARGET_APP_KEY" // 目标应用(Int)
 
     const val REMOTE_COMMAND_KEY = "REMOTE_COMMAND_KEY" // 打卡远程消息指令(String)
     const val MESSAGE_TITLE_KEY = "MESSAGE_TITLE_KEY" // 打卡消息标题(String)
     const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY" // 企业微信消息Key(String)
-    const val TARGET_APP_KEY = "TARGET_APP_KEY" // 目标应用(String)
 
     const val GESTURE_DETECTOR_KEY = "GESTURE_DETECTOR_KEY" // 检测手势(Boolean)
     const val BACK_TO_HOME_KEY = "BACK_TO_HOME_KEY" // 返回桌面(Boolean)

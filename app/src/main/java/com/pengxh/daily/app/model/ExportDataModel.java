@@ -14,11 +14,11 @@ public class ExportDataModel {
     private int overtime; // 超时时间
     private int timeRange; // 时间范围
     private int msgChannel; // 消息渠道
+    private int targetApp; // 目标应用
 
     private String remoteCommand; // 口令
     private String msgTitle; // 打卡消息标题
     private String wxKey; // 企业微信消息Key
-    private String targetApp; // 目标应用   
 
     private boolean detectGesture; // 检测手势
     private boolean backToHome; // 返回桌面
@@ -58,6 +58,14 @@ public class ExportDataModel {
         return msgChannel;
     }
 
+    public int getTargetApp() {
+        return targetApp;
+    }
+
+    public void setTargetApp(int targetApp) {
+        this.targetApp = targetApp;
+    }
+
     public void setMsgChannel(int msgChannel) {
         this.msgChannel = msgChannel;
     }
@@ -86,13 +94,6 @@ public class ExportDataModel {
         this.wxKey = wxKey;
     }
 
-    public String getTargetApp() {
-        return targetApp;
-    }
-
-    public void setTargetApp(String targetApp) {
-        this.targetApp = targetApp;
-    }
 
     public boolean isDetectGesture() {
         return detectGesture;
