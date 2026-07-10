@@ -208,6 +208,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         // 如果资源未初始化，先初始化
         if (!isCapturingInitialized || imageReader == null || virtualDisplay == null) {
             Log.w(kTag, "Capture resources not initialized, reinitializing...")
+            // 先释放可能残留的脏资源，避免 VirtualDisplay 泄漏或状态不一致
+            releaseCaptureResources()
             initializeCaptureResources(projection)
             if (!isCapturingInitialized) {
                 sendChannelMessage("截屏资源初始化失败")
@@ -288,7 +290,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     private suspend fun waitForImageAvailable(imageReader: ImageReader): Image? {
         return suspendCancellableCoroutine { continuation ->
             val listener = ImageReader.OnImageAvailableListener { reader ->
-                val image = reader.acquireLatestImage()
+                // acquireLatestImage 在部分 OEM 后台场景可能返回 null，用 acquireNextImage 兜底
+                val image = reader.acquireLatestImage() ?: reader.acquireNextImage()
                 if (image != null) {
                     reader.setOnImageAvailableListener(null, null)
                     if (continuation.isActive) {
@@ -297,6 +300,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                         image.close()
                     }
                 }
+                // image 为 null 时保留 listener，等待下一次回调；超时由 withTimeoutOrNull 兜底
             }
 
             continuation.invokeOnCancellation {
