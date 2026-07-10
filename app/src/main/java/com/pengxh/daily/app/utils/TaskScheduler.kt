@@ -100,7 +100,7 @@ class TaskScheduler(
         // Step 2: 一次性构建当日计划表
         todaySchedule = buildTodaySchedule()
         if (todaySchedule.isEmpty()) {
-            listener.onTaskExecutionError("启动任务失败，请先添加任务时间点")
+            listener.onTaskExecutionError("任务启动失败，请先添加任务时间点")
             return
         }
 

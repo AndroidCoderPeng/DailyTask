@@ -74,7 +74,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         binding.randomTimeSwitch.isChecked = needRandom
         if (needRandom) {
             binding.minuteRangeLayout.visibility = View.VISIBLE
-            val value = SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, 5)
+            val value = SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
             binding.minuteRangeView.text = "${value}分钟"
         } else {
             binding.minuteRangeLayout.visibility = View.GONE
@@ -128,7 +128,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, isChecked)
             if (isChecked) {
                 binding.minuteRangeLayout.visibility = View.VISIBLE
-                val value = SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, 5)
+                val value =
+                    SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
                 binding.minuteRangeView.text = "${value}分钟"
             } else {
                 binding.minuteRangeLayout.visibility = View.GONE
@@ -206,7 +207,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             exportData.isSavePower =
                 SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
 
-            exportData.timeRange = SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, 5)
+            exportData.timeRange =
+                SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
 
             val json = exportData.toJson()
             Log.d(kTag, json)

@@ -164,7 +164,7 @@ class ForegroundRunningService : Service() {
                 return
             }
 
-            when (SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)) {
+            when (SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)) {
                 0 -> emailManager.sendEmail("低电量提醒", "", false)
                 1 -> httpRequestManager.sendMessage("低电量提醒", "")
                 else -> LogFileManager.writeLog("低电量提醒未发送，消息渠道未配置，当前电量：$battery%")

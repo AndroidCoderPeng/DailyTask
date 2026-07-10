@@ -77,7 +77,7 @@ class NotificationMonitorService : NotificationListenerService() {
         saveTargetNotice(pkg, targetApp, title, notice)
 
         // 目标应用打卡通知
-        if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0) == 0) {
+        if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0) {
             if (pkg == targetApp && notice.contains("成功")) {
                 monitorCallback?.onClockInSuccess()
                 "即将发送通知邮件，请注意查收".show(this)
@@ -165,7 +165,8 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
 
                 notice.contains("状态查询") -> {
-                    val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+                    val type =
+                        SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
                     val content = buildString {
                         appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
                         appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
@@ -199,7 +200,7 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun sendChannelMessage(title: String, content: String) {
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         when (type) {
             0 -> emailManager.sendEmail(title, content, false)
             1 -> httpRequestManager.sendMessage(title, content)

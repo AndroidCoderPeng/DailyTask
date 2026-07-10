@@ -90,7 +90,7 @@ class TaskDataManager() {
         SaveKeyValues.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
         SaveKeyValues.saveInt(
             Constant.TIME_RANGE_KEY,
-            config.timeRange.coerceAtLeast(0)
+            config.timeRange.coerceAtLeast(Constant.DEFAULT_TIME_RANGE)
         )
     }
 

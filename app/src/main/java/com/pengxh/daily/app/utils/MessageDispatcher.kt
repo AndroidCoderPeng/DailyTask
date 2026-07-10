@@ -16,7 +16,7 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
         val messageTitle = SaveKeyValues.loadString(
             Constant.MESSAGE_TITLE_KEY, "打卡结果通知"
         )
-        val channelType = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+        val channelType = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         when (channelType) {
             0 -> {
                 // QQ邮箱
@@ -48,7 +48,7 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
         val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         val date = System.currentTimeMillis().timestampToDate()
 
-        val channelType = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+        val channelType = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         when (channelType) {
             0 -> {
                 // QQ邮箱

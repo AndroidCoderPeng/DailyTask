@@ -308,7 +308,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     }
 
     private fun sendChannelMessage(content: String) {
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         when (type) {
             0 -> emailManager.sendEmail("截屏失败", content, false)
             1 -> httpRequestManager.sendMessage("截屏失败", content)

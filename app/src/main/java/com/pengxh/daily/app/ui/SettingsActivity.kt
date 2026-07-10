@@ -107,36 +107,58 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     fun handleApplicationEvent(event: ApplicationEvent) {
         when (event) {
             is ApplicationEvent.ListenerConnected -> {
-                binding.noticeTipsView.text = "服务状态查询中，请稍后..."
-                binding.noticeTipsView.setTextColor(R.color.theme_color.convertColor(this))
                 binding.noticeSwitch.isChecked = true
                 binding.noticeTipsView.visibility = View.GONE
+
+                val sourceType =
+                    SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+                val targetApp =
+                    SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, Constant.DEFAULT_INDEX)
+                if (sourceType == 0 && targetApp == 0) {
+                    binding.noticeRadioButton.isChecked = true
+                    binding.captureRadioButton.isChecked = false
+                }
             }
 
             is ApplicationEvent.ListenerDisconnected -> {
                 binding.noticeTipsView.text = "服务未开启，无法监听打卡结果和接收远程指令"
                 binding.noticeTipsView.setTextColor(Color.RED)
                 binding.noticeSwitch.isChecked = false
+                binding.noticeRadioButton.isChecked = false
                 binding.noticeTipsView.visibility = View.VISIBLE
             }
 
             is ApplicationEvent.ProjectionReady -> {
                 binding.captureSwitch.isChecked = true
                 binding.captureTipsView.visibility = View.GONE
+                val sourceType =
+                    SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+                if (sourceType == 1) {
+                    binding.captureRadioButton.isChecked = true
+                    binding.noticeRadioButton.isChecked = false
+                }
             }
 
             is ApplicationEvent.ProjectionFailed -> {
                 "截屏服务已断开，已切换到通知模式".show(this)
                 binding.captureSwitch.isChecked = false
                 binding.captureRadioButton.isChecked = false
-                binding.noticeRadioButton.isChecked = true
+                binding.captureTipsView.text = "截屏服务未开启，无法获取打卡结果"
+                binding.captureTipsView.setTextColor(Color.RED)
                 binding.captureTipsView.visibility = View.VISIBLE
+                val targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+                if (notificationEnable() && targetApp == 0) {
+                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                    binding.noticeRadioButton.isChecked = true
+                } else {
+                    binding.noticeRadioButton.isChecked = false
+                }
             }
 
             is ApplicationEvent.CaptureCompleted -> {
-                when (SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)) {
+                val index = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+                when (index) {
                     0 -> {
-                        // QQ邮箱
                         LoadingDialog.show(this, "邮件发送中，请稍后....")
                         emailManager.sendAttachmentEmail(
                             "邮箱测试", "这是一封测试邮件，不必关注", event.imagePath, true,
@@ -151,7 +173,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     }
 
                     1 -> {
-                        // 企业微信
                         messageViewModel.sendImageMessage(
                             event.imagePath, onLoading = {
                                 if (isFinishing || isDestroyed) return@sendImageMessage
@@ -386,14 +407,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         if (Settings.canDrawOverlays(this)) {
             binding.floatingSwitch.isChecked = true
             binding.floatingTipsView.visibility = View.GONE
-
         } else {
             binding.floatingSwitch.isChecked = false
             binding.floatingTipsView.visibility = View.VISIBLE
             binding.floatingTipsView.text = "服务未开启，打完卡无法自动跳回本软件"
         }
 
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         if (type in 0..channels.lastIndex) {
             binding.channelView.text = channels[type]
             binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
@@ -402,35 +422,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.channelView.setTextColor(R.color.red.convertColor(this))
         }
 
-        val sourceType = SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0)
-        if (sourceType == 0) {
-            binding.noticeRadioButton.isChecked = true
-            binding.captureRadioButton.isChecked = false
-        } else {
-            // == 1
-            if (ProjectionSession.isStateActive()) {
-                binding.captureRadioButton.isChecked = true
-                binding.noticeRadioButton.isChecked = false
-            } else {
-                binding.captureRadioButton.isChecked = false
-                binding.noticeRadioButton.isChecked = true
-                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
-                Log.w(kTag, "截屏服务未运行，已自动切换到通知模式")
-            }
-        }
-
-        syncingSwitchState = true
-        try {
-            binding.gestureDetectSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
-            binding.backToHomeSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, true)
-            binding.powerSaveSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
-        } finally {
-            syncingSwitchState = false
-        }
-
+        // 先同步通知服务的 UI 状态（switch + tipsView）
         if (notificationEnable()) {
             binding.noticeTipsView.text = "服务状态查询中，请稍后..."
             binding.noticeTipsView.setTextColor(R.color.theme_color.convertColor(this))
@@ -448,6 +440,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.noticeTipsView.visibility = View.VISIBLE
         }
 
+        // 先同步截屏服务的 UI 状态（switch + tipsView）
         if (ProjectionSession.isStateActive()) {
             binding.captureSwitch.isChecked = true
             binding.captureTipsView.visibility = View.GONE
@@ -456,6 +449,43 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.captureTipsView.setTextColor(Color.RED)
             binding.captureSwitch.isChecked = false
             binding.captureTipsView.visibility = View.VISIBLE
+        }
+
+        // 最后再根据 sourceType 设置 radio button（此时 switch 状态已同步）
+        val sourceType = SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+        val targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+        if (sourceType == 0) {
+            if (notificationEnable() && targetApp == 0) {
+                binding.noticeRadioButton.isChecked = true
+                binding.captureRadioButton.isChecked = false
+            } else {
+                binding.noticeRadioButton.isChecked = false
+                binding.captureRadioButton.isChecked = false
+            }
+        } else if (sourceType == 1) {
+            // 如果是截屏服务，那还要考虑该服务是否正常开启
+            if (ProjectionSession.isStateActive()) {
+                binding.captureRadioButton.isChecked = true
+                binding.noticeRadioButton.isChecked = false
+            } else {
+                binding.captureRadioButton.isChecked = false
+                binding.noticeRadioButton.isChecked = false
+            }
+        } else {
+            binding.captureRadioButton.isChecked = false
+            binding.noticeRadioButton.isChecked = false
+        }
+
+        syncingSwitchState = true
+        try {
+            binding.gestureDetectSwitch.isChecked =
+                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
+            binding.backToHomeSwitch.isChecked =
+                SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, true)
+            binding.powerSaveSwitch.isChecked =
+                SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+        } finally {
+            syncingSwitchState = false
         }
     }
 

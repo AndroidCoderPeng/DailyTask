@@ -241,7 +241,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         TimeoutTimerManager.onTimeout = {
             backToMainActivity()
 
-            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0) == 0) {
+            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0) {
                 messageDispatcher.sendMessage("", "")
             } else {
                 if (imagePath == "") {
@@ -646,7 +646,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")
         } else {
             LogFileManager.writeLog("截屏服务异常：MediaProjection 已失效")
-            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0) == 1) {
+            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 1) {
                 "截屏服务已断开，请重新授权".show(this)
                 SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
             }

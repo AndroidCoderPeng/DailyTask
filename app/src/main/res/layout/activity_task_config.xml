@@ -129,28 +129,13 @@
                 android:background="@color/white"
                 android:paddingHorizontal="@dimen/dp_16">
 
-                <LinearLayout
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_centerVertical="true"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="跳过休息日"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
-                        android:textColor="@color/text_default_color" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/dp_4"
-                        android:singleLine="true"
-                        android:text="节假日/周末跳过，补班日执行"
-                        android:textColor="@color/text_hint_color"
-                        android:textSize="@dimen/sp_10" />
-                </LinearLayout>
+                    android:text="跳过节假日"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                    android:textColor="@color/text_default_color" />
 
                 <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/skipHolidaySwitch"

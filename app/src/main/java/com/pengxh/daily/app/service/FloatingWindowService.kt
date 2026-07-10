@@ -147,7 +147,7 @@ class FloatingWindowService : Service(),
     private fun sendChannelMessage() {
         val title = "内存使用预警"
         val content = "当前内存使用已超过90%，请关注设备运行情况"
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         when (type) {
             0 -> emailManager.sendEmail(title, content, false)
             1 -> httpRequestManager.sendMessage(title, content)

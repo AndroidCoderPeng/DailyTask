@@ -98,26 +98,31 @@ object SaveKeyValues {
 
     fun loadString(key: String, defaultValue: String = ""): String {
         if (key.isBlank()) return defaultValue
+        if (!::sp.isInitialized) return defaultValue
         return sp.getString(key, defaultValue) ?: defaultValue
     }
 
     fun loadInt(key: String, defaultValue: Int = 0): Int {
         if (key.isBlank()) return defaultValue
+        if (!::sp.isInitialized) return defaultValue
         return sp.getInt(key, defaultValue)
     }
 
     fun loadLong(key: String, defaultValue: Long = 0L): Long {
         if (key.isBlank()) return defaultValue
+        if (!::sp.isInitialized) return defaultValue
         return sp.getLong(key, defaultValue)
     }
 
     fun loadFloat(key: String, defaultValue: Float = 0f): Float {
         if (key.isBlank()) return defaultValue
+        if (!::sp.isInitialized) return defaultValue
         return sp.getFloat(key, defaultValue)
     }
 
     fun loadBoolean(key: String, defaultValue: Boolean = false): Boolean {
         if (key.isBlank()) return defaultValue
+        if (!::sp.isInitialized) return defaultValue
         return sp.getBoolean(key, defaultValue)
     }
 

@@ -62,7 +62,9 @@ object Constant {
     // ============================================================
     // 其他默认值
     // ============================================================
+    const val DEFAULT_INDEX = -1
     const val DEFAULT_RESET_HOUR = 0
+    const val DEFAULT_TIME_RANGE = 5
     const val DEFAULT_OVER_TIME = 30
     const val CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID = 1001
     const val COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID = 1002

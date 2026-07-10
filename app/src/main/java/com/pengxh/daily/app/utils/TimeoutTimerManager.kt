@@ -48,7 +48,8 @@ object TimeoutTimerManager {
                 FloatingWindowController.updateTime(tick)
 
                 // 启用截屏
-                val resultSource = SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, 0)
+                val resultSource =
+                    SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
                 if (resultSource == 1) {
                     if (tick <= 3 && !hasCaptured) {
                         hasCaptured = true

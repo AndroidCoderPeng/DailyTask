@@ -41,7 +41,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         val title = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         binding.messageTitleView.setText(title)
 
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, 0)
+        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         if (type == 0) {
             binding.qqRadioButton.isChecked = true
         } else if (type == 1) {
