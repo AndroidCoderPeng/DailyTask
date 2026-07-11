@@ -3,16 +3,16 @@ package com.pengxh.daily.app.extensions
 import com.github.gzuliyujiang.wheelpicker.entity.TimeEntity
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.TimeKit
 import com.pengxh.kt.lite.extensions.appendZero
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.util.Locale
 import java.util.Random
 
 fun DailyTaskBean.convertToTimeEntity(): TimeEntity {
     val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
-    val date = dateFormat.parse("${TimeKit.getTodayDate()} ${this.time}")!!
+    val date = dateFormat.parse("${LocalDate.now()} ${this.time}")!!
     return TimeEntity.target(date)
 }
 
@@ -37,7 +37,7 @@ private fun DailyTaskBean.resolveExecutionSeconds(): Int {
             SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
 
         // 生成随机种子, 保证每天的随机时间是一致的
-        val key = "${TimeKit.getTodayDate()}|$id|$time|$minuteRange"
+        val key = "${LocalDate.now()}|$id|$time|$minuteRange"
         val seed = key.hashCode().toLong()
         val random = Random(seed)
 

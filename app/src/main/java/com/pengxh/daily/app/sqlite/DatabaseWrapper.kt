@@ -3,7 +3,7 @@ package com.pengxh.daily.app.sqlite
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
-import com.pengxh.daily.app.utils.TimeKit
+import java.time.LocalDate
 
 object DatabaseWrapper {
     private val dailyTaskDao by lazy { DailyTaskApplication.get().dataBase.dailyTaskDao() }
@@ -32,7 +32,7 @@ object DatabaseWrapper {
     private val noticeDao by lazy { DailyTaskApplication.get().dataBase.noticeDao() }
 
     fun loadCurrentDayNotice(): MutableList<NotificationBean> {
-        return noticeDao.loadCurrentDayNotice(TimeKit.getTodayDate())
+        return noticeDao.loadCurrentDayNotice("${LocalDate.now()}")
     }
 
     fun insertNotice(bean: NotificationBean) {
