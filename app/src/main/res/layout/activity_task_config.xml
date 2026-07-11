@@ -262,7 +262,7 @@
                 android:background="#CCC" />
 
             <RelativeLayout
-                android:id="@+id/outputLayout"
+                android:id="@+id/exportLayout"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/itemLayoutHeight"
                 android:background="@drawable/bg_solid_layout_white_16"

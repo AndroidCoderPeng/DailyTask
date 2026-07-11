@@ -481,7 +481,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.gestureDetectSwitch.isChecked =
                 SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
             binding.backToHomeSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, true)
+                SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
             binding.powerSaveSwitch.isChecked =
                 SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
         } finally {

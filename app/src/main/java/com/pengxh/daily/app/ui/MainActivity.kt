@@ -344,7 +344,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     }
 
     private fun backToMainActivity() {
-        if (SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, true)) {
+        if (SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)) {
             //模拟点击Home键
             val home = Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
