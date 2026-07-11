@@ -68,6 +68,7 @@ class TaskScheduler(
     interface TaskStateListener {
         fun onTaskStarted()
         fun onTaskStopped()
+        fun onTaskSkipped(message: String)
         fun onTaskCompleted()
         fun onTaskExecuting(taskIndex: Int, task: DailyTaskBean, realTime: String)
         fun onTaskExecutionError(message: String)
@@ -77,13 +78,13 @@ class TaskScheduler(
     private var todaySchedule: List<ScheduledTask> = emptyList()
     private var executedCount = 0
 
-    fun isTaskStarted(): Boolean = currentState == State.EXECUTING
+    fun isTaskStarted() = currentState == State.EXECUTING || currentState == State.SKIPPED
 
     /**
      * 启动每日任务调度
      */
     fun startTask() {
-        if (currentState == State.EXECUTING) {
+        if (currentState == State.EXECUTING || currentState == State.SKIPPED) {
             LogFileManager.writeLog("任务已在执行中，忽略重复启动")
             return
         }
@@ -91,9 +92,7 @@ class TaskScheduler(
         // Step 1: 判断日类型（法定节假日 / 调休补班 / 普通周末）
         if (shouldSkipToday()) {
             currentState = State.SKIPPED
-            LogFileManager.writeLog("今日为非工作日，跳过任务执行")
-            listener.onTaskCompleted()
-            notifyServiceTaskCompleted()
+            listener.onTaskSkipped("今日为周末，跳过任务")
             return
         }
 
@@ -117,7 +116,7 @@ class TaskScheduler(
      * 停止任务调度
      */
     fun stopTask() {
-        if (currentState != State.EXECUTING && currentState != State.COMPLETED) {
+        if (currentState != State.EXECUTING && currentState != State.COMPLETED && currentState != State.SKIPPED) {
             LogFileManager.writeLog("任务未运行，无需停止")
             return
         }

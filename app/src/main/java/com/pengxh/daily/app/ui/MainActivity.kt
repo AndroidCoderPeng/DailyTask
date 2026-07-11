@@ -284,9 +284,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             taskScheduler.startTask()
         }
 
-        // 进程重新启动后，任务和计时器随进程一起销毁，运行状态需要重置
-        isTaskStarted = false
-
         // 检查是否需要执行错过的重置
         checkMissedReset()
     }
@@ -373,6 +370,18 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
     }
 
+    override fun onTaskSkipped(message: String) {
+        isTaskStarted = true
+        binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+        binding.executeTaskButton.setIconTintResource(R.color.red)
+        binding.executeTaskButton.text = "停止"
+        binding.tipsView.text = message
+        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
+        messageDispatcher.sendMessage(
+            "启动任务通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
+        )
+    }
+
     override fun onTaskCompleted() {
         // 今日任务已全部执行完毕，但保持"运行中"状态直到次日重置
         dailyTaskAdapter.updateCurrentTaskState(-1)
@@ -454,14 +463,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
                 backToMainActivity()
                 if (imagePath == "") {
                     messageDispatcher.sendMessage(
-                        "截屏状态通知",
-                        "截图完成，但是无法获取截图，请手动查看结果"
+                        "截屏状态通知", "截图完成，但是无法获取截图，请手动查看结果"
                     )
                 } else {
                     messageDispatcher.sendAttachmentMessage(
-                        "截屏状态通知",
-                        "截图完成，结果请查看附件",
-                        imagePath
+                        "截屏状态通知", "截图完成，结果请查看附件", imagePath
                     )
                 }
                 hasCaptured = false
