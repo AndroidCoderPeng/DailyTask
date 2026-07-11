@@ -80,7 +80,6 @@ class FloatingWindowService : Service(),
     // ============================================================
     // FloatingWindowView 实现
     // ============================================================
-
     override fun updateTime(tick: Int) {
         binding.timeView.text = "${tick}s"
         binding.root.alpha = if (tick < 1) 0.0f else 1.0f
@@ -106,7 +105,6 @@ class FloatingWindowService : Service(),
     // ============================================================
     // 内存监控
     // ============================================================
-
     private fun startMemoryMonitoring() {
         val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
         val interval = if (mode) {

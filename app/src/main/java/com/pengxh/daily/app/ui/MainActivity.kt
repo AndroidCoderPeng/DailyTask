@@ -31,6 +31,7 @@ import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.ApplicationEvent
+import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.FloatingWindowController
@@ -61,6 +62,8 @@ import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
+import java.time.DayOfWeek
+import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 
@@ -109,8 +112,25 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         override fun run() {
             val currentTime = dateTimeFormat.format(Date())
             val parts = currentTime.split(" ")
+            val now = LocalDate.now()
+            val flag = when {
+                // 法定节假日（如国庆、春节等，含调休放假，不含普通周末）
+                ChinaHolidayManager.isHoliday(now) -> "节假日"
+
+                // 调休补班日（如周末上班补假期）
+                ChinaHolidayManager.isWorkday(now) -> "补班日"
+
+                // 普通日期：周末/工作日
+                else -> {
+                    when (now.dayOfWeek) {
+                        DayOfWeek.SATURDAY, DayOfWeek.SUNDAY -> "休息日"
+
+                        else -> "工作日"
+                    }
+                }
+            }
             binding.toolbar.apply {
-                title = parts[2]
+                title = "${parts[2]}（$flag）"
                 subtitle = "${parts[0]} ${parts[1]}"
             }
             mainHandler.postDelayed(this, 1000)

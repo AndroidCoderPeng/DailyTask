@@ -18,6 +18,7 @@
             android:layout_height="wrap_content"
             android:background="@color/theme_color"
             app:menu="@menu/main_top_bar_menu"
+            app:subtitleTextAppearance="@style/TextAppearance.Material3.TitleSmall"
             app:subtitleTextColor="@color/white"
             app:titleTextColor="@color/white" />
 
@@ -40,7 +41,7 @@
                     android:background="@color/theme_color"
                     android:drawablePadding="@dimen/dp_4"
                     android:paddingHorizontal="@dimen/dp_16"
-                    android:paddingTop="@dimen/dp_4"
+                    android:paddingTop="0dp"
                     android:paddingBottom="@dimen/dp_12"
                     android:singleLine="true"
                     android:text="--分钟后刷新每日任务"
