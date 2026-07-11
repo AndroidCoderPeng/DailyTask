@@ -200,7 +200,6 @@ class ForegroundRunningService : Service() {
         // 标记今天已重置，防止重复触发
         LogFileManager.writeLog("ForegroundRunningService 触发任务重置（Alarm兜底）")
         SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
-        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
 
         // 重新注册 Alarm，防止之前的 Alarm 失效
         AlarmScheduler.schedule(this, resetHour)

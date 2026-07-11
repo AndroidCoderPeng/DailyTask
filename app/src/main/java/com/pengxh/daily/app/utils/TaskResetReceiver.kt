@@ -5,22 +5,20 @@ import android.content.Context
 import android.content.Intent
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
 
 class TaskResetReceiver : BroadcastReceiver() {
 
-    private val dateFormat by lazy { SimpleDateFormat("yyyy-MM-dd", Locale.CHINA) }
-
     override fun onReceive(context: Context, intent: Intent?) {
-        if (hasResetToday()) {
+        val today = "${LocalDate.now()}"
+        if (hasResetToday(today)) {
             LogFileManager.writeLog("今天已经执行过重置，跳过")
             return
         }
 
         // 先标记已重置、清除运行状态，再发送事件
-        markTodayAsReset()
+        SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
+        LogFileManager.writeLog("标记 $today 已重置")
 
         val autoStart = SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
         if (autoStart) {
@@ -33,17 +31,8 @@ class TaskResetReceiver : BroadcastReceiver() {
         AlarmScheduler.schedule(context, resetHour)
     }
 
-    private fun hasResetToday(): Boolean {
-        val today = dateFormat.format(Date())
+    private fun hasResetToday(today: String): Boolean {
         val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
         return today == lastResetDate
-    }
-
-    private fun markTodayAsReset() {
-        val today = dateFormat.format(Date())
-        SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
-        // 每日重置时清掉运行状态，防止第二天打开 app 还显示"停止"
-        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
-        LogFileManager.writeLog("标记 $today 已重置")
     }
 }

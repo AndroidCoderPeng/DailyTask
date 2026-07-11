@@ -284,13 +284,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             taskScheduler.startTask()
         }
 
+        // 进程重新启动后，任务和计时器随进程一起销毁，运行状态需要重置
+        isTaskStarted = false
+
         // 检查是否需要执行错过的重置
         checkMissedReset()
-
-        // Activity 重建时，若任务之前在跑，重新启动调度器恢复真实运行状态
-        if (SaveKeyValues.loadBoolean(Constant.TASK_RUNNING_STATE_KEY, false)) {
-            taskScheduler.startTask()
-        }
     }
 
     private fun checkMissedReset() {
@@ -304,11 +302,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
         // 今天还未重置，执行重置（覆盖 Alarm 未触发的场景）
         LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
-
-        // 标记今天已重置
         SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
-        // 重置运行模式状态，等待用户手动启动或下次自动启动
-        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
 
         if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
             taskScheduler.startTask()
@@ -364,7 +358,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
     override fun onTaskStarted() {
         isTaskStarted = true
-        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, true)
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
         binding.executeTaskButton.setIconTintResource(R.color.red)
         binding.executeTaskButton.text = "停止"
@@ -373,7 +366,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
     override fun onTaskStopped() {
         isTaskStarted = false
-        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = ""
 
@@ -408,7 +400,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     override fun onTaskExecutionError(message: String) {
         taskScheduler.stopTask()
         isTaskStarted = false
-        SaveKeyValues.saveBoolean(Constant.TASK_RUNNING_STATE_KEY, false)
         resetExecuteButton()
         binding.tipsView.text = message
         binding.tipsView.setTextColor(R.color.red.convertColor(this))

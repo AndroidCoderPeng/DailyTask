@@ -30,7 +30,6 @@ object Constant {
 
     // 不导出的sp缓存
     const val LAST_RESET_DATE_KEY = "LAST_RESET_DATE_KEY"
-    const val TASK_RUNNING_STATE_KEY = "TASK_RUNNING_STATE_KEY"
     const val RESULT_SOURCE_KEY = "RESULT_SOURCE_KEY"
 
     // ============================================================
