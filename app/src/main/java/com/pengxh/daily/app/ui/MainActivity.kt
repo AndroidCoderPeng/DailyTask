@@ -124,7 +124,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
                 else -> {
                     when (now.dayOfWeek) {
                         DayOfWeek.SATURDAY, DayOfWeek.SUNDAY -> "休息日"
-
                         else -> "工作日"
                     }
                 }

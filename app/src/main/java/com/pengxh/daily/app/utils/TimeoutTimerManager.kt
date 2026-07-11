@@ -1,8 +1,8 @@
 package com.pengxh.daily.app.utils
 
-import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import org.greenrobot.eventbus.EventBus
 
@@ -17,8 +17,8 @@ import org.greenrobot.eventbus.EventBus
  */
 object TimeoutTimerManager {
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var timeoutTimer: CountDownTimer? = null
-    private var timeoutSeconds: Int = 0
+    private var tickRunnable: Runnable? = null
+    private var targetElapsedTime: Long = 0
     private var hasCaptured = false
 
     /**
@@ -35,46 +35,49 @@ object TimeoutTimerManager {
         cancelTimeoutTimer()
 
         // 获取超时时长配置（单位：秒）
-        timeoutSeconds = try {
+        val timeoutSeconds = try {
             SaveKeyValues.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         } catch (_: Exception) {
             Constant.DEFAULT_OVER_TIME
         }
 
-        timeoutTimer = object : CountDownTimer(timeoutSeconds * 1000L, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val tick = (millisUntilFinished / 1000).toInt()
-                // 更新悬浮窗倒计时
+        targetElapsedTime = SystemClock.elapsedRealtime() + timeoutSeconds * 1000L
+
+        tickRunnable = object : Runnable {
+            override fun run() {
+                val remaining = targetElapsedTime - SystemClock.elapsedRealtime()
+                if (remaining <= 0) {
+                    mainHandler.post { onTimeout?.invoke() }
+                    hasCaptured = false
+                    return
+                }
+
+                val tick = (remaining / 1000).toInt()
                 FloatingWindowController.updateTime(tick)
 
-                // 启用截屏
-                val resultSource =
-                    SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
-                if (resultSource == 1) {
-                    if (tick <= 3 && !hasCaptured) {
+                if (tick <= 5 && !hasCaptured) {
+                    val resultSource = SaveKeyValues.loadInt(
+                        Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
+                    )
+                    if (resultSource == 1) {
                         hasCaptured = true
                         EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
                     }
                 }
-            }
 
-            override fun onFinish() {
-                mainHandler.post {
-                    onTimeout?.invoke()
-                }
-                timeoutTimer = null
-                hasCaptured = false
+                val delay = minOf(1000L, remaining).coerceAtLeast(1)
+                mainHandler.postDelayed(this, delay)
             }
         }
-        timeoutTimer?.start()
+        tickRunnable?.let { mainHandler.post(it) }
     }
 
     /**
      * 取消超时定时器
      */
     fun cancelTimeoutTimer() {
-        timeoutTimer?.cancel()
-        timeoutTimer = null
+        tickRunnable?.let { mainHandler.removeCallbacks(it) }
+        tickRunnable = null
     }
 
     /**

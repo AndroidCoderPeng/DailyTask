@@ -20,6 +20,7 @@ import android.os.RemoteException
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
@@ -32,6 +33,7 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -68,6 +70,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
     private var isCapturingInitialized = false
+    private var captureRetryCount = 0
 
     override fun onCreate() {
         super.onCreate()
@@ -164,6 +167,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             return
         }
 
+        captureRetryCount = 0
         val metrics = resources.displayMetrics
         val width = metrics.widthPixels
         val height = metrics.heightPixels
@@ -224,6 +228,12 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     return@launch
                 }
 
+                var stale = reader.acquireLatestImage()
+                while (stale != null) {
+                    stale.close()
+                    stale = reader.acquireLatestImage()
+                }
+
                 // 最多等待2秒
                 val image = withTimeoutOrNull(2000) {
                     waitForImageAvailable(reader)
@@ -263,6 +273,21 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     Bitmap.createBitmap(cropped, 0, validY, cropped.width, validHeight)
                 } else {
                     cropped
+                }
+
+                if (isBitmapMostlyBlack(topHalf)) {
+                    if (captureRetryCount < 2) {
+                        captureRetryCount++
+                        Log.w(kTag, "检测到黑色画面，第${captureRetryCount}次重试")
+                        delay(1000)
+                        captureScreen()
+                        return@launch
+                    } else {
+                        Log.w(kTag, "黑色画面重试已耗尽，使用当前图像")
+                        captureRetryCount = 0
+                    }
+                } else {
+                    captureRetryCount = 0
                 }
 
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
@@ -331,6 +356,26 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         isCapturingInitialized = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         EventBus.getDefault().unregister(this)
+    }
+
+    private fun isBitmapMostlyBlack(bitmap: Bitmap): Boolean {
+        val sampleStep = 10
+        val darkThreshold = 20
+        var darkPixels = 0
+        var totalPixels = 0
+        for (y in 0 until bitmap.height step sampleStep) {
+            for (x in 0 until bitmap.width step sampleStep) {
+                val pixel = bitmap[x, y]
+                val r = (pixel shr 16) and 0xFF
+                val g = (pixel shr 8) and 0xFF
+                val b = pixel and 0xFF
+                if (r < darkThreshold && g < darkThreshold && b < darkThreshold) {
+                    darkPixels++
+                }
+                totalPixels++
+            }
+        }
+        return totalPixels > 0 && darkPixels.toFloat() / totalPixels >= 0.90f
     }
 
     private fun releaseCaptureResources() {
