@@ -267,9 +267,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
                     messageDispatcher.sendMessage("", "打卡完成，但是无法获取截图，请手动查看结果")
                 } else {
                     messageDispatcher.sendAttachmentMessage(
-                        "",
-                        "打卡完成，结果请查看附件",
-                        imagePath
+                        "", "打卡完成，结果请查看附件", imagePath
                     )
                 }
             }
