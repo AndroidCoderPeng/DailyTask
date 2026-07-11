@@ -4,8 +4,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.os.CountDownTimer
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
@@ -17,8 +19,11 @@ import com.pengxh.daily.app.utils.TimeoutTimerManager
 import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
- * APP倒计时服务，解决手机灭屏后倒计时会出现延迟的问题
- * */
+ * APP倒计时服务。
+ * 使用 Handler + SystemClock.elapsedRealtime() 自校准，消除了 CountDownTimer 休眠漂移问题。
+ * tickInterval 只决定通知栏刷新频率（省电模式 60s / 普通 1s），
+ * 剩余时间始终由 targetElapsedTime - elapsedRealtime() 实时计算，确保精度。
+ */
 class CountDownTimerService : Service() {
 
     companion object {
@@ -46,7 +51,23 @@ class CountDownTimerService : Service() {
         }
     }
     private val timerLock = Any()
-    private var countDownTimer: CountDownTimer? = null
+    private val handler = Handler(Looper.getMainLooper())
+
+    /**
+     * 目标时刻（elapsedRealtime 时间戳），休眠唤醒后自动校准
+     * */
+    private var targetElapsedTime: Long = 0L
+
+    /**
+     * 通知栏刷新间隔：普通模式 1 秒，省电模式 60 秒
+     * */
+    @Volatile
+    private var tickInterval: Long = 1000L
+
+    /**
+     * 固定的 Runnable，反复 postDelayed，杜绝每次 new 对象带来的时序隐患
+     * */
+    private val tickRunnable = Runnable { scheduleNextTick() }
 
     @Volatile
     private var isTimerRunning = false
@@ -78,19 +99,24 @@ class CountDownTimerService : Service() {
             ACTION_CANCEL_COUNTDOWN -> cancelCountDown()
 
             ACTION_COMPLETED_DAILY_TASK -> {
+                // 清理残留 tick 回调，防止已完成后再触发
+                synchronized(timerLock) {
+                    handler.removeCallbacks(tickRunnable)
+                    isTimerRunning = false
+                    currentTaskIndex = -1
+                }
                 val notification = notificationBuilder.apply {
                     setContentText("当天所有任务已执行完毕")
                 }.build()
                 notificationManager.notify(
                     Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification
                 )
-                isTimerRunning = false
             }
         }
         return START_STICKY
     }
 
-    fun startCountDown(taskIndex: Int, seconds: Int) {
+    private fun startCountDown(taskIndex: Int, seconds: Int) {
         synchronized(timerLock) {
             // 如果是同一个任务正在执行，直接跳过
             if (isTimerRunning && currentTaskIndex == taskIndex) {
@@ -100,48 +126,72 @@ class CountDownTimerService : Service() {
 
             // 如果有其他任务正在执行，先取消它
             if (isTimerRunning) {
-                countDownTimer?.cancel()
-                countDownTimer = null
-                isTimerRunning = false
+                stopTimerInternal()
                 LogFileManager.writeLog("startCountDown: 取消之前的任务（任务${currentTaskIndex}），准备执行任务$taskIndex")
             }
 
             currentTaskIndex = taskIndex
-            LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务")
+            tickInterval = seconds.getCountDownTickInterval()
+            LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务，tickInterval=${tickInterval}ms")
 
-            val tickInterval = seconds.getCountDownTickInterval()
-            countDownTimer = object : CountDownTimer(seconds * 1000L, tickInterval) {
-                override fun onTick(millisUntilFinished: Long) {
-                    val seconds = (millisUntilFinished / 1000).toInt()
-                    val notification = notificationBuilder.apply {
-                        setContentText("${seconds.formatTime()}后执行第${taskIndex}个任务")
-                    }.build()
-                    notificationManager.notify(
-                        Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification
-                    )
-                }
-
-                override fun onFinish() {
-                    synchronized(timerLock) {
-                        isTimerRunning = false
-                        currentTaskIndex = -1
-                    }
-                    openApplication {
-                        TimeoutTimerManager.startTimeoutTimer()
-                    }
-                }
-            }.apply {
-                start()
-            }
+            // 以 elapsedRealtime 为基准记录目标时刻——这是自校准的核心
+            targetElapsedTime = SystemClock.elapsedRealtime() + seconds * 1000L
             isTimerRunning = true
+            scheduleNextTick()
         }
+    }
+
+    /**
+     * 每次 tick 都基于 [targetElapsedTime] 实时计算剩余时间，
+     * 即使设备休眠导致 postDelayed 延迟，唤醒后也能立即校准，不会累积误差。
+     *
+     * tickInterval 只决定通知栏刷新频率（省电 60s / 普通 1s），
+     * 显示的时间永远准确，因为来自 elapsedRealtime() 实时差值。
+     */
+    private fun scheduleNextTick() {
+        val remaining = targetElapsedTime - SystemClock.elapsedRealtime()
+        if (remaining <= 0) {
+            onCountDownFinished()
+            return
+        }
+
+        val remainingSeconds = (remaining / 1000).toInt()
+        val notification = notificationBuilder.apply {
+            setContentText("${remainingSeconds.formatTime()}后执行第${currentTaskIndex}个任务")
+        }.build()
+        notificationManager.notify(
+            Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification
+        )
+
+        // 下一次 post 延迟不超过 tickInterval，且不超出剩余时间
+        val delay = minOf(tickInterval, remaining).coerceAtLeast(1)
+        // 二次确认：避免在 postDelayed 之前计时器已被取消
+        if (isTimerRunning) {
+            handler.postDelayed(tickRunnable, delay)
+        }
+    }
+
+    private fun onCountDownFinished() {
+        synchronized(timerLock) {
+            handler.removeCallbacks(tickRunnable)  // 防御性清理
+            isTimerRunning = false
+            currentTaskIndex = -1
+        }
+        openApplication {
+            TimeoutTimerManager.startTimeoutTimer()
+        }
+    }
+
+    private fun stopTimerInternal() {
+        handler.removeCallbacks(tickRunnable)
+        isTimerRunning = false
+        currentTaskIndex = -1
     }
 
     fun cancelCountDown() {
         synchronized(timerLock) {
             if (isTimerRunning) {
-                countDownTimer?.cancel()
-                countDownTimer = null
+                stopTimerInternal()
                 val notification = notificationBuilder.apply {
                     setContentText("倒计时任务已停止")
                 }.build()
@@ -149,8 +199,6 @@ class CountDownTimerService : Service() {
                     Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID,
                     notification
                 )
-                isTimerRunning = false
-                currentTaskIndex = -1
             }
             LogFileManager.writeLog("cancelCountDown: 倒计时任务取消")
         }
