@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.SystemClock
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -23,7 +24,6 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.extensions.convertToTimeEntity
-import com.pengxh.daily.app.service.CountDownTimerService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -33,14 +33,15 @@ import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
+import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionSession
+import com.pengxh.daily.app.utils.SchedulerState
 import com.pengxh.daily.app.utils.TaskDataManager
 import com.pengxh.daily.app.utils.TaskScheduler
-import com.pengxh.daily.app.utils.TimeoutTimerManager
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -54,6 +55,7 @@ import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
@@ -66,7 +68,7 @@ import java.util.Date
 import java.util.Locale
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
-    TaskScheduler.TaskStateListener, NotificationMonitorService.MonitorCallback {
+    NotificationMonitorService.MonitorCallback {
 
     companion object {
         @Volatile
@@ -89,7 +91,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     private val gestureController by lazy { GestureController(this, maskViewController) }
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
     private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
-    private val taskScheduler by lazy { TaskScheduler(this, this) }
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val dailyTaskAdapter by lazy {
         DailyTaskAdapter(taskBeans).apply {
@@ -239,36 +240,19 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             overlayPermissionLauncher.launch(intent)
         }
 
-        // 启动常驻前台服务——保活+任务重置
+        // 启动常驻前台服务——保活+任务重置+托管 TaskScheduler 协程作用域
         Intent(this, ForegroundRunningService::class.java).apply {
-            startForegroundService(this)
-        }
-
-        // 启动倒计时服务——任务执行
-        Intent(this, CountDownTimerService::class.java).apply {
             startForegroundService(this)
         }
 
         // 注册监听服务回调
         NotificationMonitorService.monitorCallback = this
 
-        // 注入超时回调，打开 App 后超时未打卡则自动推进链式任务
-        TimeoutTimerManager.onTimeout = {
-            backToMainActivity()
-
-            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0) {
-                messageDispatcher.sendMessage("", "")
-            } else {
-                if (imagePath == "") {
-                    messageDispatcher.sendMessage("", "打卡完成，但是无法获取截图，请手动查看结果")
-                } else {
-                    messageDispatcher.sendAttachmentMessage(
-                        "", "打卡完成，结果请查看附件", imagePath
-                    )
-                }
+        // ====== 观察 TaskScheduler 状态，驱动 UI 更新（替代原 TaskStateListener）======
+        lifecycleScope.launch {
+            TaskScheduler.state.collectLatest { state ->
+                handleSchedulerState(state)
             }
-
-            taskScheduler.executeNextTask()
         }
 
         EventBus.getDefault().register(this)
@@ -277,11 +261,72 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
         if (stickyReset != null) {
             EventBus.getDefault().removeStickyEvent(stickyReset)
-            taskScheduler.startTask()
+            TaskScheduler.startTask(this)
         }
 
         // 检查是否需要执行错过的重置
         checkMissedReset()
+    }
+
+    /**
+     * 根据 TaskScheduler 的 StateFlow 状态更新 UI（替代原 TaskStateListener 的 7 个回调）
+     */
+    private fun handleSchedulerState(state: SchedulerState) {
+        when (state) {
+            is SchedulerState.Idle -> {
+                // 由 stopTask() 触发，重置 UI
+                isTaskStarted = false
+                dailyTaskAdapter.updateCurrentTaskState(-1)
+                binding.tipsView.text = ""
+                resetExecuteButton()
+            }
+
+            is SchedulerState.Skipped -> {
+                isTaskStarted = true
+                binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+                binding.executeTaskButton.setIconTintResource(R.color.red)
+                binding.executeTaskButton.text = "停止"
+                binding.tipsView.text = "今日为周末，跳过任务"
+                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
+                messageDispatcher.sendMessage(
+                    "启动任务通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
+                )
+            }
+
+            is SchedulerState.Executing -> {
+                isTaskStarted = true
+                // 首次进入执行态：更新按钮
+                if (binding.executeTaskButton.text != "停止") {
+                    binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+                    binding.executeTaskButton.setIconTintResource(R.color.red)
+                    binding.executeTaskButton.text = "停止"
+                    messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
+                }
+                // 更新 Tips 和 Adapter
+                binding.tipsView.text = String.format(
+                    Locale.getDefault(), "准备执行第 %d 个任务", state.taskIndex
+                )
+                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
+                dailyTaskAdapter.updateCurrentTaskState(state.taskIndex - 1, state.actualTime)
+
+                val content = buildString {
+                    appendLine("准备执行第 ${state.taskIndex} 个任务")
+                    appendLine("计划时间：${state.task.time}")
+                    append("实际时间：${state.actualTime}")
+                }
+                messageDispatcher.sendMessage("任务执行通知", content)
+
+                // 导航回主界面（任务在后台执行，需要切回来让用户看到）
+                backToMainActivity()
+            }
+
+            is SchedulerState.Completed -> {
+                dailyTaskAdapter.updateCurrentTaskState(-1)
+                binding.tipsView.text = "当天所有任务已执行完毕"
+                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
+                messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
+            }
+        }
     }
 
     private fun checkMissedReset() {
@@ -298,7 +343,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
 
         if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
-            taskScheduler.startTask()
+            TaskScheduler.startTask(this)
         }
     }
 
@@ -308,7 +353,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         when (event) {
             is ApplicationEvent.ResetDailyTask -> {
                 EventBus.getDefault().removeStickyEvent(ApplicationEvent.ResetDailyTask)
-                taskScheduler.startTask()
+                TaskScheduler.startTask(this)
             }
 
             is ApplicationEvent.UpdateResetTickTime -> {
@@ -349,80 +394,18 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         }
     }
 
-    override fun onTaskStarted() {
-        isTaskStarted = true
-        binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-        binding.executeTaskButton.setIconTintResource(R.color.red)
-        binding.executeTaskButton.text = "停止"
-        messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
-    }
-
-    override fun onTaskSkipped(message: String) {
-        isTaskStarted = true
-        binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-        binding.executeTaskButton.setIconTintResource(R.color.red)
-        binding.executeTaskButton.text = "停止"
-        binding.tipsView.text = message
-        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
-        messageDispatcher.sendMessage(
-            "启动任务通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
-        )
-    }
-
-    override fun onTaskCompleted() {
-        // 今日任务已全部执行完毕，但保持"运行中"状态直到次日重置
-        dailyTaskAdapter.updateCurrentTaskState(-1)
-        binding.tipsView.text = "当天所有任务已执行完毕"
-        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
-        messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
-    }
-
-    override fun onTaskExecuting(taskIndex: Int, task: DailyTaskBean, realTime: String) {
-        // 任务执行中
-        binding.tipsView.text = String.format(
-            Locale.getDefault(), "准备执行第 %d 个任务", taskIndex
-        )
-        binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
-        dailyTaskAdapter.updateCurrentTaskState(taskIndex - 1, realTime)
-
-        val content = buildString {
-            appendLine("准备执行第 $taskIndex 个任务")
-            appendLine("计划时间：${task.time}")
-            append("实际时间：$realTime")
-        }
-        messageDispatcher.sendMessage("任务执行通知", content)
-    }
-
-    override fun onTaskExecutionError(message: String) {
-        taskScheduler.stopTask()
-        isTaskStarted = false
-        resetExecuteButton()
-        binding.tipsView.text = message
-        binding.tipsView.setTextColor(R.color.red.convertColor(this))
-        messageDispatcher.sendMessage("任务执行出错通知", message)
-    }
-
-    override fun onTaskStopped() {
-        isTaskStarted = false
-        dailyTaskAdapter.updateCurrentTaskState(-1)
-        binding.tipsView.text = ""
-
-        resetExecuteButton()
-        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
-    }
-
     // ============================================================
     // MonitorCallback 实现
     // ============================================================
     override fun onClockInSuccess() {
-        TimeoutTimerManager.cancelTimeoutTimer()
+        // 通知 TaskScheduler：打卡成功，取消超时等待分支
+        TaskScheduler.notifyClockIn()
         backToMainActivity()
-        taskScheduler.executeNextTask()
     }
 
     override fun onStartTaskCommand() {
-        if (!taskScheduler.isTaskStarted()) {
-            taskScheduler.startTask()
+        if (!TaskScheduler.isRunning()) {
+            TaskScheduler.startTask(this)
         }
     }
 
@@ -441,9 +424,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     }
 
     override fun onAppOpenedForScreenshot() {
-        // 等待 3 秒让目标 APP 界面稳定，然后截屏
-        TimeoutTimerManager.scheduleScreenshot(3) {
-            // 截屏完成后的回调
+        // 遥控"截屏"指令：等待 3 秒让目标 App 界面稳定，然后截屏
+        lifecycleScope.launch {
+            // 倒计时 3 秒，更新悬浮窗
+            val target = SystemClock.elapsedRealtime() + 3000L
+            while (true) {
+                val remaining = target - SystemClock.elapsedRealtime()
+                if (remaining <= 0) break
+                val tick = (remaining / 1000).toInt()
+                FloatingWindowController.updateTime(tick)
+                delay(minOf(1000L, remaining).coerceAtLeast(1))
+            }
+            // 触发截屏
+            EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+            // 回到主界面并发送通知
             backToMainActivity()
             if (imagePath.isEmpty()) {
                 messageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
@@ -454,8 +448,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     }
 
     private fun doStopTask() {
-        if (!taskScheduler.isTaskStarted()) return
-        taskScheduler.stopTask()
+        if (!TaskScheduler.isRunning()) return
+        TaskScheduler.stopTask()
+        isTaskStarted = false
+        dailyTaskAdapter.updateCurrentTaskState(-1)
+        binding.tipsView.text = ""
+        resetExecuteButton()
+        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
     }
 
     private fun resetExecuteButton() {
@@ -542,13 +541,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         binding.executeTaskButton.setOnClickListener {
             // 用运行模式标志判断，而非调度器内部状态（任务当天完成后调度器已闲置但仍在运行模式）
             if (isTaskStarted) {
-                taskScheduler.stopTask()
+                doStopTask()
             } else {
                 if (DatabaseWrapper.loadAllTask().isEmpty()) {
                     "循环任务启动失败，请先添加任务时间点".show(this)
                     return@setOnClickListener
                 }
-                taskScheduler.startTask()
+                TaskScheduler.startTask(this)
             }
         }
     }
@@ -651,7 +650,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     override fun onDestroy() {
         super.onDestroy()
         NotificationMonitorService.monitorCallback = null
-        TimeoutTimerManager.destroy()
         mainHandler.removeCallbacksAndMessages(null)
         maskViewController.destroy()
         EventBus.getDefault().unregister(this)

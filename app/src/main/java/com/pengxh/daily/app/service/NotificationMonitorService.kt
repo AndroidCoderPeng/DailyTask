@@ -15,7 +15,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.ProjectionSession
-import com.pengxh.daily.app.utils.TimeoutTimerManager
+import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -191,7 +191,7 @@ class NotificationMonitorService : NotificationListenerService() {
                     val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
                     if (notice.contains(key)) {
                         openApplication {
-                            TimeoutTimerManager.startTimeoutTimer()
+                            TaskScheduler.countdownAndAdvance(this@NotificationMonitorService)
                         }
                     }
                 }

@@ -19,7 +19,12 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -29,8 +34,9 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * APP前台服务，降低APP被系统杀死的可能性
- * */
+ * APP 前台服务，降低 APP 被系统杀死的可能性。
+ * 同时托管 TaskScheduler 的协程作用域。
+ */
 class ForegroundRunningService : Service() {
 
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
@@ -38,11 +44,19 @@ class ForegroundRunningService : Service() {
     private val emailManager by lazy { EmailManager(this) }
     private var lastRemindTime = 0L
 
+    /** 协程作用域：托管 TaskScheduler 的调度协程 */
+    val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
+    private lateinit var notificationBuilder: NotificationCompat.Builder
+
     override fun onCreate() {
         super.onCreate()
         EventBus.getDefault().register(this)
 
-        val notificationManager = getSystemService(NotificationManager::class.java)
+        // 注入协程作用域给 TaskScheduler
+        TaskScheduler.attach(serviceScope)
+
         val name = "${resources.getString(R.string.app_name)}前台服务"
         val channel = NotificationChannel(
             "foreground_running_service_channel", name, NotificationManager.IMPORTANCE_LOW
@@ -50,7 +64,7 @@ class ForegroundRunningService : Service() {
             description = "Channel for Foreground Running Service"
         }
         notificationManager.createNotificationChannel(channel)
-        val notificationBuilder =
+        notificationBuilder =
             NotificationCompat.Builder(this, "foreground_running_service_channel").apply {
                 setSmallIcon(R.mipmap.ic_launcher)
                 setContentText("为保证程序正常运行，请勿移除此通知")
@@ -117,9 +131,22 @@ class ForegroundRunningService : Service() {
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleApplicationEvent(event: ApplicationEvent) {
-        if (event is ApplicationEvent.SetResetTaskTime) {
-            // 重新计算并更新倒计时显示
-            updateResetTimeView()
+        when (event) {
+            is ApplicationEvent.SetResetTaskTime -> {
+                updateResetTimeView()
+            }
+
+            is ApplicationEvent.UpdateCountdownText -> {
+                // 倒计时期间更新通知栏文本
+                val notification = notificationBuilder.apply {
+                    setContentText(event.text)
+                }.build()
+                notificationManager.notify(
+                    Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification
+                )
+            }
+
+            else -> {}
         }
     }
 
@@ -226,7 +253,16 @@ class ForegroundRunningService : Service() {
             e.printStackTrace()
         }
 
+        // 还原通知文本
+        val notification = notificationBuilder.apply {
+            setContentText("为保证程序正常运行，请勿移除此通知")
+        }.build()
+        notificationManager.notify(
+            Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification
+        )
+
         EventBus.getDefault().unregister(this)
+        serviceScope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 

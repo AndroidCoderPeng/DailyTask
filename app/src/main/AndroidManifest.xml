@@ -67,10 +67,6 @@
             </intent-filter>
         </service>
         <service
-            android:name=".service.CountDownTimerService"
-            android:exported="false"
-            android:foregroundServiceType="dataSync" />
-        <service
             android:name=".service.CaptureImageService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
