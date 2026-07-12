@@ -2,7 +2,6 @@ package com.pengxh.daily.app.ui
 
 import android.content.Intent
 import android.os.Bundle
-import android.os.CountDownTimer
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
@@ -34,7 +33,6 @@ import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
-import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
@@ -107,7 +105,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         }
     }
     private var imagePath = ""
-    private var hasCaptured = false
     private val timeUpdateRunnable = object : Runnable {
         override fun run() {
             val currentTime = dateTimeFormat.format(Date())
@@ -135,7 +132,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             mainHandler.postDelayed(this, 1000)
         }
     }
-    private var remoteCountDownTimer: CountDownTimer? = null
 
     override fun observeRequestState() {
 
@@ -445,35 +441,16 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     }
 
     override fun onAppOpenedForScreenshot() {
-        // 先取消上一个计时器（如果存在）
-        remoteCountDownTimer?.cancel()
-        imagePath = ""
-        // 跳转到目标应用后，等待加载，然后截屏
-        remoteCountDownTimer = object : CountDownTimer(5000, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val tick = (millisUntilFinished / 1000).toInt()
-                FloatingWindowController.updateTime(tick)
-                if (tick <= 5 && !hasCaptured) {
-                    hasCaptured = true
-                    EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
-                }
-            }
-
-            override fun onFinish() {
-                backToMainActivity()
-                if (imagePath == "") {
-                    messageDispatcher.sendMessage(
-                        "截屏状态通知", "截图完成，但是无法获取截图，请手动查看结果"
-                    )
-                } else {
-                    messageDispatcher.sendAttachmentMessage(
-                        "截屏状态通知", "截图完成，结果请查看附件", imagePath
-                    )
-                }
-                hasCaptured = false
+        // 等待 3 秒让目标 APP 界面稳定，然后截屏
+        TimeoutTimerManager.scheduleScreenshot(3) {
+            // 截屏完成后的回调
+            backToMainActivity()
+            if (imagePath.isEmpty()) {
+                messageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
+            } else {
+                messageDispatcher.sendAttachmentMessage("截屏状态通知", "截图完成", imagePath)
             }
         }
-        remoteCountDownTimer?.start()
     }
 
     private fun doStopTask() {
@@ -676,8 +653,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         NotificationMonitorService.monitorCallback = null
         TimeoutTimerManager.destroy()
         mainHandler.removeCallbacksAndMessages(null)
-        remoteCountDownTimer?.cancel()
-        remoteCountDownTimer = null
         maskViewController.destroy()
         EventBus.getDefault().unregister(this)
     }
