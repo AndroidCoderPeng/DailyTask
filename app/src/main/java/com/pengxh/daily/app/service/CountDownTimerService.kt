@@ -71,7 +71,7 @@ class CountDownTimerService : Service() {
 
     @Volatile
     private var isTimerRunning = false
-    private var currentTaskIndex: Int = -1
+    private var currentTaskIndex = -1
 
     override fun onCreate() {
         super.onCreate()

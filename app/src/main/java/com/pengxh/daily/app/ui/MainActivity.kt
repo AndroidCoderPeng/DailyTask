@@ -453,7 +453,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             override fun onTick(millisUntilFinished: Long) {
                 val tick = (millisUntilFinished / 1000).toInt()
                 FloatingWindowController.updateTime(tick)
-                if (tick <= 2 && !hasCaptured) {
+                if (tick <= 5 && !hasCaptured) {
                     hasCaptured = true
                     EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
                 }
