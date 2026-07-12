@@ -16,6 +16,8 @@ object TimeoutTimerManager {
     private var tickRunnable: Runnable? = null
     private var screenshotRunnable: Runnable? = null
     private var targetElapsedTime: Long = 0
+
+    @Volatile
     private var hasCaptured = false
 
     var onTimeout: (() -> Unit)? = null

@@ -55,11 +55,7 @@
         <service
             android:name=".service.ForegroundRunningService"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="background_keep_alive" />
-        </service>
+            android:foregroundServiceType="dataSync" />
         <service
             android:name=".service.NotificationMonitorService"
             android:enabled="true"

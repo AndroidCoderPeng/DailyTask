@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ServiceInfo
 import android.os.BatteryManager
 import android.os.Build
 import android.os.IBinder
@@ -63,7 +64,14 @@ class ForegroundRunningService : Service() {
                 setVibrate(null) // 禁用振动
             }
         val notification = notificationBuilder.build()
-        startForeground(Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            startForeground(Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification)
+        }
 
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_TIME_TICK) // 每分钟广播
