@@ -58,7 +58,7 @@ class CountDownTimerService : Service() {
     /**
      * 目标时刻（elapsedRealtime 时间戳），休眠唤醒后自动校准
      * */
-    private var targetElapsedTime: Long = 0L
+    private var targetElapsedTime = 0L
 
     /**
      * 通知栏刷新间隔：普通模式 1 秒，省电模式 60 秒
@@ -140,7 +140,12 @@ class CountDownTimerService : Service() {
             }
 
             currentTaskIndex = taskIndex
-            tickInterval = seconds.getCountDownTickInterval()
+            val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+            tickInterval = if (mode && seconds > 60) {
+                60_000L
+            } else {
+                1_000L
+            }
             LogFileManager.writeLog("startCountDown: 倒计时任务开始，执行第${taskIndex}个任务，tickInterval=${tickInterval}ms")
 
             // 以 elapsedRealtime 为基准记录目标时刻——这是自校准的核心
@@ -168,9 +173,7 @@ class CountDownTimerService : Service() {
         val notification = notificationBuilder.apply {
             setContentText("${remainingSeconds.formatTime()}后执行第${currentTaskIndex}个任务")
         }.build()
-        notificationManager.notify(
-            Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification
-        )
+        notificationManager.notify(Constant.COUNTDOWN_TIMER_SERVICE_NOTIFICATION_ID, notification)
 
         // 下一次 post 延迟不超过 tickInterval，且不超出剩余时间
         val delay = minOf(tickInterval, remaining).coerceAtLeast(1)
@@ -218,15 +221,6 @@ class CountDownTimerService : Service() {
         cancelCountDown()
         stopForeground(STOP_FOREGROUND_REMOVE)
         Log.d(kTag, "onDestroy: CountDownTimerService")
-    }
-
-    private fun Int.getCountDownTickInterval(): Long {
-        val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
-        return if (mode && this > 60) {
-            60_000L
-        } else {
-            1_000L
-        }
     }
 
     override fun onBind(intent: Intent?): IBinder? {

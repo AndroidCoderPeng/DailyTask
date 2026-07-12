@@ -357,15 +357,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
     }
 
-    override fun onTaskStopped() {
-        isTaskStarted = false
-        dailyTaskAdapter.updateCurrentTaskState(-1)
-        binding.tipsView.text = ""
-
-        resetExecuteButton()
-        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
-    }
-
     override fun onTaskSkipped(message: String) {
         isTaskStarted = true
         binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
@@ -409,6 +400,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         binding.tipsView.text = message
         binding.tipsView.setTextColor(R.color.red.convertColor(this))
         messageDispatcher.sendMessage("任务执行出错通知", message)
+    }
+
+    override fun onTaskStopped() {
+        isTaskStarted = false
+        dailyTaskAdapter.updateCurrentTaskState(-1)
+        binding.tipsView.text = ""
+
+        resetExecuteButton()
+        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
     }
 
     // ============================================================
