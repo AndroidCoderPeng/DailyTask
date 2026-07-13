@@ -23,8 +23,6 @@ sealed class ApplicationEvent {
      * 截屏事件
      */
     object CaptureScreen : ApplicationEvent()
-    data class CaptureCompleted(val imagePath: String) : ApplicationEvent()
-
 
     /**
      * 投影截屏事件

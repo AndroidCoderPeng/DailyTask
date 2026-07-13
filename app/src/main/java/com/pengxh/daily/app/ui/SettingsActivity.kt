@@ -39,8 +39,10 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -152,44 +154,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     binding.noticeRadioButton.isChecked = true
                 } else {
                     binding.noticeRadioButton.isChecked = false
-                }
-            }
-
-            is ApplicationEvent.CaptureCompleted -> {
-                val index = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-                when (index) {
-                    0 -> {
-                        LoadingDialog.show(this, "邮件发送中，请稍后....")
-                        emailManager.sendAttachmentEmail(
-                            "邮箱测试", "这是一封测试邮件，不必关注", event.imagePath, true,
-                            onSuccess = {
-                                LoadingDialog.dismiss()
-                                "发送成功，请注意查收".show(this)
-                            },
-                            onFailure = {
-                                LoadingDialog.dismiss()
-                                "发送失败：${it}".show(this)
-                            })
-                    }
-
-                    1 -> {
-                        messageViewModel.sendImageMessage(
-                            event.imagePath, onLoading = {
-                                if (isFinishing || isDestroyed) return@sendImageMessage
-                                LoadingDialog.show(this, "消息发送中，请稍后...")
-                            },
-                            onSuccess = {
-                                if (isFinishing || isDestroyed) return@sendImageMessage
-                                LoadingDialog.dismiss()
-                            },
-                            onFailed = {
-                                if (isFinishing || isDestroyed) return@sendImageMessage
-                                LoadingDialog.dismiss()
-                                it.show(this)
-                            })
-                    }
-
-                    else -> "消息渠道不支持".show(this)
                 }
             }
 
@@ -336,7 +300,57 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 "截屏授权已失效，请重新授权".show(this)
                 return@setOnClickListener
             }
+
+            // 触发截屏
             EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+
+            // 等待截屏结果
+            lifecycleScope.launch {
+                val imagePath = withTimeoutOrNull(5000L) {
+                    CaptureImageService.captureResults.first()
+                }
+                if (imagePath.isNullOrEmpty()) {
+                    "截图失败，无法获取图像".show(context)
+                    return@launch
+                }
+
+                val index = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+                when (index) {
+                    0 -> {
+                        LoadingDialog.show(context, "邮件发送中，请稍后....")
+                        emailManager.sendAttachmentEmail(
+                            "邮箱测试", "这是一封测试邮件，不必关注", imagePath, true,
+                            onSuccess = {
+                                LoadingDialog.dismiss()
+                                "发送成功，请注意查收".show(context)
+                            },
+                            onFailure = {
+                                LoadingDialog.dismiss()
+                                "发送失败：$it".show(context)
+                            })
+                    }
+
+                    1 -> {
+                        messageViewModel.sendImageMessage(
+                            imagePath,
+                            onLoading = {
+                                if (isFinishing || isDestroyed) return@sendImageMessage
+                                LoadingDialog.show(context, "消息发送中，请稍后...")
+                            },
+                            onSuccess = {
+                                if (isFinishing || isDestroyed) return@sendImageMessage
+                                LoadingDialog.dismiss()
+                            },
+                            onFailed = {
+                                if (isFinishing || isDestroyed) return@sendImageMessage
+                                LoadingDialog.dismiss()
+                                it.show(context)
+                            })
+                    }
+
+                    else -> "消息渠道不支持".show(context)
+                }
+            }
         }
 
         binding.gestureDetectSwitch.setOnCheckedChangeListener { _, isChecked ->

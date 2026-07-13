@@ -24,6 +24,7 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.extensions.convertToTimeEntity
+import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -57,8 +58,10 @@ import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -102,7 +105,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             })
         }
     }
-    private var imagePath = ""
 
     /**
      * 每秒刷新 toolbar 时间和日期标签
@@ -330,22 +332,38 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
 
             is MonitorEvent.AppOpenedForScreenshot -> {
-                // 遥控"截屏"指令：等待 3 秒让目标 App 界面稳定，然后截屏
+                /**
+                 * 遥控"截屏"指令完整流程（整个流程 4~5 秒，最长 8 秒，根据手机情况定）：
+                 *   1. 由 NotificationMonitorService 触发 openApplication
+                 *   2. 等待 3~5 秒让目标 App 界面稳定
+                 *   3. 触发截屏
+                 *   4. 等待截屏结果（在跳转之前，避免 lifecycle 问题）
+                 *   5. 跳回 MainActivity
+                 *   6. 发送通知
+                 */
                 lifecycleScope.launch {
                     // 倒计时 3 秒，更新悬浮窗
-                    val target = SystemClock.elapsedRealtime() + 3000L
+                    val countdownTarget = SystemClock.elapsedRealtime() + 3000L
                     while (true) {
-                        val remaining = target - SystemClock.elapsedRealtime()
+                        val remaining = countdownTarget - SystemClock.elapsedRealtime()
                         if (remaining <= 0) break
-                        val tick = (remaining / 1000).toInt()
-                        FloatingWindowController.updateTime(tick)
+                        FloatingWindowController.updateTime((remaining / 1000).toInt())
                         delay(minOf(1000L, remaining).coerceAtLeast(1))
                     }
+
                     // 触发截屏
                     EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
-                    // 回到主界面并发送通知
+
+                    // 等待截屏结果（在跳转之前，保证协程不被取消），截屏本身 1~2 秒就完成了
+                    val imagePath = withTimeoutOrNull(5000L) {
+                        CaptureImageService.captureResults.first()
+                    }
+
+                    // 回到主界面
                     backToMainActivity()
-                    if (imagePath.isEmpty()) {
+
+                    // 发送通知（跳回后执行，Activity 已在前台）
+                    if (imagePath.isNullOrEmpty()) {
                         messageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
                     } else {
                         messageDispatcher.sendAttachmentMessage(
@@ -432,10 +450,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
 
             is ApplicationEvent.StopDailyTask -> doStopTask()
-
-            is ApplicationEvent.CaptureCompleted -> {
-                imagePath = event.imagePath
-            }
 
             is ApplicationEvent.ProjectionDestroyed -> {
                 "截屏服务已停止，已切换到通知模式".show(this)

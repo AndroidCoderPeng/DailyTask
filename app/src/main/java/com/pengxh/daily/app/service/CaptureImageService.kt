@@ -34,6 +34,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -46,6 +48,18 @@ import java.util.Locale
 import kotlin.coroutines.resume
 
 class CaptureImageService : Service(), CoroutineScope by MainScope() {
+
+    companion object {
+        private val _captureResults = MutableSharedFlow<String>(extraBufferCapacity = 1)
+        val captureResults = _captureResults.asSharedFlow()
+
+        /**
+         * 截屏服务内部调用，发布截屏结果
+         * */
+        fun emitCaptureResult(imagePath: String) {
+            _captureResults.tryEmit(imagePath)
+        }
+    }
 
     private val kTag = "CaptureImageService"
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
@@ -292,7 +306,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
                 topHalf.saveImage(imagePath)
-                EventBus.getDefault().post(ApplicationEvent.CaptureCompleted(imagePath))
+                emitCaptureResult(imagePath)
             } catch (_: RemoteException) {
                 Log.w(kTag, "RemoteException during capture")
                 ProjectionSession.markStoppedNeedAuth()
