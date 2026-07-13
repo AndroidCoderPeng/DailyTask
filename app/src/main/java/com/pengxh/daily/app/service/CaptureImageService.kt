@@ -252,16 +252,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 val startTime = System.currentTimeMillis()
                 Log.d(kTag, "================== 开始截屏 ==================")
 
-                var stale = reader.acquireLatestImage()
-                var staleCount = 0
-                while (stale != null) {
-                    stale.close()
-                    stale = reader.acquireLatestImage()
-                    staleCount++
-                }
-                Log.d(kTag, "排空旧帧: ${staleCount}张")
-
-                // 最多等待2秒
+                // 不排空旧帧：后台环境下 VirtualDisplay 帧率被系统限速，排空后等新帧依赖时机运气，直接用 buffer 中已有的帧更可靠
                 val image = withTimeoutOrNull(2000) {
                     Log.d(kTag, "进入等待......")
                     waitForImageAvailable(reader)
@@ -346,11 +337,15 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     private suspend fun waitForImageAvailable(imageReader: ImageReader): Image? {
         return suspendCancellableCoroutine { continuation ->
+            var resumed = false
+
             val listener = ImageReader.OnImageAvailableListener { reader ->
-                // acquireLatestImage 在部分 OEM 后台场景可能返回 null，用 acquireNextImage 兜底
+                if (resumed) return@OnImageAvailableListener
+                // acquireLatestImage 在部分国内 OEM 后台场景可能返回 null，用 acquireNextImage 兜底
                 val image = reader.acquireLatestImage() ?: reader.acquireNextImage()
                 if (image != null) {
                     reader.setOnImageAvailableListener(null, null)
+                    resumed = true
                     if (continuation.isActive) {
                         continuation.resume(image)
                     } else {
@@ -361,10 +356,22 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             }
 
             continuation.invokeOnCancellation {
-                imageReader.setOnImageAvailableListener(null, null)
+                if (!resumed) {
+                    imageReader.setOnImageAvailableListener(null, null)
+                }
             }
 
             imageReader.setOnImageAvailableListener(listener, null)
+
+            // 立即尝试获取 buffer 中已有的帧（不依赖 listener 异步回调），后台慢帧率场景下 buffer 里大概率已有一帧，直接取可避免超时
+            if (!resumed) {
+                val existing = imageReader.acquireLatestImage()
+                if (existing != null) {
+                    imageReader.setOnImageAvailableListener(null, null)
+                    resumed = true
+                    continuation.resume(existing)
+                }
+            }
         }
     }
 
