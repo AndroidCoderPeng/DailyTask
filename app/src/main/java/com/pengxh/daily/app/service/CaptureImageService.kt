@@ -26,6 +26,7 @@ import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
 import com.pengxh.kt.lite.extensions.saveImage
@@ -306,6 +307,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
                 val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
                 topHalf.saveImage(imagePath)
+                LogFileManager.writeLog("截屏成功: $imagePath")
                 emitCaptureResult(imagePath)
             } catch (_: RemoteException) {
                 Log.w(kTag, "RemoteException during capture")

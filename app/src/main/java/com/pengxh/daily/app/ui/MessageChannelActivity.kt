@@ -109,6 +109,13 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 return@setOnClickListener
             }
 
+            val cacheObj = JsonObject().apply {
+                addProperty("outbox", outbox)
+                addProperty("authCode", binding.emailSendCodeView.text.toString())
+                addProperty("inbox", binding.emailInboxView.text.toString())
+            }
+            ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, cacheObj)
+
             sendTestEmail()
         }
     }
@@ -149,7 +156,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         MaterialAlertDialogBuilder(this)
             .setTitle("测试邮件")
             .setMessage("QQ邮箱配置完成，可以发送QQ邮件。\n\n是否继续？")
-            .setCancelable(false) // 禁止点击外部关闭
+            .setCancelable(false)
             .setPositiveButton("继续") { _, _ ->
                 LoadingDialog.show(context, "邮件发送中，请稍后....")
                 emailManager.sendEmail(
@@ -163,19 +170,6 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                             Constant.MESSAGE_TITLE_KEY,
                             binding.messageTitleView.text.toString().trim()
                         )
-
-                        val address = binding.emailSendAddressView.text.toString()
-                        val outbox = if (address.contains("@qq.com")) {
-                            address
-                        } else {
-                            "${address}@qq.com"
-                        }
-                        val cacheObj = JsonObject().apply {
-                            addProperty("outbox", outbox)
-                            addProperty("authCode", binding.emailSendCodeView.text.toString())
-                            addProperty("inbox", binding.emailInboxView.text.toString())
-                        }
-                        ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, cacheObj)
 
                         SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, 0)
                     },
