@@ -28,7 +28,9 @@ import com.pengxh.kt.lite.extensions.toJson
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -204,37 +206,39 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
             // TaskBeans
             lifecycleScope.launch {
-                val taskBeans = DatabaseWrapper.loadAllTask()
+                val taskBeans = withContext(Dispatchers.IO) {
+                    DatabaseWrapper.loadAllTask()
+                }
                 if (taskBeans.isNotEmpty()) {
                     exportData.tasks = taskBeans
                 } else {
                     exportData.tasks = ArrayList<DailyTaskBean>()
                 }
-            }
 
-            val json = exportData.toJson()
-            Log.d(kTag, json)
+                val json = exportData.toJson()
+                Log.d(kTag, json)
 
-            // 分享
-            BottomActionSheet.Builder()
-                .setContext(this)
-                .setActionItemTitle(optionArray)
-                .setItemTextColor(R.color.theme_color.convertColor(this))
-                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-                    override fun onActionItemClick(position: Int) {
-                        when (position) {
-                            0 -> shareTextTo(Constant.QQ, "QQ", json)
-                            1 -> shareTextTo(Constant.WECHAT, "微信", json)
-                            2 -> shareTextTo(Constant.TIM, "TIM", json)
-                            3 -> shareTextTo(Constant.ZFB, "支付宝", json)
-                            4 -> {
-                                val cipData = ClipData.newPlainText("TaskConfig", json)
-                                clipboard.setPrimaryClip(cipData)
-                                "已复制到剪切板".show(context)
+                // 分享
+                BottomActionSheet.Builder()
+                    .setContext(this@TaskConfigActivity)
+                    .setActionItemTitle(optionArray)
+                    .setItemTextColor(R.color.theme_color.convertColor(this@TaskConfigActivity))
+                    .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+                        override fun onActionItemClick(position: Int) {
+                            when (position) {
+                                0 -> shareTextTo(Constant.QQ, "QQ", json)
+                                1 -> shareTextTo(Constant.WECHAT, "微信", json)
+                                2 -> shareTextTo(Constant.TIM, "TIM", json)
+                                3 -> shareTextTo(Constant.ZFB, "支付宝", json)
+                                4 -> {
+                                    val cipData = ClipData.newPlainText("TaskConfig", json)
+                                    clipboard.setPrimaryClip(cipData)
+                                    "已复制到剪切板".show(context)
+                                }
                             }
                         }
-                    }
-                }).build().show()
+                    }).build().show()
+            }
         }
     }
 

@@ -22,6 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -330,7 +332,9 @@ object TaskScheduler {
      * 从数据库加载所有任务，计算出当日实际执行时间，按时间排序
      * */
     private suspend fun buildTodaySchedule(): List<ScheduledTask> {
-        val allTasks = DatabaseWrapper.loadAllTask()
+        val allTasks = withContext(Dispatchers.IO) {
+            DatabaseWrapper.loadAllTask()
+        }
         if (allTasks.isEmpty()) return emptyList()
 
         val baseMillis = LocalDate.now()

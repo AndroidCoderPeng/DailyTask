@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.provider.Settings
+import android.util.Log
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -52,6 +53,7 @@ import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
+import com.pengxh.kt.lite.extensions.toJson
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
@@ -73,6 +75,7 @@ import java.util.Locale
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
+    private val kTag = "MainActivity"
     private val context by lazy { this }
     private val dateTimeFormat by lazy {
         SimpleDateFormat("yyyy年MM月dd日 HH:mm:ss EEEE", Locale.CHINA)
@@ -200,7 +203,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         // 加载任务列表
         lifecycleScope.launch {
-            taskBeans = DatabaseWrapper.loadAllTask()
+            taskBeans = withContext(Dispatchers.IO) {
+                DatabaseWrapper.loadAllTask()
+            }
+
+            Log.d(kTag, "initOnCreate: ${taskBeans.toJson()}")
+
             if (taskBeans.isEmpty()) {
                 binding.recyclerView.visibility = View.GONE
                 binding.emptyView.visibility = View.VISIBLE
@@ -208,14 +216,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 binding.recyclerView.visibility = View.VISIBLE
                 binding.emptyView.visibility = View.GONE
             }
-        }
 
-        binding.recyclerView.adapter = dailyTaskAdapter
-        binding.recyclerView.addItemDecoration(
-            RecyclerViewItemBorder(
-                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
+            binding.recyclerView.adapter = dailyTaskAdapter
+            dailyTaskAdapter.refresh(taskBeans)
+            binding.recyclerView.addItemDecoration(
+                RecyclerViewItemBorder(
+                    marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
+                )
             )
-        )
+        }
 
         // 显示悬浮窗
         if (Settings.canDrawOverlays(this)) {
@@ -269,7 +278,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 doStopTask()
             } else {
                 lifecycleScope.launch {
-                    if (DatabaseWrapper.loadAllTask().isEmpty()) {
+                    val isEmpty = withContext(Dispatchers.IO) {
+                        DatabaseWrapper.loadAllTask().isEmpty()
+                    }
+                    if (isEmpty) {
                         "循环任务启动失败，请先添加任务时间点".show(context)
                         return@launch
                     }
@@ -500,8 +512,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
             lifecycleScope.launch {
                 item.time = time
-                DatabaseWrapper.updateTask(item)
-                taskBeans = DatabaseWrapper.loadAllTask()
+                withContext(Dispatchers.IO) {
+                    DatabaseWrapper.updateTask(item)
+                }
+                taskBeans = withContext(Dispatchers.IO) {
+                    DatabaseWrapper.loadAllTask()
+                }
                 dailyTaskAdapter.refresh(taskBeans)
                 dialog.dismiss()
             }
@@ -525,10 +541,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 try {
                     lifecycleScope.launch {
                         val item = taskBeans[position]
-                        DatabaseWrapper.deleteTask(item)
+                        withContext(Dispatchers.IO) {
+                            DatabaseWrapper.deleteTask(item)
+                        }
 
                         // 为了确保数据一致性，重新从数据库加载数据
-                        taskBeans = DatabaseWrapper.loadAllTask()
+                        taskBeans = withContext(Dispatchers.IO) {
+                            DatabaseWrapper.loadAllTask()
+                        }
                         dailyTaskAdapter.refresh(taskBeans)
 
                         if (taskBeans.isEmpty()) {
@@ -562,7 +582,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             )
 
             lifecycleScope.launch {
-                if (DatabaseWrapper.isTaskTimeExist(time)) {
+                val exist = withContext(Dispatchers.IO) {
+                    DatabaseWrapper.isTaskTimeExist(time)
+                }
+                if (exist) {
                     "任务时间点已存在".show(context)
                     return@launch
                 }
@@ -571,8 +594,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 val bean = DailyTaskBean().apply {
                     this.time = time
                 }
-                DatabaseWrapper.insert(bean)
-                taskBeans = DatabaseWrapper.loadAllTask()
+                withContext(Dispatchers.IO) {
+                    DatabaseWrapper.insert(bean)
+                }
+                taskBeans = withContext(Dispatchers.IO) {
+                    DatabaseWrapper.loadAllTask()
+                }
                 dailyTaskAdapter.refresh(taskBeans)
                 dialog.dismiss()
             }
@@ -592,10 +619,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 override fun onConfirmClick(value: String) {
                     // 同一个业务，可以使用同一个协程作用域，避免重复创建
                     lifecycleScope.launch {
-                        when (val result = taskDataManager.importTasks(value)) {
+                        val result = withContext(Dispatchers.IO) {
+                            taskDataManager.importTasks(value)
+                        }
+                        when (result) {
                             is TaskDataManager.ImportResult.Success -> {
                                 if (result.count > 0) {
-                                    taskBeans = DatabaseWrapper.loadAllTask()
+                                    taskBeans = withContext(Dispatchers.IO) {
+                                        DatabaseWrapper.loadAllTask()
+                                    }
                                     dailyTaskAdapter.refresh(taskBeans)
                                     binding.recyclerView.visibility = View.VISIBLE
                                     binding.emptyView.visibility = View.GONE
