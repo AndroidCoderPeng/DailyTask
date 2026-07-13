@@ -215,7 +215,7 @@
                             android:gravity="end|center_vertical"
                             android:padding="0dp"
                             android:singleLine="true"
-                            android:textSize="@dimen/sp_16" />
+                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
                     </LinearLayout>
 
                     <LinearLayout

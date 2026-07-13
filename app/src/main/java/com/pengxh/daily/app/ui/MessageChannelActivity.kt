@@ -68,6 +68,10 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 return@setOnClickListener
             }
 
+            SaveKeyValues.saveString(
+                Constant.WX_WEB_HOOK_KEY, binding.wxKeyView.text.toString()
+            )
+
             MaterialAlertDialogBuilder(this)
                 .setTitle("测试消息")
                 .setMessage("企业微信配置完成，可以发送企业微信消息。\n\n是否继续？")
@@ -79,14 +83,15 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
         binding.sendEmailButton.setOnClickListener {
             val address = binding.emailSendAddressView.text.toString()
+            if (address.isBlank()) {
+                binding.emailSendAddressView.shakeIfEmpty()
+                "发件箱地址为空".show(context)
+                return@setOnClickListener
+            }
             val outbox = if (address.contains("@qq.com")) {
                 address
             } else {
                 "${address}@qq.com"
-            }
-            if (outbox.isBlank()) {
-                "发件箱地址为空".show(context)
-                return@setOnClickListener
             }
             if (!outbox.isEmail()) {
                 "发件箱格式错误，请检查".show(context)
@@ -95,12 +100,14 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
             val authCode = binding.emailSendCodeView.text.toString()
             if (authCode.isBlank()) {
+                binding.emailSendCodeView.shakeIfEmpty()
                 "发件箱授权码为空".show(context)
                 return@setOnClickListener
             }
 
             val inbox = binding.emailInboxView.text.toString()
             if (inbox.isBlank()) {
+                binding.emailInboxView.shakeIfEmpty()
                 "收件箱地址为空".show(context)
                 return@setOnClickListener
             }
@@ -137,10 +144,6 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
                 SaveKeyValues.saveString(
                     Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
-                )
-
-                SaveKeyValues.saveString(
-                    Constant.WX_WEB_HOOK_KEY, binding.wxKeyView.text.toString()
                 )
 
                 SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, 1)

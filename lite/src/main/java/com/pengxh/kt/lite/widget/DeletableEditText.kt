@@ -97,10 +97,8 @@ class DeletableEditText @JvmOverloads constructor(
     }
 
     fun shakeIfEmpty() {
-        if (text.isNullOrEmpty()) {
-            val animation = AnimationUtils.loadAnimation(context, R.anim.shake_animation)
-            startAnimation(animation)
-        }
+        val animation = AnimationUtils.loadAnimation(context, R.anim.shake_animation)
+        startAnimation(animation)
     }
 
     override fun onDetachedFromWindow() {
