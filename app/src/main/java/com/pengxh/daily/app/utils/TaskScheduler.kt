@@ -281,6 +281,7 @@ object TaskScheduler {
         LogFileManager.writeLog("等待 ${waitSeconds}s 后进入下一个任务周期")
 
         // 只发一次静态通知，不每秒刷新
+        _tipsEvent.emit(TipsEvent.Completed)
         ForegroundRunningService.emitNotificationText("今日任务已执行完毕，等待下次任务")
 
         if (waitSeconds > 0) {
