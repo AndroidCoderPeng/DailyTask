@@ -15,10 +15,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
@@ -80,10 +82,16 @@ import java.util.Calendar
  */
 object TaskScheduler {
     /**
-     * 对外暴露的调度状态，Activity 通过 collect 驱动 UI
+     * 调度器是否在运行中
      * */
-    private val _state = MutableStateFlow<SchedulerState>(SchedulerState.Idle)
-    val state: StateFlow<SchedulerState> = _state.asStateFlow()
+    private val _isRunning = MutableStateFlow(false)
+    val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
+
+    /**
+     * UI 文本事件（tipsView / adapter 高亮），不参与按钮逻辑
+     * */
+    private val _tipsEvent = MutableSharedFlow<TipsEvent>(extraBufferCapacity = 1)
+    val tipsEvent: SharedFlow<TipsEvent> = _tipsEvent.asSharedFlow()
 
     private var scope: CoroutineScope? = null
     private var job: Job? = null
@@ -102,8 +110,7 @@ object TaskScheduler {
     }
 
     fun isRunning(): Boolean {
-        val s = _state.value
-        return s is SchedulerState.Executing || s is SchedulerState.Skipped || s is SchedulerState.Completed
+        return _isRunning.value
     }
 
     /**
@@ -111,11 +118,7 @@ object TaskScheduler {
      * 时序：防重复 → 检查协程作用域 → 判断周末/节假日 → 构建排程 → 启动核心循环
      */
     fun startTask() {
-        val currentState = _state.value
-        if (currentState is SchedulerState.Executing
-            || currentState is SchedulerState.Skipped
-            || currentState is SchedulerState.Completed
-        ) {
+        if (_isRunning.value) {
             LogFileManager.writeLog("任务已在执行中，忽略重复启动")
             return
         }
@@ -126,21 +129,16 @@ object TaskScheduler {
             return
         }
 
-        if (shouldSkipToday()) {
-            _state.update { SchedulerState.Skipped }
-            ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
-            return
-        }
+        _isRunning.value = true
 
-        job = currentScope.launch {
+        val tempJob = currentScope.launch {
             while (isActive) {
                 if (shouldSkipToday()) {
-                    _state.update { SchedulerState.Skipped }
+                    _tipsEvent.emit(TipsEvent.Skip)
                     ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
                 } else {
                     val schedule = buildTodaySchedule()
                     if (schedule.isEmpty()) {
-                        _state.update { SchedulerState.Idle }
                         LogFileManager.writeLog("任务列表为空，停止调度")
                         return@launch
                     }
@@ -153,6 +151,10 @@ object TaskScheduler {
                 if (isActive) waitUntilNextReset()
             }
         }
+        tempJob.invokeOnCompletion {
+            _isRunning.value = false
+        }
+        job = tempJob
     }
 
     /**
@@ -181,11 +183,14 @@ object TaskScheduler {
 
             // ====== 阶段 1：倒计时等待 ======
             val delayMs = task.actualTimeMillis - now
-            _state.update {
-                SchedulerState.Executing(
-                    task.displayIndex, task.task, task.actualTime, schedule.size
+            _tipsEvent.emit(
+                TipsEvent.Executing(
+                    task.displayIndex,
+                    schedule.size,
+                    task.actualTime,
+                    task.plannedTime
                 )
-            }
+            )
 
             LogFileManager.writeLog(
                 "调度第 ${task.displayIndex} 个任务，" +
@@ -250,7 +255,6 @@ object TaskScheduler {
             else -> "今日任务已全部执行完毕"
         }
         LogFileManager.writeLog(message)
-        _state.update { SchedulerState.Completed }
         ForegroundRunningService.emitNotificationText(message)
     }
 
@@ -266,7 +270,6 @@ object TaskScheduler {
         LogFileManager.writeLog("等待 ${waitSeconds}s 后进入下一个任务周期")
 
         // 只发一次静态通知，不每秒刷新
-        _state.update { SchedulerState.Completed }
         ForegroundRunningService.emitNotificationText("今日任务已执行完毕，等待下次任务")
 
         if (waitSeconds > 0) {
@@ -287,11 +290,7 @@ object TaskScheduler {
     }
 
     fun stopTask() {
-        val currentState = _state.value
-        if (currentState !is SchedulerState.Executing
-            && currentState !is SchedulerState.Completed
-            && currentState !is SchedulerState.Skipped
-        ) {
+        if (!_isRunning.value) {
             LogFileManager.writeLog("任务未运行，无需停止")
             return
         }
@@ -299,7 +298,7 @@ object TaskScheduler {
         LogFileManager.writeLog("停止执行每日任务")
         job?.cancel()
         job = null
-        _state.update { SchedulerState.Idle }
+        _isRunning.value = false
         ForegroundRunningService.emitNotificationText("为保证程序正常运行，请勿移除此通知")
     }
 
@@ -315,7 +314,7 @@ object TaskScheduler {
         LogFileManager.writeLog("因错误请求停止：$reason")
         job?.cancel()
         job = null
-        _state.update { SchedulerState.Idle }
+        _isRunning.value = false
     }
 
     /**

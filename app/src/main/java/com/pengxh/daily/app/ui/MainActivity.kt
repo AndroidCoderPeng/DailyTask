@@ -42,9 +42,9 @@ import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MonitorEvent
 import com.pengxh.daily.app.utils.ProjectionSession
-import com.pengxh.daily.app.utils.SchedulerState
 import com.pengxh.daily.app.utils.TaskDataManager
 import com.pengxh.daily.app.utils.TaskScheduler
+import com.pengxh.daily.app.utils.TipsEvent
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -254,9 +254,59 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             NotificationMonitorService.events.collect { event -> handleMonitorEvent(event) }
         }
 
-        // 订阅 TaskScheduler 状态 → UI 更新
+        // 订阅调度器运行状态 → 按钮 UI
         lifecycleScope.launch {
-            TaskScheduler.state.collectLatest { state -> handleSchedulerState(state) }
+            TaskScheduler.isRunning.collectLatest { running ->
+                if (running) {
+                    binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+                    binding.executeTaskButton.setIconTintResource(R.color.red)
+                    binding.executeTaskButton.text = "停止"
+                } else {
+                    dailyTaskAdapter.updateCurrentTaskState(-1)
+                    binding.tipsView.text = ""
+                    binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
+                    binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+                    binding.executeTaskButton.text = "启动"
+                }
+            }
+        }
+
+        // 订阅 TipsEvent → tipsView + adapter 高亮
+        lifecycleScope.launch {
+            TaskScheduler.tipsEvent.collectLatest { event ->
+                when (event) {
+                    is TipsEvent.Skip -> {
+                        binding.tipsView.text = "今日为周末，跳过任务"
+                        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
+                        messageDispatcher.sendMessage(
+                            "启动任务通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
+                        )
+                    }
+
+                    is TipsEvent.Executing -> {
+                        messageDispatcher.sendMessage(
+                            "启动任务通知", "任务启动成功，请注意下次打卡时间"
+                        )
+                        binding.tipsView.text = "准备执行第 ${event.index} 个任务"
+                        binding.tipsView.setTextColor(R.color.theme_color.convertColor(this@MainActivity))
+                        dailyTaskAdapter.updateCurrentTaskState(event.index - 1, event.actualTime)
+
+                        val content = buildString {
+                            appendLine("准备执行第 ${event.index} 个任务")
+                            appendLine("计划时间：${event.plannedTime}")
+                            append("实际时间：${event.actualTime}")
+                        }
+                        messageDispatcher.sendMessage("任务执行通知", content)
+                    }
+
+                    is TipsEvent.Completed -> {
+                        dailyTaskAdapter.updateCurrentTaskState(-1)
+                        binding.tipsView.text = "今日任务已全部执行完毕，等待下次任务"
+                        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
+                        messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
+                    }
+                }
+            }
         }
 
         // EventBus 注册 + 处理粘性事件（Alarm 触发时 Activity 尚未创建的情况）
@@ -398,62 +448,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         )
                     }
                 }
-            }
-        }
-    }
-
-    // ================================================================
-    // TaskScheduler 状态观察 → UI 更新
-    // ================================================================
-
-    /**
-     * 根据 SchedulerState 驱动 UI 变化
-     */
-    private fun handleSchedulerState(state: SchedulerState) {
-        // ===== 统一按钮状态 =====
-        if (state is SchedulerState.Idle) {
-            binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-            binding.executeTaskButton.setIconTintResource(R.color.ios_green)
-            binding.executeTaskButton.text = "启动"
-        } else {
-            binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-            binding.executeTaskButton.setIconTintResource(R.color.red)
-            binding.executeTaskButton.text = "停止"
-        }
-
-        when (state) {
-            is SchedulerState.Idle -> {
-                dailyTaskAdapter.updateCurrentTaskState(-1)
-                binding.tipsView.text = ""
-            }
-
-            is SchedulerState.Skipped -> {
-                binding.tipsView.text = "今日为周末，跳过任务"
-                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
-                messageDispatcher.sendMessage(
-                    "启动任务通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
-                )
-            }
-
-            is SchedulerState.Executing -> {
-                messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
-                binding.tipsView.text = "准备执行第 ${state.taskIndex} 个任务"
-                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
-                dailyTaskAdapter.updateCurrentTaskState(state.taskIndex - 1, state.actualTime)
-
-                val content = buildString {
-                    appendLine("准备执行第 ${state.taskIndex} 个任务")
-                    appendLine("计划时间：${state.task.time}")
-                    append("实际时间：${state.actualTime}")
-                }
-                messageDispatcher.sendMessage("任务执行通知", content)
-            }
-
-            is SchedulerState.Completed -> {
-                dailyTaskAdapter.updateCurrentTaskState(-1)
-                binding.tipsView.text = "今日任务已全部执行完毕，等待下次任务"
-                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
-                messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
             }
         }
     }

@@ -95,6 +95,7 @@ class ConfigStore private constructor(private val filePath: String) {
 
         try {
             val text = file.readText()
+            if (text.isBlank()) return
             val root = JsonParser.parseString(text).asJsonObject
             root.entrySet().forEach { (key, value) ->
                 if (value.isJsonObject) {
