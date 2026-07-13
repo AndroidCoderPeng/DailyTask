@@ -33,52 +33,6 @@ import java.util.Calendar
 
 /**
  * 任务调度器
- *
- * 完整时序：
- *   ┌─────────────────────────────────────────────────────────┐
- *   │ ForegroundRunningService.onCreate()                     │
- *   │   → attach(serviceScope)        注入协程作用域             │
- *   └─────────────────────────────────────────────────────────┘
- *                              ↓
- *   ┌─────────────────────────────────────────────────────────┐
- *   │ MainActivity 用户点击"启动" / Alarm 触发 / 兜底检查          │
- *   │   → startTask(ctx)                                      │
- *   │     ├─ isRunning? → 防重复                               │
- *   │     ├─ scope == null? → 未初始化                         │
- *   │     ├─ shouldSkipToday()? → Skipped (周末/节假日)         │
- *   │     ├─ buildTodaySchedule() → 空? → Idle                │
- *   │     └─ launch { executeSchedule() }                     │
- *   └─────────────────────────────────────────────────────────┘
- *                              ↓
- *   ┌─────────────────────────────────────────────────────────┐
- *   │ executeSchedule()  链式逐任务执行                          │
- *   │   for task in schedule:                                 │
- *   │     ├─ 过期? → continue                                  │
- *   │     ├─ emit Executing(taskIndex, task, actualTime, ...) │
- *   │     ├─ 阶段1: countdownWithUI(delayMs)                   │
- *   │     │         → EventBus → 通知栏秒级倒计时                │
- *   │     ├─ 阶段2: openApplication()                          │
- *   │     │         select { 超时 | 打卡成功 }                   │
- *   │     │          分支A: timeoutJob.onJoin → false          │
- *   │     │          分支B: clockInDeferred.onAwait → true     │
- *   │     └─ 阶段3: 推进下一个任务                                │
- *   │   → emit Completed                                      │
- *   └─────────────────────────────────────────────────────────┘
- *                              ↓
- *   ┌─────────────────────────────────────────────────────────┐
- *   │ 外部触发：                                                │
- *   │   notifyClockIn()     ← MainActivity.onClockInSuccess() │
- *   │                         → complete(clockInDeferred)     │
- *   │                                                         │
- *   │   遥控"打卡"独立到                                         │
- *   │   NotificationMonitorService                            │
- *   │   不触发任何 TaskScheduler 逻辑                            │
- *   └─────────────────────────────────────────────────────────┘
- *                              ↓
- *   ┌─────────────────────────────────────────────────────────┐
- *   │ stopTask()  用户点击"停止" / 遥控"终止任务"                  │
- *   │   → job?.cancel() + emit Idle                           │
- *   └─────────────────────────────────────────────────────────┘
  */
 object TaskScheduler {
     /**

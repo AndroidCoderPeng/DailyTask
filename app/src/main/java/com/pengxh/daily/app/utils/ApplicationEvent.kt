@@ -14,11 +14,4 @@ sealed class ApplicationEvent {
      * 截屏事件
      */
     object CaptureScreen : ApplicationEvent()
-
-    /**
-     * 投影截屏事件
-     */
-    object ProjectionReady : ApplicationEvent()
-    object ProjectionFailed : ApplicationEvent()
-    object ProjectionDestroyed : ApplicationEvent()
 }

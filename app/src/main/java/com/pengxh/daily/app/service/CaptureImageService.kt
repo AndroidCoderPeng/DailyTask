@@ -27,6 +27,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
 import com.pengxh.kt.lite.extensions.saveImage
@@ -51,6 +52,14 @@ import kotlin.coroutines.resume
 class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     companion object {
+        private val _projectionEvents = MutableSharedFlow<ProjectionEvent>(extraBufferCapacity = 2)
+        val projectionEvents = _projectionEvents.asSharedFlow()
+
+        fun emitProjectionEvent(event: ProjectionEvent) {
+            _projectionEvents.tryEmit(event)
+        }
+
+
         private val _captureResults = MutableSharedFlow<String>(extraBufferCapacity = 1)
         val captureResults = _captureResults.asSharedFlow()
 
@@ -129,7 +138,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
         if (data == null) {
             Log.w(kTag, "onStartCommand: intent data is null")
-            EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+            emitProjectionEvent(ProjectionEvent.Failed)
             return START_STICKY
         }
 
@@ -137,7 +146,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             val projection = mpr.getMediaProjection(resultCode, data)
             if (projection == null) {
                 Log.w(kTag, "getMediaProjection returned null")
-                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+                emitProjectionEvent(ProjectionEvent.Failed)
                 return START_STICKY
             }
 
@@ -158,11 +167,12 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             // 初始化截屏资源（只执行一次）
             initializeCaptureResources(projection)
 
-            EventBus.getDefault().post(ApplicationEvent.ProjectionReady)
+            emitProjectionEvent(ProjectionEvent.Ready)
+
             SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
         } catch (e: Exception) {
             Log.w(kTag, "createMediaProjection failed: ${e.message}", e)
-            EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+            emitProjectionEvent(ProjectionEvent.Failed)
         }
 
         return START_STICKY
@@ -312,13 +322,13 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             } catch (_: RemoteException) {
                 Log.w(kTag, "RemoteException during capture")
                 ProjectionSession.markStoppedNeedAuth()
-                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+                emitProjectionEvent(ProjectionEvent.Failed)
                 releaseCaptureResources()
                 isCapturingInitialized = false
             } catch (_: SecurityException) {
                 Log.w(kTag, "SecurityException during capture")
                 ProjectionSession.markStoppedNeedAuth()
-                EventBus.getDefault().post(ApplicationEvent.ProjectionFailed)
+                emitProjectionEvent(ProjectionEvent.Failed)
                 releaseCaptureResources()
                 isCapturingInitialized = false
             } catch (e: Exception) {
@@ -364,7 +374,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     override fun onDestroy() {
         super.onDestroy()
         Log.d(kTag, "CaptureImageService 被销毁，清理 MediaProjection")
-        EventBus.getDefault().post(ApplicationEvent.ProjectionDestroyed)
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()

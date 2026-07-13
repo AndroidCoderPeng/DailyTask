@@ -27,6 +27,7 @@ import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MessageViewModel
@@ -44,8 +45,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
@@ -90,8 +89,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        EventBus.getDefault().register(this)
-
         val index = (SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)).coerceIn(0, icons.lastIndex)
         binding.iconView.setBackgroundResource(icons[index])
 
@@ -102,6 +99,22 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         val watermark = DailyTask.getWatermarkText()
         binding.contentView.background = WatermarkDrawable(this, watermark)
+
+        lifecycleScope.launch {
+            ChinaHolidayManager.syncResult.collect { result ->
+                when (result) {
+                    is ChinaHolidayManager.SyncResult.Success -> {
+                        LoadingDialog.dismiss()
+                        result.content.show(context)
+                    }
+
+                    is ChinaHolidayManager.SyncResult.Error -> {
+                        LoadingDialog.dismiss()
+                        result.message.show(context)
+                    }
+                }
+            }
+        }
 
         // 监听通知服务状态
         lifecycleScope.launch {
@@ -128,53 +141,37 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         lifecycleScope.launch {
-            ChinaHolidayManager.syncResult.collect { result ->
-                when (result) {
-                    is ChinaHolidayManager.SyncResult.Success -> {
-                        LoadingDialog.dismiss()
-                        result.content.show(context)
+            CaptureImageService.projectionEvents.collect { event ->
+                when (event) {
+                    ProjectionEvent.Ready -> {
+                        binding.captureSwitch.isChecked = true
+                        binding.captureTipsView.visibility = View.GONE
+                        val sourceType = SaveKeyValues.loadInt(
+                            Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
+                        )
+                        if (sourceType == 1) {
+                            binding.captureRadioButton.isChecked = true
+                            binding.noticeRadioButton.isChecked = false
+                        }
                     }
-                    is ChinaHolidayManager.SyncResult.Error -> {
-                        LoadingDialog.dismiss()
-                        result.message.show(context)
+
+                    ProjectionEvent.Failed -> {
+                        "截屏服务已断开，已切换到通知模式".show(context)
+                        binding.captureSwitch.isChecked = false
+                        binding.captureRadioButton.isChecked = false
+                        binding.captureTipsView.text = "截屏服务未开启，无法获取打卡结果"
+                        binding.captureTipsView.setTextColor(Color.RED)
+                        binding.captureTipsView.visibility = View.VISIBLE
+                        val targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+                        if (notificationEnable() && targetApp == 0) {
+                            SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                            binding.noticeRadioButton.isChecked = true
+                        } else {
+                            binding.noticeRadioButton.isChecked = false
+                        }
                     }
                 }
             }
-        }
-    }
-
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleApplicationEvent(event: ApplicationEvent) {
-        when (event) {
-            is ApplicationEvent.ProjectionReady -> {
-                binding.captureSwitch.isChecked = true
-                binding.captureTipsView.visibility = View.GONE
-                val sourceType =
-                    SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
-                if (sourceType == 1) {
-                    binding.captureRadioButton.isChecked = true
-                    binding.noticeRadioButton.isChecked = false
-                }
-            }
-
-            is ApplicationEvent.ProjectionFailed -> {
-                "截屏服务已断开，已切换到通知模式".show(this)
-                binding.captureSwitch.isChecked = false
-                binding.captureRadioButton.isChecked = false
-                binding.captureTipsView.text = "截屏服务未开启，无法获取打卡结果"
-                binding.captureTipsView.setTextColor(Color.RED)
-                binding.captureTipsView.visibility = View.VISIBLE
-                val targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
-                if (notificationEnable() && targetApp == 0) {
-                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
-                    binding.noticeRadioButton.isChecked = true
-                } else {
-                    binding.noticeRadioButton.isChecked = false
-                }
-            }
-
-            else -> {}
         }
     }
 
@@ -537,10 +534,5 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 e.printStackTrace()
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        EventBus.getDefault().unregister(this)
     }
 }
