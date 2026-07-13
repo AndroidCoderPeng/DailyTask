@@ -93,6 +93,12 @@ object TaskScheduler {
     private val _tipsEvent = MutableSharedFlow<TipsEvent>(extraBufferCapacity = 1)
     val tipsEvent: SharedFlow<TipsEvent> = _tipsEvent.asSharedFlow()
 
+    /**
+     * 超时后回到主页信号（TaskScheduler → MainActivity）
+     * */
+    private val _returnToApp = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
+    val returnToApp: SharedFlow<Unit> = _returnToApp.asSharedFlow()
+
     private var scope: CoroutineScope? = null
     private var job: Job? = null
 
@@ -232,7 +238,7 @@ object TaskScheduler {
                 }
             }
 
-            select {
+            val clockInSuccess = select {
                 // 分支 A：超时
                 timeoutJob.onJoin { false }
 
@@ -242,6 +248,11 @@ object TaskScheduler {
 
             timeoutJob.cancel()
             clockInDeferred = null
+
+            // 超时路径——打卡失败，回到主页 + 恢复悬浮窗
+            if (!clockInSuccess) {
+                _returnToApp.emit(Unit)
+            }
 
             // ====== 阶段 3：回到主界面，处理结果 ======
             executedCount++

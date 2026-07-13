@@ -271,6 +271,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
         }
 
+        // 订阅超时回主页信号
+        lifecycleScope.launch {
+            TaskScheduler.returnToApp.collectLatest {
+                backToMainActivity()
+            }
+        }
+
         // 订阅 TipsEvent → tipsView + adapter 高亮
         lifecycleScope.launch {
             TaskScheduler.tipsEvent.collectLatest { event ->
