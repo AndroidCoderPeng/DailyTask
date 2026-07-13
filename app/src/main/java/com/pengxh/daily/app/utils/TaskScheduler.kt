@@ -28,33 +28,66 @@ import java.time.ZoneId
 /**
  * 任务调度器（协程版）
  *
- * 核心思路：
- * - 倒计时等待 → delay() + tick 循环（替代 CountDownTimerService）
- * - 等待打卡/超时 → select {} 天然竞态保护（替代 TimeoutTimerManager）
- * - UI 更新 → StateFlow emit，Activity collect（替代 TaskStateListener 回调接口）
- *
- * 调度流程：
- *   for each task in schedule:
- *     delay(到任务时间)
- *     openApplication()
- *     select { timeout() vs clockIn() }  → 谁先到用谁，另一个自动取消
- *     推进到下一个任务
- *
- * TODO 功能还有缺陷，还未能自洽，待修改
- * 调度器 -> 服务 -> 主活动
- * [TaskScheduler] -> [com.pengxh.daily.app.service.ForegroundRunningService] -> [com.pengxh.daily.app.ui.MainActivity]
+ * 完整时序：
+ *   ┌─────────────────────────────────────────────────────────┐
+ *   │ ForegroundRunningService.onCreate()                     │
+ *   │   → attach(serviceScope)        注入协程作用域             │
+ *   └─────────────────────────────────────────────────────────┘
+ *                              ↓
+ *   ┌─────────────────────────────────────────────────────────┐
+ *   │ MainActivity 用户点击"启动" / Alarm 触发 / 兜底检查          │
+ *   │   → startTask(ctx)                                      │
+ *   │     ├─ isRunning? → 防重复                               │
+ *   │     ├─ scope == null? → 未初始化                         │
+ *   │     ├─ shouldSkipToday()? → Skipped (周末/节假日)         │
+ *   │     ├─ buildTodaySchedule() → 空? → Idle                │
+ *   │     └─ launch { executeSchedule() }                     │
+ *   └─────────────────────────────────────────────────────────┘
+ *                              ↓
+ *   ┌─────────────────────────────────────────────────────────┐
+ *   │ executeSchedule()  链式逐任务执行                          │
+ *   │   for task in schedule:                                 │
+ *   │     ├─ 过期? → continue                                  │
+ *   │     ├─ emit Executing(taskIndex, task, actualTime, ...) │
+ *   │     ├─ 阶段1: countdownWithUI(delayMs)                   │
+ *   │     │         → EventBus → 通知栏秒级倒计时                │
+ *   │     ├─ 阶段2: openApplication()                          │
+ *   │     │         select { 超时 | 打卡成功 }                   │
+ *   │     │          分支A: timeoutJob.onJoin → false          │
+ *   │     │          分支B: clockInDeferred.onAwait → true     │
+ *   │     └─ 阶段3: 推进下一个任务                                │
+ *   │   → emit Completed                                      │
+ *   └─────────────────────────────────────────────────────────┘
+ *                              ↓
+ *   ┌─────────────────────────────────────────────────────────┐
+ *   │ 外部触发：                                                │
+ *   │   notifyClockIn()     ← MainActivity.onClockInSuccess() │
+ *   │                         → complete(clockInDeferred)     │
+ *   │                                                         │
+ *   │   遥控"打卡"独立到                                         │
+ *   │   NotificationMonitorService                            │
+ *   │   不触发任何 TaskScheduler 逻辑                            │
+ *   └─────────────────────────────────────────────────────────┘
+ *                              ↓
+ *   ┌─────────────────────────────────────────────────────────┐
+ *   │ stopTask()  用户点击"停止" / 遥控"终止任务"                  │
+ *   │   → job?.cancel() + emit Idle                           │
+ *   └─────────────────────────────────────────────────────────┘
  */
 object TaskScheduler {
-
-    // ---- 对外状态 ----
+    /**
+     * 对外暴露的调度状态，Activity 通过 collect 驱动 UI
+     * */
     private val _state = MutableStateFlow<SchedulerState>(SchedulerState.Idle)
     val state: StateFlow<SchedulerState> = _state.asStateFlow()
 
-    // ---- 内部状态 ----
     private var scope: CoroutineScope? = null
     private var job: Job? = null
+
+    /**
+     * 打卡信号：外部 notifyClockIn() 触发，解除 select{} 阻塞
+     * */
     private var clockInDeferred: CompletableDeferred<Unit>? = null
-    private var forceAdvanceDeferred: CompletableDeferred<Unit>? = null
 
     /**
      * 由 ForegroundRunningService 调用，注入协程作用域
@@ -64,19 +97,16 @@ object TaskScheduler {
         scope = serviceScope
     }
 
-    /**
-     * 检测任务是否正在运行
-     */
     fun isRunning(): Boolean {
         val s = _state.value
         return s is SchedulerState.Executing || s is SchedulerState.Skipped
     }
 
-    // ============================================================
-    // 对外控制方法
-    // ============================================================
-
-    fun startTask(ctx: Context) {
+    /**
+     * 启动每日任务调度
+     * 时序：防重复 → 检查协程作用域 → 判断周末/节假日 → 构建排程 → 启动核心循环
+     */
+    fun startTask(context: Context) {
         val currentState = _state.value
         if (currentState is SchedulerState.Executing || currentState is SchedulerState.Skipped) {
             LogFileManager.writeLog("任务已在执行中，忽略重复启动")
@@ -91,65 +121,31 @@ object TaskScheduler {
 
         if (shouldSkipToday()) {
             _state.update { SchedulerState.Skipped }
+            EventBus.getDefault().post(
+                ApplicationEvent.UpdateNotification("今日休息，任务已跳过")
+            )
             return
         }
 
         val schedule = buildTodaySchedule()
         if (schedule.isEmpty()) {
             _state.update { SchedulerState.Idle }
-            // 通过 emit 错误态，Activity 自行处理
             return
         }
 
         LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
-
         job = currentScope.launch {
-            executeSchedule(ctx.applicationContext, schedule)
+            executeSchedule(context, schedule)
         }
-    }
-
-    fun stopTask() {
-        val currentState = _state.value
-        if (currentState !is SchedulerState.Executing
-            && currentState !is SchedulerState.Completed
-            && currentState !is SchedulerState.Skipped
-        ) {
-            LogFileManager.writeLog("任务未运行，无需停止")
-            return
-        }
-
-        LogFileManager.writeLog("停止执行每日任务")
-        job?.cancel()
-        job = null
-        _state.update { SchedulerState.Idle }
-    }
-
-    /** 打卡成功通知（由 NotificationMonitorService → MainActivity 调用） */
-    fun notifyClockIn() {
-        clockInDeferred?.complete(Unit)
     }
 
     /**
-     * 遥控指令"打卡"触发：打开目标 App → 倒计时 → 强制推进链式任务
-     * 用于遥控场景：用户发送关键字 → 打开 App → 等待超时 → 推进链式任务
+     * 链式任务主循环
+     * for 循环保证顺序执行，每个任务经历三个阶段：
+     *   阶段1 - delay(到任务时间) + 通知栏秒级倒计时
+     *   阶段2 - openApplication() + select{超时|打卡} 竞态等待
+     *   阶段3 - 推进到下一个任务（或全部完成 emit Completed）
      */
-    fun countdownAndAdvance() {
-        scope?.launch {
-            val timeoutSeconds = SaveKeyValues.loadInt(
-                Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
-            )
-            countdownWithUI(timeoutSeconds * 1000L) { remaining ->
-                FloatingWindowController.updateTime((remaining / 1000).toInt())
-            }
-            // 超时：强制推进当前链式任务（等效于超时分支）
-            forceAdvanceDeferred?.complete(Unit)
-        }
-    }
-
-    // ============================================================
-    // 核心调度循环
-    // ============================================================
-
     private suspend fun CoroutineScope.executeSchedule(
         context: Context,
         schedule: List<ScheduledTask>
@@ -174,10 +170,7 @@ object TaskScheduler {
             val delayMs = task.actualTimeMillis - now
             _state.update {
                 SchedulerState.Executing(
-                    taskIndex = task.displayIndex,
-                    task = task.task,
-                    actualTime = task.actualTime,
-                    totalTasks = schedule.size
+                    task.displayIndex, task.task, task.actualTime, schedule.size
                 )
             }
 
@@ -188,11 +181,11 @@ object TaskScheduler {
                         "延迟=${delayMs / 1000}s"
             )
 
-            countdownWithUI(delayMs) { remaining ->
+            updateCountdownWithNotification(delayMs) { remaining ->
                 val seconds = (remaining / 1000).toInt()
                 // 更新通知栏
                 EventBus.getDefault().post(
-                    ApplicationEvent.UpdateCountdownText(
+                    ApplicationEvent.UpdateNotification(
                         "${seconds.formatTime()}后执行第${task.displayIndex}个任务"
                     )
                 )
@@ -205,11 +198,10 @@ object TaskScheduler {
 
             context.openApplication()
 
-            // 竞态保护：select 只取先完成的分支，另一个自动取消
+            // Kotlin语法糖——竞态保护：select 只取先完成的分支，另一个自动取消
             var hasCaptured = false
-            // 启动超时倒计时 coroutine（在 select 外部，因为 select {} 的 receiver 是 SelectBuilder）
             val timeoutJob = launch {
-                countdownWithUI(timeoutSeconds * 1000L) { remaining ->
+                updateCountdownWithNotification(timeoutSeconds * 1000L) { remaining ->
                     val tick = (remaining / 1000).toInt()
                     FloatingWindowController.updateTime(tick)
 
@@ -225,27 +217,20 @@ object TaskScheduler {
                     }
                 }
             }
+
             select {
-                // 分支 A：超时 → 未打卡成功
+                // 分支 A：超时
                 timeoutJob.onJoin { false }
 
                 // 分支 B：打卡成功
                 CompletableDeferred<Unit>().also { clockInDeferred = it }.onAwait { true }
-
-                // 分支 C：遥控指令"打卡"强制推进（countdownAndAdvance 中倒计时结束后触发）
-                CompletableDeferred<Unit>().also { forceAdvanceDeferred = it }.onAwait { false }
             }
-            // 如果 select 选择了分支 B/C，则取消仍在进行的倒计时
+
             timeoutJob.cancel()
-
             clockInDeferred = null
-            forceAdvanceDeferred = null
-
-            executedCount++
 
             // ====== 阶段 3：回到主界面，处理结果 ======
-            // 注意：不在这里做 backToMainActivity，交给 MainActivity 通过状态变化处理
-            // TaskScheduler 只负责调度，导航逻辑由 Activity 自己处理
+            executedCount++
         }
 
         // ====== 全部完成 ======
@@ -257,19 +242,47 @@ object TaskScheduler {
         }
         LogFileManager.writeLog(message)
         _state.update { SchedulerState.Completed }
+        EventBus.getDefault().post(
+            ApplicationEvent.UpdateNotification(message)
+        )
     }
 
-    // ============================================================
-    // 工具方法
-    // ============================================================
+    /**
+     * 打卡成功通知
+     * 调用链：NotificationMonitorService.onNotificationPosted()
+     *       → MainActivity.onClockInSuccess()
+     *       → TaskScheduler.notifyClockIn()
+     * 效果：完成 clockInDeferred，select{} 走分支 B，推进到下一个任务
+     */
+    fun notifyClockIn() {
+        clockInDeferred?.complete(Unit)
+    }
+
+    fun stopTask() {
+        val currentState = _state.value
+        if (currentState !is SchedulerState.Executing
+            && currentState !is SchedulerState.Completed
+            && currentState !is SchedulerState.Skipped
+        ) {
+            LogFileManager.writeLog("任务未运行，无需停止")
+            return
+        }
+
+        LogFileManager.writeLog("停止执行每日任务")
+        job?.cancel()
+        job = null
+        _state.update { SchedulerState.Idle }
+        EventBus.getDefault().post(
+            ApplicationEvent.UpdateNotification("为保证程序正常运行，请勿移除此通知")
+        )
+    }
 
     /**
      * 自校准倒计时 tick，支持 UI 回调。
      * 使用 elapsedRealtime 确保休眠唤醒后剩余时间准确。
      */
-    private suspend fun CoroutineScope.countdownWithUI(
-        totalMs: Long,
-        onTick: (remainingMs: Long) -> Unit
+    private suspend fun CoroutineScope.updateCountdownWithNotification(
+        totalMs: Long, onTick: (remainingMs: Long) -> Unit
     ) {
         val target = SystemClock.elapsedRealtime() + totalMs
         while (isActive) {
@@ -287,16 +300,19 @@ object TaskScheduler {
 
         val today = LocalDate.now()
 
+        // 法定节假日
         if (ChinaHolidayManager.isHoliday(today)) {
             LogFileManager.writeLog("今日为法定节假日，跳过任务")
             return true
         }
 
+        // 调休补班日（例外：周末但要上班）
         if (ChinaHolidayManager.isWorkday(today)) {
             LogFileManager.writeLog("今日为调休补班日，正常执行任务")
             return false
         }
 
+        // 普通周末
         val dayOfWeek = today.dayOfWeek
         if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY) {
             LogFileManager.writeLog("今日为周末，跳过任务")
@@ -306,6 +322,9 @@ object TaskScheduler {
         return false
     }
 
+    /**
+     * 从数据库加载所有任务，计算出当日实际执行时间，按时间排序
+     * */
     private fun buildTodaySchedule(): List<ScheduledTask> {
         val allTasks = DatabaseWrapper.loadAllTask()
         if (allTasks.isEmpty()) return emptyList()
@@ -329,10 +348,6 @@ object TaskScheduler {
             }
     }
 
-    // ============================================================
-    // 数据类
-    // ============================================================
-
     private data class ScheduledTask(
         val task: DailyTaskBean,
         val displayIndex: Int,
@@ -340,26 +355,4 @@ object TaskScheduler {
         val actualTime: String,
         val actualTimeMillis: Long
     )
-}
-
-/**
- * 调度器对外状态
- */
-sealed class SchedulerState {
-    /** 空闲 */
-    data object Idle : SchedulerState()
-
-    /** 节假日跳过 */
-    data object Skipped : SchedulerState()
-
-    /** 正在执行某个任务 */
-    data class Executing(
-        val taskIndex: Int,
-        val task: DailyTaskBean,
-        val actualTime: String,
-        val totalTasks: Int
-    ) : SchedulerState()
-
-    /** 当日所有任务已完成 */
-    data object Completed : SchedulerState()
 }

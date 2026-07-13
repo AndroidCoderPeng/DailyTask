@@ -136,7 +136,7 @@ class ForegroundRunningService : Service() {
                 updateResetTimeView()
             }
 
-            is ApplicationEvent.UpdateCountdownText -> {
+            is ApplicationEvent.UpdateNotification -> {
                 // 倒计时期间更新通知栏文本
                 val notification = notificationBuilder.apply {
                     setContentText(event.text)

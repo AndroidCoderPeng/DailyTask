@@ -36,5 +36,5 @@ sealed class ApplicationEvent {
     /**
      * 倒计时通知更新
      */
-    data class UpdateCountdownText(val text: String) : ApplicationEvent()
+    data class UpdateNotification(val text: String) : ApplicationEvent()
 }

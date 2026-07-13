@@ -2,6 +2,7 @@ package com.pengxh.daily.app.service
 
 import android.app.Notification
 import android.content.ComponentName
+import android.os.SystemClock
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -13,9 +14,9 @@ import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.ProjectionSession
-import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -23,6 +24,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
@@ -190,8 +193,20 @@ class NotificationMonitorService : NotificationListenerService() {
                 else -> {
                     val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
                     if (notice.contains(key)) {
+                        // 遥控"打卡"：一次性，只唤起目标 App 并倒计时，不关联任务调度
                         openApplication {
-                            TaskScheduler.countdownAndAdvance(this@NotificationMonitorService)
+                            serviceScope.launch {
+                                val timeoutSeconds = SaveKeyValues.loadInt(
+                                    Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+                                )
+                                val target = SystemClock.elapsedRealtime() + timeoutSeconds * 1000L
+                                while (isActive) {
+                                    val remaining = target - SystemClock.elapsedRealtime()
+                                    if (remaining <= 0) break
+                                    FloatingWindowController.updateTime((remaining / 1000).toInt())
+                                    delay(minOf(1000L, remaining).coerceAtLeast(1))
+                                }
+                            }
                         }
                     }
                 }

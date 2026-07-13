@@ -83,14 +83,16 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     private val marginOffset by lazy { 16.dp2px(this) }
     private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val taskDataManager by lazy { TaskDataManager() }
+
     private val insetsController by lazy {
         WindowCompat.getInsetsController(window, binding.rootView)
     }
     private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
     private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
+    private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
     private val gestureController by lazy { GestureController(this, maskViewController) }
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
-    private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
+
     private var taskBeans = mutableListOf<DailyTaskBean>()
     private val dailyTaskAdapter by lazy {
         DailyTaskAdapter(taskBeans).apply {
@@ -106,6 +108,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         }
     }
     private var imagePath = ""
+
+    /**
+     * 每秒刷新 toolbar 时间和日期标签
+     * */
     private val timeUpdateRunnable = object : Runnable {
         override fun run() {
             val currentTime = dateTimeFormat.format(Date())
@@ -183,36 +189,19 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
                     MaterialAlertDialogBuilder(this)
                         .setTitle("使用须知")
                         .setMessage("本软件完全免费！仅供内部使用！严禁商用或者用作其他非法用途！\r\n近期发现有人在咸鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！")
-                        .setCancelable(false) // 禁止点击外部关闭
-                        .setPositiveButton("知道了") { _, _ ->
-                            navigatePageTo<SettingsActivity>()
-                        }.show()
+                        .setCancelable(false)
+                        .setPositiveButton("知道了") { _, _ -> navigatePageTo<SettingsActivity>() }
+                        .show()
                 }
             }
             true
         }
     }
 
-    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
-        if (Settings.canDrawOverlays(this)) {
-            Intent(this, FloatingWindowService::class.java).apply {
-                startService(this)
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (!Settings.canDrawOverlays(this)) {
-            "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
-        }
-    }
-
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val watermark = DailyTask.getWatermarkText()
-        binding.contentView.background = WatermarkDrawable(this, watermark)
+        binding.contentView.background = WatermarkDrawable(this, DailyTask.getWatermarkText())
 
-        // 数据
+        // 加载任务列表
         taskBeans = DatabaseWrapper.loadAllTask()
         if (taskBeans.isEmpty()) {
             binding.recyclerView.visibility = View.GONE
@@ -231,32 +220,26 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
         // 显示悬浮窗
         if (Settings.canDrawOverlays(this)) {
-            Intent(this, FloatingWindowService::class.java).apply {
-                startService(this)
-            }
+            Intent(this, FloatingWindowService::class.java).apply { startService(this) }
         } else {
             // 悬浮窗权限并显示悬浮窗
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
             overlayPermissionLauncher.launch(intent)
         }
 
-        // 启动常驻前台服务——保活+任务重置+托管 TaskScheduler 协程作用域
-        Intent(this, ForegroundRunningService::class.java).apply {
-            startForegroundService(this)
-        }
+        // 前台服务（保活 + 托管 TaskScheduler 协程作用域 + 每日重置）
+        Intent(this, ForegroundRunningService::class.java).apply { startForegroundService(this) }
 
         // 注册监听服务回调
         NotificationMonitorService.monitorCallback = this
 
-        // ====== 观察 TaskScheduler 状态，驱动 UI 更新（替代原 TaskStateListener）======
+        // 订阅 TaskScheduler 状态 → UI 更新
         lifecycleScope.launch {
-            TaskScheduler.state.collectLatest { state ->
-                handleSchedulerState(state)
-            }
+            TaskScheduler.state.collectLatest { state -> handleSchedulerState(state) }
         }
 
+        // EventBus 注册 + 处理粘性事件（Alarm 触发时 Activity 尚未创建的情况）
         EventBus.getDefault().register(this)
-        // 处理 Alarm 触发时 Activity 未注册导致的 ResetDailyTask 事件丢失
         val stickyReset =
             EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
         if (stickyReset != null) {
@@ -264,12 +247,65 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             TaskScheduler.startTask(this)
         }
 
-        // 检查是否需要执行错过的重置
+        // 兜底检查是否有错过的每日重置
         checkMissedReset()
     }
 
+    override fun initEvent() {
+        binding.executeTaskButton.setOnClickListener {
+            if (isTaskStarted) {
+                doStopTask()
+            } else {
+                if (DatabaseWrapper.loadAllTask().isEmpty()) {
+                    "循环任务启动失败，请先添加任务时间点".show(this)
+                    return@setOnClickListener
+                }
+                TaskScheduler.startTask(this)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (!Settings.canDrawOverlays(this)) {
+            "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        LogFileManager.writeLog("onNewIntent: ${packageName}回到前台")
+
+        if (ProjectionSession.isStateActive()) {
+            LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")
+        } else {
+            LogFileManager.writeLog("截屏服务异常：MediaProjection 已失效")
+            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 1) {
+                "截屏服务已断开，请重新授权".show(this)
+                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+            }
+        }
+
+        if (!maskViewController.isMaskVisible()) {
+            maskViewController.showMaskView()
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        NotificationMonitorService.monitorCallback = null
+        mainHandler.removeCallbacksAndMessages(null)
+        maskViewController.destroy()
+        EventBus.getDefault().unregister(this)
+    }
+
+    // ================================================================
+    // TaskScheduler 状态观察 → UI 更新
+    // ================================================================
+
     /**
-     * 根据 TaskScheduler 的 StateFlow 状态更新 UI（替代原 TaskStateListener 的 7 个回调）
+     * 根据 SchedulerState 驱动 UI 变化
+     * 这是 View ← ViewModel 的桥梁，替代了原来 7 个回调接口
      */
     private fun handleSchedulerState(state: SchedulerState) {
         when (state) {
@@ -302,7 +338,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
                     binding.executeTaskButton.text = "停止"
                     messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
                 }
-                // 更新 Tips 和 Adapter
                 binding.tipsView.text = String.format(
                     Locale.getDefault(), "准备执行第 %d 个任务", state.taskIndex
                 )
@@ -315,9 +350,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
                     append("实际时间：${state.actualTime}")
                 }
                 messageDispatcher.sendMessage("任务执行通知", content)
-
-                // 导航回主界面（任务在后台执行，需要切回来让用户看到）
-                backToMainActivity()
             }
 
             is SchedulerState.Completed -> {
@@ -329,24 +361,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         }
     }
 
-    private fun checkMissedReset() {
-        val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
-        val today = dateFormat.format(Date())
-
-        // 今天已重置，跳过（防止重复执行）
-        if (lastResetDate == today) {
-            return
-        }
-
-        // 今天还未重置，执行重置（覆盖 Alarm 未触发的场景）
-        LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
-        SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
-
-        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
-            TaskScheduler.startTask(this)
-        }
-    }
-
+    // ================================================================
+    // EventBus 事件处理
+    // ================================================================
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleApplicationEvent(event: ApplicationEvent) {
@@ -375,28 +392,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         }
     }
 
-    private fun backToMainActivity() {
-        if (SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)) {
-            //模拟点击Home键
-            val home = Intent(Intent.ACTION_MAIN).apply {
-                addCategory(Intent.CATEGORY_HOME)
-            }
-            startActivity(home)
-
-            lifecycleScope.launch(Dispatchers.IO) {
-                delay(2000)
-                withContext(Dispatchers.Main) {
-                    navigatePageTo<MainActivity>()
-                }
-            }
-        } else {
-            navigatePageTo<MainActivity>()
-        }
-    }
-
-    // ============================================================
+    // ================================================================
     // MonitorCallback 实现
-    // ============================================================
+    // ================================================================
     override fun onClockInSuccess() {
         // 通知 TaskScheduler：打卡成功，取消超时等待分支
         TaskScheduler.notifyClockIn()
@@ -447,21 +445,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         }
     }
 
-    private fun doStopTask() {
-        if (!TaskScheduler.isRunning()) return
-        TaskScheduler.stopTask()
-        isTaskStarted = false
-        dailyTaskAdapter.updateCurrentTaskState(-1)
-        binding.tipsView.text = ""
-        resetExecuteButton()
-        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
-    }
-
-    private fun resetExecuteButton() {
-        binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-        binding.executeTaskButton.setIconTintResource(R.color.ios_green)
-        binding.executeTaskButton.text = "启动"
-    }
+    // ================================================================
+    // 用户交互
+    // ================================================================
 
     /**
      * 列表项单击
@@ -530,40 +516,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             }.setNegativeButton("取消", null).show()
     }
 
-    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        ev?.let {
-            gestureController.onTouchEvent(it)
-        }
-        return super.dispatchTouchEvent(ev)
-    }
-
-    override fun initEvent() {
-        binding.executeTaskButton.setOnClickListener {
-            // 用运行模式标志判断，而非调度器内部状态（任务当天完成后调度器已闲置但仍在运行模式）
-            if (isTaskStarted) {
-                doStopTask()
-            } else {
-                if (DatabaseWrapper.loadAllTask().isEmpty()) {
-                    "循环任务启动失败，请先添加任务时间点".show(this)
-                    return@setOnClickListener
-                }
-                TaskScheduler.startTask(this)
-            }
-        }
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            if (maskViewController.isMaskVisible()) {
-                maskViewController.hideMaskView()
-            } else {
-                maskViewController.showMaskView()
-            }
-            return true
-        }
-        return super.onKeyDown(keyCode, event)
-    }
-
     private fun createTask() {
         val view = layoutInflater.inflate(R.layout.bottom_sheet_layout_select_time, null)
         val dialog = BottomSheetDialog(this)
@@ -628,30 +580,89 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             }).build().show()
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        LogFileManager.writeLog("onNewIntent: ${packageName}回到前台")
-
-        if (ProjectionSession.isStateActive()) {
-            LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")
-        } else {
-            LogFileManager.writeLog("截屏服务异常：MediaProjection 已失效")
-            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 1) {
-                "截屏服务已断开，请重新授权".show(this)
-                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            if (maskViewController.isMaskVisible()) {
+                maskViewController.hideMaskView()
+            } else {
+                maskViewController.showMaskView()
             }
+            return true
         }
+        return super.onKeyDown(keyCode, event)
+    }
 
-        if (!maskViewController.isMaskVisible()) {
-            maskViewController.showMaskView()
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        ev?.let {
+            gestureController.onTouchEvent(it)
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    // ================================================================
+    // 辅助方法
+    // ================================================================
+
+    private fun doStopTask() {
+        if (!TaskScheduler.isRunning()) return
+        TaskScheduler.stopTask()
+        isTaskStarted = false
+        dailyTaskAdapter.updateCurrentTaskState(-1)
+        binding.tipsView.text = ""
+        resetExecuteButton()
+        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
+    }
+
+    private fun resetExecuteButton() {
+        binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
+        binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+        binding.executeTaskButton.text = "启动"
+    }
+
+    private fun backToMainActivity() {
+        if (SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)) {
+            //模拟点击Home键
+            startActivity(Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) })
+            lifecycleScope.launch(Dispatchers.IO) {
+                delay(1000)
+                withContext(Dispatchers.Main) {
+                    navigatePageTo<MainActivity>()
+                }
+            }
+        } else {
+            navigatePageTo<MainActivity>()
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        NotificationMonitorService.monitorCallback = null
-        mainHandler.removeCallbacksAndMessages(null)
-        maskViewController.destroy()
-        EventBus.getDefault().unregister(this)
+    /**
+     * 兜底检查：覆盖 Alarm 未触发的场景
+     * */
+    private fun checkMissedReset() {
+        val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
+        val today = dateFormat.format(Date())
+
+        // 今天已重置，跳过（防止重复执行）
+        if (lastResetDate == today) {
+            return
+        }
+
+        // 今天还未重置，执行重置（覆盖 Alarm 未触发的场景）
+        LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
+        SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
+
+        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
+            TaskScheduler.startTask(this)
+        }
+    }
+
+    /**
+     * 悬浮窗权限启动器
+     * */
+    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
+        if (Settings.canDrawOverlays(this)) {
+            Intent(this, FloatingWindowService::class.java).apply {
+                startService(this)
+            }
+        }
     }
 }
