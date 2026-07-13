@@ -5,6 +5,7 @@ import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.resolveExecutionTime
+import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
@@ -17,15 +18,12 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
-import org.greenrobot.eventbus.EventBus
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
@@ -39,19 +37,19 @@ object TaskScheduler {
      * 调度器是否在运行中
      * */
     private val _isRunning = MutableStateFlow(false)
-    val isRunning: StateFlow<Boolean> = _isRunning.asStateFlow()
+    val isRunning = _isRunning.asStateFlow()
 
     /**
      * UI 文本事件（tipsView / adapter 高亮），不参与按钮逻辑
      * */
     private val _tipsEvent = MutableSharedFlow<TipsEvent>(extraBufferCapacity = 1)
-    val tipsEvent: SharedFlow<TipsEvent> = _tipsEvent.asSharedFlow()
+    val tipsEvent = _tipsEvent.asSharedFlow()
 
     /**
      * 超时后回到主页信号（TaskScheduler → MainActivity）
      * */
     private val _returnToApp = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
-    val returnToApp: SharedFlow<Unit> = _returnToApp.asSharedFlow()
+    val returnToApp = _returnToApp.asSharedFlow()
 
     private var scope: CoroutineScope? = null
     private var job: Job? = null
@@ -186,7 +184,7 @@ object TaskScheduler {
                         )
                         if (resultSource == 1) {
                             hasCaptured = true
-                            EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+                            CaptureImageService.requestCaptureScreen()
                         }
                     }
                 }

@@ -22,7 +22,6 @@ import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.NotificationMonitorService
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
@@ -44,7 +43,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import org.greenrobot.eventbus.EventBus
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
@@ -156,7 +154,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     }
 
                     ProjectionEvent.Failed -> {
-                        "截屏服务已断开，已切换到通知模式".show(context)
                         binding.captureSwitch.isChecked = false
                         binding.captureRadioButton.isChecked = false
                         binding.captureTipsView.text = "截屏服务未开启，无法获取打卡结果"
@@ -166,6 +163,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         if (notificationEnable() && targetApp == 0) {
                             SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                             binding.noticeRadioButton.isChecked = true
+                            "截屏服务已断开，已切换到通知模式".show(context)
                         } else {
                             binding.noticeRadioButton.isChecked = false
                         }
@@ -305,7 +303,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
 
             // 触发截屏
-            EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+            CaptureImageService.requestCaptureScreen()
 
             // 等待截屏结果
             lifecycleScope.launch {

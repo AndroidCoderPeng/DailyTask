@@ -22,7 +22,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
@@ -41,9 +40,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -59,6 +55,11 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             _projectionEvents.tryEmit(event)
         }
 
+        private val _captureScreenRequest = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+        fun requestCaptureScreen() {
+            _captureScreenRequest.tryEmit(Unit)
+        }
 
         private val _captureResults = MutableSharedFlow<String>(extraBufferCapacity = 1)
         val captureResults = _captureResults.asSharedFlow()
@@ -98,7 +99,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     override fun onCreate() {
         super.onCreate()
-        EventBus.getDefault().register(this)
         val name = "${resources.getString(R.string.app_name)}截屏服务"
         val channel = NotificationChannel(
             "capture_image_service_channel", name, NotificationManager.IMPORTANCE_LOW
@@ -119,6 +119,10 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             )
         } else {
             startForeground(Constant.CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID, notification)
+        }
+
+        launch {
+            _captureScreenRequest.collect { captureScreen() }
         }
     }
 
@@ -176,14 +180,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         }
 
         return START_STICKY
-    }
-
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleApplicationEvent(event: ApplicationEvent) {
-        if (event is ApplicationEvent.CaptureScreen) {
-            captureScreen()
-        }
     }
 
     private fun initializeCaptureResources(projection: MediaProjection) {
@@ -253,21 +249,31 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     return@launch
                 }
 
+                val startTime = System.currentTimeMillis()
+                Log.d(kTag, "================== 开始截屏 ==================")
+
                 var stale = reader.acquireLatestImage()
+                var staleCount = 0
                 while (stale != null) {
                     stale.close()
                     stale = reader.acquireLatestImage()
+                    staleCount++
                 }
+                Log.d(kTag, "排空旧帧: ${staleCount}张")
 
                 // 最多等待2秒
                 val image = withTimeoutOrNull(2000) {
+                    Log.d(kTag, "进入等待......")
                     waitForImageAvailable(reader)
                 }
 
+                val elapsed = System.currentTimeMillis() - startTime
                 if (image == null) {
+                    Log.e(kTag, "获取图像失败: acquireNextImage返回null, 总耗时: ${elapsed}ms")
                     sendChannelMessage("获取图像失败: acquireNextImage返回null")
                     return@launch
                 }
+                Log.d(kTag, "图像获取成功, 耗时: ${elapsed}ms")
 
                 val width = image.width
                 val height = image.height
@@ -380,7 +386,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
         isCapturingInitialized = false
         stopForeground(STOP_FOREGROUND_REMOVE)
-        EventBus.getDefault().unregister(this)
     }
 
     private fun isBitmapMostlyBlack(bitmap: Bitmap): Boolean {

@@ -436,7 +436,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     }
 
                     // 触发截屏
-                    EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+                    CaptureImageService.requestCaptureScreen()
 
                     // 等待截屏结果（在跳转之前，保证协程不被取消），截屏本身 1~2 秒就完成了
                     val imagePath = withTimeoutOrNull(5000L) {
