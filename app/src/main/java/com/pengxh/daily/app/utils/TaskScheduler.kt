@@ -5,6 +5,7 @@ import android.os.SystemClock
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.resolveExecutionTime
+import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -121,9 +122,7 @@ object TaskScheduler {
 
         if (shouldSkipToday()) {
             _state.update { SchedulerState.Skipped }
-            EventBus.getDefault().post(
-                ApplicationEvent.UpdateNotification("今日休息，任务已跳过")
-            )
+            ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
             return
         }
 
@@ -184,11 +183,7 @@ object TaskScheduler {
             updateCountdownWithNotification(delayMs) { remaining ->
                 val seconds = (remaining / 1000).toInt()
                 // 更新通知栏
-                EventBus.getDefault().post(
-                    ApplicationEvent.UpdateNotification(
-                        "${seconds.formatTime()}后执行第${task.displayIndex}个任务"
-                    )
-                )
+                ForegroundRunningService.emitNotificationText("${seconds.formatTime()}后执行第${task.displayIndex}个任务")
             }
 
             // ====== 阶段 2：打开目标 App，等待打卡或超时 ======
@@ -242,9 +237,7 @@ object TaskScheduler {
         }
         LogFileManager.writeLog(message)
         _state.update { SchedulerState.Completed }
-        EventBus.getDefault().post(
-            ApplicationEvent.UpdateNotification(message)
-        )
+        ForegroundRunningService.emitNotificationText(message)
     }
 
     /**
@@ -272,9 +265,7 @@ object TaskScheduler {
         job?.cancel()
         job = null
         _state.update { SchedulerState.Idle }
-        EventBus.getDefault().post(
-            ApplicationEvent.UpdateNotification("为保证程序正常运行，请勿移除此通知")
-        )
+        ForegroundRunningService.emitNotificationText("为保证程序正常运行，请勿移除此通知")
     }
 
     /**

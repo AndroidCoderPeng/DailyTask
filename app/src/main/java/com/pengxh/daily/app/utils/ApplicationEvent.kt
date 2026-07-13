@@ -24,9 +24,4 @@ sealed class ApplicationEvent {
     object ProjectionReady : ApplicationEvent()
     object ProjectionFailed : ApplicationEvent()
     object ProjectionDestroyed : ApplicationEvent()
-
-    /**
-     * 倒计时通知更新
-     */
-    data class UpdateNotification(val text: String) : ApplicationEvent()
 }

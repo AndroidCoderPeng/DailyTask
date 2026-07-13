@@ -25,6 +25,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
@@ -39,13 +42,20 @@ import java.util.Locale
  */
 class ForegroundRunningService : Service() {
 
+    companion object {
+        private val _notificationText = MutableSharedFlow<String>(extraBufferCapacity = 1)
+        val notificationText = _notificationText.asSharedFlow()
+
+        fun emitNotificationText(text: String) {
+            _notificationText.tryEmit(text)
+        }
+    }
+
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
     private val httpRequestManager by lazy { HttpRequestManager(this) }
     private val emailManager by lazy { EmailManager(this) }
     private var lastRemindTime = 0L
-
-    /** 协程作用域：托管 TaskScheduler 的调度协程 */
-    val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
     private lateinit var notificationBuilder: NotificationCompat.Builder
@@ -85,6 +95,17 @@ class ForegroundRunningService : Service() {
             )
         } else {
             startForeground(Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification)
+        }
+
+        serviceScope.launch {
+            notificationText.collect { text ->
+                val notification = notificationBuilder.apply {
+                    setContentText(text)
+                }.build()
+                notificationManager.notify(
+                    Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification
+                )
+            }
         }
 
         val filter = IntentFilter().apply {
@@ -131,22 +152,8 @@ class ForegroundRunningService : Service() {
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleApplicationEvent(event: ApplicationEvent) {
-        when (event) {
-            is ApplicationEvent.SetResetTaskTime -> {
-                updateResetTimeView()
-            }
-
-            is ApplicationEvent.UpdateNotification -> {
-                // 倒计时期间更新通知栏文本
-                val notification = notificationBuilder.apply {
-                    setContentText(event.text)
-                }.build()
-                notificationManager.notify(
-                    Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification
-                )
-            }
-
-            else -> {}
+        if (event is ApplicationEvent.SetResetTaskTime) {
+            updateResetTimeView()
         }
     }
 
