@@ -102,34 +102,36 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         val watermark = DailyTask.getWatermarkText()
         binding.contentView.background = WatermarkDrawable(this, watermark)
+
+        // 监听通知服务状态
+        lifecycleScope.launch {
+            NotificationMonitorService.listenerState.collect { connected ->
+                if (connected) {
+                    binding.noticeSwitch.isChecked = true
+                    binding.noticeTipsView.visibility = View.GONE
+                    val sourceType =
+                        SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+                    val targetApp =
+                        SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, Constant.DEFAULT_INDEX)
+                    if (sourceType == 0 && targetApp == 0) {
+                        binding.noticeRadioButton.isChecked = true
+                        binding.captureRadioButton.isChecked = false
+                    }
+                } else {
+                    binding.noticeTipsView.text = "服务未开启，无法监听打卡结果和接收远程指令"
+                    binding.noticeTipsView.setTextColor(Color.RED)
+                    binding.noticeSwitch.isChecked = false
+                    binding.noticeRadioButton.isChecked = false
+                    binding.noticeTipsView.visibility = View.VISIBLE
+                }
+            }
+        }
     }
 
     @Suppress("unused")
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun handleApplicationEvent(event: ApplicationEvent) {
         when (event) {
-            is ApplicationEvent.ListenerConnected -> {
-                binding.noticeSwitch.isChecked = true
-                binding.noticeTipsView.visibility = View.GONE
-
-                val sourceType =
-                    SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
-                val targetApp =
-                    SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, Constant.DEFAULT_INDEX)
-                if (sourceType == 0 && targetApp == 0) {
-                    binding.noticeRadioButton.isChecked = true
-                    binding.captureRadioButton.isChecked = false
-                }
-            }
-
-            is ApplicationEvent.ListenerDisconnected -> {
-                binding.noticeTipsView.text = "服务未开启，无法监听打卡结果和接收远程指令"
-                binding.noticeTipsView.setTextColor(Color.RED)
-                binding.noticeSwitch.isChecked = false
-                binding.noticeRadioButton.isChecked = false
-                binding.noticeTipsView.visibility = View.VISIBLE
-            }
-
             is ApplicationEvent.ProjectionReady -> {
                 binding.captureSwitch.isChecked = true
                 binding.captureTipsView.visibility = View.GONE

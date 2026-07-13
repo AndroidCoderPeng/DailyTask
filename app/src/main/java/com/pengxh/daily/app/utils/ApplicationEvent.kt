@@ -6,12 +6,6 @@ package com.pengxh.daily.app.utils
  */
 sealed class ApplicationEvent {
     /**
-     * 监听器状态事件
-     */
-    object ListenerConnected : ApplicationEvent()
-    object ListenerDisconnected : ApplicationEvent()
-
-    /**
      * 任务控制事件
      */
     object StopDailyTask : ApplicationEvent()

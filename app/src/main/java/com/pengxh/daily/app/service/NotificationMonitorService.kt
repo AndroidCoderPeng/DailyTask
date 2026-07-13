@@ -10,7 +10,6 @@ import android.util.Log
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.FloatingWindowController
@@ -31,7 +30,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.greenrobot.eventbus.EventBus
 
 /**
  * @description: 状态栏监听服务
@@ -47,6 +45,13 @@ class NotificationMonitorService : NotificationListenerService() {
         fun emit(event: MonitorEvent) {
             _events.tryEmit(event)
         }
+
+        private val _listenerState = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1)
+        val listenerState = _listenerState.asSharedFlow()
+
+        fun emitListenerState(connected: Boolean) {
+            _listenerState.tryEmit(connected)
+        }
     }
 
     private val kTag = "MonitorService"
@@ -61,7 +66,7 @@ class NotificationMonitorService : NotificationListenerService() {
      */
     override fun onListenerConnected() {
         listenerConnected = true
-        EventBus.getDefault().post(ApplicationEvent.ListenerConnected)
+        emitListenerState(true)
     }
 
     /**
@@ -229,7 +234,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
     override fun onListenerDisconnected() {
         listenerConnected = false
-        EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
+        emitListenerState(false)
         // 主动请求系统重新绑定监听服务
         requestRebind(ComponentName(this, NotificationMonitorService::class.java))
     }
