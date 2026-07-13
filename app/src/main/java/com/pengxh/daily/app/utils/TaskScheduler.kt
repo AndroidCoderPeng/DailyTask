@@ -269,6 +269,21 @@ object TaskScheduler {
     }
 
     /**
+     * 因外部错误请求停止（目标 App 未安装、启动失败等）
+     * 由 Context.openApplication() 在无法打开目标 App 时调用
+     *
+     * 与 stopTask() 的区别：
+     *   stopTask()     — 用户主动点击"停止"，发消息通知
+     *   requestStopDueToError() — 系统错误停止，不发消息通知，只重置调度器
+     */
+    fun requestStopDueToError(reason: String) {
+        LogFileManager.writeLog("因错误请求停止：$reason")
+        job?.cancel()
+        job = null
+        _state.update { SchedulerState.Idle }
+    }
+
+    /**
      * 自校准倒计时 tick，支持 UI 回调。
      * 使用 elapsedRealtime 确保休眠唤醒后剩余时间准确。
      */

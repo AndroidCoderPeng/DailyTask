@@ -7,10 +7,9 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.extensions.show
-import org.greenrobot.eventbus.EventBus
 
 /**
  * 检测通知监听服务是否被授权
@@ -47,7 +46,7 @@ fun Context.openApplication(onOpened: (() -> Unit)? = null) {
     Log.d("Ex-Context", "openApplication: $targetApp")
     if (!isApplicationExist(targetApp)) {
         "未安装指定的目标软件，无法执行任务".show(this)
-        EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
+        TaskScheduler.requestStopDueToError("未安装指定的目标软件，无法执行任务")
         return
     }
 
@@ -68,7 +67,6 @@ fun Context.openApplication(onOpened: (() -> Unit)? = null) {
         startActivity(intent)
         onOpened?.invoke()
     } else {
-        Log.w("Ex-Context", "openApplication: 未找到目标应用的 Launcher Activity，包名：$targetApp")
-        EventBus.getDefault().post(ApplicationEvent.StopDailyTask)
+        TaskScheduler.requestStopDueToError("未找到目标应用的 Launcher Activity，包名：$targetApp")
     }
 }

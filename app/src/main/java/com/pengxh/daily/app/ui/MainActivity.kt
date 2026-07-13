@@ -451,8 +451,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 TaskScheduler.startTask(this)
             }
 
-            is ApplicationEvent.StopDailyTask -> doStopTask()
-
             is ApplicationEvent.ProjectionDestroyed -> {
                 "截屏服务已停止，已切换到通知模式".show(this)
                 SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)

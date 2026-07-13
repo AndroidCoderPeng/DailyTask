@@ -8,7 +8,6 @@ sealed class ApplicationEvent {
     /**
      * 任务控制事件
      */
-    object StopDailyTask : ApplicationEvent()
     object ResetDailyTask : ApplicationEvent()
 
     /**
