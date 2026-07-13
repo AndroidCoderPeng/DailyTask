@@ -126,6 +126,21 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 }
             }
         }
+
+        lifecycleScope.launch {
+            ChinaHolidayManager.syncResult.collect { result ->
+                when (result) {
+                    is ChinaHolidayManager.SyncResult.Success -> {
+                        LoadingDialog.dismiss()
+                        result.content.show(context)
+                    }
+                    is ChinaHolidayManager.SyncResult.Error -> {
+                        LoadingDialog.dismiss()
+                        result.message.show(context)
+                    }
+                }
+            }
+        }
     }
 
     @Suppress("unused")
@@ -242,18 +257,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         binding.updateHolidayLayout.setOnClickListener {
             LoadingDialog.show(this, "更新中，请稍后...")
-            ChinaHolidayManager.updateChinaHolidayData(object :
-                ChinaHolidayManager.OnUpdateListener {
-                override fun onSyncSuccess(message: String) {
-                    LoadingDialog.dismiss()
-                    message.show(context)
-                }
-
-                override fun onSyncError(message: String) {
-                    LoadingDialog.dismiss()
-                    message.show(context)
-                }
-            })
+            ChinaHolidayManager.updateChinaHolidayData()
         }
 
         binding.floatingSwitch.setOnClickListener {

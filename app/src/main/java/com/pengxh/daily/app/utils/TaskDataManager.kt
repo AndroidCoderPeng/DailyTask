@@ -16,7 +16,7 @@ class TaskDataManager() {
         Regex("""^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$""")
     }
 
-    fun importTasks(json: String): ImportResult {
+    suspend fun importTasks(json: String): ImportResult {
         return try {
             val type = object : TypeToken<ExportDataModel>() {}.type
             val config = gson.fromJson<ExportDataModel>(json, type)

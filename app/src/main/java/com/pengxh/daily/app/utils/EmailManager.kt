@@ -7,6 +7,8 @@ import com.pengxh.daily.app.BuildConfig
 import com.pengxh.kt.lite.extensions.timestampToDate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -24,6 +26,7 @@ import javax.mail.internet.MimeMultipart
 
 class EmailManager(private val context: Context) {
     private val kTag = "EmailManager"
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val batteryManager by lazy { context.getSystemService(BatteryManager::class.java) }
 
     private fun createSmtpProperties(): Properties {
@@ -150,7 +153,7 @@ class EmailManager(private val context: Context) {
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             try {
                 Transport.send(message)
                 if (isTest) {
@@ -176,5 +179,9 @@ class EmailManager(private val context: Context) {
                 }
             }
         }
+    }
+
+    fun release() {
+        scope.cancel()
     }
 }

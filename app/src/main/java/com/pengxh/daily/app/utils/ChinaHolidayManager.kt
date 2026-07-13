@@ -7,6 +7,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -23,6 +25,9 @@ object ChinaHolidayManager {
     private const val kTag = "ChinaHolidayManager"
     private const val CACHE_KEY = "holidayConfig"
 
+    private val _syncResult = MutableSharedFlow<SyncResult>(extraBufferCapacity = 1)
+    val syncResult = _syncResult.asSharedFlow()
+
     /**
      * CDN 镜像源
      * */
@@ -32,9 +37,9 @@ object ChinaHolidayManager {
         "https://registry.npmmirror.com/chinese-days/latest/files/dist/years/%s.json"
     )
 
-    private sealed class DownloadResult {
-        data class Success(val content: String) : DownloadResult()
-        data class Error(val message: String) : DownloadResult()
+    sealed class SyncResult {
+        data class Success(val content: String) : SyncResult()
+        data class Error(val message: String) : SyncResult()
     }
 
     private val scope = CoroutineScope(SupervisorJob())
@@ -44,7 +49,6 @@ object ChinaHolidayManager {
         .readTimeout(10, TimeUnit.SECONDS)
         .followRedirects(true)
         .build()
-    private var listener: OnUpdateListener? = null
 
     @Volatile
     private var holidayDates: Set<LocalDate> = emptySet()
@@ -55,12 +59,11 @@ object ChinaHolidayManager {
     private val isSyncing = AtomicBoolean(false)
     private val dataMutex = Mutex()
 
-    fun updateChinaHolidayData(listener: OnUpdateListener?) {
+    fun updateChinaHolidayData() {
         if (!isSyncing.compareAndSet(false, true)) {
             Log.w(kTag, "Already syncing, skip duplicate request")
             return
         }
-        this.listener = listener
         scope.launch {
             try {
                 tryLoadFromCache()
@@ -100,12 +103,12 @@ object ChinaHolidayManager {
         for (url in urls) {
             val outcome = downloadJson(url)
             when (outcome) {
-                is DownloadResult.Success -> {
+                is SyncResult.Success -> {
                     resultJson = outcome.content
                     break
                 }
 
-                is DownloadResult.Error -> Log.w(kTag, "Network error: ${outcome.message}")
+                is SyncResult.Error -> Log.w(kTag, "Network error: ${outcome.message}")
             }
         }
 
@@ -117,26 +120,26 @@ object ChinaHolidayManager {
         handleHolidayData(resultJson)
     }
 
-    private suspend fun downloadJson(urlString: String): DownloadResult {
+    private suspend fun downloadJson(urlString: String): SyncResult {
         return withContext(Dispatchers.IO) {
             try {
                 val request = Request.Builder().url(urlString).build()
                 okHttpClient.newCall(request).execute().use { response ->
                     val body = response.body.string()
                     if (!response.isSuccessful || body.isEmpty()) {
-                        DownloadResult.Error("HTTP ${response.code}")
+                        SyncResult.Error("HTTP ${response.code}")
                     } else {
                         try {
                             // 仅做Json格式校验，返回值不必处理
                             val element = JsonParser.parseString(body)
                         } catch (_: Exception) {
-                            return@withContext DownloadResult.Error("Invalid JSON")
+                            return@withContext SyncResult.Error("Invalid JSON")
                         }
-                        DownloadResult.Success(body)
+                        SyncResult.Success(body)
                     }
                 }
             } catch (e: IOException) {
-                DownloadResult.Error(e.message ?: "Unknown")
+                SyncResult.Error(e.message ?: "Unknown")
             }
         }
     }
@@ -203,19 +206,10 @@ object ChinaHolidayManager {
     }
 
     private suspend fun notifySuccess(message: String) {
-        withContext(Dispatchers.Main) {
-            listener?.onSyncSuccess(message)
-        }
+        _syncResult.emit(SyncResult.Success(message))
     }
 
     private suspend fun notifyError(message: String) {
-        withContext(Dispatchers.Main) {
-            listener?.onSyncError(message)
-        }
-    }
-
-    interface OnUpdateListener {
-        fun onSyncSuccess(message: String)
-        fun onSyncError(message: String)
+        _syncResult.emit(SyncResult.Error(message))
     }
 }

@@ -48,8 +48,6 @@ class DailyTaskApplication : Application() {
         }
         ConfigStore.init(file.absolutePath)
 
-        dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db")
-            .allowMainThreadQueries()
-            .build()
+        dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db").build()
     }
 }

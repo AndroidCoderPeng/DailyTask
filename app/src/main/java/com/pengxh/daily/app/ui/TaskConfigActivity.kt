@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.isApplicationExist
@@ -16,7 +17,6 @@ import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.AlarmScheduler
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.FloatingWindowController
@@ -28,7 +28,7 @@ import com.pengxh.kt.lite.extensions.toJson
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
-import org.greenrobot.eventbus.EventBus
+import kotlinx.coroutines.launch
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -203,11 +203,13 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             }
 
             // TaskBeans
-            val taskBeans = DatabaseWrapper.loadAllTask()
-            if (taskBeans.isNotEmpty()) {
-                exportData.tasks = taskBeans
-            } else {
-                exportData.tasks = ArrayList<DailyTaskBean>()
+            lifecycleScope.launch {
+                val taskBeans = DatabaseWrapper.loadAllTask()
+                if (taskBeans.isNotEmpty()) {
+                    exportData.tasks = taskBeans
+                } else {
+                    exportData.tasks = ArrayList<DailyTaskBean>()
+                }
             }
 
             val json = exportData.toJson()

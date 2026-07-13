@@ -2,6 +2,7 @@ package com.pengxh.daily.app.utils
 
 import android.content.Context
 import android.os.SystemClock
+import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.resolveExecutionTime
@@ -27,7 +28,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 /**
- * 任务调度器（协程版）
+ * 任务调度器
  *
  * 完整时序：
  *   ┌─────────────────────────────────────────────────────────┐
@@ -107,7 +108,7 @@ object TaskScheduler {
      * 启动每日任务调度
      * 时序：防重复 → 检查协程作用域 → 判断周末/节假日 → 构建排程 → 启动核心循环
      */
-    fun startTask(context: Context) {
+    fun startTask() {
         val currentState = _state.value
         if (currentState is SchedulerState.Executing || currentState is SchedulerState.Skipped) {
             LogFileManager.writeLog("任务已在执行中，忽略重复启动")
@@ -126,15 +127,15 @@ object TaskScheduler {
             return
         }
 
-        val schedule = buildTodaySchedule()
-        if (schedule.isEmpty()) {
-            _state.update { SchedulerState.Idle }
-            return
-        }
+        currentScope.launch {
+            val schedule = buildTodaySchedule()
+            if (schedule.isEmpty()) {
+                _state.update { SchedulerState.Idle }
+                return@launch
+            }
 
-        LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
-        job = currentScope.launch {
-            executeSchedule(context, schedule)
+            LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
+            executeSchedule(schedule)
         }
     }
 
@@ -145,10 +146,7 @@ object TaskScheduler {
      *   阶段2 - openApplication() + select{超时|打卡} 竞态等待
      *   阶段3 - 推进到下一个任务（或全部完成 emit Completed）
      */
-    private suspend fun CoroutineScope.executeSchedule(
-        context: Context,
-        schedule: List<ScheduledTask>
-    ) {
+    private suspend fun CoroutineScope.executeSchedule(schedule: List<ScheduledTask>) {
         var executedCount = 0
         var skippedCount = 0
 
@@ -191,7 +189,7 @@ object TaskScheduler {
                 Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
             )
 
-            context.openApplication()
+            DailyTaskApplication.get().openApplication()
 
             // Kotlin语法糖——竞态保护：select 只取先完成的分支，另一个自动取消
             var hasCaptured = false
@@ -331,7 +329,7 @@ object TaskScheduler {
     /**
      * 从数据库加载所有任务，计算出当日实际执行时间，按时间排序
      * */
-    private fun buildTodaySchedule(): List<ScheduledTask> {
+    private suspend fun buildTodaySchedule(): List<ScheduledTask> {
         val allTasks = DatabaseWrapper.loadAllTask()
         if (allTasks.isEmpty()) return emptyList()
 

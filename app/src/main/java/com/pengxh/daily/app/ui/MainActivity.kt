@@ -199,13 +199,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.contentView.background = WatermarkDrawable(this, DailyTask.getWatermarkText())
 
         // 加载任务列表
-        taskBeans = DatabaseWrapper.loadAllTask()
-        if (taskBeans.isEmpty()) {
-            binding.recyclerView.visibility = View.GONE
-            binding.emptyView.visibility = View.VISIBLE
-        } else {
-            binding.recyclerView.visibility = View.VISIBLE
-            binding.emptyView.visibility = View.GONE
+        lifecycleScope.launch {
+            taskBeans = DatabaseWrapper.loadAllTask()
+            if (taskBeans.isEmpty()) {
+                binding.recyclerView.visibility = View.GONE
+                binding.emptyView.visibility = View.VISIBLE
+            } else {
+                binding.recyclerView.visibility = View.VISIBLE
+                binding.emptyView.visibility = View.GONE
+            }
         }
 
         binding.recyclerView.adapter = dailyTaskAdapter
@@ -227,6 +229,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         // 前台服务（保活 + 托管 TaskScheduler 协程作用域 + 每日重置）
         Intent(this, ForegroundRunningService::class.java).apply { startForegroundService(this) }
 
+        // ================================================================
+        // 每个 lifecycleScope.launch 都是独立的协程，互斥，不能为了省事把协程合并，否则只会执行第一个协程的业务，其他的业务被挂起
+        // ================================================================
+
+        // 订阅每日重置时间倒计时
         lifecycleScope.launch {
             ForegroundRunningService.resetTickTime.collect { text ->
                 binding.repeatTimeView.text = text
@@ -249,7 +256,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
         if (stickyReset != null) {
             EventBus.getDefault().removeStickyEvent(stickyReset)
-            TaskScheduler.startTask(this)
+            TaskScheduler.startTask()
         }
 
         // 兜底检查是否有错过的每日重置
@@ -261,11 +268,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             if (TaskScheduler.isRunning()) {
                 doStopTask()
             } else {
-                if (DatabaseWrapper.loadAllTask().isEmpty()) {
-                    "循环任务启动失败，请先添加任务时间点".show(this)
-                    return@setOnClickListener
+                lifecycleScope.launch {
+                    if (DatabaseWrapper.loadAllTask().isEmpty()) {
+                        "循环任务启动失败，请先添加任务时间点".show(context)
+                        return@launch
+                    }
+                    TaskScheduler.startTask()
                 }
-                TaskScheduler.startTask(this)
             }
         }
     }
@@ -319,7 +328,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
             is MonitorEvent.StartTaskCommand -> {
                 if (!TaskScheduler.isRunning()) {
-                    TaskScheduler.startTask(this)
+                    TaskScheduler.startTask()
                 }
             }
 
@@ -448,7 +457,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         when (event) {
             is ApplicationEvent.ResetDailyTask -> {
                 EventBus.getDefault().removeStickyEvent(ApplicationEvent.ResetDailyTask)
-                TaskScheduler.startTask(this)
+                TaskScheduler.startTask()
             }
 
             is ApplicationEvent.ProjectionDestroyed -> {
@@ -488,11 +497,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 timePicker.selectedMinute,
                 timePicker.selectedSecond
             )
-            item.time = time
-            DatabaseWrapper.updateTask(item)
-            taskBeans = DatabaseWrapper.loadAllTask()
-            dailyTaskAdapter.refresh(taskBeans)
-            dialog.dismiss()
+
+            lifecycleScope.launch {
+                item.time = time
+                DatabaseWrapper.updateTask(item)
+                taskBeans = DatabaseWrapper.loadAllTask()
+                dailyTaskAdapter.refresh(taskBeans)
+                dialog.dismiss()
+            }
         }
         dialog.show()
     }
@@ -511,19 +523,21 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             .setCancelable(false) // 禁止点击外部关闭
             .setPositiveButton("确定") { _, _ ->
                 try {
-                    val item = taskBeans[position]
-                    DatabaseWrapper.deleteTask(item)
+                    lifecycleScope.launch {
+                        val item = taskBeans[position]
+                        DatabaseWrapper.deleteTask(item)
 
-                    // 为了确保数据一致性，重新从数据库加载数据
-                    taskBeans = DatabaseWrapper.loadAllTask()
-                    dailyTaskAdapter.refresh(taskBeans)
+                        // 为了确保数据一致性，重新从数据库加载数据
+                        taskBeans = DatabaseWrapper.loadAllTask()
+                        dailyTaskAdapter.refresh(taskBeans)
 
-                    if (taskBeans.isEmpty()) {
-                        binding.recyclerView.visibility = View.GONE
-                        binding.emptyView.visibility = View.VISIBLE
-                    } else {
-                        binding.recyclerView.visibility = View.VISIBLE
-                        binding.emptyView.visibility = View.GONE
+                        if (taskBeans.isEmpty()) {
+                            binding.recyclerView.visibility = View.GONE
+                            binding.emptyView.visibility = View.VISIBLE
+                        } else {
+                            binding.recyclerView.visibility = View.VISIBLE
+                            binding.emptyView.visibility = View.GONE
+                        }
                     }
                 } catch (e: IndexOutOfBoundsException) {
                     e.printStackTrace()
@@ -547,19 +561,21 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 timePicker.selectedSecond
             )
 
-            if (DatabaseWrapper.isTaskTimeExist(time)) {
-                "任务时间点已存在".show(this)
-                return@setOnClickListener
+            lifecycleScope.launch {
+                if (DatabaseWrapper.isTaskTimeExist(time)) {
+                    "任务时间点已存在".show(context)
+                    return@launch
+                }
+                binding.recyclerView.visibility = View.VISIBLE
+                binding.emptyView.visibility = View.GONE
+                val bean = DailyTaskBean().apply {
+                    this.time = time
+                }
+                DatabaseWrapper.insert(bean)
+                taskBeans = DatabaseWrapper.loadAllTask()
+                dailyTaskAdapter.refresh(taskBeans)
+                dialog.dismiss()
             }
-            binding.recyclerView.visibility = View.VISIBLE
-            binding.emptyView.visibility = View.GONE
-            val bean = DailyTaskBean().apply {
-                this.time = time
-            }
-            DatabaseWrapper.insert(bean)
-            taskBeans = DatabaseWrapper.loadAllTask()
-            dailyTaskAdapter.refresh(taskBeans)
-            dialog.dismiss()
         }
         dialog.show()
     }
@@ -574,19 +590,22 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             .setOnDialogButtonClickListener(object :
                 AlertInputDialog.OnDialogButtonClickListener {
                 override fun onConfirmClick(value: String) {
-                    when (val result = taskDataManager.importTasks(value)) {
-                        is TaskDataManager.ImportResult.Success -> {
-                            if (result.count > 0) {
-                                taskBeans = DatabaseWrapper.loadAllTask()
-                                dailyTaskAdapter.refresh(taskBeans)
-                                binding.recyclerView.visibility = View.VISIBLE
-                                binding.emptyView.visibility = View.GONE
+                    // 同一个业务，可以使用同一个协程作用域，避免重复创建
+                    lifecycleScope.launch {
+                        when (val result = taskDataManager.importTasks(value)) {
+                            is TaskDataManager.ImportResult.Success -> {
+                                if (result.count > 0) {
+                                    taskBeans = DatabaseWrapper.loadAllTask()
+                                    dailyTaskAdapter.refresh(taskBeans)
+                                    binding.recyclerView.visibility = View.VISIBLE
+                                    binding.emptyView.visibility = View.GONE
+                                }
+                                "任务导入成功".show(context)
                             }
-                            "任务导入成功".show(context)
-                        }
 
-                        is TaskDataManager.ImportResult.Error -> {
-                            result.message.show(context)
+                            is TaskDataManager.ImportResult.Error -> {
+                                result.message.show(context)
+                            }
                         }
                     }
                 }
@@ -665,7 +684,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
 
         if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
-            TaskScheduler.startTask(this)
+            TaskScheduler.startTask()
         }
     }
 

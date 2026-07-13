@@ -27,9 +27,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class FloatingWindowService : Service(),
-    CoroutineScope by CoroutineScope(Dispatchers.Main),
-    FloatingWindowController.OnFloatingWindowView {
+class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
     private val kTag = "FloatingWindowService"
     private val windowManager by lazy { getSystemService(WindowManager::class.java) }
@@ -52,8 +50,32 @@ class FloatingWindowService : Service(),
         super.onCreate()
         binding = WindowFloatingBinding.inflate(LayoutInflater.from(this))
 
-        // 注册到控制器
-        FloatingWindowController.register(this)
+        // 收集悬浮窗控制事件
+        launch {
+            FloatingWindowController.timeTick.collect { tick ->
+                binding.timeView.text = "${tick}s"
+                binding.root.alpha = if (tick < 1) 0.0f else 1.0f
+            }
+        }
+        launch {
+            FloatingWindowController.overtime.collect { seconds ->
+                binding.timeView.text = "${seconds}s"
+            }
+        }
+        launch {
+            FloatingWindowController.visibility.collect { visible ->
+                if (visible) {
+                    binding.root.alpha = 1.0f
+                    val time = SaveKeyValues.loadInt(
+                        Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+                    )
+                    binding.timeView.text = "${time}s"
+                } else {
+                    binding.root.alpha = 0.0f
+                    binding.timeView.text = "0s"
+                }
+            }
+        }
 
         floatViewParams = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -77,31 +99,6 @@ class FloatingWindowService : Service(),
         startMemoryMonitoring()
     }
 
-    override fun updateTime(tick: Int) {
-        binding.timeView.text = "${tick}s"
-        binding.root.alpha = if (tick < 1) 0.0f else 1.0f
-    }
-
-    override fun setOvertime(seconds: Int) {
-        binding.timeView.text = "${seconds}s"
-    }
-
-    override fun setVisible(visible: Boolean) {
-        if (visible) {
-            binding.root.alpha = 1.0f
-            val time = SaveKeyValues.loadInt(
-                Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
-            )
-            binding.timeView.text = "${time}s"
-        } else {
-            binding.root.alpha = 0.0f
-            binding.timeView.text = "0s"
-        }
-    }
-
-    // ============================================================
-    // 内存监控
-    // ============================================================
     private fun startMemoryMonitoring() {
         val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
         val interval = if (mode) {
@@ -181,7 +178,6 @@ class FloatingWindowService : Service(),
 
     override fun onDestroy() {
         super.onDestroy()
-        FloatingWindowController.unregister()
         memoryMonitorJob?.cancel()
         cancel()
         if (::binding.isInitialized && binding.root.isAttachedToWindow) {

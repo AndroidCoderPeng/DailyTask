@@ -8,6 +8,8 @@ import com.pengxh.kt.lite.extensions.timestampToDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -19,7 +21,7 @@ import java.util.concurrent.TimeUnit
 class HttpRequestManager(private val context: Context) {
 
     private val kTag = "HttpRequestManager"
-
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val okHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
@@ -29,7 +31,7 @@ class HttpRequestManager(private val context: Context) {
     private val batteryManager by lazy { context.getSystemService(BatteryManager::class.java) }
 
     fun sendMessage(title: String, message: String) {
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             val webhookKey = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
             if (webhookKey.isBlank()) {
                 Log.e(kTag, "企业微信 Webhook Key 未配置")
@@ -67,5 +69,9 @@ class HttpRequestManager(private val context: Context) {
                 Log.e(kTag, "发送失败", e)
             }
         }
+    }
+
+    fun release() {
+        scope.cancel()
     }
 }

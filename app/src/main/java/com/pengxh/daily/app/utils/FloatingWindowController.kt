@@ -1,43 +1,35 @@
 package com.pengxh.daily.app.utils
 
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
+
 /**
  * 悬浮窗控制器
- *
- * FloatingWindowService 在 onCreate/onDestroy 中注册/注销自身，
- * 其他组件直接调用方法即可。
  */
 object FloatingWindowController {
 
-    interface OnFloatingWindowView {
-        fun updateTime(tick: Int)
-        fun setOvertime(seconds: Int)
-        fun setVisible(visible: Boolean)
-    }
+    private val _timeTick = MutableSharedFlow<Int>(extraBufferCapacity = 2)
+    val timeTick = _timeTick.asSharedFlow()
 
-    @Volatile
-    private var view: OnFloatingWindowView? = null
+    private val _overtime = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val overtime = _overtime.asSharedFlow()
 
-    fun register(v: OnFloatingWindowView) {
-        view = v
-    }
-
-    fun unregister() {
-        view = null
-    }
+    private val _visibility = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1)
+    val visibility = _visibility.asSharedFlow()
 
     fun updateTime(tick: Int) {
-        view?.updateTime(tick)
+        _timeTick.tryEmit(tick)
     }
 
     fun setOvertime(seconds: Int) {
-        view?.setOvertime(seconds)
+        _overtime.tryEmit(seconds)
     }
 
     fun show() {
-        view?.setVisible(true)
+        _visibility.tryEmit(true)
     }
 
     fun hide() {
-        view?.setVisible(false)
+        _visibility.tryEmit(false)
     }
 }

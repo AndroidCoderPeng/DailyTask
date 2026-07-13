@@ -7,27 +7,18 @@ import java.util.concurrent.atomic.AtomicReference
 object ProjectionSession {
     private const val kTag = "ProjectionSession"
 
-    enum class State {
-        IDLE,
-        ACTIVE,
-        NEED_AUTH
-    }
+    enum class State { IDLE, ACTIVE, NEED_AUTH }
 
     private val projectionRef = AtomicReference<MediaProjection?>(null)
 
+    @Volatile
     private var state = State.IDLE
 
-    fun isStateActive(): Boolean {
-        return synchronized(this) {
-            state == State.ACTIVE
-        }
-    }
+    // 单字段读取，不需要同步
+    fun isStateActive(): Boolean = state == State.ACTIVE
 
-    fun getState(): State {
-        return synchronized(this) {
-            state
-        }
-    }
+    // 同上
+    fun getState(): State = state
 
     fun setProjection(projection: MediaProjection) {
         synchronized(this) {
@@ -42,6 +33,7 @@ object ProjectionSession {
         }
     }
 
+    // 同上
     fun getProjection(): MediaProjection? = projectionRef.get()
 
     fun markStoppedNeedAuth() {
