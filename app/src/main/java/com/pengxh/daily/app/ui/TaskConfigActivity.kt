@@ -12,6 +12,7 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.isApplicationExist
 import com.pengxh.daily.app.model.ExportDataModel
+import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.AlarmScheduler
@@ -275,7 +276,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         AlarmScheduler.cancel(this)
         AlarmScheduler.schedule(this, hour)
         // 通知 Service 更新倒计时显示
-        EventBus.getDefault().post(ApplicationEvent.SetResetTaskTime)
+        ForegroundRunningService.emitResetTaskTime()
     }
 
     private fun setTimeByPosition(position: Int) {

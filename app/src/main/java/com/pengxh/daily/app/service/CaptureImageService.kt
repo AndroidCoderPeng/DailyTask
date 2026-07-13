@@ -54,7 +54,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         val captureResults = _captureResults.asSharedFlow()
 
         /**
-         * 截屏服务内部调用，发布截屏结果
+         * 发布截屏结果
          * */
         fun emitCaptureResult(imagePath: String) {
             _captureResults.tryEmit(imagePath)

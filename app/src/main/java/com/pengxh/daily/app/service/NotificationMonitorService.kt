@@ -42,13 +42,19 @@ class NotificationMonitorService : NotificationListenerService() {
         private val _events = MutableSharedFlow<MonitorEvent>(extraBufferCapacity = 2)
         val events = _events.asSharedFlow()
 
-        fun emit(event: MonitorEvent) {
+        /**
+         * 发送事件
+         */
+        fun emitMonitorEvent(event: MonitorEvent) {
             _events.tryEmit(event)
         }
 
         private val _listenerState = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1)
         val listenerState = _listenerState.asSharedFlow()
 
+        /**
+         * 发送监听状态
+         */
         fun emitListenerState(connected: Boolean) {
             _listenerState.tryEmit(connected)
         }
@@ -94,7 +100,7 @@ class NotificationMonitorService : NotificationListenerService() {
         // 目标应用打卡通知
         if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0) {
             if (pkg == targetApp && notice.contains("成功")) {
-                emit(MonitorEvent.ClockInSuccess)
+                emitMonitorEvent(MonitorEvent.ClockInSuccess)
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
                     SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
@@ -128,9 +134,9 @@ class NotificationMonitorService : NotificationListenerService() {
     private fun handleRemoteCommand(pkg: String, notice: String) {
         if (pkg in auxiliaryApp) {
             when {
-                notice.contains("执行任务") -> emit(MonitorEvent.StartTaskCommand)
+                notice.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
 
-                notice.contains("终止任务") -> emit(MonitorEvent.StopTaskCommand)
+                notice.contains("终止任务") -> emitMonitorEvent(MonitorEvent.StopTaskCommand)
 
                 notice.contains("开启循环") -> {
                     SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
@@ -142,9 +148,9 @@ class NotificationMonitorService : NotificationListenerService() {
                     sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
                 }
 
-                notice.contains("息屏") -> emit(MonitorEvent.ShowMaskCommand)
+                notice.contains("息屏") -> emitMonitorEvent(MonitorEvent.ShowMaskCommand)
 
-                notice.contains("亮屏") -> emit(MonitorEvent.HideMaskCommand)
+                notice.contains("亮屏") -> emitMonitorEvent(MonitorEvent.HideMaskCommand)
 
                 notice.contains("考勤记录") -> {
                     serviceScope.launch {
@@ -186,7 +192,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("截屏") -> {
                     if (ProjectionSession.isStateActive()) {
-                        openApplication { emit(MonitorEvent.AppOpenedForScreenshot) }
+                        openApplication { emitMonitorEvent(MonitorEvent.AppOpenedForScreenshot) }
                     } else {
                         sendChannelMessage("截屏状态通知", "截屏服务已断开，截屏失败")
                     }

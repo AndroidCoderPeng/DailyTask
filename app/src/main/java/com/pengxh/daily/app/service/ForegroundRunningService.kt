@@ -29,8 +29,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -46,8 +44,31 @@ class ForegroundRunningService : Service() {
         private val _notificationText = MutableSharedFlow<String>(extraBufferCapacity = 1)
         val notificationText = _notificationText.asSharedFlow()
 
+        /**
+         * 更新通知文字
+         * */
         fun emitNotificationText(text: String) {
             _notificationText.tryEmit(text)
+        }
+
+        private val _resetTickTime = MutableSharedFlow<String>(replay = 1, extraBufferCapacity = 1)
+        val resetTickTime = _resetTickTime.asSharedFlow()
+
+        /**
+         * 更新任务重置时间倒计时文字
+         * */
+        fun emitResetTickTime(text: String) {
+            _resetTickTime.tryEmit(text)
+        }
+
+        private val _resetTaskTime = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+        val resetTaskTime = _resetTaskTime.asSharedFlow()
+
+        /**
+         * 更新任务重置时间点
+         * */
+        fun emitResetTaskTime() {
+            _resetTaskTime.tryEmit(Unit)
         }
     }
 
@@ -62,8 +83,6 @@ class ForegroundRunningService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        EventBus.getDefault().register(this)
-
         // 注入协程作用域给 TaskScheduler
         TaskScheduler.attach(serviceScope)
 
@@ -108,6 +127,12 @@ class ForegroundRunningService : Service() {
             }
         }
 
+        serviceScope.launch {
+            resetTaskTime.collect {
+                updateResetTimeView()
+            }
+        }
+
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_TIME_TICK) // 每分钟广播
             addAction(Intent.ACTION_BATTERY_CHANGED) // 电池状态改变广播
@@ -149,14 +174,6 @@ class ForegroundRunningService : Service() {
         }
     }
 
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleApplicationEvent(event: ApplicationEvent) {
-        if (event is ApplicationEvent.SetResetTaskTime) {
-            updateResetTimeView()
-        }
-    }
-
     private fun updateResetTimeView() {
         val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         val seconds = resetTaskSeconds(resetHour)
@@ -164,7 +181,7 @@ class ForegroundRunningService : Service() {
         val hours = seconds / 3600
         val minutes = (seconds % 3600) / 60
         val time = String.format(Locale.getDefault(), "%02d小时%02d分钟", hours, minutes)
-        EventBus.getDefault().post(ApplicationEvent.UpdateResetTickTime("${time}后刷新每日任务"))
+        emitResetTickTime("${time}后刷新每日任务")
     }
 
     private fun resetTaskSeconds(hour: Int): Int {
@@ -268,7 +285,6 @@ class ForegroundRunningService : Service() {
             Constant.FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID, notification
         )
 
-        EventBus.getDefault().unregister(this)
         serviceScope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }

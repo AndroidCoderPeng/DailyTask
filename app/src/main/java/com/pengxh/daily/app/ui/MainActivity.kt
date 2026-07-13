@@ -227,7 +227,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         // 前台服务（保活 + 托管 TaskScheduler 协程作用域 + 每日重置）
         Intent(this, ForegroundRunningService::class.java).apply { startForegroundService(this) }
 
-        // 订阅通知监听事件（替代原 MonitorCallback 接口）
+        lifecycleScope.launch {
+            ForegroundRunningService.resetTickTime.collect { text ->
+                binding.repeatTimeView.text = text
+            }
+        }
+
+        // 订阅通知监听事件
         lifecycleScope.launch {
             NotificationMonitorService.events.collect { event -> handleMonitorEvent(event) }
         }
@@ -443,10 +449,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             is ApplicationEvent.ResetDailyTask -> {
                 EventBus.getDefault().removeStickyEvent(ApplicationEvent.ResetDailyTask)
                 TaskScheduler.startTask(this)
-            }
-
-            is ApplicationEvent.UpdateResetTickTime -> {
-                binding.repeatTimeView.text = event.countDownTime
             }
 
             is ApplicationEvent.StopDailyTask -> doStopTask()

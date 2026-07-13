@@ -9,8 +9,6 @@ sealed class ApplicationEvent {
      * 任务控制事件
      */
     object StopDailyTask : ApplicationEvent()
-    object SetResetTaskTime : ApplicationEvent()
-    data class UpdateResetTickTime(val countDownTime: String) : ApplicationEvent()
     object ResetDailyTask : ApplicationEvent()
 
     /**
