@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.utils
 
-import android.content.Context
 import android.os.SystemClock
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.extensions.formatTime
@@ -12,6 +11,7 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.greenrobot.eventbus.EventBus
 import java.time.DayOfWeek
@@ -129,7 +128,7 @@ object TaskScheduler {
             return
         }
 
-        currentScope.launch {
+        job = currentScope.launch {
             val schedule = buildTodaySchedule()
             if (schedule.isEmpty()) {
                 _state.update { SchedulerState.Idle }
