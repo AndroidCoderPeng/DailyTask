@@ -38,6 +38,7 @@ import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
+import com.pengxh.daily.app.utils.MonitorEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.SchedulerState
 import com.pengxh.daily.app.utils.TaskDataManager
@@ -67,13 +68,7 @@ import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 
-class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
-    NotificationMonitorService.MonitorCallback {
-
-    companion object {
-        @Volatile
-        var isTaskStarted = false
-    }
+class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private val context by lazy { this }
     private val dateTimeFormat by lazy {
@@ -161,7 +156,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
                 R.id.menu_add_task -> {
-                    if (isTaskStarted) {
+                    if (TaskScheduler.isRunning()) {
                         "任务进行中，无法添加".show(this)
                         return@setOnMenuItemClickListener true
                     }
@@ -230,8 +225,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
         // 前台服务（保活 + 托管 TaskScheduler 协程作用域 + 每日重置）
         Intent(this, ForegroundRunningService::class.java).apply { startForegroundService(this) }
 
-        // 注册监听服务回调
-        NotificationMonitorService.monitorCallback = this
+        // 订阅通知监听事件（替代原 MonitorCallback 接口）
+        lifecycleScope.launch {
+            NotificationMonitorService.events.collect { event -> handleMonitorEvent(event) }
+        }
 
         // 订阅 TaskScheduler 状态 → UI 更新
         lifecycleScope.launch {
@@ -253,7 +250,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
     override fun initEvent() {
         binding.executeTaskButton.setOnClickListener {
-            if (isTaskStarted) {
+            if (TaskScheduler.isRunning()) {
                 doStopTask()
             } else {
                 if (DatabaseWrapper.loadAllTask().isEmpty()) {
@@ -293,10 +290,71 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
     override fun onDestroy() {
         super.onDestroy()
-        NotificationMonitorService.monitorCallback = null
         mainHandler.removeCallbacksAndMessages(null)
         maskViewController.destroy()
         EventBus.getDefault().unregister(this)
+    }
+
+    // ================================================================
+    // NotificationMonitorService 状态观察 → UI 更新
+    // ================================================================
+
+    /**
+     * 根据 MonitorEvent 驱动 UI 变化
+     */
+    private fun handleMonitorEvent(event: MonitorEvent) {
+        when (event) {
+            is MonitorEvent.ClockInSuccess -> {
+                TaskScheduler.notifyClockIn() // 通知 TaskScheduler：打卡成功，取消超时等待分支
+                backToMainActivity()
+            }
+
+            is MonitorEvent.StartTaskCommand -> {
+                if (!TaskScheduler.isRunning()) {
+                    TaskScheduler.startTask(this)
+                }
+            }
+
+            is MonitorEvent.StopTaskCommand -> doStopTask()
+
+            is MonitorEvent.ShowMaskCommand -> {
+                if (!maskViewController.isMaskVisible()) {
+                    maskViewController.showMaskView()
+                }
+            }
+
+            is MonitorEvent.HideMaskCommand -> {
+                if (maskViewController.isMaskVisible()) {
+                    maskViewController.hideMaskView()
+                }
+            }
+
+            is MonitorEvent.AppOpenedForScreenshot -> {
+                // 遥控"截屏"指令：等待 3 秒让目标 App 界面稳定，然后截屏
+                lifecycleScope.launch {
+                    // 倒计时 3 秒，更新悬浮窗
+                    val target = SystemClock.elapsedRealtime() + 3000L
+                    while (true) {
+                        val remaining = target - SystemClock.elapsedRealtime()
+                        if (remaining <= 0) break
+                        val tick = (remaining / 1000).toInt()
+                        FloatingWindowController.updateTime(tick)
+                        delay(minOf(1000L, remaining).coerceAtLeast(1))
+                    }
+                    // 触发截屏
+                    EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
+                    // 回到主界面并发送通知
+                    backToMainActivity()
+                    if (imagePath.isEmpty()) {
+                        messageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
+                    } else {
+                        messageDispatcher.sendAttachmentMessage(
+                            "截屏状态通知", "截图完成", imagePath
+                        )
+                    }
+                }
+            }
+        }
     }
 
     // ================================================================
@@ -305,20 +363,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
 
     /**
      * 根据 SchedulerState 驱动 UI 变化
-     * 这是 View ← ViewModel 的桥梁，替代了原来 7 个回调接口
      */
     private fun handleSchedulerState(state: SchedulerState) {
         when (state) {
             is SchedulerState.Idle -> {
                 // 由 stopTask() 触发，重置 UI
-                isTaskStarted = false
                 dailyTaskAdapter.updateCurrentTaskState(-1)
                 binding.tipsView.text = ""
                 resetExecuteButton()
             }
 
             is SchedulerState.Skipped -> {
-                isTaskStarted = true
                 binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
                 binding.executeTaskButton.setIconTintResource(R.color.red)
                 binding.executeTaskButton.text = "停止"
@@ -330,7 +385,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
             }
 
             is SchedulerState.Executing -> {
-                isTaskStarted = true
                 // 首次进入执行态：更新按钮
                 if (binding.executeTaskButton.text != "停止") {
                     binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
@@ -393,59 +447,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     }
 
     // ================================================================
-    // MonitorCallback 实现
-    // ================================================================
-    override fun onClockInSuccess() {
-        // 通知 TaskScheduler：打卡成功，取消超时等待分支
-        TaskScheduler.notifyClockIn()
-        backToMainActivity()
-    }
-
-    override fun onStartTaskCommand() {
-        if (!TaskScheduler.isRunning()) {
-            TaskScheduler.startTask(this)
-        }
-    }
-
-    override fun onStopTaskCommand() = doStopTask()
-
-    override fun onShowMaskCommand() {
-        if (!maskViewController.isMaskVisible()) {
-            maskViewController.showMaskView()
-        }
-    }
-
-    override fun onHideMaskCommand() {
-        if (maskViewController.isMaskVisible()) {
-            maskViewController.hideMaskView()
-        }
-    }
-
-    override fun onAppOpenedForScreenshot() {
-        // 遥控"截屏"指令：等待 3 秒让目标 App 界面稳定，然后截屏
-        lifecycleScope.launch {
-            // 倒计时 3 秒，更新悬浮窗
-            val target = SystemClock.elapsedRealtime() + 3000L
-            while (true) {
-                val remaining = target - SystemClock.elapsedRealtime()
-                if (remaining <= 0) break
-                val tick = (remaining / 1000).toInt()
-                FloatingWindowController.updateTime(tick)
-                delay(minOf(1000L, remaining).coerceAtLeast(1))
-            }
-            // 触发截屏
-            EventBus.getDefault().post(ApplicationEvent.CaptureScreen)
-            // 回到主界面并发送通知
-            backToMainActivity()
-            if (imagePath.isEmpty()) {
-                messageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
-            } else {
-                messageDispatcher.sendAttachmentMessage("截屏状态通知", "截图完成", imagePath)
-            }
-        }
-    }
-
-    // ================================================================
     // 用户交互
     // ================================================================
 
@@ -453,7 +454,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
      * 列表项单击
      * */
     private fun itemClick(position: Int) {
-        if (isTaskStarted) {
+        if (TaskScheduler.isRunning()) {
             "任务进行中，无法修改".show(this)
             return
         }
@@ -486,7 +487,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
      * 列表项长按
      * */
     private fun itemLongClick(position: Int) {
-        if (isTaskStarted) {
+        if (TaskScheduler.isRunning()) {
             "任务进行中，无法删除".show(this)
             return
         }
@@ -606,7 +607,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>(),
     private fun doStopTask() {
         if (!TaskScheduler.isRunning()) return
         TaskScheduler.stopTask()
-        isTaskStarted = false
         dailyTaskAdapter.updateCurrentTaskState(-1)
         binding.tipsView.text = ""
         resetExecuteButton()

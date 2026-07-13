@@ -10,13 +10,14 @@ import android.util.Log
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
-import com.pengxh.daily.app.ui.MainActivity
 import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.HttpRequestManager
+import com.pengxh.daily.app.utils.MonitorEvent
 import com.pengxh.daily.app.utils.ProjectionSession
+import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.kt.lite.utils.SaveKeyValues
@@ -25,6 +26,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,8 +41,12 @@ import org.greenrobot.eventbus.EventBus
  */
 class NotificationMonitorService : NotificationListenerService() {
     companion object {
-        @Volatile
-        var monitorCallback: MonitorCallback? = null
+        private val _events = MutableSharedFlow<MonitorEvent>(extraBufferCapacity = 2)
+        val events = _events.asSharedFlow()
+
+        fun emit(event: MonitorEvent) {
+            _events.tryEmit(event)
+        }
     }
 
     private val kTag = "MonitorService"
@@ -82,7 +89,7 @@ class NotificationMonitorService : NotificationListenerService() {
         // 目标应用打卡通知
         if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0) {
             if (pkg == targetApp && notice.contains("成功")) {
-                monitorCallback?.onClockInSuccess()
+                emit(MonitorEvent.ClockInSuccess)
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
                     SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
@@ -116,13 +123,9 @@ class NotificationMonitorService : NotificationListenerService() {
     private fun handleRemoteCommand(pkg: String, notice: String) {
         if (pkg in auxiliaryApp) {
             when {
-                notice.contains("执行任务") -> {
-                    monitorCallback?.onStartTaskCommand()
-                }
+                notice.contains("执行任务") -> emit(MonitorEvent.StartTaskCommand)
 
-                notice.contains("终止任务") -> {
-                    monitorCallback?.onStopTaskCommand()
-                }
+                notice.contains("终止任务") -> emit(MonitorEvent.StopTaskCommand)
 
                 notice.contains("开启循环") -> {
                     SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
@@ -134,13 +137,9 @@ class NotificationMonitorService : NotificationListenerService() {
                     sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
                 }
 
-                notice.contains("息屏") -> {
-                    monitorCallback?.onShowMaskCommand()
-                }
+                notice.contains("息屏") -> emit(MonitorEvent.ShowMaskCommand)
 
-                notice.contains("亮屏") -> {
-                    monitorCallback?.onHideMaskCommand()
-                }
+                notice.contains("亮屏") -> emit(MonitorEvent.HideMaskCommand)
 
                 notice.contains("考勤记录") -> {
                     serviceScope.launch {
@@ -171,7 +170,7 @@ class NotificationMonitorService : NotificationListenerService() {
                     val type =
                         SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
                     val content = buildString {
-                        appendLine("任务状态：${if (MainActivity.isTaskStarted) "运行中" else "已停止"}")
+                        appendLine("任务状态：${if (TaskScheduler.isRunning()) "运行中" else "已停止"}")
                         appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
                         appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
                         appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
@@ -182,9 +181,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
                 notice.contains("截屏") -> {
                     if (ProjectionSession.isStateActive()) {
-                        openApplication {
-                            monitorCallback?.onAppOpenedForScreenshot()
-                        }
+                        openApplication { emit(MonitorEvent.AppOpenedForScreenshot) }
                     } else {
                         sendChannelMessage("截屏状态通知", "截屏服务已断开，截屏失败")
                     }
@@ -235,38 +232,6 @@ class NotificationMonitorService : NotificationListenerService() {
         EventBus.getDefault().post(ApplicationEvent.ListenerDisconnected)
         // 主动请求系统重新绑定监听服务
         requestRebind(ComponentName(this, NotificationMonitorService::class.java))
-    }
-
-    interface MonitorCallback {
-        /**
-         * 打卡成功通知
-         * */
-        fun onClockInSuccess()
-
-        /**
-         * 远程"执行任务"指令
-         * */
-        fun onStartTaskCommand()
-
-        /**
-         * 远程"终止任务"指令
-         * */
-        fun onStopTaskCommand()
-
-        /**
-         * 远程"息屏"指令
-         * */
-        fun onShowMaskCommand()
-
-        /**
-         * 远程"亮屏"指令
-         * */
-        fun onHideMaskCommand()
-
-        /**
-         * 远程"截屏"指令：目标 App 已打开，启动截屏倒计时
-         * */
-        fun onAppOpenedForScreenshot()
     }
 
     override fun onDestroy() {
