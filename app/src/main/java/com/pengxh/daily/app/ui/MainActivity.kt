@@ -410,18 +410,24 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * 根据 SchedulerState 驱动 UI 变化
      */
     private fun handleSchedulerState(state: SchedulerState) {
+        // ===== 统一按钮状态 =====
+        if (state is SchedulerState.Idle) {
+            binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
+            binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+            binding.executeTaskButton.text = "启动"
+        } else {
+            binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+            binding.executeTaskButton.setIconTintResource(R.color.red)
+            binding.executeTaskButton.text = "停止"
+        }
+
         when (state) {
             is SchedulerState.Idle -> {
-                // 由 stopTask() 触发，重置 UI
                 dailyTaskAdapter.updateCurrentTaskState(-1)
                 binding.tipsView.text = ""
-                resetExecuteButton()
             }
 
             is SchedulerState.Skipped -> {
-                binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-                binding.executeTaskButton.setIconTintResource(R.color.red)
-                binding.executeTaskButton.text = "停止"
                 binding.tipsView.text = "今日为周末，跳过任务"
                 binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
                 messageDispatcher.sendMessage(
@@ -430,16 +436,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
 
             is SchedulerState.Executing -> {
-                // 首次进入执行态：更新按钮
-                if (binding.executeTaskButton.text != "停止") {
-                    binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-                    binding.executeTaskButton.setIconTintResource(R.color.red)
-                    binding.executeTaskButton.text = "停止"
-                    messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
-                }
-                binding.tipsView.text = String.format(
-                    Locale.getDefault(), "准备执行第 %d 个任务", state.taskIndex
-                )
+                messageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
+                binding.tipsView.text = "准备执行第 ${state.taskIndex} 个任务"
                 binding.tipsView.setTextColor(R.color.theme_color.convertColor(this))
                 dailyTaskAdapter.updateCurrentTaskState(state.taskIndex - 1, state.actualTime)
 
@@ -453,7 +451,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
             is SchedulerState.Completed -> {
                 dailyTaskAdapter.updateCurrentTaskState(-1)
-                binding.tipsView.text = "当天所有任务已执行完毕"
+                binding.tipsView.text = "今日任务已全部执行完毕，等待下次任务"
                 binding.tipsView.setTextColor(R.color.ios_green.convertColor(this))
                 messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
             }
@@ -672,16 +670,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private fun doStopTask() {
         if (!TaskScheduler.isRunning()) return
         TaskScheduler.stopTask()
-        dailyTaskAdapter.updateCurrentTaskState(-1)
-        binding.tipsView.text = ""
-        resetExecuteButton()
         messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
-    }
-
-    private fun resetExecuteButton() {
-        binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-        binding.executeTaskButton.setIconTintResource(R.color.ios_green)
-        binding.executeTaskButton.text = "启动"
     }
 
     private fun backToMainActivity() {

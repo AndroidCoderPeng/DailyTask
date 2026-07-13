@@ -60,14 +60,11 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_weight="1"
-                        android:fontFamily="sans-serif-condensed"
                         android:gravity="center_vertical"
                         android:hint="点击按钮开始执行任务"
-                        android:singleLine="true"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
                         android:textColor="@color/theme_color"
-                        android:textColorHint="@color/lib_hint_color"
-                        android:textSize="@dimen/sp_16"
-                        android:textStyle="bold" />
+                        android:textColorHint="@color/lib_hint_color" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/executeTaskButton"

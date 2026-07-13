@@ -27,6 +27,7 @@ import org.greenrobot.eventbus.EventBus
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Calendar
 
 /**
  * 任务调度器
@@ -102,7 +103,7 @@ object TaskScheduler {
 
     fun isRunning(): Boolean {
         val s = _state.value
-        return s is SchedulerState.Executing || s is SchedulerState.Skipped
+        return s is SchedulerState.Executing || s is SchedulerState.Skipped || s is SchedulerState.Completed
     }
 
     /**
@@ -111,7 +112,10 @@ object TaskScheduler {
      */
     fun startTask() {
         val currentState = _state.value
-        if (currentState is SchedulerState.Executing || currentState is SchedulerState.Skipped) {
+        if (currentState is SchedulerState.Executing
+            || currentState is SchedulerState.Skipped
+            || currentState is SchedulerState.Completed
+        ) {
             LogFileManager.writeLog("任务已在执行中，忽略重复启动")
             return
         }
@@ -129,14 +133,25 @@ object TaskScheduler {
         }
 
         job = currentScope.launch {
-            val schedule = buildTodaySchedule()
-            if (schedule.isEmpty()) {
-                _state.update { SchedulerState.Idle }
-                return@launch
-            }
+            while (isActive) {
+                if (shouldSkipToday()) {
+                    _state.update { SchedulerState.Skipped }
+                    ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
+                } else {
+                    val schedule = buildTodaySchedule()
+                    if (schedule.isEmpty()) {
+                        _state.update { SchedulerState.Idle }
+                        LogFileManager.writeLog("任务列表为空，停止调度")
+                        return@launch
+                    }
 
-            LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
-            executeSchedule(schedule)
+                    LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
+                    executeSchedule(schedule)
+                }
+
+                // 今天结束，睡到明天
+                if (isActive) waitUntilNextReset()
+            }
         }
     }
 
@@ -230,13 +245,34 @@ object TaskScheduler {
         // ====== 全部完成 ======
         val message = when {
             executedCount + skippedCount == 0 -> "无任务可供执行"
-            executedCount == 0 -> "今日所有任务均已过期跳过（$skippedCount 个），无需执行"
+            executedCount == 0 -> "今日所有任务均已过期，跳过（$skippedCount 个），无需执行"
             skippedCount > 0 -> "今日任务已全部执行完毕（执行 $executedCount 个，跳过 $skippedCount 个）"
             else -> "今日任务已全部执行完毕"
         }
         LogFileManager.writeLog(message)
         _state.update { SchedulerState.Completed }
         ForegroundRunningService.emitNotificationText(message)
+    }
+
+    /**
+     * 等待到下一个每日重置时间
+     */
+    private suspend fun waitUntilNextReset() {
+        val resetHour = SaveKeyValues.loadInt(
+            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+        )
+        val waitSeconds = calculateSecondsUntilReset(resetHour)
+
+        LogFileManager.writeLog("等待 ${waitSeconds}s 后进入下一个任务周期")
+
+        // 只发一次静态通知，不每秒刷新
+        _state.update { SchedulerState.Completed }
+        ForegroundRunningService.emitNotificationText("今日任务已执行完毕，等待下次任务")
+
+        if (waitSeconds > 0) {
+            // 单次挂起，零 CPU 开销
+            delay(waitSeconds * 1000L)
+        }
     }
 
     /**
@@ -353,6 +389,24 @@ object TaskScheduler {
             .mapIndexed { index, (task, actualTime, actualMillis) ->
                 ScheduledTask(task, index + 1, task.time, actualTime, actualMillis)
             }
+    }
+
+    /**
+     * 计算距离下一次重置还有多少秒
+     */
+    private fun calculateSecondsUntilReset(resetHour: Int): Int {
+        val now = Calendar.getInstance()
+        val target = now.clone() as Calendar
+        target.set(Calendar.HOUR_OF_DAY, resetHour)
+        target.set(Calendar.MINUTE, 0)
+        target.set(Calendar.SECOND, 0)
+        target.set(Calendar.MILLISECOND, 0)
+
+        if (now.timeInMillis >= target.timeInMillis) {
+            target.add(Calendar.DATE, 1)
+        }
+
+        return ((target.timeInMillis - now.timeInMillis) / 1000).toInt()
     }
 
     private data class ScheduledTask(
