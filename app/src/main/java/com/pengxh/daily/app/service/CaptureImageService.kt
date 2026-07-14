@@ -23,9 +23,8 @@ import androidx.core.graphics.createBitmap
 import androidx.core.graphics.get
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailManager
-import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
@@ -89,8 +88,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         }
     }
     private val dateTimeFormat by lazy { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINA) }
-    private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager(this) }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
@@ -220,13 +217,15 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     private fun captureScreen() {
         if (!ProjectionSession.isStateActive()) {
-            sendChannelMessage("MediaProjection not active. state=${ProjectionSession.getState()}")
+            MessageDispatcher.sendMessage(
+                "截屏失败", "MediaProjection not active. state=${ProjectionSession.getState()}"
+            )
             return
         }
 
         val projection = ProjectionSession.getProjection()
         if (projection == null) {
-            sendChannelMessage("MediaProjection not available")
+            MessageDispatcher.sendMessage("截屏失败", "MediaProjection not available")
             return
         }
 
@@ -237,7 +236,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             releaseCaptureResources()
             initializeCaptureResources(projection)
             if (!isCapturingInitialized) {
-                sendChannelMessage("截屏资源初始化失败")
+                MessageDispatcher.sendMessage("截屏失败", "截屏资源初始化失败")
                 return
             }
         }
@@ -245,7 +244,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         launch {
             try {
                 val reader = imageReader ?: run {
-                    sendChannelMessage("ImageReader 为空")
+                    MessageDispatcher.sendMessage("截屏失败", "ImageReader 为空")
                     return@launch
                 }
 
@@ -261,7 +260,9 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 val elapsed = System.currentTimeMillis() - startTime
                 if (image == null) {
                     Log.e(kTag, "获取图像失败: acquireNextImage返回null, 总耗时: ${elapsed}ms")
-                    sendChannelMessage("获取图像失败: acquireNextImage返回null")
+                    MessageDispatcher.sendMessage(
+                        "截屏失败", "acquireNextImage返回null, 总耗时: ${elapsed}ms"
+                    )
                     return@launch
                 }
                 Log.d(kTag, "图像获取成功, 耗时: ${elapsed}ms")
@@ -330,7 +331,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 isCapturingInitialized = false
             } catch (e: Exception) {
                 Log.e(kTag, "截屏失败: ${e.message}", e)
-                sendChannelMessage("截屏失败: ${e.message}")
+                MessageDispatcher.sendMessage("截屏失败", "${e.message}")
             }
         }
     }
@@ -375,18 +376,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun sendChannelMessage(content: String) {
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-        when (type) {
-            0 -> emailManager.sendEmail("截屏失败", content, false)
-            1 -> httpRequestManager.sendMessage("截屏失败", content)
-            else -> Log.w(kTag, "消息渠道不支持: content => $content")
-        }
-    }
-
     override fun onDestroy() {
         super.onDestroy()
-        Log.d(kTag, "CaptureImageService 被销毁，清理 MediaProjection")
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()

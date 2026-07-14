@@ -14,7 +14,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -45,7 +44,6 @@ import com.pengxh.daily.app.utils.TaskDataManager
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.TipsEvent
 import com.pengxh.daily.app.utils.WatermarkDrawable
-import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemBorder
 import com.pengxh.kt.lite.extensions.convertColor
@@ -84,8 +82,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val insetsController by lazy {
         WindowCompat.getInsetsController(window, binding.rootView)
     }
-    private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val messageDispatcher by lazy { MessageDispatcher(this, messageViewModel) }
     private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
     private val gestureController by lazy { GestureController(this, maskViewController) }
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
@@ -281,15 +277,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     is TipsEvent.Skip -> {
                         binding.tipsView.text = "今日为周末，跳过任务"
                         binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
-                        messageDispatcher.sendMessage(
+                        MessageDispatcher.sendMessage(
                             "启动任务通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
                         )
                     }
 
                     is TipsEvent.Executing -> {
-                        messageDispatcher.sendMessage(
-                            "启动任务通知", "任务启动成功，请注意下次打卡时间"
-                        )
+                        MessageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
                         binding.tipsView.text = "准备执行第 ${event.index} 个任务"
                         binding.tipsView.setTextColor(R.color.theme_color.convertColor(this@MainActivity))
                         dailyTaskAdapter.updateCurrentTaskState(event.index - 1, event.actualTime)
@@ -299,14 +293,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                             appendLine("计划时间：${event.plannedTime}")
                             append("实际时间：${event.actualTime}")
                         }
-                        messageDispatcher.sendMessage("任务执行通知", content)
+                        MessageDispatcher.sendMessage("任务执行通知", content)
                     }
 
                     is TipsEvent.Completed -> {
                         dailyTaskAdapter.updateCurrentTaskState(-1)
                         binding.tipsView.text = "今日任务已全部执行完毕，等待下次任务"
                         binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
-                        messageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
+                        MessageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
                     }
                 }
             }
@@ -434,11 +428,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
                     // 发送通知（跳回后执行，Activity 已在前台）
                     if (imagePath.isNullOrEmpty()) {
-                        messageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
+                        MessageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
                     } else {
-                        messageDispatcher.sendAttachmentMessage(
-                            "截屏状态通知", "截图完成", imagePath
-                        )
+                        MessageDispatcher.sendAttachmentMessage("截屏状态通知", "截图完成", imagePath)
                     }
                 }
             }
@@ -636,7 +628,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private fun doStopTask() {
         if (!TaskScheduler.isRunning()) return
         TaskScheduler.stopTask()
-        messageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
+        MessageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
     }
 
     private fun backToMainActivity() {

@@ -6,6 +6,7 @@ import androidx.room.Room.databaseBuilder
 import com.pengxh.daily.app.sqlite.DailyTaskDataBase
 import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import java.io.File
 import java.io.IOException
@@ -34,6 +35,7 @@ class DailyTaskApplication : Application() {
         super.onCreate()
         initApplication(this)
         SaveKeyValues.initSharedPreferences(this)
+        MessageDispatcher.initialize(this)
         LogFileManager.initLogFile(this)
 
         // 初始化配置文件

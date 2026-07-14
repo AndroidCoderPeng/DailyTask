@@ -3,14 +3,12 @@ package com.pengxh.daily.app.ui
 import android.os.Bundle
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonObject
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
 import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailManager
-import com.pengxh.daily.app.vm.MessageViewModel
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
@@ -20,8 +18,6 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>() {
 
     private val context = this
-    private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val emailManager by lazy { EmailManager(this) }
 
     override fun initViewBinding(): ActivityMessageChannelBinding {
         return ActivityMessageChannelBinding.inflate(layoutInflater)
@@ -132,12 +128,10 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             appendLine("你好！")
             append("这是来自 DailyTask 的测试消息 🎉")
         }
-        messageViewModel.sendMessage(
-            message,
-            onLoading = {
-                if (isFinishing || isDestroyed) return@sendMessage
-                LoadingDialog.show(this, "消息发送中，请稍后...")
-            },
+        LoadingDialog.show(this, "消息发送中，请稍后...")
+        MessageDispatcher.sendMessage(
+            "测试消息", message,
+            channelOverride = 1,
             onSuccess = {
                 if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
@@ -148,7 +142,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
                 SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, 1)
             },
-            onFailed = {
+            onFailure = {
                 if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
                 it.show(this)
@@ -162,9 +156,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             .setCancelable(false)
             .setPositiveButton("继续") { _, _ ->
                 LoadingDialog.show(context, "邮件发送中，请稍后....")
-                emailManager.sendEmail(
+                MessageDispatcher.sendMessage(
                     "邮箱测试", "这是一封测试邮件，不必关注",
-                    true,
+                    channelOverride = 0,
                     onSuccess = {
                         LoadingDialog.dismiss()
                         "发送成功，请注意查收".show(context)
@@ -179,8 +173,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                     onFailure = {
                         LoadingDialog.dismiss()
                         "发送失败：${it}".show(context)
-                    }
-                )
+                    })
             }.setNegativeButton("取消", null).show()
     }
 }

@@ -12,7 +12,6 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
@@ -25,11 +24,10 @@ import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
-import com.pengxh.daily.app.utils.EmailManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
-import com.pengxh.daily.app.vm.MessageViewModel
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
@@ -69,8 +67,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val notificationContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val mpr by lazy { getSystemService(MediaProjectionManager::class.java) }
-    private val messageViewModel by lazy { ViewModelProvider(this)[MessageViewModel::class.java] }
-    private val emailManager by lazy { EmailManager(this) }
     private var syncingSwitchState = false
 
     override fun initViewBinding(): ActivitySettingsBinding {
@@ -319,42 +315,17 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     return@launch
                 }
 
-                val index = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-                when (index) {
-                    0 -> {
-                        LoadingDialog.show(context, "邮件发送中，请稍后....")
-                        emailManager.sendAttachmentEmail(
-                            "邮箱测试", "这是一封测试邮件，不必关注", imagePath, true,
-                            onSuccess = {
-                                LoadingDialog.dismiss()
-                                "发送成功，请注意查收".show(context)
-                            },
-                            onFailure = {
-                                LoadingDialog.dismiss()
-                                "发送失败：$it".show(context)
-                            })
-                    }
-
-                    1 -> {
-                        messageViewModel.sendImageMessage(
-                            imagePath,
-                            onLoading = {
-                                if (isFinishing || isDestroyed) return@sendImageMessage
-                                LoadingDialog.show(context, "消息发送中，请稍后...")
-                            },
-                            onSuccess = {
-                                if (isFinishing || isDestroyed) return@sendImageMessage
-                                LoadingDialog.dismiss()
-                            },
-                            onFailed = {
-                                if (isFinishing || isDestroyed) return@sendImageMessage
-                                LoadingDialog.dismiss()
-                                it.show(context)
-                            })
-                    }
-
-                    else -> "消息渠道不支持".show(context)
-                }
+                LoadingDialog.show(context, "消息发送中，请稍后...")
+                MessageDispatcher.sendAttachmentMessage(
+                    "邮箱测试", "这是一封测试邮件，不必关注", imagePath,
+                    onSuccess = {
+                        LoadingDialog.dismiss()
+                        "发送成功，请注意查收".show(context)
+                    },
+                    onFailure = {
+                        LoadingDialog.dismiss()
+                        "发送失败：$it".show(context)
+                    })
             }
         }
 

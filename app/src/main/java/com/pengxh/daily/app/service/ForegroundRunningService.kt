@@ -15,9 +15,8 @@ import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailManager
-import com.pengxh.daily.app.utils.HttpRequestManager
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
@@ -71,8 +70,6 @@ class ForegroundRunningService : Service() {
     }
 
     private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
-    private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager(this) }
     private var lastRemindTime = 0L
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -221,11 +218,7 @@ class ForegroundRunningService : Service() {
                 return
             }
 
-            when (SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)) {
-                0 -> emailManager.sendEmail("低电量提醒", "", false)
-                1 -> httpRequestManager.sendMessage("低电量提醒", "")
-                else -> LogFileManager.writeLog("低电量提醒未发送，消息渠道未配置，当前电量：$battery%")
-            }
+            MessageDispatcher.sendMessage("低电量提醒", "手机电量低于20%，请及时充电")
             lastRemindTime = currentTime
         } else {
             // 电量恢复到20%以上，重置提醒时间

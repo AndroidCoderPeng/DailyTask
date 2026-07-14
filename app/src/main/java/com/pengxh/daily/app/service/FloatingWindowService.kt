@@ -14,9 +14,8 @@ import android.view.View
 import android.view.WindowManager
 import com.pengxh.daily.app.databinding.WindowFloatingBinding
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.FloatingWindowController
-import com.pengxh.daily.app.utils.HttpRequestManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,8 +31,6 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
     private val kTag = "FloatingWindowService"
     private val windowManager by lazy { getSystemService(WindowManager::class.java) }
     private val activityManager by lazy { getSystemService(ActivityManager::class.java) }
-    private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager(this) }
     private lateinit var binding: WindowFloatingBinding
     private var floatViewParams: WindowManager.LayoutParams? = null
     private var initialX = 0
@@ -130,20 +127,9 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             withContext(Dispatchers.Main) {
                 binding.waveProgressView.setProgress(usagePercent)
                 if (usagePercent >= 90) {
-                    sendChannelMessage()
+                    MessageDispatcher.sendMessage("内存使用预警", "当前内存使用已超过90%，请关注设备运行情况")
                 }
             }
-        }
-    }
-
-    private fun sendChannelMessage() {
-        val title = "内存使用预警"
-        val content = "当前内存使用已超过90%，请关注设备运行情况"
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-        when (type) {
-            0 -> emailManager.sendEmail(title, content, false)
-            1 -> httpRequestManager.sendMessage(title, content)
-            else -> Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
         }
     }
 
