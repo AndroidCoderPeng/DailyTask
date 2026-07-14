@@ -19,6 +19,7 @@ public class ExportDataModel {
     private String remoteCommand; // 口令
     private String msgTitle; // 打卡消息标题
     private String wxKey; // 企业微信消息Key
+    private String customWorkdays; // 自定义工作日
 
     private boolean detectGesture; // 检测手势
     private boolean backToHome; // 返回桌面
@@ -92,6 +93,14 @@ public class ExportDataModel {
 
     public void setWxKey(String wxKey) {
         this.wxKey = wxKey;
+    }
+
+    public String getCustomWorkdays() {
+        return customWorkdays;
+    }
+
+    public void setCustomWorkdays(String customWorkdays) {
+        this.customWorkdays = customWorkdays;
     }
 
 
