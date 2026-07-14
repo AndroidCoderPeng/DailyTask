@@ -9,6 +9,7 @@ import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.isApplicationExist
@@ -19,6 +20,7 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
@@ -31,6 +33,7 @@ import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.DayOfWeek
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
@@ -72,6 +75,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.skipHolidaySwitch.isChecked =
             SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+        updateCustomWorkdaySummary(CustomWorkdayManager.loadConfiguredWorkdays())
 
         val needRandom = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
         binding.randomTimeSwitch.isChecked = needRandom
@@ -125,6 +129,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
                     override fun onCancelClick() {}
                 }).build().show()
+        }
+
+        binding.workdayLayout.setOnClickListener {
+            showWorkdaySelector()
         }
 
         binding.randomTimeSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -194,6 +202,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             exportData.isSkipHoliday = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
             exportData.isSavePower =
                 SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+            exportData.customWorkdays = CustomWorkdayManager.serializeWorkdays(
+                CustomWorkdayManager.loadConfiguredWorkdays()
+            )
 
             // EmailConfig
             val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
@@ -240,6 +251,40 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     }).build().show()
             }
         }
+    }
+
+    private fun showWorkdaySelector() {
+        val orderedDays = CustomWorkdayManager.getOrderedDays()
+        val selectedDays = CustomWorkdayManager.loadConfiguredWorkdays().toMutableSet()
+        val labels = orderedDays.map { CustomWorkdayManager.getDayLabel(it) }.toTypedArray()
+        val checkedItems = orderedDays.map { it in selectedDays }.toBooleanArray()
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("选择工作日")
+            .setMultiChoiceItems(labels, checkedItems) { _, which, isChecked ->
+                val day = orderedDays[which]
+                if (isChecked) {
+                    selectedDays.add(day)
+                } else {
+                    selectedDays.remove(day)
+                }
+            }
+            .setNegativeButton("取消", null)
+            .setPositiveButton("确定") { _, _ ->
+                if (selectedDays.isEmpty()) {
+                    "至少保留一天为工作日".show(this)
+                    return@setPositiveButton
+                }
+
+                val normalized = orderedDays.filter { it in selectedDays }.toSet()
+                CustomWorkdayManager.saveConfiguredWorkdays(normalized)
+                updateCustomWorkdaySummary(normalized)
+            }
+            .show()
+    }
+
+    private fun updateCustomWorkdaySummary(workdays: Set<DayOfWeek>) {
+        binding.workdayValueView.text = CustomWorkdayManager.formatWorkdays(workdays)
     }
 
     private fun setHourByPosition(position: Int) {

@@ -92,6 +92,17 @@ class TaskDataManager() {
             Constant.TIME_RANGE_KEY,
             config.timeRange.coerceAtLeast(Constant.DEFAULT_TIME_RANGE)
         )
+        val workdays = config.customWorkdays
+            ?.takeIf { it.isNotBlank() }
+            ?.let {
+                CustomWorkdayManager.serializeWorkdays(
+                    CustomWorkdayManager.loadConfiguredWorkdaysFromRaw(it)
+                )
+            }
+            ?: CustomWorkdayManager.serializeWorkdays(
+                CustomWorkdayManager.getOrderedDays().take(5).toSet()
+            )
+        SaveKeyValues.saveString(Constant.CUSTOM_WORKDAYS_KEY, workdays)
     }
 
     private fun isValidTaskTime(time: String?): Boolean {
