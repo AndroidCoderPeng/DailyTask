@@ -24,7 +24,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Calendar
@@ -299,22 +298,25 @@ object TaskScheduler {
     }
 
     private fun shouldSkipToday(): Boolean {
+        val skipEnabled = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+        if (!skipEnabled) return false
+
         val today = LocalDate.now()
         val customWorkdays = CustomWorkdayManager.loadConfiguredWorkdays()
-        val skipEnabled = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
 
         // 法定节假日
-        if (skipEnabled && ChinaHolidayManager.isHoliday(today)) {
+        if (ChinaHolidayManager.isHoliday(today)) {
             LogFileManager.writeLog("今日为法定节假日，跳过任务")
             return true
         }
 
         // 调休补班日（例外：周末但要上班）
-        if (skipEnabled && ChinaHolidayManager.isWorkday(today)) {
+        if (ChinaHolidayManager.isWorkday(today)) {
             LogFileManager.writeLog("今日为调休补班日，正常执行任务")
             return false
         }
 
+        // 不在自定义工作日内，即为休息日
         if (today.dayOfWeek !in customWorkdays) {
             LogFileManager.writeLog("今日不在自定义工作日内，跳过任务")
             return true

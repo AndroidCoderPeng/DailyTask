@@ -21,6 +21,10 @@ class TaskDataManager() {
             val type = object : TypeToken<ExportDataModel>() {}.type
             val config = gson.fromJson<ExportDataModel>(json, type)
 
+            // 保存相关配置
+            saveConfiguration(config)
+
+            // 导入任务
             val importedTasks = mutableListOf<DailyTaskBean>()
             for (task in config.tasks.orEmpty()) {
                 val taskTime = task.time
@@ -34,9 +38,6 @@ class TaskDataManager() {
                 }
             }
 
-            // 保存相关配置
-            saveConfiguration(config)
-
             ImportResult.Success(importedTasks.size)
         } catch (e: JsonSyntaxException) {
             e.printStackTrace()
@@ -48,14 +49,50 @@ class TaskDataManager() {
     }
 
     private fun saveConfiguration(config: ExportDataModel) {
+        //
+        SaveKeyValues.saveInt(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
+        SaveKeyValues.saveInt(
+            Constant.STAY_OVERTIME_KEY,
+            config.overtime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
+        )
+        SaveKeyValues.saveInt(
+            Constant.TIME_RANGE_KEY,
+            config.timeRange.coerceAtLeast(Constant.DEFAULT_TIME_RANGE)
+        )
+        SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, config.msgChannel.coerceIn(0, 1))
+        SaveKeyValues.saveInt(Constant.TARGET_APP_KEY, config.targetApp.coerceIn(0, 3))
+
+        //
+        SaveKeyValues.saveString(
+            Constant.REMOTE_COMMAND_KEY,
+            config.remoteCommand?.takeIf { it.isNotBlank() } ?: "打卡"
+        )
         SaveKeyValues.saveString(
             Constant.MESSAGE_TITLE_KEY,
             config.msgTitle?.takeIf { it.isNotBlank() } ?: "打卡结果通知"
         )
-
-        // 保存企业微信 Key
         SaveKeyValues.saveString(Constant.WX_WEB_HOOK_KEY, config.wxKey ?: "")
+        val workdays = config.customWorkdays
+            ?.takeIf { it.isNotBlank() }
+            ?.let {
+                CustomWorkdayManager.serializeWorkdays(
+                    CustomWorkdayManager.loadConfiguredWorkdaysFromRaw(it)
+                )
+            }
+            ?: CustomWorkdayManager.serializeWorkdays(
+                CustomWorkdayManager.getOrderedDays().take(5).toSet()
+            )
+        SaveKeyValues.saveString(Constant.CUSTOM_WORKDAYS_KEY, workdays)
 
+        //
+        SaveKeyValues.saveBoolean(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
+        SaveKeyValues.saveBoolean(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
+        SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, config.isAutoRecycle)
+        SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
+        SaveKeyValues.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
+        SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isSavePower)
+
+        //
         val email = config.emailConfig
         val outbox = email?.first
         val authCode = email?.second
@@ -72,37 +109,6 @@ class TaskDataManager() {
             }
             ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, cacheObj)
         }
-
-        SaveKeyValues.saveBoolean(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
-        SaveKeyValues.saveBoolean(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
-        SaveKeyValues.saveInt(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
-        SaveKeyValues.saveInt(
-            Constant.STAY_OVERTIME_KEY,
-            config.overtime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
-        )
-        SaveKeyValues.saveString(
-            Constant.REMOTE_COMMAND_KEY,
-            config.remoteCommand?.takeIf { it.isNotBlank() } ?: "打卡"
-        )
-        SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, config.isAutoRecycle)
-        SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
-        SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isSavePower)
-        SaveKeyValues.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
-        SaveKeyValues.saveInt(
-            Constant.TIME_RANGE_KEY,
-            config.timeRange.coerceAtLeast(Constant.DEFAULT_TIME_RANGE)
-        )
-        val workdays = config.customWorkdays
-            ?.takeIf { it.isNotBlank() }
-            ?.let {
-                CustomWorkdayManager.serializeWorkdays(
-                    CustomWorkdayManager.loadConfiguredWorkdaysFromRaw(it)
-                )
-            }
-            ?: CustomWorkdayManager.serializeWorkdays(
-                CustomWorkdayManager.getOrderedDays().take(5).toSet()
-            )
-        SaveKeyValues.saveString(Constant.CUSTOM_WORKDAYS_KEY, workdays)
     }
 
     private fun isValidTaskTime(time: String?): Boolean {
