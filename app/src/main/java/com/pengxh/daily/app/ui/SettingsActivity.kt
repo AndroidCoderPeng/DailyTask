@@ -311,7 +311,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
             // 等待截屏结果
             lifecycleScope.launch {
-                val imagePath = withTimeoutOrNull(5000L) {
+                val imagePath = withTimeoutOrNull(1000L) {
                     CaptureImageService.captureResults.first()
                 }
                 if (imagePath.isNullOrEmpty()) {

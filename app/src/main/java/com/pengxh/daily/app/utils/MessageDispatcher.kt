@@ -13,9 +13,7 @@ class MessageDispatcher(private val context: Context, private val viewModel: Mes
     private val batteryManager by lazy { context.getSystemService(BatteryManager::class.java) }
 
     fun sendMessage(title: String, content: String) {
-        val messageTitle = SaveKeyValues.loadString(
-            Constant.MESSAGE_TITLE_KEY, "打卡结果通知"
-        )
+        val messageTitle = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         val channelType = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         when (channelType) {
             0 -> {
