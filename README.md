@@ -1,10 +1,10 @@
 # DailyTask
 
-> 基于 Kotlin + Java 混编的 Android 无人值守打卡工具，兼容 Android 8 ~ 16 及 HarmonyOS 4.0。
+> 基于 Kotlin 开发的 Android 无人值守打卡工具，兼容 Android 8 ~ 16 及 HarmonyOS 4.0。
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-green.svg)](https://developer.android.com)
-[![Version](https://img.shields.io/badge/version-2.4.1.0-brightgreen.svg)](#最新版本)
+[![Version](https://img.shields.io/badge/version-2.4.2.0-brightgreen.svg)](#最新版本)
 
 ---
 
@@ -196,7 +196,7 @@ graph LR
 
 ## 最新版本
 
-**v2.4.1.0** — *2026-06-22*
+**2.4.1.0** — *2026-06-22*
 
 - 优化主界面时间显示与屏幕常亮
 - 修复远程倒计时器管理与上下文引用问题

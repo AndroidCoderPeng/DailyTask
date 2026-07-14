@@ -224,32 +224,47 @@ SharedFlow 收集 → `TaskScheduler.notifyClockIn()`；识别
 
 ## ⑦ 消息通知线
 
-**做什么**：打卡结果 / 错误信息 → 根据渠道（QQ邮箱 / 企业微信）→ 发送
+**做什么**：打卡结果 / 错误信息 → `MessageDispatcher` 根据用户配置自动分流 → QQ 邮箱（`EmailManager`
+）或企业微信 Webhook（`RetrofitServiceManager`）→ 异步发送
 
 **涉及文件**：
 
-- `MessageDispatcher.kt` — 消息分发
-- `EmailManager.kt` — 邮件发送
-- `HttpRequestManager.kt` — 企业微信 Webhook
-- `MessageViewModel.kt` + `MessageChannelActivity.kt` — 企业微信配置
+- `MessageDispatcher.kt` — 统一消息分发入口（全局 `object`），封装渠道分流逻辑、元数据拼接、企微响应处理，全局复用协程作用域
+- `EmailManager.kt` — QQ 邮箱 SMTP 发送，支持普通邮件和带附件邮件，`loadEmailConfig()` 提取公共配置加载
+- `RetrofitServiceManager.kt` — 企业微信 Webhook API 调用（文本消息 / 图片消息），基于 Retrofit suspend
+  函数
+- `MessageChannelActivity.kt` — 消息渠道配置界面（QQ 邮箱 + 企业微信 Key）
+
+**架构要点**：
+
+- `MessageDispatcher` 是全局 `object`，通过 `DailyTaskApplication.onCreate` 中 `initialize()` 拿到
+  `BatteryManager`
+- 所有调用方统一走 `sendMessage()` / `sendAttachmentMessage()`，内部根据 `SaveKeyValues` 中存储的渠道配置分流
+- `sendMessage` 入口统一拼接元数据（标题、正文、日期、电量、版本号），保证邮件和企微正文一致
+- 邮件通过 `EmailManager.sendAsync()` 在内部 `CoroutineScope(IO)` 异步发送，回调切到 Main 线程
+- 企微通过 `RetrofitServiceManager` suspend 函数在 `MessageDispatcher.scope` 中调用，
+  `handleWechatResponse` 统一处理响应
 
 **重点关注**：
 
-| 风险点                                                                             | 描述                                   |
-|---------------------------------------------------------------------------------|--------------------------------------|
-| `sendMessage()` 变量遮蔽 `content`                                                  | 不影响运行但误导                             |
-| `HttpRequestManager` 每次 `sendMessage` 都 `CoroutineScope(Dispatchers.IO).launch` | 每次都创建新协程作用域，无法取消，如果网络超时 10 秒，多次调用会堆积 |
+| 风险点                                               | 描述                                                                                                   |
+|:--------------------------------------------------|:-----------------------------------------------------------------------------------------------------|
+| `initialize()` 未调用时 `batteryManager` 是 `lateinit` | 需确保 `DailyTaskApplication.onCreate` 中先调用，否则 `sendMessage` 直接抛 `UninitializedPropertyAccessException` |
+| `EmailManager.sendEmail` 配置缺失时回调 `onFailure`，不抛异常 | 若调用方未传 `onFailure`，静默失败，无法感知                                                                         |
+| 企业微信图片消息 2MB 限制                                   | `RetrofitServiceManager.sendImageMessage` 检测超限后降级为文本提示，截图分辨率较高时可能被拒绝                                 |
+| `handleWechatResponse` 回调均为 null 时提前 return       | 避免无意义的 JSON 解析和线程切换，守卫逻辑正确                                                                           |
 
 **测试路线**：
 
-| # | 场景       | 操作                           | 预期结果               | 看什么                   |
-|---|----------|------------------------------|--------------------|-----------------------|
-| 1 | 企业微信发送   | 配置好企业微信 Webhook → 触发一条打卡结果消息 | 企业微信收到消息           | 消息内容正确（时间、任务名、截图等）    |
-| 2 | QQ邮箱发送   | 配置好 SMTP 邮箱 → 触发一条通知消息       | 邮箱收到邮件             | 邮件标题和内容正确             |
-| 3 | 无网络发送    | 关闭 WiFi 和移动数据 → 触发消息发送       | 消息发送失败但不 Crash     | 超时后优雅失败、有错误日志         |
-| 4 | 快速连续发送   | 手动连续触发 5 条消息（如多次截屏结果）        | 每条消息独立发送，不互相覆盖     | 5 条消息都收到、无遗漏、无内容错乱    |
-| 5 | 渠道切换     | 先用企业微信发送 → 切换到邮箱 → 再发送一条     | 新消息走新渠道            | 切换后无效旧渠道残留            |
-| 6 | 空内容/异常内容 | 触发一条内容为空或含特殊字符的消息            | 不 Crash，根据配置决定是否发送 | 空消息被过滤或正常发送、特殊字符不导致乱码 |
+| # | 场景      | 操作                               | 预期结果                   | 看什么              |
+|:--|:--------|:---------------------------------|:-----------------------|:-----------------|
+| 1 | 企业微信发送  | 配置好企业微信 Webhook Key → 触发一条打卡结果消息 | 企微收到消息，正文含日期/电量/版本号    | 元数据完整、格式正确       |
+| 2 | QQ邮箱发送  | 配置好 SMTP 邮箱 → 触发一条通知消息           | 邮箱收到邮件，标题和正文正确         | 邮件标题和内容一致        |
+| 3 | 无网络发送   | 关闭 WiFi 和移动数据 → 触发消息发送           | 消息发送失败但不 Crash         | 超时后优雅失败、有错误日志    |
+| 4 | 快速连续发送  | 手动连续触发 5 条消息                     | 每条消息独立发送，不互相覆盖         | 5 条都收到、无遗漏、无内容错乱 |
+| 5 | 渠道切换    | 企微 → 邮箱 → 再发送                    | 新消息走新渠道                | 切换后无旧渠道残留        |
+| 6 | 空/异常内容  | 触发 title 或 content 为空的消息         | 不 Crash，使用默认文案兜底       | 空消息有兜底、特殊字符不导致乱码 |
+| 7 | 邮箱配置未填写 | 清空邮箱配置 → 触发邮件发送                  | `onFailure` 回调 "邮箱未配置" | 不崩溃、有明确错误提示      |
 
 ---
 
