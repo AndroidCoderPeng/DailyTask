@@ -11,9 +11,8 @@ import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.FloatingWindowController
-import com.pengxh.daily.app.utils.HttpRequestManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MonitorEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.TaskScheduler
@@ -61,8 +60,6 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private val kTag = "MonitorService"
-    private val httpRequestManager by lazy { HttpRequestManager(this) }
-    private val emailManager by lazy { EmailManager(this) }
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var listenerConnected = false
@@ -104,7 +101,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
                     SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
-                sendChannelMessage(title.ifBlank { messageTitle }, notice)
+                MessageDispatcher.sendMessage(title.ifBlank { messageTitle }, notice)
             }
         }
 
@@ -131,104 +128,99 @@ class NotificationMonitorService : NotificationListenerService() {
         }
     }
 
+    /**
+     * 处理远程指令
+     */
     private fun handleRemoteCommand(pkg: String, notice: String) {
-        if (pkg in auxiliaryApp) {
-            when {
-                notice.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
+        if (pkg !in auxiliaryApp) return
 
-                notice.contains("终止任务") -> emitMonitorEvent(MonitorEvent.StopTaskCommand)
+        // 必须以 DT# 开头，否则忽略
+        if (!notice.startsWith(Constant.COMMAND_PREFIX)) return
 
-                notice.contains("开启循环") -> {
-                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
-                    sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：开启")
-                }
+        when {
+            notice.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
 
-                notice.contains("关闭循环") -> {
-                    SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
-                    sendChannelMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
-                }
+            notice.contains("终止任务") -> emitMonitorEvent(MonitorEvent.StopTaskCommand)
 
-                notice.contains("息屏") -> emitMonitorEvent(MonitorEvent.ShowMaskCommand)
+            notice.contains("开启循环") -> {
+                SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
+                MessageDispatcher.sendMessage("循环任务状态通知", "循环任务状态已更新为：开启")
+            }
 
-                notice.contains("亮屏") -> emitMonitorEvent(MonitorEvent.HideMaskCommand)
+            notice.contains("关闭循环") -> {
+                SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
+                MessageDispatcher.sendMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
+            }
 
-                notice.contains("考勤记录") -> {
-                    serviceScope.launch {
-                        val notices = try {
-                            DatabaseWrapper.loadCurrentDayNotice()
-                        } catch (e: Exception) {
-                            Log.e(kTag, "Load notices failed", e)
-                            emptyList()
-                        }
+            notice.contains("息屏") -> emitMonitorEvent(MonitorEvent.ShowMaskCommand)
 
-                        val record = buildString {
-                            var index = 1
-                            notices.filter {
-                                it.noticeMessage.contains("考勤打卡")
-                            }.forEach {
-                                append("【第${index}次】${it.noticeMessage}，时间：${it.postTime}\r\n")
-                                index++
-                            }
-                        }
+            notice.contains("亮屏") -> emitMonitorEvent(MonitorEvent.HideMaskCommand)
 
-                        withContext(Dispatchers.Main) {
-                            sendChannelMessage("当天考勤记录通知", record)
+            notice.contains("考勤记录") -> {
+                serviceScope.launch {
+                    val notices = try {
+                        DatabaseWrapper.loadCurrentDayNotice()
+                    } catch (e: Exception) {
+                        Log.e(kTag, "Load notices failed", e)
+                        emptyList()
+                    }
+
+                    val record = buildString {
+                        var index = 1
+                        notices.filter {
+                            it.noticeMessage.contains("考勤打卡")
+                        }.forEach {
+                            append("【第${index}次】${it.noticeMessage}，时间：${it.postTime}\r\n")
+                            index++
                         }
                     }
-                }
 
-                notice.contains("状态查询") -> {
-                    val type =
-                        SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-                    val content = buildString {
-                        appendLine("任务状态：${if (TaskScheduler.isRunning()) "运行中" else "已停止"}")
-                        appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
-                        appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
-                        appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
-                        append("消息渠道：${if (type == 0) "QQ邮箱" else "企业微信"}")
-                    }
-                    sendChannelMessage("状态查询通知", content)
-                }
-
-                notice.contains("截屏") -> {
-                    if (ProjectionSession.isStateActive()) {
-                        openApplication { emitMonitorEvent(MonitorEvent.AppOpenedForScreenshot) }
-                    } else {
-                        sendChannelMessage("截屏状态通知", "截屏服务已断开，截屏失败")
-                    }
-                }
-
-                else -> {
-                    val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
-                    if (notice.contains(key)) {
-                        // 遥控"打卡"：一次性，只唤起目标 App 并倒计时，不关联任务调度
-                        openApplication {
-                            serviceScope.launch {
-                                val timeoutSeconds = SaveKeyValues.loadInt(
-                                    Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
-                                )
-                                val target = SystemClock.elapsedRealtime() + timeoutSeconds * 1000L
-                                while (isActive) {
-                                    val remaining = target - SystemClock.elapsedRealtime()
-                                    if (remaining <= 0) break
-                                    FloatingWindowController.updateTime((remaining / 1000).toInt())
-                                    delay(minOf(1000L, remaining).coerceAtLeast(1))
-                                }
-                            }
-                        }
+                    withContext(Dispatchers.Main) {
+                        MessageDispatcher.sendMessage("当天考勤记录通知", record)
                     }
                 }
             }
-        }
-    }
 
-    private fun sendChannelMessage(title: String, content: String) {
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-        when (type) {
-            0 -> emailManager.sendEmail(title, content, false)
-            1 -> httpRequestManager.sendMessage(title, content)
+            notice.contains("状态查询") -> {
+                val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+                val content = buildString {
+                    appendLine("任务状态：${if (TaskScheduler.isRunning()) "运行中" else "已停止"}")
+                    appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
+                    appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
+                    appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
+                    append("消息渠道：${if (type == 0) "QQ邮箱" else "企业微信"}")
+                }
+                MessageDispatcher.sendMessage("状态查询通知", content)
+            }
+
+            notice.contains("截屏") -> {
+                if (ProjectionSession.isStateActive()) {
+                    openApplication { emitMonitorEvent(MonitorEvent.AppOpenedForScreenshot) }
+                } else {
+                    MessageDispatcher.sendMessage("截屏状态通知", "截屏服务已断开，截屏失败")
+                }
+            }
+
             else -> {
-                Log.d(kTag, "sendChannelMessage: 消息渠道不支持")
+                // 自定义打卡指令，用户可配置关键词（如 "打卡"），同样需要 DT# 前缀
+                val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
+                if (notice.contains(key)) {
+                    // 遥控"打卡"：一次性，只唤起目标 App 并倒计时，不关联任务调度
+                    openApplication {
+                        serviceScope.launch {
+                            val timeoutSeconds = SaveKeyValues.loadInt(
+                                Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+                            )
+                            val target = SystemClock.elapsedRealtime() + timeoutSeconds * 1000L
+                            while (isActive) {
+                                val remaining = target - SystemClock.elapsedRealtime()
+                                if (remaining <= 0) break
+                                FloatingWindowController.updateTime((remaining / 1000).toInt())
+                                delay(minOf(1000L, remaining).coerceAtLeast(1))
+                            }
+                        }
+                    }
+                }
             }
         }
     }

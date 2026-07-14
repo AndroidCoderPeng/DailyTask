@@ -18,16 +18,16 @@ class CommandActivity : KotlinBaseActivity<ActivityCommandBinding>() {
 
     private val context = this
     private val list = mutableListOf(
-        Triple("执行任务", "启动循环任务（默认每天自动执行）", true),
-        Triple("终止任务", "停止循环任务（仅停止当天）", true),
-        Triple("开启循环", "开启周期循环的标志", true),
-        Triple("关闭循环", "关闭循环标志位（永久暂停，直到收到「开启循环」指令）", true),
-        Triple("息屏", "开启伪装息屏模式，显示纯黑背景+动态时钟", false),
-        Triple("亮屏", "退出伪装息屏模式", false),
-        Triple("考勤记录", "导出当天考勤记录", true),
-        Triple("打卡", "触发一次打卡（默认指令内容为「打卡」）", true),
-        Triple("状态查询", "查询当前状态（任务、服务、监听、电量、版本、日期等）", true),
-        Triple("截屏", "截取目标应用屏幕并通过消息渠道返回给用户", true)
+        Triple("DT#执行任务", "启动循环任务（默认每天自动执行）", true),
+        Triple("DT#终止任务", "停止循环任务（仅停止当天）", true),
+        Triple("DT#开启循环", "开启周期循环的标志", true),
+        Triple("DT#关闭循环", "关闭循环标志位（永久暂停，直到收到「开启循环」指令）", true),
+        Triple("DT#息屏", "开启伪装息屏模式，显示纯黑背景+动态时钟", false),
+        Triple("DT#亮屏", "退出伪装息屏模式", false),
+        Triple("DT#考勤记录", "导出当天考勤记录", true),
+        Triple("DT#打卡", "触发一次打卡（默认指令内容为「打卡」）", true),
+        Triple("DT#状态查询", "查询当前状态（任务、服务、监听、电量、版本、日期等）", true),
+        Triple("DT#截屏", "截取目标应用屏幕并通过消息渠道返回给用户", true)
     )
     private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 

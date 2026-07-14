@@ -48,6 +48,7 @@ object Constant {
     // ============================================================
     // 消息指令
     // ============================================================
+    const val COMMAND_PREFIX = "DT#" // 远程指令前缀，避免日常对话误触发
     const val WECHAT = "com.tencent.mm" // 微信
     const val QQ = "com.tencent.mobileqq" // QQ
     const val TIM = "com.tencent.tim" // TIM
