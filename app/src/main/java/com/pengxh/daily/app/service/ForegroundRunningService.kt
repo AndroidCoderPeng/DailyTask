@@ -14,7 +14,6 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.AlarmScheduler
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.HttpRequestManager
@@ -28,7 +27,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import org.greenrobot.eventbus.EventBus
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -263,9 +261,9 @@ class ForegroundRunningService : Service() {
         // 重新注册 Alarm，防止之前的 Alarm 失效
         AlarmScheduler.schedule(this, resetHour)
 
-        // 发送 ResetDailyTask 事件，触发任务重置
+        // 任务重置
         if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
-            EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
+            TaskScheduler.startTask()
         }
     }
 

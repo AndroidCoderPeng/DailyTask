@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.pengxh.kt.lite.utils.SaveKeyValues
-import org.greenrobot.eventbus.EventBus
 import java.time.LocalDate
 
 class TaskResetReceiver : BroadcastReceiver() {
@@ -22,8 +21,7 @@ class TaskResetReceiver : BroadcastReceiver() {
 
         val autoStart = SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
         if (autoStart) {
-            // 用 postSticky 保证 MainActivity 未注册时事件不丢失，启动后仍可收到
-            EventBus.getDefault().postSticky(ApplicationEvent.ResetDailyTask)
+            TaskScheduler.startTask()
         }
 
         // 重新注册明天同一时刻的 Alarm（循环触发）

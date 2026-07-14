@@ -125,8 +125,6 @@ dependencies {
     //日期、时间选择器
     implementation 'com.github.gzu-liyujiang.AndroidPicker:WheelPicker:4.1.15'
     implementation 'com.google.code.gson:gson:2.14.0'
-    //事件总线
-    implementation 'org.greenrobot:eventbus:3.3.1'
     //返回值转换器
     implementation 'com.squareup.retrofit2:converter-gson:3.0.0'
     //okhttp3日志拦截器

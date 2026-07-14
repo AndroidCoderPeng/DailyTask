@@ -31,7 +31,6 @@ import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.daily.app.utils.ApplicationEvent
 import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
@@ -64,9 +63,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
-import org.greenrobot.eventbus.EventBus
-import org.greenrobot.eventbus.Subscribe
-import org.greenrobot.eventbus.ThreadMode
 import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -316,15 +312,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
         }
 
-        // EventBus 注册 + 处理粘性事件（Alarm 触发时 Activity 尚未创建的情况）
-        EventBus.getDefault().register(this)
-        val stickyReset =
-            EventBus.getDefault().getStickyEvent(ApplicationEvent.ResetDailyTask::class.java)
-        if (stickyReset != null) {
-            EventBus.getDefault().removeStickyEvent(stickyReset)
-            TaskScheduler.startTask()
-        }
-
         // 兜底检查是否有错过的每日重置
         checkMissedReset()
     }
@@ -378,7 +365,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         super.onDestroy()
         mainHandler.removeCallbacksAndMessages(null)
         maskViewController.destroy()
-        EventBus.getDefault().unregister(this)
     }
 
     // ================================================================
@@ -456,18 +442,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     }
                 }
             }
-        }
-    }
-
-    // ================================================================
-    // EventBus 事件处理
-    // ================================================================
-    @Suppress("unused")
-    @Subscribe(threadMode = ThreadMode.MAIN)
-    fun handleApplicationEvent(event: ApplicationEvent) {
-        if (event is ApplicationEvent.ResetDailyTask) {
-            EventBus.getDefault().removeStickyEvent(ApplicationEvent.ResetDailyTask)
-            TaskScheduler.startTask()
         }
     }
 
