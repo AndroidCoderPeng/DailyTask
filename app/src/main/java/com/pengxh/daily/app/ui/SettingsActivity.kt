@@ -285,6 +285,10 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             projectionLauncher.launch(mpr.createScreenCaptureIntent())
         }
 
+        binding.commandLayout.setOnClickListener {
+            navigatePageTo<CommandActivity>()
+        }
+
         binding.openTestLayout.setOnClickListener {
             openApplication()
         }

@@ -12,6 +12,7 @@ import android.view.animation.LinearInterpolator
 import androidx.core.graphics.withClip
 import com.pengxh.daily.app.R
 import com.pengxh.kt.lite.extensions.convertColor
+import com.pengxh.kt.lite.extensions.sp2px
 
 /**
  * 根据Android自定义View的标准实践，即使没有自定义属性（attr），也应该实现4个构造函数
@@ -66,7 +67,7 @@ class WaveProgressView @JvmOverloads constructor(
             isAntiAlias = true
             style = Paint.Style.FILL
             color = DEFAULT_TEXT_COLOR
-            textSize = DEFAULT_TEXT_SIZE
+            textSize = DEFAULT_TEXT_SIZE.sp2px(context)
             textAlign = Paint.Align.CENTER
         }
     }
@@ -102,7 +103,7 @@ class WaveProgressView @JvmOverloads constructor(
         private const val DEFAULT_WAVE_COLOR2 = 0xFF42A5F5.toInt()     // 浅蓝色
         private const val DEFAULT_TEXT_COLOR = Color.WHITE
         private const val DEFAULT_BORDER_WIDTH = 4f
-        private const val DEFAULT_TEXT_SIZE = 18f
+        private const val DEFAULT_TEXT_SIZE = 8f // 悬浮球里面文字大小，单位：sp
         private const val DEFAULT_WAVE_AMPLITUDE = 8f
         private const val ANIMATION_DURATION = 2000L  // 波浪动画周期（毫秒）
         private const val SEGMENTS_PER_WAVELENGTH = 24  // 每个波长的分段数（值越大波浪更平滑）
