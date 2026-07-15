@@ -57,10 +57,8 @@ import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -405,8 +403,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                  *   6. 发送通知
                  */
                 lifecycleScope.launch {
-                    // 倒计时 3 秒，更新悬浮窗
-                    val countdownTarget = SystemClock.elapsedRealtime() + 3000L
+                    // 倒计时 5 秒，更新悬浮窗
+                    val countdownTarget = SystemClock.elapsedRealtime() + 5000L
                     while (true) {
                         val remaining = countdownTarget - SystemClock.elapsedRealtime()
                         if (remaining <= 0) break
@@ -414,13 +412,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         delay(minOf(1000L, remaining).coerceAtLeast(1))
                     }
 
-                    // 触发截屏
-                    CaptureImageService.requestCaptureScreen()
-
-                    // 等待截屏结果，截屏本身 2~3 毫秒就完成了
-                    val imagePath = withTimeoutOrNull(1000L) {
-                        CaptureImageService.captureResults.first()
-                    }
+                    // 触发截屏并等待截屏结果
+                    val imagePath = CaptureImageService.requestCaptureScreen().await()
 
                     // 回到主界面
                     backToMainActivity()
@@ -429,7 +422,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     if (imagePath.isNullOrEmpty()) {
                         MessageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
                     } else {
-                        MessageDispatcher.sendAttachmentMessage("截屏状态通知", "截图完成", imagePath)
+                        MessageDispatcher.sendAttachmentMessage(
+                            "截屏状态通知", "截图完成", imagePath
+                        )
                     }
                 }
             }

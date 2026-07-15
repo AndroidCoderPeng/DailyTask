@@ -30,12 +30,16 @@ import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
 import com.pengxh.kt.lite.extensions.saveImage
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -54,20 +58,44 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             _projectionEvents.tryEmit(event)
         }
 
-        private val _captureScreenRequest = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+        // 等待截屏结果的协程作用域
+        @Volatile
+        private var captureScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
-        fun requestCaptureScreen() {
-            _captureScreenRequest.tryEmit(Unit)
+        // 截屏结果流，仅供 requestCaptureScreen() 内部使用
+        private val _captureResults = MutableSharedFlow<String>(extraBufferCapacity = 1)
+        private val captureResults = _captureResults.asSharedFlow()
+
+        private fun emitCaptureResult(imagePath: String) {
+            _captureResults.tryEmit(imagePath)
         }
 
-        private val _captureResults = MutableSharedFlow<String>(replay = 1, extraBufferCapacity = 1)
-        val captureResults = _captureResults.asSharedFlow()
+        private val _captureScreenRequest = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
         /**
-         * 发布截屏结果
-         * */
-        fun emitCaptureResult(imagePath: String) {
-            _captureResults.tryEmit(imagePath)
+         * 触发截屏，返回 CompletableDeferred 供调用方 await 结果
+         *
+         * 内部逻辑：
+         *   1. 发射截屏请求到 captureScreenRequest
+         *   2. 启动协程订阅 captureResults 等待截屏结果
+         *   3. 超时 3 秒兜底（覆盖 captureScreen 内部黑屏重试的 ~2.3s）
+         *   4. complete Deferred → 调用方 await() 即时返回
+         */
+        fun requestCaptureScreen(): CompletableDeferred<String?> {
+            _captureScreenRequest.tryEmit(Unit)
+            val deferred = CompletableDeferred<String?>()
+            captureScope.launch {
+                val result = withTimeoutOrNull(5000L) {
+                    captureResults.first()
+                }
+                deferred.complete(result ?: "")
+            }
+            return deferred
+        }
+
+        private fun resetCaptureScope() {
+            captureScope.cancel()
+            captureScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         }
     }
 
@@ -96,6 +124,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
     override fun onCreate() {
         super.onCreate()
+        resetCaptureScope()
         val name = "${resources.getString(R.string.app_name)}截屏服务"
         val channel = NotificationChannel(
             "capture_image_service_channel", name, NotificationManager.IMPORTANCE_LOW
@@ -252,7 +281,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 Log.d(kTag, "================== 开始截屏 ==================")
 
                 // 不排空旧帧：后台环境下 VirtualDisplay 帧率被系统限速，排空后等新帧依赖时机运气，直接用 buffer 中已有的帧更可靠
-                val image = withTimeoutOrNull(1000) {
+                val image = withTimeoutOrNull(1000L) {
                     Log.d(kTag, "进入等待......")
                     waitForImageAvailable(reader)
                 }
@@ -379,6 +408,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     override fun onDestroy() {
         super.onDestroy()
         cancel()
+        captureScope.cancel()
         releaseCaptureResources()
         ProjectionSession.clear()
         SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)

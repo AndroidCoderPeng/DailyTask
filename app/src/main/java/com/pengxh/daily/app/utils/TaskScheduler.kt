@@ -20,12 +20,10 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Calendar
@@ -173,6 +171,7 @@ object TaskScheduler {
 
             // Kotlin语法糖——竞态保护：select 只取先完成的分支，另一个自动取消
             var hasCaptured = false
+            var captureDeferred: CompletableDeferred<String?>? = null
             val timeoutJob = launch {
                 updateCountdownWithNotification(timeoutSeconds * 1000L) { remaining ->
                     val tick = (remaining / 1000).toInt()
@@ -185,7 +184,7 @@ object TaskScheduler {
                         )
                         if (resultSource == 1) {
                             hasCaptured = true
-                            CaptureImageService.requestCaptureScreen()
+                            captureDeferred = CaptureImageService.requestCaptureScreen()
                         }
                     }
                 }
@@ -202,27 +201,25 @@ object TaskScheduler {
             timeoutJob.cancel()
             clockInDeferred = null
 
-            // 超时路径——打卡失败，回到主页
+            // 超时路径——打卡失败，回到主页 + 兜底通知 + 继续下一个任务
             if (!clockInSuccess) {
                 _returnToApp.emit(Unit)
 
                 // 发送兜底截图给用户
                 if (hasCaptured) {
-                    val imagePath = withTimeoutOrNull(1000) {
-                        CaptureImageService.captureResults.first()
-                    }
-                    if (!imagePath.isNullOrEmpty()) {
+                    // Deferred 内部已有 3s 超时兜底，await() 不会无限挂起
+                    val imagePath = captureDeferred?.await() ?: ""
+                    if (imagePath.isNotEmpty()) {
                         MessageDispatcher.sendAttachmentMessage(
                             "打卡超时通知", "打卡超时，截图见附件", imagePath
                         )
                         LogFileManager.writeLog("发送打卡超时截屏: $imagePath")
                     } else {
-                        LogFileManager.writeLog("打卡超时截屏失败，imagePath 为空")
+                        MessageDispatcher.sendMessage("打卡超时通知", "超时截屏失败，imagePath 为空")
                     }
                 } else {
-                    MessageDispatcher.sendMessage(
-                        "打卡超时通知", "打卡超时，截图失败，请手动检查是否打卡成功"
-                    )
+                    // 通知模式：无截图，纯文本提醒
+                    MessageDispatcher.sendMessage("打卡超时通知", "打卡超时，请手动检查是否打卡成功")
                 }
             }
 

@@ -37,10 +37,8 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
@@ -302,14 +300,9 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 return@setOnClickListener
             }
 
-            // 触发截屏
-            CaptureImageService.requestCaptureScreen()
-
-            // 等待截屏结果
+            // 触发截屏并等待截屏结果
             lifecycleScope.launch {
-                val imagePath = withTimeoutOrNull(1000L) {
-                    CaptureImageService.captureResults.first()
-                }
+                val imagePath = CaptureImageService.requestCaptureScreen().await()
                 if (imagePath.isNullOrEmpty()) {
                     "截图失败，无法获取图像".show(context)
                     return@launch
