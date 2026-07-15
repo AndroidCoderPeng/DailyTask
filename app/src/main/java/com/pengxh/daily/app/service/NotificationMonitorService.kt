@@ -135,7 +135,10 @@ class NotificationMonitorService : NotificationListenerService() {
         if (pkg !in auxiliaryApp) return
 
         // 必须以 DT# 开头，否则忽略
-        if (!notice.startsWith(Constant.COMMAND_PREFIX)) return
+        if (!notice.startsWith(Constant.COMMAND_PREFIX)) {
+            MessageDispatcher.sendMessage("指令错误", "新版指令均已 DT# 开头，请检查")
+            return
+        }
 
         when {
             notice.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
