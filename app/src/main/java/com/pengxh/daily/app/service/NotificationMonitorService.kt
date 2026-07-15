@@ -136,7 +136,7 @@ class NotificationMonitorService : NotificationListenerService() {
 
         // 必须以 DT# 开头，否则忽略
         if (!notice.startsWith(Constant.COMMAND_PREFIX)) {
-            MessageDispatcher.sendMessage("指令错误", "新版指令均已 DT# 开头，请检查")
+            Log.d(kTag, "handleRemoteCommand: 指令错误, 新版指令均已 DT# 开头，请检查")
             return
         }
 
