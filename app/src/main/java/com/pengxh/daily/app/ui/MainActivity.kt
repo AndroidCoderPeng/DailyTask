@@ -394,17 +394,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
             is MonitorEvent.AppOpenedForScreenshot -> {
                 /**
-                 * 遥控"截屏"指令完整流程（整个流程 4~5 秒，最长 8 秒，根据手机情况定）：
+                 * 遥控"截屏"指令完整流程：
                  *   1. 由 NotificationMonitorService 触发 openApplication
-                 *   2. 等待 3~5 秒让目标 App 界面稳定
+                 *   2. 等待 10 秒让目标 App 界面稳定（需要把目标APP的启动动画耗时加上）
                  *   3. 触发截屏
                  *   4. 等待截屏结果（在跳转之前，避免 lifecycle 问题）
                  *   5. 跳回 MainActivity
                  *   6. 发送通知
                  */
                 lifecycleScope.launch {
-                    // 倒计时 5 秒，更新悬浮窗
-                    val countdownTarget = SystemClock.elapsedRealtime() + 5000L
+                    // 倒计时 10 秒，更新悬浮窗
+                    val countdownTarget = SystemClock.elapsedRealtime() + 10_000L
                     while (true) {
                         val remaining = countdownTarget - SystemClock.elapsedRealtime()
                         if (remaining <= 0) break
