@@ -451,7 +451,7 @@
                     android:id="@+id/commandLayout"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@color/white"
+                    android:background="@drawable/bg_solid_layout_white_16"
                     android:paddingHorizontal="@dimen/dp_16">
 
                     <com.google.android.material.textview.MaterialTextView
