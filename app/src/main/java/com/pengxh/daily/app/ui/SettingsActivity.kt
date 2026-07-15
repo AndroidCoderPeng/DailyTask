@@ -187,20 +187,37 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                             return
                         }
 
-                        if (position == 1 || position == 2) {
-                            // 企业微信或者飞书只能采用截屏获取打卡结果
-                            if (binding.captureSwitch.isChecked) {
-                                binding.captureRadioButton.isChecked = true
-                                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
-                                binding.noticeRadioButton.isChecked = false
-                            } else {
-                                "请先打开截屏服务".show(context)
-                                binding.captureRadioButton.isChecked = false
-                                return
+                        when (position) {
+                            0 -> {
+                                // 钉钉：默认通知监听，通知未开则降级截屏，两者都未开则阻断
+                                if (binding.noticeSwitch.isChecked) {
+                                    binding.noticeRadioButton.isChecked = true
+                                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                                    binding.captureRadioButton.isChecked = false
+                                } else if (binding.captureSwitch.isChecked) {
+                                    binding.captureRadioButton.isChecked = true
+                                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                                    binding.noticeRadioButton.isChecked = false
+                                } else {
+                                    "请先打开通知监听或截屏服务".show(context)
+                                    return
+                                }
+                            }
+
+                            1, 2, 3 -> {
+                                // 企业微信、飞书、移动办公M3：只能截屏
+                                if (binding.captureSwitch.isChecked) {
+                                    binding.captureRadioButton.isChecked = true
+                                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                                    binding.noticeRadioButton.isChecked = false
+                                } else {
+                                    "请先打开截屏服务".show(context)
+                                    return
+                                }
                             }
                         }
 
-                        // 更新配置
+                        // 只有通过所有校验后才写入配置
                         binding.iconView.setBackgroundResource(icons[position])
                         SaveKeyValues.saveInt(Constant.TARGET_APP_KEY, position)
                     }
