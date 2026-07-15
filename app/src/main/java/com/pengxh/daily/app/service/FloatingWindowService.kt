@@ -46,6 +46,32 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
     override fun onCreate() {
         super.onCreate()
         binding = WindowFloatingBinding.inflate(LayoutInflater.from(this))
+        floatViewParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+            PixelFormat.TRANSLUCENT
+        ).apply {
+            gravity = Gravity.TOP or Gravity.START
+        }.also {
+            windowManager.addView(binding.root, it)
+        }
+
+        // 布局完成后，将悬浮窗移动到屏幕右侧垂直居中
+        binding.root.post {
+            val displayMetrics = resources.displayMetrics
+            val screenWidth = displayMetrics.widthPixels
+            val screenHeight = displayMetrics.heightPixels
+            val viewWidth = binding.root.width
+            val viewHeight = binding.root.height
+
+            floatViewParams?.let {
+                it.x = screenWidth - viewWidth
+                it.y = (screenHeight - viewHeight) / 2
+                windowManager.updateViewLayout(binding.root, it)
+            }
+        }
 
         // 收集悬浮窗控制事件
         launch {
@@ -72,18 +98,6 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
                     binding.timeView.text = "0s"
                 }
             }
-        }
-
-        floatViewParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-            PixelFormat.TRANSLUCENT
-        ).apply {
-            gravity = Gravity.CENTER or Gravity.TOP
-        }.also {
-            windowManager.addView(binding.root, it)
         }
 
         // 获取目标应用任务超时时间
