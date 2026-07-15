@@ -88,9 +88,7 @@ class NotificationMonitorService : NotificationListenerService() {
         if (notice.isNullOrBlank()) {
             return
         }
-
         val targetApp = Constant.getTargetApp()
-        Log.d(kTag, "onNotificationPosted: $notice, 目标应用: $targetApp")
 
         // 保存指定包名的通知，其他的一律不保存
         saveTargetNotice(pkg, targetApp, title, notice)
