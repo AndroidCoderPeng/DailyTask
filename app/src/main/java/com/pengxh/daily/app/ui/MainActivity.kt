@@ -278,12 +278,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         binding.tipsView.text = "今日为周末，跳过任务"
                         binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
                         MessageDispatcher.sendMessage(
-                            "启动任务通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
+                            "任务跳过通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
                         )
                     }
 
                     is TipsEvent.Executing -> {
-                        MessageDispatcher.sendMessage("启动任务通知", "任务启动成功，请注意下次打卡时间")
                         binding.tipsView.text = "准备执行第 ${event.index} 个任务"
                         binding.tipsView.setTextColor(R.color.theme_color.convertColor(this@MainActivity))
                         dailyTaskAdapter.updateCurrentTaskState(event.index - 1, event.actualTime)
@@ -338,7 +337,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        LogFileManager.writeLog("onNewIntent: ${packageName}回到前台")
+        LogFileManager.writeLog("onNewIntent: ${packageName} 回到前台")
 
         if (ProjectionSession.isStateActive()) {
             LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")

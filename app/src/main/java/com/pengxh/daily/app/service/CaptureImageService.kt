@@ -60,7 +60,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             _captureScreenRequest.tryEmit(Unit)
         }
 
-        private val _captureResults = MutableSharedFlow<String>(extraBufferCapacity = 1)
+        private val _captureResults = MutableSharedFlow<String>(replay = 1, extraBufferCapacity = 1)
         val captureResults = _captureResults.asSharedFlow()
 
         /**
@@ -252,7 +252,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 Log.d(kTag, "================== 开始截屏 ==================")
 
                 // 不排空旧帧：后台环境下 VirtualDisplay 帧率被系统限速，排空后等新帧依赖时机运气，直接用 buffer 中已有的帧更可靠
-                val image = withTimeoutOrNull(2000) {
+                val image = withTimeoutOrNull(1000) {
                     Log.d(kTag, "进入等待......")
                     waitForImageAvailable(reader)
                 }

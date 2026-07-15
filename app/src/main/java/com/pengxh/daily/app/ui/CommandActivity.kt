@@ -18,7 +18,7 @@ class CommandActivity : KotlinBaseActivity<ActivityCommandBinding>() {
 
     private val context = this
     private val list = mutableListOf(
-        Triple("DT#执行任务", "启动循环任务（默认每天自动执行）", true),
+        Triple("DT#执行任务", "启动循环任务（默认每天自动执行）", false),
         Triple("DT#终止任务", "停止循环任务（仅停止当天）", true),
         Triple("DT#开启循环", "开启周期循环的标志", true),
         Triple("DT#关闭循环", "关闭循环标志位（永久暂停，直到收到「开启循环」指令）", true),

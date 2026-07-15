@@ -1,6 +1,6 @@
 # DailyTask
 
-> 基于 Kotlin 开发的 Android 无人值守打卡工具，兼容 Android 8 ~ 16 及 HarmonyOS 4.0。
+> 基于 Kotlin 开发的 Android 无人值守打卡工具，兼容 Android 8 ~ 16 及 HarmonyOS 4.0，其他OS需要自行测试，理论上能安装就能用，但不保证兼容性，需注意！
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-green.svg)](https://developer.android.com)
