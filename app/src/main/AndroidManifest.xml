@@ -22,8 +22,7 @@
         android:maxSdkVersion="30"
         tools:ignore="QueryAllPackagesPermission" />
 
-    <!-- AlarmManager 精确闹钟权限（Android 12+） -->
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
 
 
     <application
@@ -70,10 +69,6 @@
             android:name=".service.CaptureImageService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection" />
-
-        <receiver
-            android:name=".utils.TaskResetReceiver"
-            android:exported="false" />
     </application>
 
     <queries>

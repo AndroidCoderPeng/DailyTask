@@ -13,7 +13,6 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.utils.AlarmScheduler
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
@@ -141,10 +140,6 @@ class ForegroundRunningService : Service() {
         // 立即更新一次倒计时显示
         updateResetTimeView()
 
-        // 每次 Service 启动时重新注册 Alarm
-        val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-        AlarmScheduler.schedule(this, resetHour)
-
         // 检查电量
         checkLowBattery()
     }
@@ -228,7 +223,7 @@ class ForegroundRunningService : Service() {
 
     /**
      * 每分钟检查是否需要触发任务重置
-     * 作为 AlarmManager 的兜底，防止部分机型 Alarm 不触发导致任务不重置
+     * 作为协程 delay 的兜底，防止长时间运行后协程异常退出导致任务不重置
      */
     private fun checkAndTriggerReset() {
         val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
@@ -248,11 +243,8 @@ class ForegroundRunningService : Service() {
         }
 
         // 标记今天已重置，防止重复触发
-        LogFileManager.writeLog("ForegroundRunningService 触发任务重置（Alarm兜底）")
+        LogFileManager.writeLog("ForegroundRunningService 触发任务重置（兜底）")
         SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
-
-        // 重新注册 Alarm，防止之前的 Alarm 失效
-        AlarmScheduler.schedule(this, resetHour)
 
         // 任务重置
         if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
