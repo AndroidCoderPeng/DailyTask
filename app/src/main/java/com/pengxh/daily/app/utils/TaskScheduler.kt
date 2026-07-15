@@ -302,7 +302,7 @@ object TaskScheduler {
         if (!skipEnabled) return false
 
         val today = LocalDate.now()
-        val customWorkdays = CustomWorkdayManager.loadConfiguredWorkdays()
+        val customWorkdays = CustomWorkdayManager.loadWorkdays()
 
         // 法定节假日
         if (ChinaHolidayManager.isHoliday(today)) {

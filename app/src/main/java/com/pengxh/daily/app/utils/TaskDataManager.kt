@@ -76,7 +76,7 @@ class TaskDataManager() {
             ?.takeIf { it.isNotBlank() }
             ?.let {
                 CustomWorkdayManager.serializeWorkdays(
-                    CustomWorkdayManager.loadConfiguredWorkdaysFromRaw(it)
+                    CustomWorkdayManager.loadWorkdaysFromRaw(it)
                 )
             }
             ?: CustomWorkdayManager.serializeWorkdays(

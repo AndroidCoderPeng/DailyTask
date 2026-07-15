@@ -26,44 +26,52 @@ object CustomWorkdayManager {
         DayOfWeek.SUNDAY to "周日"
     )
 
-    fun loadConfiguredWorkdays(): Set<DayOfWeek> {
+    fun loadWorkdays(): Set<DayOfWeek> {
         val raw = SaveKeyValues.loadString(
-            Constant.CUSTOM_WORKDAYS_KEY,
-            serializeWorkdays(defaultWorkdays)
+            Constant.CUSTOM_WORKDAYS_KEY, serializeWorkdays(defaultWorkdays)
         )
-        return loadConfiguredWorkdaysFromRaw(raw)
+        return loadWorkdaysFromRaw(raw)
     }
 
-    fun loadConfiguredWorkdaysFromRaw(raw: String): Set<DayOfWeek> {
-        val parsed = raw.split(",")
-            .mapNotNull { token ->
-                token.trim().toIntOrNull()?.let { value ->
-                    orderedDays.firstOrNull { it.value == value }
-                }
+    fun loadWorkdaysFromRaw(raw: String): Set<DayOfWeek> {
+        val parsed = raw.split(",").mapNotNull { token ->
+            token.trim().toIntOrNull()?.let { value ->
+                orderedDays.firstOrNull { it.value == value }
             }
-            .toSet()
-        return if (parsed.isEmpty()) defaultWorkdays else parsed
+        }.toSet()
+        return parsed.ifEmpty { defaultWorkdays }
     }
 
-    fun saveConfiguredWorkdays(workdays: Set<DayOfWeek>) {
+    fun saveWorkdays(workdays: Set<DayOfWeek>) {
         SaveKeyValues.saveString(Constant.CUSTOM_WORKDAYS_KEY, serializeWorkdays(workdays))
     }
 
     fun serializeWorkdays(workdays: Set<DayOfWeek>): String {
-        val normalized = orderedDays
-            .filter { it in workdays }
-            .map { it.value.toString() }
+        val normalized = orderedDays.filter {
+            it in workdays
+        }.map {
+            it.value.toString()
+        }
         return if (normalized.isEmpty()) {
-            orderedDays.take(5).joinToString(",") { it.value.toString() }
+            defaultWorkdays.joinToString(",") {
+                it.value.toString()
+            }
         } else {
             normalized.joinToString(",")
         }
     }
 
     fun formatWorkdays(workdays: Set<DayOfWeek>): String {
-        return orderedDays
-            .filter { it in workdays }
-            .joinToString("、") { dayNameMap[it].orEmpty() }
+        val workdayNames = orderedDays.filter {
+            it in workdays
+        }.joinToString("、") {
+            dayNameMap[it].orEmpty()
+        }
+
+        return when (workdays.size) {
+            7 -> "每天"
+            else -> workdayNames
+        }
     }
 
     fun getOrderedDays(): List<DayOfWeek> {

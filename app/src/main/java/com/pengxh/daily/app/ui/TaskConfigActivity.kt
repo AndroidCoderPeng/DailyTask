@@ -70,12 +70,13 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.keyTextView.text = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
 
+        updateCustomWorkdaySummary(CustomWorkdayManager.loadWorkdays())
+
         binding.autoTaskSwitch.isChecked =
             SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
 
         binding.skipHolidaySwitch.isChecked =
             SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
-        updateCustomWorkdaySummary(CustomWorkdayManager.loadConfiguredWorkdays())
 
         val needRandom = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
         binding.randomTimeSwitch.isChecked = needRandom
@@ -191,6 +192,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             exportData.msgTitle =
                 SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
             exportData.wxKey = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
+            exportData.customWorkdays = CustomWorkdayManager.serializeWorkdays(
+                CustomWorkdayManager.loadWorkdays()
+            )
 
             // Boolean
             exportData.isDetectGesture =
@@ -202,9 +206,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             exportData.isSkipHoliday = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
             exportData.isSavePower =
                 SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
-            exportData.customWorkdays = CustomWorkdayManager.serializeWorkdays(
-                CustomWorkdayManager.loadConfiguredWorkdays()
-            )
 
             // EmailConfig
             val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
@@ -255,7 +256,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun showWorkdaySelector() {
         val orderedDays = CustomWorkdayManager.getOrderedDays()
-        val selectedDays = CustomWorkdayManager.loadConfiguredWorkdays().toMutableSet()
+        val selectedDays = CustomWorkdayManager.loadWorkdays().toMutableSet()
         val labels = orderedDays.map { CustomWorkdayManager.getDayLabel(it) }.toTypedArray()
         val checkedItems = orderedDays.map { it in selectedDays }.toBooleanArray()
 
@@ -277,7 +278,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 }
 
                 val normalized = orderedDays.filter { it in selectedDays }.toSet()
-                CustomWorkdayManager.saveConfiguredWorkdays(normalized)
+                CustomWorkdayManager.saveWorkdays(normalized)
                 updateCustomWorkdaySummary(normalized)
             }
             .show()
