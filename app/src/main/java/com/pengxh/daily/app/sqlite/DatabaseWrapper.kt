@@ -8,8 +8,8 @@ import java.time.LocalDate
 object DatabaseWrapper {
     private val dailyTaskDao by lazy { DailyTaskApplication.get().dataBase.dailyTaskDao() }
 
-    suspend fun loadAllTask(): ArrayList<DailyTaskBean> {
-        return dailyTaskDao.loadAll() as ArrayList<DailyTaskBean>
+    suspend fun loadAllTask(): MutableList<DailyTaskBean> {
+        return dailyTaskDao.loadAll()
     }
 
     suspend fun isTaskTimeExist(time: String): Boolean {

@@ -7,7 +7,7 @@ import androidx.core.content.edit
 object SaveKeyValues {
     private lateinit var sp: SharedPreferences
 
-    fun initSharedPreferences(context: Context) {
+    fun initialize(context: Context) {
         val packageName = context.packageName
         //获取到的包名带有“.”方便命名，取最后一个作为sp文件名
         val split = packageName.split(".")
@@ -37,6 +37,7 @@ object SaveKeyValues {
 
     fun saveString(key: String, value: String) {
         if (key.isBlank()) return
+        if (!::sp.isInitialized) return
         try {
             sp.edit { putString(key, value) }
         } catch (e: Exception) {
@@ -46,6 +47,7 @@ object SaveKeyValues {
 
     fun saveInt(key: String, value: Int) {
         if (key.isBlank()) return
+        if (!::sp.isInitialized) return
         try {
             sp.edit { putInt(key, value) }
         } catch (e: Exception) {
@@ -55,6 +57,7 @@ object SaveKeyValues {
 
     fun saveLong(key: String, value: Long) {
         if (key.isBlank()) return
+        if (!::sp.isInitialized) return
         try {
             sp.edit { putLong(key, value) }
         } catch (e: Exception) {
@@ -64,6 +67,7 @@ object SaveKeyValues {
 
     fun saveFloat(key: String, value: Float) {
         if (key.isBlank()) return
+        if (!::sp.isInitialized) return
         try {
             sp.edit { putFloat(key, value) }
         } catch (e: Exception) {
@@ -73,6 +77,7 @@ object SaveKeyValues {
 
     fun saveBoolean(key: String, value: Boolean) {
         if (key.isBlank()) return
+        if (!::sp.isInitialized) return
         try {
             sp.edit { putBoolean(key, value) }
         } catch (e: Exception) {
@@ -131,6 +136,7 @@ object SaveKeyValues {
      */
     fun removeKey(key: String) {
         if (key.isBlank()) return
+        if (!::sp.isInitialized) return
         try {
             sp.edit { remove(key) }
         } catch (e: Exception) {
@@ -142,6 +148,7 @@ object SaveKeyValues {
      * 清除所有数据
      */
     fun clearAll() {
+        if (!::sp.isInitialized) return
         try {
             sp.edit { clear() }
         } catch (e: Exception) {
@@ -153,6 +160,7 @@ object SaveKeyValues {
      * 查询某个key是否存在
      */
     fun containsKey(key: String): Boolean {
+        if (!::sp.isInitialized) return false
         if (key.isBlank()) {
             return false
         }

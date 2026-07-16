@@ -34,7 +34,7 @@ class DailyTaskApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initApplication(this)
-        SaveKeyValues.initSharedPreferences(this)
+        SaveKeyValues.initialize(this)
         MessageDispatcher.initialize(this)
         LogFileManager.initLogFile(this)
 

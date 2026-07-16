@@ -29,7 +29,7 @@ fun String.wrapLine(length: Int): String {
 
     val builder = StringBuilder()
     var start = 0
-    while (start < length) {
+    while (start < this.length) {
         val end = minOf(step, length)
         builder.append(substring(start, end))
         if (end < length) {

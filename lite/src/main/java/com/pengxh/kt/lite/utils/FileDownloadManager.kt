@@ -23,7 +23,7 @@ class FileDownloadManager(builder: Builder) : CoroutineScope {
 
     private val job = SupervisorJob()
 
-    override val coroutineContext = Dispatchers.Main + SupervisorJob()
+    override val coroutineContext = Dispatchers.Main + job
 
     class Builder {
         lateinit var url: String

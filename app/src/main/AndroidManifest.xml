@@ -22,9 +22,6 @@
         android:maxSdkVersion="30"
         tools:ignore="QueryAllPackagesPermission" />
 
-
-
-
     <application
         android:name=".DailyTaskApplication"
         android:allowBackup="true"

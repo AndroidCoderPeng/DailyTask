@@ -6,6 +6,7 @@ import android.os.Bundle
 import com.pengxh.kt.lite.databinding.DialogProgressBinding
 import com.pengxh.kt.lite.extensions.binding
 import com.pengxh.kt.lite.extensions.initDialogLayoutParams
+import java.util.Locale
 
 class ProgressDialog(context: Context) : Dialog(context) {
 
@@ -20,8 +21,8 @@ class ProgressDialog(context: Context) : Dialog(context) {
         binding.progressText.text = "0 %"
     }
 
-    fun setMaxProgress(max: Long) {
-        binding.progressBar.max = max.toInt()
+    fun setMaxProgress(max: Int) {
+        binding.progressBar.max = max
     }
 
     private fun getMaxProgress() = binding.progressBar.max
@@ -29,7 +30,7 @@ class ProgressDialog(context: Context) : Dialog(context) {
     fun updateProgress(progress: Int) {
         binding.progressBar.progress = progress
 
-        val percent = (progress / getMaxProgress()) * 100
-        binding.progressText.text = String.format("%.2f %%", percent)
+        val percent = (progress.toFloat() / getMaxProgress()) * 100
+        binding.progressText.text = String.format(Locale.CHINA, "%.2f %%", percent)
     }
 }
