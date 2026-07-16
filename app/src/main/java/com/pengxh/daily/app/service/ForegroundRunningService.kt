@@ -243,7 +243,6 @@ class ForegroundRunningService : Service() {
         }
 
         // 标记今天已重置，防止重复触发
-        LogFileManager.writeLog("ForegroundRunningService 触发任务重置（兜底）")
         SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
 
         // 任务重置
