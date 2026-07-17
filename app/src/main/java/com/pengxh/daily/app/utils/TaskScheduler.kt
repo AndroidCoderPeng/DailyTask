@@ -211,15 +211,14 @@ object TaskScheduler {
                     val imagePath = captureDeferred?.await() ?: ""
                     if (imagePath.isNotEmpty()) {
                         MessageDispatcher.sendAttachmentMessage(
-                            "打卡超时通知", "打卡超时，截图见附件", imagePath
+                            "任务执行结果通知", "任务执行结果见附件", imagePath
                         )
-                        LogFileManager.writeLog("发送打卡超时截屏: $imagePath")
                     } else {
-                        MessageDispatcher.sendMessage("打卡超时通知", "超时截屏失败，imagePath 为空")
+                        MessageDispatcher.sendMessage("任务执行结果通知", "截屏失败，imagePath 为空")
                     }
                 } else {
                     // 通知模式：无截图，纯文本提醒
-                    MessageDispatcher.sendMessage("打卡超时通知", "打卡超时，请手动检查是否打卡成功")
+                    MessageDispatcher.sendMessage("任务执行结果通知", "任务超时，请手动检查是否打卡成功")
                 }
             }
 
