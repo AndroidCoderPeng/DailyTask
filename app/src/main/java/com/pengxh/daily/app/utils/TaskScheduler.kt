@@ -50,6 +50,12 @@ object TaskScheduler {
     private val _returnToApp = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
     val returnToApp = _returnToApp.asSharedFlow()
 
+    /**
+     * 日期变化信号（TaskScheduler → MainActivity）
+     * */
+    private val _dayFlag = MutableStateFlow("工作日")
+    val dayFlag = _dayFlag.asSharedFlow()
+
     private var scope: CoroutineScope? = null
     private var job: Job? = null
 
@@ -90,6 +96,9 @@ object TaskScheduler {
 
         val tempJob = currentScope.launch {
             while (isActive) {
+                // 每天开始先发送当日的 flag
+                _dayFlag.value = getDayFlag()
+
                 if (shouldSkipToday()) {
                     _tipsEvent.emit(TipsEvent.Skip)
                     ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
@@ -112,6 +121,19 @@ object TaskScheduler {
             _isRunning.value = false
         }
         job = tempJob
+    }
+
+    /**
+     * 获取当日 flag
+     * */
+    fun getDayFlag(): String {
+        val today = LocalDate.now()
+        return when {
+            ChinaHolidayManager.isWorkday(today) -> "补班日"
+            CustomWorkdayManager.isWeekdayRestDay(today) -> "休息日"
+            ChinaHolidayManager.isHoliday(today) -> "节假日"
+            else -> "工作日"
+        }
     }
 
     /**
@@ -218,7 +240,10 @@ object TaskScheduler {
                     }
                 } else {
                     // 通知模式：无截图，纯文本提醒
-                    MessageDispatcher.sendMessage("任务执行结果通知", "任务超时，请手动检查是否打卡成功")
+                    MessageDispatcher.sendMessage(
+                        "任务执行结果通知",
+                        "任务超时，请手动检查是否打卡成功"
+                    )
                 }
             }
 

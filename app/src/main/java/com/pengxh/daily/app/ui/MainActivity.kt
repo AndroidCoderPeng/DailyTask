@@ -30,9 +30,7 @@ import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.GestureController
@@ -61,7 +59,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
-import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 
@@ -106,24 +103,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         override fun run() {
             val currentTime = dateTimeFormat.format(Date())
             val parts = currentTime.split(" ")
-            val now = LocalDate.now()
-            val flag = when {
-                // 调休补班日（如周末上班补假期，覆盖一切）
-                ChinaHolidayManager.isWorkday(now) -> "补班日"
-
-                // 一周休息日（按星期几，默认周六日双休，用户可修改）
-                CustomWorkdayManager.isWeekdayRestDay(now) -> "休息日"
-
-                // 法定节假日
-                ChinaHolidayManager.isHoliday(now) -> "节假日"
-
-                // 其余情况
-                else -> "工作日"
-            }
-            binding.toolbar.apply {
-                title = "${parts[2]}（$flag）"
-                subtitle = "${parts[0]} ${parts[1]}"
-            }
+            binding.toolbar.subtitle = "${parts[0]} ${parts[1]}"
             mainHandler.postDelayed(this, 1000)
         }
     }
@@ -145,6 +125,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         // 显示时间
         mainHandler.post(timeUpdateRunnable)
+
+        lifecycleScope.launch {
+            TaskScheduler.dayFlag.collect { flag ->
+                val currentTime = dateTimeFormat.format(Date())
+                val parts = currentTime.split(" ")
+                binding.toolbar.title = "${parts[2]}（$flag）"
+            }
+        }
 
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
