@@ -2,6 +2,7 @@ package com.pengxh.daily.app.utils
 
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import java.time.DayOfWeek
+import java.time.LocalDate
 
 object CustomWorkdayManager {
     private val orderedDays = listOf(
@@ -80,5 +81,14 @@ object CustomWorkdayManager {
 
     fun getDayLabel(dayOfWeek: DayOfWeek): String {
         return dayNameMap[dayOfWeek].orEmpty()
+    }
+
+
+    /**
+     * 判断今天是否是用户设置的一周固定休息日（按星期几配置）
+     */
+    fun isWeekdayRestDay(date: LocalDate): Boolean {
+        val workdays = loadWorkdays()
+        return date.dayOfWeek !in workdays
     }
 }

@@ -319,26 +319,26 @@ object TaskScheduler {
         if (!skipEnabled) return false
 
         val today = LocalDate.now()
-        val customWorkdays = CustomWorkdayManager.loadWorkdays()
 
-        // 法定节假日
-        if (ChinaHolidayManager.isHoliday(today)) {
-            LogFileManager.writeLog("今日为法定节假日，跳过任务")
-            return true
-        }
-
-        // 调休补班日（例外：周末但要上班）
+        // 调休补班日（覆盖一切，必须执行）
         if (ChinaHolidayManager.isWorkday(today)) {
             LogFileManager.writeLog("今日为调休补班日，正常执行任务")
             return false
         }
 
-        // 不在自定义工作日内，即为休息日
-        if (today.dayOfWeek !in customWorkdays) {
-            LogFileManager.writeLog("今日不在自定义工作日内，跳过任务")
+        // 法定节假日 → 跳过
+        if (ChinaHolidayManager.isHoliday(today)) {
+            LogFileManager.writeLog("今日为法定节假日，跳过任务")
             return true
         }
 
+        // 一周休息日（默认周六日双休，用户可修改）→ 跳过
+        if (CustomWorkdayManager.isWeekdayRestDay(today)) {
+            LogFileManager.writeLog("今日为休息日，跳过任务")
+            return true
+        }
+
+        // 其余情况 → 正常执行
         return false
     }
 
