@@ -278,6 +278,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         dailyTaskAdapter.updateCurrentTaskState(-1)
                         binding.tipsView.text = "今日任务已全部执行完毕，等待下次任务"
                         binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
+                        LogFileManager.writeLog("今日任务已全部执行完毕")
                         MessageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
                     }
                 }
@@ -316,7 +317,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        LogFileManager.writeLog("onNewIntent: ${packageName} 回到前台")
+        LogFileManager.writeLog("onNewIntent: $packageName 回到前台")
 
         if (ProjectionSession.isStateActive()) {
             LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")

@@ -58,6 +58,8 @@ object TaskScheduler {
      * */
     private var clockInDeferred: CompletableDeferred<Unit>? = null
 
+    private var lastProcessedDate: LocalDate? = null
+
     /**
      * 由 ForegroundRunningService 调用，注入协程作用域
      */
@@ -90,6 +92,15 @@ object TaskScheduler {
 
         val tempJob = currentScope.launch {
             while (isActive) {
+                val today = LocalDate.now()
+
+                // 今天已经处理过了，不再重复
+                if (lastProcessedDate == today) {
+                    LogFileManager.writeLog("今日已处理，等待下一次重置")
+                    if (isActive) waitUntilNextReset()
+                    continue
+                }
+
                 if (shouldSkipToday()) {
                     _tipsEvent.emit(TipsEvent.Skip)
                     ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
@@ -103,6 +114,8 @@ object TaskScheduler {
                     LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
                     executeSchedule(schedule)
                 }
+
+                lastProcessedDate = today
 
                 // 今天结束，睡到明天
                 if (isActive) waitUntilNextReset()
@@ -232,8 +245,7 @@ object TaskScheduler {
                 } else {
                     // 通知模式：无截图，纯文本提醒
                     MessageDispatcher.sendMessage(
-                        "任务执行结果通知",
-                        "任务超时，请手动检查是否打卡成功"
+                        "任务执行结果通知", "任务超时，请手动检查是否打卡成功"
                     )
                 }
             }
@@ -254,13 +266,22 @@ object TaskScheduler {
     }
 
     /**
+     * 调试用：非 null 时跳过真实计算，直接使用指定秒数
+     * 生产环境保持 null
+     */
+    @Volatile
+    var debugWaitSeconds: Long? = null
+
+    /**
      * 等待到下一个每日重置时间
      */
     private suspend fun waitUntilNextReset() {
         val resetHour = SaveKeyValues.loadInt(
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         )
-        val waitSeconds = calculateSecondsUntilReset(resetHour)
+
+        val waitSeconds = debugWaitSeconds ?: calculateSecondsUntilReset(resetHour)
+        if (waitSeconds <= 0L) return  // 防御性代码：防止自旋
 
         LogFileManager.writeLog("等待 ${waitSeconds}s 后进入下一个任务周期")
 
@@ -268,10 +289,7 @@ object TaskScheduler {
         _tipsEvent.emit(TipsEvent.Completed)
         ForegroundRunningService.emitNotificationText("今日任务已执行完毕，等待下次任务")
 
-        if (waitSeconds > 0) {
-            // 单次挂起，零 CPU 开销
-            delay(waitSeconds * 1000)
-        }
+        delay(waitSeconds * 1000)
     }
 
     /**
@@ -380,10 +398,9 @@ object TaskScheduler {
                     timeParts[1] * 60_000L +
                     timeParts[2] * 1_000L
             Triple(task, actualTime, actualMillis)
-        }.sortedBy { it.third }
-            .mapIndexed { index, (task, actualTime, actualMillis) ->
-                ScheduledTask(task, index + 1, task.time, actualTime, actualMillis)
-            }
+        }.sortedBy { it.third }.mapIndexed { index, (task, actualTime, actualMillis) ->
+            ScheduledTask(task, index + 1, task.time, actualTime, actualMillis)
+        }
     }
 
     /**
