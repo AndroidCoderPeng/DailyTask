@@ -103,7 +103,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         override fun run() {
             val currentTime = dateTimeFormat.format(Date())
             val parts = currentTime.split(" ")
-            binding.toolbar.subtitle = "${parts[0]} ${parts[1]}"
+            binding.toolbar.apply {
+                title = "${parts[2]}（${TaskScheduler.getDayFlag()}）"
+                subtitle = "${parts[0]} ${parts[1]}"
+            }
             mainHandler.postDelayed(this, 1000)
         }
     }
@@ -125,14 +128,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         // 显示时间
         mainHandler.post(timeUpdateRunnable)
-
-        lifecycleScope.launch {
-            TaskScheduler.dayFlag.collect { flag ->
-                val currentTime = dateTimeFormat.format(Date())
-                val parts = currentTime.split(" ")
-                binding.toolbar.title = "${parts[2]}（$flag）"
-            }
-        }
 
         binding.toolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {

@@ -50,12 +50,6 @@ object TaskScheduler {
     private val _returnToApp = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
     val returnToApp = _returnToApp.asSharedFlow()
 
-    /**
-     * 日期变化信号（TaskScheduler → MainActivity）
-     * */
-    private val _dayFlag = MutableStateFlow("工作日")
-    val dayFlag = _dayFlag.asSharedFlow()
-
     private var scope: CoroutineScope? = null
     private var job: Job? = null
 
@@ -96,9 +90,6 @@ object TaskScheduler {
 
         val tempJob = currentScope.launch {
             while (isActive) {
-                // 每天开始先发送当日的 flag
-                _dayFlag.value = getDayFlag()
-
                 if (shouldSkipToday()) {
                     _tipsEvent.emit(TipsEvent.Skip)
                     ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
@@ -279,7 +270,7 @@ object TaskScheduler {
 
         if (waitSeconds > 0) {
             // 单次挂起，零 CPU 开销
-            delay(waitSeconds * 1000L)
+            delay(waitSeconds * 1000)
         }
     }
 
@@ -398,7 +389,7 @@ object TaskScheduler {
     /**
      * 计算距离下一次重置还有多少秒
      */
-    private fun calculateSecondsUntilReset(resetHour: Int): Int {
+    private fun calculateSecondsUntilReset(resetHour: Int): Long {
         val now = Calendar.getInstance()
         val target = now.clone() as Calendar
         target.set(Calendar.HOUR_OF_DAY, resetHour)
@@ -410,7 +401,7 @@ object TaskScheduler {
             target.add(Calendar.DATE, 1)
         }
 
-        return ((target.timeInMillis - now.timeInMillis) / 1000).toInt()
+        return ((target.timeInMillis - now.timeInMillis) / 1000).coerceAtLeast(1)
     }
 
     private data class ScheduledTask(
