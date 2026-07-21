@@ -64,6 +64,10 @@ class NotificationMonitorService : NotificationListenerService() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var listenerConnected = false
 
+    // 通知转移去重：相同标题+内容在短时间窗口内只转发一次，避免系统重复投递刷屏
+    private var lastTransferKey: String? = null
+    private var lastTransferTime = 0L
+
     /**
      * 有可用的并且和通知管理器连接成功时回调
      */
@@ -92,6 +96,9 @@ class NotificationMonitorService : NotificationListenerService() {
 
         // 保存指定包名的通知，其他的一律不保存
         saveTargetNotice(pkg, targetApp, title, notice)
+
+        // 通知转移：开启后将目标打卡 App 的通知经现有消息渠道转发到目标手机
+        forwardNotificationIfEnabled(pkg, targetApp, title, notice)
 
         // 截屏模式选中 + 钉钉手动打卡 → 通知被第 99 行拦截，仅测试场景会出现
         // 目标应用打卡通知，如果设置通知监听，那么结果来源只能选通知监听。
@@ -126,6 +133,34 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
             }
         }
+    }
+
+    /**
+     * 通知转移：开启后，将目标打卡 App 的通知原文经现有消息渠道转发到目标手机。
+     * 范围限制为当前目标打卡 App（飞书/企微/钉钉/M3/自定义），不会转发辅助聊天 App 或本应用自身。
+     * 复用 [MessageDispatcher] 按用户已配置渠道（邮件/企业微信）自动分流，与打卡结果通知同一套通道。
+     */
+    private fun forwardNotificationIfEnabled(pkg: String, targetApp: String, title: String, notice: String) {
+        if (!SaveKeyValues.loadBoolean(Constant.NOTIFICATION_TRANSFER_KEY, false)) return
+        if (pkg != targetApp) return
+        if (notice.isBlank()) return
+
+        // 轻量去重：相同标题+内容在 10s 内只转发一次
+        val key = "$title|$notice"
+        val now = System.currentTimeMillis()
+        if (key == lastTransferKey && now - lastTransferTime < 10_000) return
+        lastTransferKey = key
+        lastTransferTime = now
+
+        MessageDispatcher.sendMessage(title.ifBlank { "通知转移" }, notice)
+    }
+
+    /**
+     * 校验通知转移依赖的消息渠道是否已配置，未配置时返回告警文案（仍允许保存开关态）。
+     */
+    private fun validateTransferConfig(): String {
+        val channel = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+        return if (channel !in 0..1) "消息渠道未配置，转发可能失败" else ""
     }
 
     /**
@@ -202,6 +237,20 @@ class NotificationMonitorService : NotificationListenerService() {
                 } else {
                     MessageDispatcher.sendMessage("截屏状态通知", "截屏服务已断开，截屏失败")
                 }
+            }
+
+            notice.contains("开启转移") -> {
+                SaveKeyValues.saveBoolean(Constant.NOTIFICATION_TRANSFER_KEY, true)
+                val warning = validateTransferConfig()
+                MessageDispatcher.sendMessage(
+                    "通知转移状态通知",
+                    "通知转移已开启" + if (warning.isBlank()) "" else "\n⚠️$warning"
+                )
+            }
+
+            notice.contains("关闭转移") -> {
+                SaveKeyValues.saveBoolean(Constant.NOTIFICATION_TRANSFER_KEY, false)
+                MessageDispatcher.sendMessage("通知转移状态通知", "通知转移已关闭")
             }
 
             else -> {

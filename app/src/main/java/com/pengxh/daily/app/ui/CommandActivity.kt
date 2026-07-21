@@ -27,7 +27,9 @@ class CommandActivity : KotlinBaseActivity<ActivityCommandBinding>() {
         Triple("DT#考勤记录", "导出当天考勤记录", true),
         Triple("DT#打卡", "触发一次打卡（默认指令内容为「打卡」）", true),
         Triple("DT#状态查询", "查询当前状态（任务、服务、监听、电量、版本、日期等）", true),
-        Triple("DT#截屏", "截取目标应用屏幕并通过消息渠道返回给用户", true)
+        Triple("DT#截屏", "截取目标应用屏幕并通过消息渠道返回给用户", true),
+        Triple("DT#开启转移", "开启通知转移（将打卡应用通知转发到目标手机）", true),
+        Triple("DT#关闭转移", "关闭通知转移", true)
     )
     private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 
