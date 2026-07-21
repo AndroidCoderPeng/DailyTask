@@ -360,6 +360,27 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
         }
 
+        binding.transferSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            if (isChecked) {
+                // 通知转移依赖通知监听服务才能收到目标 App 通知
+                if (!notificationEnable()) {
+                    "请先开启通知监听".show(this)
+                    binding.transferSwitch.isChecked = false
+                    return@setOnCheckedChangeListener
+                }
+                SaveKeyValues.saveBoolean(Constant.NOTIFICATION_TRANSFER_KEY, true)
+                val channel = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+                if (channel !in 0..1) {
+                    "未配置消息渠道，转发可能失败".show(this)
+                }
+            } else {
+                SaveKeyValues.saveBoolean(Constant.NOTIFICATION_TRANSFER_KEY, false)
+            }
+        }
+
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }
@@ -484,6 +505,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
             binding.powerSaveSwitch.isChecked =
                 SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+            binding.transferSwitch.isChecked =
+                SaveKeyValues.loadBoolean(Constant.NOTIFICATION_TRANSFER_KEY, false)
         } finally {
             syncingSwitchState = false
         }
