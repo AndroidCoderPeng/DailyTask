@@ -34,4 +34,12 @@ sealed class MonitorEvent {
      * 远程"截屏"指令
      * */
     data object AppOpenedForScreenshot : MonitorEvent()
+
+    /**
+     * 目标应用已为远程"打卡"指令打开
+     * */
+    data class AppOpenedForRemoteClockIn(
+        val countdownSeconds: Int,
+        val returnScreenshot: Boolean
+    ) : MonitorEvent()
 }

@@ -2,7 +2,6 @@ package com.pengxh.daily.app.service
 
 import android.app.Notification
 import android.content.ComponentName
-import android.os.SystemClock
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -11,7 +10,6 @@ import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MonitorEvent
 import com.pengxh.daily.app.utils.ProjectionSession
@@ -23,10 +21,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -208,20 +204,18 @@ class NotificationMonitorService : NotificationListenerService() {
                 // 自定义打卡指令，用户可配置关键词（如 "打卡"），同样需要 DT# 前缀
                 val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
                 if (notice.contains(key)) {
-                    // 遥控"打卡"：一次性，只唤起目标 App 并倒计时，不关联任务调度
+                    val timeoutSeconds = SaveKeyValues.loadInt(
+                        Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+                    )
+                    val returnScreenshot = SaveKeyValues.loadBoolean(
+                        Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false
+                    )
                     openApplication {
-                        serviceScope.launch {
-                            val timeoutSeconds = SaveKeyValues.loadInt(
-                                Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+                        emitMonitorEvent(
+                            MonitorEvent.AppOpenedForRemoteClockIn(
+                                timeoutSeconds, returnScreenshot
                             )
-                            val target = SystemClock.elapsedRealtime() + timeoutSeconds * 1000L
-                            while (isActive) {
-                                val remaining = target - SystemClock.elapsedRealtime()
-                                if (remaining <= 0) break
-                                FloatingWindowController.updateTime((remaining / 1000).toInt())
-                                delay(minOf(1000L, remaining).coerceAtLeast(1))
-                            }
-                        }
+                        )
                     }
                 }
             }

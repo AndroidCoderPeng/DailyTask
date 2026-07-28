@@ -360,6 +360,20 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
         }
 
+        binding.remoteClockInCaptureSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            if (isChecked && !ProjectionSession.isStateActive()) {
+                syncingSwitchState = true
+                binding.remoteClockInCaptureSwitch.isChecked = false
+                syncingSwitchState = false
+                "请先打开截屏服务".show(this)
+                return@setOnCheckedChangeListener
+            }
+            SaveKeyValues.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, isChecked)
+        }
+
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
         }
@@ -484,6 +498,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
             binding.powerSaveSwitch.isChecked =
                 SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+            binding.remoteClockInCaptureSwitch.isChecked =
+                SaveKeyValues.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false)
         } finally {
             syncingSwitchState = false
         }
