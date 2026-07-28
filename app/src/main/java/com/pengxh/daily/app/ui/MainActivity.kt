@@ -375,41 +375,69 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
 
             is MonitorEvent.AppOpenedForScreenshot -> {
-                /**
-                 * 遥控"截屏"指令完整流程：
-                 *   1. 由 NotificationMonitorService 触发 openApplication
-                 *   2. 等待 10 秒让目标 App 界面稳定（需要把目标APP的启动动画耗时加上）
-                 *   3. 触发截屏
-                 *   4. 等待截屏结果（在跳转之前，避免 lifecycle 问题）
-                 *   5. 跳回 MainActivity
-                 *   6. 发送通知
-                 */
-                lifecycleScope.launch {
-                    // 倒计时 10 秒，更新悬浮窗
-                    val countdownTarget = SystemClock.elapsedRealtime() + 10_000L
-                    while (true) {
-                        val remaining = countdownTarget - SystemClock.elapsedRealtime()
-                        if (remaining <= 0) break
-                        FloatingWindowController.updateTime((remaining / 1000).toInt())
-                        delay(minOf(1000L, remaining).coerceAtLeast(1))
-                    }
+                captureTargetAppAndReturn(
+                    countdownSeconds = 10,
+                    messageTitle = "截屏状态通知",
+                    successMessage = "截图完成",
+                    failureMessage = "截图完成，但是无法获取截图"
+                )
+            }
 
-                    // 触发截屏并等待截屏结果
-                    val imagePath = CaptureImageService.requestCaptureScreen().await()
-
-                    // 回到主界面
-                    backToMainActivity()
-
-                    // 发送通知（跳回后执行，Activity 已在前台）
-                    if (imagePath.isNullOrEmpty()) {
-                        MessageDispatcher.sendMessage("截屏状态通知", "截图完成，但是无法获取截图")
-                    } else {
-                        MessageDispatcher.sendAttachmentMessage(
-                            "截屏状态通知", "截图完成", imagePath
-                        )
-                    }
+            is MonitorEvent.AppOpenedForRemoteClockIn -> {
+                if (event.returnScreenshot) {
+                    captureTargetAppAndReturn(
+                        countdownSeconds = event.countdownSeconds,
+                        messageTitle = "打卡结果通知",
+                        successMessage = "打卡完成，结果见附件",
+                        failureMessage = "打卡完成，但是无法获取截图"
+                    )
+                } else {
+                    returnAfterCountdown(event.countdownSeconds)
                 }
             }
+        }
+    }
+
+    private fun returnAfterCountdown(countdownSeconds: Int) {
+        lifecycleScope.launch {
+            countdownTargetApp(countdownSeconds)
+            backToMainActivity()
+        }
+    }
+
+    /**
+     * 远程截屏与远程打卡的公共流程：倒计时 → 截屏 → 返回 → 发送结果。
+     */
+    private fun captureTargetAppAndReturn(
+        countdownSeconds: Int,
+        messageTitle: String,
+        successMessage: String,
+        failureMessage: String
+    ) {
+        lifecycleScope.launch {
+            countdownTargetApp(countdownSeconds)
+
+            // 在返回前等待截屏结果，避免 Activity 生命周期变化导致结果丢失。
+            val imagePath = CaptureImageService.requestCaptureScreen().await()
+            backToMainActivity()
+
+            if (imagePath.isNullOrEmpty()) {
+                MessageDispatcher.sendMessage(messageTitle, failureMessage)
+            } else {
+                MessageDispatcher.sendAttachmentMessage(
+                    messageTitle, successMessage, imagePath
+                )
+            }
+        }
+    }
+
+    private suspend fun countdownTargetApp(countdownSeconds: Int) {
+        val countdownTarget = SystemClock.elapsedRealtime() + countdownSeconds * 1000L
+        while (true) {
+            val remaining = countdownTarget - SystemClock.elapsedRealtime()
+            if (remaining <= 0) break
+            FloatingWindowController.updateTime((remaining / 1000).toInt())
+            delay(minOf(1000L, remaining).coerceAtLeast(1))
         }
     }
 
