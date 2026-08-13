@@ -28,8 +28,7 @@ object Constant {
     const val RANDOM_TIME_KEY = "RANDOM_TIME_KEY" // 随机时间(Boolean)
     const val SKIP_HOLIDAY_KEY = "SKIP_HOLIDAY_KEY" // 跳过节假日(Boolean)
     const val POWER_SAVE_MODE_KEY = "POWER_SAVE_MODE_KEY" // 省电模式(Boolean)
-    const val REMOTE_CLOCK_IN_CAPTURE_KEY =
-        "REMOTE_CLOCK_IN_CAPTURE_KEY" // 远程打卡指令返回截图(Boolean)
+    const val REMOTE_CLOCK_IN_CAPTURE_KEY = "REMOTE_CLOCK_IN_CAPTURE_KEY" // 远程打卡指令返回截图(Boolean)
 
     // 不导出的sp缓存
     const val LAST_RESET_DATE_KEY = "LAST_RESET_DATE_KEY"

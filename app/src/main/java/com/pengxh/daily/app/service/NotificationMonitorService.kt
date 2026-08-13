@@ -130,32 +130,37 @@ class NotificationMonitorService : NotificationListenerService() {
     private fun handleRemoteCommand(pkg: String, notice: String) {
         if (pkg !in auxiliaryApp) return
 
-        // 必须以 DT# 开头，否则忽略
-        if (!notice.startsWith(Constant.COMMAND_PREFIX)) {
-            Log.d(kTag, "handleRemoteCommand: 指令错误, 新版指令均已 DT# 开头，请检查")
+        Log.d(kTag, "handleRemoteCommand: notice = $notice")
+        val prefixIndex = notice.indexOf(Constant.COMMAND_PREFIX)
+        if (prefixIndex < 0) {
+            Log.d(kTag, "handleRemoteCommand: 未检测到 DT# 指令前缀")
             return
         }
 
+        // 折叠通知格式形如 "[n条]昵称: DT#执行任务"，截取 DT# 之后的真正指令
+        val command = notice.substring(prefixIndex)
+        Log.d(kTag, "handleRemoteCommand: command = $command")
+
         when {
-            notice.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
+            command.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
 
-            notice.contains("终止任务") -> emitMonitorEvent(MonitorEvent.StopTaskCommand)
+            command.contains("终止任务") -> emitMonitorEvent(MonitorEvent.StopTaskCommand)
 
-            notice.contains("开启循环") -> {
+            command.contains("开启循环") -> {
                 SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
                 MessageDispatcher.sendMessage("循环任务状态通知", "循环任务状态已更新为：开启")
             }
 
-            notice.contains("关闭循环") -> {
+            command.contains("关闭循环") -> {
                 SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
                 MessageDispatcher.sendMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
             }
 
-            notice.contains("息屏") -> emitMonitorEvent(MonitorEvent.ShowMaskCommand)
+            command.contains("息屏") -> emitMonitorEvent(MonitorEvent.ShowMaskCommand)
 
-            notice.contains("亮屏") -> emitMonitorEvent(MonitorEvent.HideMaskCommand)
+            command.contains("亮屏") -> emitMonitorEvent(MonitorEvent.HideMaskCommand)
 
-            notice.contains("考勤记录") -> {
+            command.contains("考勤记录") -> {
                 serviceScope.launch {
                     val notices = try {
                         DatabaseWrapper.loadCurrentDayNotice()
@@ -180,7 +185,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
             }
 
-            notice.contains("状态查询") -> {
+            command.contains("状态查询") -> {
                 val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
                 val content = buildString {
                     appendLine("任务状态：${if (TaskScheduler.isRunning()) "运行中" else "已停止"}")
@@ -192,7 +197,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 MessageDispatcher.sendMessage("状态查询通知", content)
             }
 
-            notice.contains("截屏") -> {
+            command.contains("截屏") -> {
                 if (ProjectionSession.isStateActive()) {
                     openApplication { emitMonitorEvent(MonitorEvent.AppOpenedForScreenshot) }
                 } else {
