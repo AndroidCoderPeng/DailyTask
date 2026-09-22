@@ -530,7 +530,7 @@
                             <div class="hh-date" id="homeDate">2026年09月22日 星期三 · 工作日</div>
                             <div class="hh-row">
                                 <div class="hh-txt">
-                                    <div class="hh-day" id="heroDay">距下次任务</div>
+                                    <div class="hh-day" id="heroDay">今日待执行</div>
                                     <div class="hh-st" id="heroStatus">任务未启动，点击按钮开始</div>
                                 </div>
                                 <div class="ring lg" id="heroRing"><b id="heroRingTxt">0%</b></div>
@@ -1251,7 +1251,7 @@
         $('heroStatus').textContent = '打卡任务今日自动跳过';
         $('hhead').classList.add('skip');
       } else {
-        $('heroDay').textContent = doneAll ? '今日已完成' : '今日 ' + df.type;
+        $('heroDay').textContent = doneAll ? '今日已完成' : '今日待执行';
         $('heroStatus').textContent = doneAll ? '全部任务执行完毕，结果已推送'
           : (state.tasks.length ? '任务未启动，点击下方按钮开始' : '还没有配置任务时间点');
         $('hhead').classList.remove('skip');
