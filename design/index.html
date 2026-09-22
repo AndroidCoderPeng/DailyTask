@@ -101,8 +101,8 @@
         html[data-theme="dark"] .watermark{opacity:.18}
 
         .statusbar{
-          height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 24px;
-          font-size:11.5px;font-weight:700;color:#fff;background:var(--brand);position:relative;z-index:5;
+          height:26px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 22px;
+          font-size:11px;font-weight:700;color:#fff;background:var(--brand);position:relative;z-index:5;
         }
         .statusbar .ri{display:flex;gap:5px;align-items:center;font-size:10px;opacity:.95}
 
@@ -124,13 +124,13 @@
            4. 顶栏
            ========================================================== */
         .appbar{
-          flex:0 0 auto;color:#fff;padding:6px 10px 12px 6px;display:flex;align-items:center;gap:2px;min-height:54px;
+          flex:0 0 auto;color:#fff;padding:2px 10px 6px 4px;display:flex;align-items:center;gap:2px;min-height:46px;
           background:linear-gradient(120deg,var(--hero-a),var(--hero-b));position:relative;z-index:6;
           transition:background .25s,box-shadow .25s;
         }
         .appbar::after{content:"";position:absolute;inset:0;background:radial-gradient(130% 100% at 86% 0%,rgba(255,255,255,.24),transparent 58%);pointer-events:none}
         .appbar .nav,.appbar .act{
-          width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:13px;cursor:pointer;
+          width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:12px;cursor:pointer;
           font-size:19px;flex:0 0 auto;background:rgba(255,255,255,.16);transition:.16s;position:relative;z-index:1;
         }
         .appbar .act{font-size:17px}
@@ -138,13 +138,6 @@
         .appbar .ttl{flex:1;min-width:0;padding-left:6px;position:relative;z-index:1}
         .appbar .ttl .t{font-size:18px;font-weight:800;letter-spacing:.2px}
         .appbar .ttl .s{font-size:11.5px;opacity:.85;margin-top:2px;font-variant-numeric:tabular-nums}
-
-        /* 首页：顶栏叠在渐变状态区之上，滚动后实体化 */
-        #page-home .appbar{position:absolute;left:0;right:0;top:0;background:transparent;box-shadow:none}
-        #page-home .appbar::after{display:none}
-        #page-home .appbar .ttl .t,#page-home .appbar .ttl .s{opacity:0;transform:translateY(8px);transition:.25s}
-        #page-home .appbar.solid{background:linear-gradient(120deg,var(--hero-a),var(--hero-b));box-shadow:0 10px 24px rgba(15,99,196,.24)}
-        #page-home .appbar.solid .ttl .t,#page-home .appbar.solid .ttl .s{opacity:1;transform:none}
 
         /* ==========================================================
            5. 通用组件
@@ -222,7 +215,7 @@
            6. 首页
            ========================================================== */
         .hhead{
-          position:relative;padding:66px 20px 18px;color:#fff;overflow:hidden;
+          position:relative;padding:14px 20px 16px;color:#fff;overflow:hidden;
           border-radius:0 0 28px 28px;background:linear-gradient(140deg,var(--hero-a),var(--hero-b));
           transition:background .4s;
         }
@@ -242,7 +235,7 @@
         #heroRing::after{inset:7px;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
         .ring.lg b{font-size:16px;color:#fff}
 
-        .hero{margin:-16px 14px 0;background:var(--card);border-radius:var(--r-xl);box-shadow:var(--sh);padding:14px;position:relative;z-index:2}
+        .hero{margin:-24px 14px 0;background:var(--card);border-radius:var(--r-xl);box-shadow:var(--sh);padding:14px;position:relative;z-index:2}
         .hero .bar{display:flex;gap:10px}
         .run-btn{
           flex:1;border:none;cursor:pointer;font-family:inherit;height:46px;border-radius:14px;font-size:15px;font-weight:700;color:#fff;
@@ -252,12 +245,6 @@
         .run-btn.stop{background:linear-gradient(135deg,#FF6A5C,#E92E1B);box-shadow:0 6px 16px rgba(255,77,61,.3)}
         .run-btn:active{transform:scale(.98)}
         .run-btn .gl{font-size:11px}
-        .tick-btn{
-          border:none;cursor:pointer;font-family:inherit;height:46px;padding:0 16px;border-radius:15px;flex:0 0 auto;
-          background:var(--field);color:var(--txt-2);font-size:13px;font-weight:700;
-          box-shadow:inset 0 0 0 1px var(--line);transition:.16s;
-        }
-        .tick-btn:active{transform:scale(.96);background:var(--brand-soft);color:var(--brand)}
 
         .stat-row{display:flex;gap:10px;margin-top:13px}
         .stat{flex:1;background:var(--field);border-radius:var(--r-md);padding:11px 12px;min-width:0;position:relative;overflow:hidden}
@@ -506,8 +493,6 @@
     <div class="grp">演示</div>
     <button onclick="toggleRun()">▶ / ■ 任务启停<small>切换「执行中 / 已完成」展示态</small>
     </button>
-    <button onclick="toggleMask()">伪装息屏 / 亮屏<small>等同 DT#息屏 / DT#亮屏（快捷键 V）</small>
-    </button>
     <button onclick="demoFloat()">悬浮窗倒计时<small>打卡停留倒计时 + 内存占用球</small></button>
 
     <div class="grp">外观</div>
@@ -518,7 +503,7 @@
         · 任务卡片：单击修改时间，长按删除<br>
         · 目标应用切到企微 / 飞书 / M3 会强制校验截屏服务<br>
         · 首次进入设置会弹出「使用须知」<br>
-        · 音量减键（此处快捷键 V）可切换蒙层
+        · 息屏蒙层改由 Android 端手势触发，界面不再提供入口（预览可用 V 键）
     </div>
 </aside>
 
@@ -538,20 +523,11 @@
             <div class="pages">
                 <!-- ============ 首页 ============ -->
                 <section class="page show has-tab" id="page-home">
-                    <div class="appbar" id="homeAppbar">
-                        <div class="ttl">
-                            <div class="t" id="homeTitle">星期一 · 工作日</div>
-                            <div class="s" id="homeSub">2026年09月22日 09:41:00</div>
-                        </div>
-                        <div class="act" onclick="addTask()" title="添加任务">＋</div>
-                        <div class="act" onclick="goto('settings')" title="设置">⚙</div>
-                    </div>
-
                     <div class="scroll" id="homeScroll">
                         <!-- 渐变状态区 -->
                         <div class="hhead" id="hhead">
                             <div class="aur"></div>
-                            <div class="hh-date" id="homeDate">2026年09月22日</div>
+                            <div class="hh-date" id="homeDate">2026年09月22日 星期三 · 工作日</div>
                             <div class="hh-row">
                                 <div class="hh-txt">
                                     <div class="hh-day" id="heroDay">距下次任务</div>
@@ -570,7 +546,6 @@
                                     <span class="gl" id="runGlyph">▶</span><span
                                         id="runTxt">启动任务</span>
                                 </button>
-                                <button class="tick-btn" onclick="toggleMask()">◐ 息屏</button>
                             </div>
                             <div class="stat-row">
                                 <div class="stat">
@@ -595,7 +570,7 @@
                         <div class="empty" id="emptyView" style="display:none">
                             <div class="art">🗂</div>
                             <div class="t1">还没有定时任务</div>
-                            <div class="t2">点击右上角「＋」配置第一个打卡时间点</div>
+                            <div class="t2">点击「添加任务」配置第一个打卡时间点</div>
                             <button class="btn sm" style="margin-top:6px" onclick="addTask()">
                                 添加任务
                             </button>
@@ -1243,7 +1218,6 @@
         state.firstSettings = false;
         setTimeout(showNoticeDialog, 260);
       }
-      if(name === 'home') syncAppbar();
     }
     function moveTabInd(i){
       const order = ['tbHome','tbCmd','tbNotice','tbSet'];
@@ -1706,10 +1680,7 @@
       const d = new Date();
       const w = ['日','一','二','三','四','五','六'][d.getDay()];
       const df = workdayFlags();
-      $('homeTitle').textContent = '星期' + w + ' · ' + df.type;
-      $('homeSub').textContent = d.getFullYear() + '年' + pad2(d.getMonth()+1) + '月' + pad2(d.getDate()) + '日 '
-        + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
-      $('homeDate').textContent = d.getFullYear() + '年' + pad2(d.getMonth()+1) + '月' + pad2(d.getDate()) + '日 星期' + w;
+      $('homeDate').textContent = d.getFullYear() + '年' + pad2(d.getMonth()+1) + '月' + pad2(d.getDate()) + '日 星期' + w + ' · ' + df.type;
       $('sbTime').textContent = d.getHours() + ':' + pad2(d.getMinutes());
       $('maskClock').textContent = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
       const now = d.getHours()*3600 + d.getMinutes()*60 + d.getSeconds();
@@ -1730,14 +1701,10 @@
         + 'font-family="sans-serif" transform="rotate(-30 30 60)">DailyTask</text></svg>';
       $('watermark').style.backgroundImage = 'url("data:image/svg+xml;utf8,' + svg + '")';
     }
-    function syncAppbar(){
-      $('homeAppbar').classList.toggle('solid', $('homeScroll').scrollTop > 12);
-    }
     function init(){
       renderHome(); renderCommands(); renderQA(); renderNotices();
       updateClock(); paintWatermark();
       setInterval(updateClock, 1000);
-      $('homeScroll').addEventListener('scroll', syncAppbar);
       window.addEventListener('resize', ()=>moveTabInd(state.cur === 'settings' ? 3 : TAB_PAGES.indexOf(state.cur)));
       $('swGesture').addEventListener('change', e=>toast(e.target.checked ? '已开启手势辅助' : '已关闭手势辅助'));
       $('swPower').addEventListener('change', e=>toast(e.target.checked ? '省电模式已开启，刷新频率降低' : '已关闭省电模式'));
