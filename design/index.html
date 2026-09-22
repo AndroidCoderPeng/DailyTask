@@ -343,20 +343,71 @@
         .hero-info .nm{font-size:16px;font-weight:700;color:var(--txt)}
         .hero-info .sb{font-size:11.5px;color:var(--txt-3);margin-top:3px}
 
-        .cmd{padding:13px 16px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;transition:background .15s}
+        /* —— 指令页 —— */
+        .cmd-hero{
+          margin:12px 14px 0;padding:14px;border-radius:var(--r-lg);color:#fff;display:flex;gap:12px;align-items:center;
+          background:linear-gradient(135deg,var(--hero-a),var(--hero-b));position:relative;overflow:hidden;
+          box-shadow:0 12px 26px rgba(15,99,196,.22);
+        }
+        .cmd-hero::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 100% at 88% 0%,rgba(255,255,255,.26),transparent 60%);pointer-events:none}
+        .cmd-hero .ch-ic{
+          width:44px;height:44px;border-radius:14px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+          font-size:13px;font-weight:800;letter-spacing:.5px;background:rgba(255,255,255,.18);
+          box-shadow:inset 0 0 0 1px rgba(255,255,255,.32);position:relative;z-index:1;
+        }
+        .cmd-hero .ch-t{font-size:14.5px;font-weight:800;position:relative;z-index:1}
+        .cmd-hero .ch-s{font-size:11.5px;opacity:.86;margin-top:5px;line-height:1.65;position:relative;z-index:1}
+
+        .cmd-search{
+          margin:12px 14px 0;height:40px;border-radius:14px;background:var(--field);display:flex;align-items:center;gap:8px;
+          padding:0 12px;box-shadow:inset 0 0 0 1px var(--line);
+        }
+        .cmd-search .mg{font-size:12px;color:var(--txt-3);flex:0 0 auto}
+        .cmd-search input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;color:var(--txt)}
+        .cmd-search input::placeholder{color:var(--txt-3)}
+        .cmd-search .clr{
+          width:19px;height:19px;border-radius:50%;flex:0 0 auto;display:none;align-items:center;justify-content:center;
+          font-size:10px;color:#fff;background:var(--txt-3);cursor:pointer;
+        }
+        .cmd-search.has .clr{display:flex}
+
+        .cmd-grp{margin:14px 14px 0}
+        .cmd-grp .gh{display:flex;align-items:center;gap:8px;padding:0 3px 8px}
+        .cmd-grp .gi{
+          width:22px;height:22px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+          font-size:11px;font-weight:800;color:#fff;
+        }
+        .cmd-grp .gt{font-size:13px;font-weight:800;color:var(--txt)}
+        .cmd-grp .gc{margin-left:auto;font-size:11px;color:var(--txt-3);font-variant-numeric:tabular-nums}
+
+        .cmd{display:flex;gap:11px;align-items:center;padding:12px 14px;cursor:pointer;transition:background .15s}
+        .cmd + .cmd{border-top:1px solid var(--line)}
         .cmd:active{background:var(--field)}
+        .cmd .ic{
+          width:34px;height:34px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+          font-size:15px;background:var(--field);
+        }
         .cmd .mn{flex:1;min-width:0}
-        .cmd .r1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
         .cmd .nm{
-          font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:800;
-          color:var(--brand);background:var(--brand-soft);padding:4px 10px;border-radius:9px;letter-spacing:.3px;
+          font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;font-weight:800;
+          color:var(--txt);letter-spacing:.2px;
         }
-        .cmd .ds{font-size:11.5px;color:var(--txt-3);margin-top:7px;line-height:1.6}
+        .cmd .nm b{color:var(--brand);background:var(--brand-soft);border-radius:4px;padding:0 2px}
+        .cmd .ds{font-size:11.5px;color:var(--txt-3);margin-top:4px;line-height:1.55}
+        .cmd .ds b{color:var(--brand);background:var(--brand-soft);border-radius:4px;padding:0 2px}
+        .cmd .fb{display:inline-flex;align-items:center;gap:5px;margin-top:7px;font-size:10.5px;font-weight:700;color:var(--txt-3)}
+        .cmd .fb i{width:5px;height:5px;border-radius:50%;background:var(--txt-3);font-style:normal}
+        .cmd .fb.on{color:var(--green)}
+        .cmd .fb.on i{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
         .cmd .cp{
-          font-size:11px;color:var(--brand);font-weight:800;flex:0 0 auto;padding:5px 11px;border-radius:9px;
-          background:transparent;box-shadow:inset 0 0 0 1.5px var(--brand);margin-top:1px;
+          width:34px;height:34px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+          font-size:13px;color:var(--brand);background:var(--brand-soft);transition:.15s;
         }
-        .cmd:active .cp{background:var(--brand);color:#fff}
+        .cmd:active .cp{background:var(--brand);color:#fff;transform:scale(.92)}
+
+        .cmd-empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:44px 0;color:var(--txt-3)}
+        .cmd-empty .e{font-size:30px;opacity:.6}
+        .cmd-empty .t{font-size:12.5px}
 
         .qa{border-bottom:1px solid var(--line)}
         .qa:last-child{border-bottom:none}
@@ -583,16 +634,34 @@
                     <div class="appbar">
                         <div class="ttl">
                             <div class="t">全部指令</div>
-                            <div class="s">由另一台设备远程发送即可控制本机</div>
+                            <div class="s" id="cmdSub">由另一台设备远程发送即可控制本机</div>
                         </div>
                     </div>
                     <div class="scroll">
-                        <div style="padding:14px 18px 8px;font-size:12px;color:var(--txt-3);line-height:1.75">
-                            指令需通过 <b style="color:var(--brand)">微信 / QQ / TIM / 支付宝</b>
-                            发送到本机，
-                            并以 <b style="color:var(--brand)">DT#</b> 开头。点击卡片可复制整条指令。
+                        <div class="cmd-hero">
+                            <div class="ch-ic">DT#</div>
+                            <div style="min-width:0;position:relative;z-index:1">
+                                <div class="ch-t">远程指令一律以 DT# 开头</div>
+                                <div class="ch-s">用小号发送「微信 / QQ / TIM /
+                                    支付宝」消息到本机即可触发，点击右侧按钮复制整条指令
+                                </div>
+                            </div>
                         </div>
-                        <div class="card" id="cmdList" style="margin:2px 14px 18px"></div>
+
+                        <div class="cmd-search" id="cmdSearchWrap">
+                            <span class="mg">🔍</span>
+                            <input id="cmdSearch" placeholder="搜索指令名称或说明"
+                                   autocomplete="off">
+                            <span class="clr" id="cmdSearchClr">✕</span>
+                        </div>
+
+                        <div class="filter" id="cmdFilter" style="padding-top:10px"></div>
+
+                        <div id="cmdGroups" style="padding-bottom:18px"></div>
+                        <div class="cmd-empty" id="cmdEmpty" style="display:none">
+                            <div class="e">🔍</div>
+                            <div class="t">没有匹配的指令，换个关键词试试</div>
+                        </div>
                     </div>
                 </section>
 
@@ -1118,16 +1187,21 @@
       'com.eg.android.AlipayGphone':{n:'支付宝',c:'#1678FF'}
     };
     const COMMANDS = [
-      {cmd:'DT#执行任务', desc:'启动循环任务（默认每天自动执行）', fb:false},
-      {cmd:'DT#终止任务', desc:'停止循环任务（仅停止当天）', fb:true},
-      {cmd:'DT#开启循环', desc:'开启周期循环的标志', fb:true},
-      {cmd:'DT#关闭循环', desc:'关闭循环标志位（永久暂停，直到收到「开启循环」指令）', fb:true},
-      {cmd:'DT#息屏', desc:'开启伪装息屏模式，显示纯黑背景 + 动态时钟', fb:false},
-      {cmd:'DT#亮屏', desc:'退出伪装息屏模式', fb:false},
-      {cmd:'DT#考勤记录', desc:'导出当天考勤记录', fb:true},
-      {cmd:'DT#打卡', desc:'触发一次打卡（默认指令内容为「打卡」）', fb:true},
-      {cmd:'DT#状态查询', desc:'查询当前状态（任务、服务、监听、电量、版本、日期等）', fb:true},
-      {cmd:'DT#截屏', desc:'截取目标应用屏幕并通过消息渠道返回给用户', fb:true}
+      {cmd:'DT#执行任务', desc:'启动循环任务（默认每天自动执行）', fb:false, g:'task', ic:'🚀'},
+      {cmd:'DT#终止任务', desc:'停止循环任务（仅停止当天）', fb:true, g:'task', ic:'⏹'},
+      {cmd:'DT#开启循环', desc:'开启周期循环的标志', fb:true, g:'task', ic:'🔁'},
+      {cmd:'DT#关闭循环', desc:'关闭循环标志位（永久暂停，直到收到「开启循环」指令）', fb:true, g:'task', ic:'⏸'},
+      {cmd:'DT#打卡', desc:'触发一次打卡（默认指令内容为「打卡」）', fb:true, g:'task', ic:'✅'},
+      {cmd:'DT#息屏', desc:'开启伪装息屏模式，显示纯黑背景 + 动态时钟', fb:false, g:'device', ic:'🌙'},
+      {cmd:'DT#亮屏', desc:'退出伪装息屏模式', fb:false, g:'device', ic:'☀'},
+      {cmd:'DT#截屏', desc:'截取目标应用屏幕并通过消息渠道返回给用户', fb:true, g:'device', ic:'📷'},
+      {cmd:'DT#状态查询', desc:'查询当前状态（任务、服务、监听、电量、版本、日期等）', fb:true, g:'query', ic:'📡'},
+      {cmd:'DT#考勤记录', desc:'导出当天考勤记录', fb:true, g:'query', ic:'📤'}
+    ];
+    const CMD_GROUPS = [
+      {k:'task',   n:'任务控制',   i:'▶', c:'var(--brand)'},
+      {k:'device', n:'设备控制',   i:'◑', c:'var(--amber)'},
+      {k:'query',  n:'查询 / 导出', i:'⤓', c:'var(--green)'}
     ];
     const QA = [
       {q:'怎么使用本软件？', a:'本软件不对目标应用做侵入式攻击，不修改定位数据，可以放心使用。只需要设置好任务时间，本软件会在设置的时间点附近调起目标应用实现自动打卡（初次使用会有个弹框提示，"DailyTask"想要打开的目标应用，勾选"始终允许"），但是需要长亮屏幕，因为锁屏后再解锁，并不会直接进入桌面，会无法调起软件。'},
@@ -1336,19 +1410,76 @@
         el.addEventListener('click', ()=>{ clearTimeout(timer); if(!longPressed) editTask(i); });
       });
     }
+    function esc(s){
+      return String(s).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+    }
+    function hl(s, q){
+      const t = esc(s);
+      if(!q) return t;
+      const k = esc(q).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      return t.replace(new RegExp(k, 'gi'), m=>'<b>'+m+'</b>');
+    }
     function renderCommands(){
-      $('cmdList').innerHTML = COMMANDS.map((c,i)=>
-        '<div class="cmd" data-c="'+i+'"'+(i ? ' style="border-top:1px solid var(--line)"' : '')+'>'
-        + '<div class="mn"><div class="r1"><span class="nm">'+c.cmd+'</span>'
-        + '<span class="chip '+(c.fb ? 'green' : 'amber')+'">'+(c.fb ? '有反馈' : '无反馈')+'</span></div>'
-        + '<div class="ds">'+c.desc+'</div></div>'
-        + '<div class="cp">复制</div></div>').join('');
-      Array.from($('cmdList').children).forEach(el=>{
+      const q = (state.cmdQuery || '').trim();
+      const kw = q.toLowerCase();
+
+      /* 分类过滤条 */
+      $('cmdFilter').innerHTML = [{k:'all', n:'全部', i:'★'}].concat(CMD_GROUPS).map(g=>{
+        const n = g.k === 'all' ? COMMANDS.length : COMMANDS.filter(c=>c.g === g.k).length;
+        return '<button class="'+(state.cmdFilter === g.k ? 'on' : '')+'" data-g="'+g.k+'">'+g.n+' '+n+'</button>';
+      }).join('');
+      Array.from($('cmdFilter').children).forEach(b=>{
+        b.addEventListener('click', ()=>{ state.cmdFilter = b.dataset.g; renderCommands(); });
+      });
+
+      /* 列表 */
+      const hit = COMMANDS.filter(c=>
+        (state.cmdFilter === 'all' || c.g === state.cmdFilter)
+        && (!kw || (c.cmd + c.desc).toLowerCase().includes(kw))
+      );
+
+      $('cmdGroups').innerHTML = CMD_GROUPS
+        .filter(g=>state.cmdFilter === 'all' || g.k === state.cmdFilter)
+        .map(g=>{
+          const items = hit.filter(c=>c.g === g.k);
+          if(!items.length) return '';
+          return '<div class="cmd-grp">'
+            + '<div class="gh"><span class="gi" style="background:'+g.c+'">'+g.i+'</span>'
+            + '<span class="gt">'+g.n+'</span><span class="gc">'+items.length+' 条</span></div>'
+            + '<div class="card">'
+            + items.map(c=>{
+                const idx = COMMANDS.indexOf(c);
+                return '<div class="cmd" data-c="'+idx+'">'
+                  + '<span class="ic">'+c.ic+'</span>'
+                  + '<div class="mn"><div class="nm">'+hl(c.cmd, q)+'</div>'
+                  + '<div class="ds">'+hl(c.desc, q)+'</div>'
+                  + '<div class="fb'+(c.fb ? ' on' : '')+'"><i></i>'+(c.fb ? '执行后返回结果' : '静默执行，无反馈')+'</div></div>'
+                  + '<div class="cp">⧉</div></div>';
+              }).join('')
+            + '</div></div>';
+        }).join('');
+
+      $('cmdEmpty').style.display = hit.length ? 'none' : 'flex';
+      $('cmdSub').textContent = hit.length + ' / ' + COMMANDS.length + ' 条指令 · 点击复制';
+
+      Array.from($('cmdGroups').querySelectorAll('.cmd')).forEach(el=>{
         el.addEventListener('click', ()=>{
           const c = COMMANDS[+el.dataset.c];
           navigator.clipboard && navigator.clipboard.writeText(c.cmd);
           toast('已复制：<b>'+c.cmd+'</b>');
         });
+      });
+    }
+    function bindCommandSearch(){
+      const inp = $('cmdSearch'), wrap = $('cmdSearchWrap');
+      inp.addEventListener('input', ()=>{
+        state.cmdQuery = inp.value;
+        wrap.classList.toggle('has', !!inp.value);
+        renderCommands();
+      });
+      $('cmdSearchClr').addEventListener('click', ()=>{
+        inp.value = ''; state.cmdQuery = '';
+        wrap.classList.remove('has'); renderCommands(); inp.focus();
       });
     }
     function renderQA(){
@@ -1702,7 +1833,7 @@
       $('watermark').style.backgroundImage = 'url("data:image/svg+xml;utf8,' + svg + '")';
     }
     function init(){
-      renderHome(); renderCommands(); renderQA(); renderNotices();
+      renderHome(); renderCommands(); bindCommandSearch(); renderQA(); renderNotices();
       updateClock(); paintWatermark();
       setInterval(updateClock, 1000);
       window.addEventListener('resize', ()=>moveTabInd(state.cur === 'settings' ? 3 : TAB_PAGES.indexOf(state.cur)));
