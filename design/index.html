@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>DailyTask · 界面重设计原型</title>
+    <style>
+        /* ==========================================================
+           0. 设计令牌
+           ========================================================== */
+        :root{
+          --brand:#3399FF;
+          --brand-600:#1f7fe6;
+          --brand-soft:#e9f3ff;
+          --green:#32C95C;
+          --green-soft:#e7f8ed;
+          --red:#FF4D3D;
+          --red-soft:#ffeceb;
+          --amber:#FFA317;
+          --amber-soft:#fff3dd;
+          --bg:#F3F5F8;
+          --card:#FFFFFF;
+          --txt:#1A2733;
+          --txt-2:#68798C;
+          --txt-3:#A2B0BF;
+          --line:#EAEEF3;
+          --field:#F5F7FA;
+          --r-lg:20px;
+          --r-md:14px;
+          --sh:0 2px 12px rgba(26,39,51,.06);
+          --sh-lg:0 10px 30px rgba(26,39,51,.14);
+        }
+        html[data-theme="dark"]{
+          --brand:#4FA6FF;
+          --brand-600:#2f86e0;
+          --brand-soft:#14263A;
+          --green:#3AD672;
+          --green-soft:#122A1C;
+          --red:#FF6558;
+          --red-soft:#2C1715;
+          --amber:#FFB43A;
+          --amber-soft:#2A2113;
+          --bg:#0E1116;
+          --card:#161B22;
+          --txt:#E7EEF6;
+          --txt-2:#93A3B5;
+          --txt-3:#6A7987;
+          --line:#222A34;
+          --field:#1C232C;
+          --sh:0 2px 12px rgba(0,0,0,.35);
+          --sh-lg:0 10px 30px rgba(0,0,0,.5);
+        }
+        *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        html,body{height:100%}
+        body{
+          margin:0;display:flex;background:#1B1F26;color:#CBD5E1;
+          font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+          font-size:14px;
+        }
+
+        /* ==========================================================
+           1. 左侧演示控制台
+           ========================================================== */
+        .dev{width:288px;flex:0 0 288px;height:100vh;overflow-y:auto;background:#14181E;border-right:1px solid #242B34;padding:20px 16px 60px}
+        .dev h1{font-size:15px;margin:0;color:#fff;letter-spacing:.5px}
+        .dev .sub{font-size:11px;color:#75838F;margin:4px 0 18px;line-height:1.7}
+        .dev .grp{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#5D6B79;margin:20px 0 8px;font-weight:700}
+        .dev button{
+          display:block;width:100%;text-align:left;cursor:pointer;background:#1D232B;border:1px solid #262F39;
+          color:#C6D2DE;padding:9px 11px;border-radius:9px;font-size:12.5px;margin-bottom:6px;transition:.15s;font-family:inherit;
+        }
+        .dev button:hover{background:#252D37;border-color:#354150;color:#fff}
+        .dev button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+        .dev button small{display:block;font-size:10.5px;color:#75838F;margin-top:2px;line-height:1.5}
+        .dev button.on small{color:rgba(255,255,255,.8)}
+        .dev .note{font-size:10.5px;color:#5D6B79;line-height:1.8;border-top:1px solid #242B34;margin-top:20px;padding-top:14px}
+        .dev .row2{display:flex;gap:6px}
+
+        /* ==========================================================
+           2. 舞台 / 手机外壳
+           ========================================================== */
+        .stage{flex:1;display:flex;align-items:center;justify-content:center;padding:26px;overflow:auto}
+        .phone{width:392px;height:828px;flex:0 0 auto;background:#0A0C10;border-radius:46px;padding:11px;box-shadow:0 30px 80px rgba(0,0,0,.65),0 0 0 1px #2C333C;position:relative}
+        .notch{position:absolute;top:16px;left:50%;transform:translateX(-50%);width:104px;height:24px;background:#0A0C10;border-radius:14px;z-index:60}
+        .frame{width:100%;height:100%;border-radius:37px;overflow:hidden;position:relative;background:var(--bg);display:flex;flex-direction:column}
+        .watermark{position:absolute;inset:-30%;z-index:0;pointer-events:none;opacity:.45;background-repeat:repeat;background-size:210px auto}
+        html[data-theme="dark"] .watermark{opacity:.18}
+
+        .statusbar{
+          height:30px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 24px;
+          font-size:11.5px;font-weight:700;color:#fff;background:var(--brand);position:relative;z-index:5;
+        }
+        .statusbar .ri{display:flex;gap:5px;align-items:center;font-size:10px;opacity:.95}
+
+        /* ==========================================================
+           3. 页面容器
+           ========================================================== */
+        .pages{flex:1;position:relative;overflow:hidden;z-index:1}
+        .page{
+          position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);
+          transform:translateX(16%);opacity:0;visibility:hidden;pointer-events:none;
+          transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .3s ease,visibility .3s;
+        }
+        .page.show{transform:none;opacity:1;visibility:visible;pointer-events:auto}
+        .page.has-tab{padding-bottom:64px}
+        .scroll{flex:1;overflow-y:auto;overscroll-behavior:contain}
+        .scroll::-webkit-scrollbar{width:0}
+
+        /* ==========================================================
+           4. 顶栏
+           ========================================================== */
+        .appbar{flex:0 0 auto;background:var(--brand);color:#fff;padding:6px 10px 12px 6px;display:flex;align-items:center;gap:2px;min-height:54px}
+        .appbar .nav{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;font-size:19px;flex:0 0 auto}
+        .appbar .nav:active,.appbar .act:active{background:rgba(255,255,255,.2)}
+        .appbar .ttl{flex:1;min-width:0;padding-left:2px}
+        .appbar .ttl .t{font-size:18px;font-weight:700;letter-spacing:.3px}
+        .appbar .ttl .s{font-size:11.5px;opacity:.9;margin-top:2px;font-variant-numeric:tabular-nums}
+        .appbar .act{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;font-size:18px;flex:0 0 auto}
+
+        /* ==========================================================
+           5. 通用组件
+           ========================================================== */
+        .pad{padding:14px}
+        .card{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh);overflow:hidden}
+        .sec-title{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
+        .sec-title .l{font-size:12.5px;font-weight:700;color:var(--txt-2);letter-spacing:.5px}
+        .sec-title .r{font-size:12.5px;color:var(--brand);cursor:pointer;font-weight:600}
+        .divider{height:1px;background:var(--line);margin:0 16px}
+        .divider.full{margin:0}
+
+        .it{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card);cursor:pointer;transition:background .15s}
+        .it:active{background:var(--field)}
+        .it .ico{width:34px;height:34px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--brand-soft);color:var(--brand);font-weight:700}
+        .it .ico.g{background:var(--green-soft);color:var(--green)}
+        .it .ico.r{background:var(--red-soft);color:var(--red)}
+        .it .ico.a{background:var(--amber-soft);color:var(--amber)}
+        .it .tx{flex:1;min-width:0}
+        .it .tx .k{font-size:14.5px;color:var(--txt);font-weight:500}
+        .it .tx .d{font-size:11px;color:var(--txt-3);margin-top:3px;line-height:1.55}
+        .it .tx .d.warn{color:var(--red)}
+        .it .v{font-size:13.5px;color:var(--txt-3);flex:0 0 auto;max-width:44%;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .it .v.brand{color:var(--brand);font-weight:600}
+        .chev{width:8px;height:8px;border-right:2px solid var(--txt-3);border-bottom:2px solid var(--txt-3);transform:rotate(-45deg);flex:0 0 auto;opacity:.55}
+        .lock{font-size:12px;color:var(--txt-3)}
+
+        .dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;margin-left:4px;margin-right:4px}
+        .dot.on{background:var(--green);box-shadow:0 0 0 3px var(--green-soft)}
+        .dot.off{background:var(--red);box-shadow:0 0 0 3px var(--red-soft)}
+
+        .chip{display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;color:#fff;flex:0 0 auto}
+        .chip.brand{background:var(--brand)}
+        .chip.green{background:var(--green)}
+        .chip.red{background:var(--red)}
+        .chip.amber{background:var(--amber)}
+        .chip.soft{background:var(--brand-soft);color:var(--brand)}
+        .chip.gs{background:var(--green-soft);color:var(--green)}
+        .chip.as{background:var(--amber-soft);color:var(--amber)}
+
+        .sw{position:relative;width:48px;height:28px;flex:0 0 auto}
+        .sw input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:2;width:100%;height:100%}
+        .sw .tr{position:absolute;inset:0;border-radius:14px;background:#C9D0D8;transition:.22s}
+        html[data-theme="dark"] .sw .tr{background:#333C47}
+        .sw .th{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.28);transition:.22s}
+        .sw input:checked ~ .tr{background:var(--brand)}
+        .sw input:checked ~ .th{left:23px}
+        .sw.lock .tr{background:#8A97A5}
+
+        .seg{display:flex;background:var(--field);border-radius:12px;padding:3px;gap:3px;width:100%}
+        .seg button{flex:1;border:none;background:transparent;color:var(--txt-2);font-size:12.5px;padding:7px 0;border-radius:9px;cursor:pointer;font-weight:600;transition:.18s;font-family:inherit}
+        .seg button.on{background:var(--card);color:var(--brand);box-shadow:var(--sh)}
+
+        .btn{border:none;cursor:pointer;font-family:inherit;font-size:14px;font-weight:600;border-radius:12px;padding:11px 18px;background:var(--brand);color:#fff;transition:.15s}
+        .btn:active{transform:scale(.975)}
+        .btn.line{background:transparent;color:var(--brand);box-shadow:inset 0 0 0 1.5px var(--brand)}
+        .btn.sm{padding:7px 13px;font-size:12.5px;border-radius:10px}
+
+        .fld{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--card)}
+        .fld .k{font-size:14px;color:var(--txt);width:64px;flex:0 0 auto}
+        .fld .sfx{font-size:13px;color:var(--txt-2);flex:0 0 auto}
+        .fld input{flex:1;min-width:0;border:none;outline:none;background:transparent;color:var(--txt);font-size:14px;text-align:right;font-family:inherit}
+        .fld input::placeholder{color:var(--txt-3)}
+
+        /* ==========================================================
+           6. 首页
+           ========================================================== */
+        .hero{margin:14px 14px 0;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh);padding:16px;position:relative;overflow:hidden}
+        .hero .halo{position:absolute;width:160px;height:160px;border-radius:50%;top:-78px;right:-56px;background:radial-gradient(circle,var(--brand-soft),transparent 70%)}
+        .hero .top{display:flex;align-items:flex-start;gap:12px;position:relative}
+        .hero .big{flex:1;min-width:0}
+        .hero .day{font-size:12px;color:var(--txt-3);font-weight:700;letter-spacing:.6px}
+        .hero .st{font-size:16.5px;font-weight:700;color:var(--txt);margin-top:6px;line-height:1.45}
+        .hero .st.skip{color:var(--green)}
+        .hero .st.run{color:var(--brand)}
+        .hero .ring{width:58px;height:58px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--brand) var(--p,0%),var(--field) 0);position:relative}
+        .hero .ring::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--card)}
+        .hero .ring b{position:relative;font-size:14px;color:var(--txt);font-weight:800;font-variant-numeric:tabular-nums}
+        .hero .bar{margin-top:14px;display:flex;gap:10px}
+        .run-btn{
+          flex:1;border:none;cursor:pointer;font-family:inherit;height:46px;border-radius:14px;font-size:15px;font-weight:700;color:#fff;
+          display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;
+          background:linear-gradient(135deg,var(--brand),var(--brand-600));box-shadow:0 6px 16px rgba(51,153,255,.32);
+        }
+        .run-btn.stop{background:linear-gradient(135deg,#FF6A5C,#E92E1B);box-shadow:0 6px 16px rgba(255,77,61,.3)}
+        .run-btn:active{transform:scale(.98)}
+        .run-btn .gl{font-size:11px}
+        .tick-btn{border:none;cursor:pointer;font-family:inherit;height:46px;padding:0 15px;border-radius:14px;background:var(--field);color:var(--txt-2);font-size:13px;font-weight:600;flex:0 0 auto}
+
+        .meta-row{display:flex;gap:10px;margin:10px 14px 0}
+        .meta{flex:1;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh);padding:11px 13px;display:flex;align-items:center;gap:9px;min-width:0}
+        .meta .em{font-size:16px}
+        .meta .n{font-size:12.5px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .meta .l{font-size:10.5px;color:var(--txt-3);margin-top:2px}
+        .progress{margin:12px 14px 0;height:6px;border-radius:6px;background:var(--field);overflow:hidden}
+        .progress i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--brand),var(--green));transition:width .5s ease}
+
+        .tasks{padding:0 14px 16px}
+        .task{display:flex;gap:12px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh);padding:13px 14px;margin-top:10px;cursor:pointer;border:1.5px solid transparent;transition:.2s}
+        .task.done{opacity:.6}
+        .task.now{border-color:var(--brand);box-shadow:0 6px 18px rgba(51,153,255,.18)}
+        .task:active{transform:scale(.99)}
+        .task .tl{width:14px;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;padding-top:5px}
+        .task .tl .d{width:9px;height:9px;border-radius:50%;background:var(--txt-3)}
+        .task .tl .ln{flex:1;width:1.5px;background:var(--line);margin-top:6px}
+        .task.done .tl .d{background:var(--green)}
+        .task.now .tl .d{background:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+        .task .bd{flex:1;min-width:0}
+        .task .hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        .task .hd .idx{font-size:11px;color:var(--txt-3);font-weight:700;letter-spacing:.5px}
+        .task .tm{display:flex;align-items:center;gap:10px;margin-top:7px}
+        .task .tm .c .cap{font-size:10px;color:var(--txt-3);font-weight:700;letter-spacing:.6px}
+        .task .tm .c .v{font-size:24px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1.25}
+        .task .tm .c.act .v{font-size:20px;color:var(--txt-3)}
+        .task.now .tm .c.act .v{color:var(--brand)}
+        .task .arw{width:26px;height:26px;border-radius:50%;background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--txt-3);font-size:13px;flex:0 0 auto;transition:transform .3s}
+        .task.now .arw{transform:rotate(90deg);color:var(--brand);background:var(--brand-soft)}
+        .task .src{font-size:10.5px;color:var(--txt-3);margin-top:7px}
+
+        .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--txt-3);gap:12px;padding-bottom:70px}
+        .empty .art{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--card);box-shadow:var(--sh);font-size:36px}
+        .empty .t1{font-size:14.5px;color:var(--txt-2);font-weight:600}
+        .empty .t2{font-size:12px;color:var(--txt-3)}
+
+        /* ==========================================================
+           7. 底部导航
+           ========================================================== */
+        .tabbar{position:absolute;left:0;right:0;bottom:0;height:64px;z-index:20;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:6px;transition:transform .28s cubic-bezier(.32,.72,0,1)}
+        .tabbar.hide{transform:translateY(110%)}
+        .tabbar .tb{flex:1;border:none;background:transparent;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--txt-3);padding:0;position:relative}
+        .tabbar .tb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+        .tabbar .tb span{font-size:10px;font-weight:700}
+        .tabbar .tb.on{color:var(--brand)}
+        .tabbar .tb .bdg{position:absolute;top:8px;left:50%;margin-left:8px;width:6px;height:6px;border-radius:50%;background:var(--red)}
+
+        /* ==========================================================
+           8. 其它页
+           ========================================================== */
+        .hero-info{display:flex;align-items:center;gap:12px;padding:16px}
+        .hero-info .lg{width:46px;height:46px;border-radius:14px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex:0 0 auto}
+        .hero-info .nm{font-size:16px;font-weight:700;color:var(--txt)}
+        .hero-info .sb{font-size:11.5px;color:var(--txt-3);margin-top:3px}
+
+        .cmd{padding:13px 16px;cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+        .cmd:active{background:var(--field)}
+        .cmd .mn{flex:1;min-width:0}
+        .cmd .r1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .cmd .nm{font-size:14.5px;font-weight:700;color:var(--txt)}
+        .cmd .ds{font-size:11.5px;color:var(--txt-3);margin-top:6px;line-height:1.6}
+        .cmd .cp{font-size:11px;color:var(--brand);font-weight:700;flex:0 0 auto;padding:4px 9px;border-radius:8px;background:var(--brand-soft)}
+
+        .qa{border-bottom:1px solid var(--line)}
+        .qa:last-child{border-bottom:none}
+        .qa .q{display:flex;gap:10px;padding:14px 16px;cursor:pointer;align-items:flex-start}
+        .qa .no{width:20px;height:20px;border-radius:6px;background:var(--brand-soft);color:var(--brand);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto;margin-top:2px}
+        .qa .qt{flex:1;font-size:14px;color:var(--txt);font-weight:600;line-height:1.5}
+        .qa .aw{font-size:11px;color:var(--txt-3);transition:transform .25s;margin-top:4px}
+        .qa.open .aw{transform:rotate(180deg)}
+        .qa .a{display:none;font-size:12.5px;color:var(--txt-2);line-height:1.85;padding:0 16px 15px 46px}
+        .qa.open .a{display:block}
+        .qa .a a{color:var(--brand)}
+
+        .notice{display:flex;gap:11px;padding:12px 16px}
+        .notice .av{width:32px;height:32px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+        .notice .bd{flex:1;min-width:0}
+        .notice .r1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+        .notice .ti{font-size:13.5px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .notice .ts{font-size:10.5px;color:var(--txt-3);flex:0 0 auto;font-variant-numeric:tabular-nums}
+        .notice .ms{font-size:12px;color:var(--txt-2);margin-top:5px;line-height:1.6}
+        .filter{display:flex;gap:8px;padding:12px 14px 2px;overflow-x:auto}
+        .filter::-webkit-scrollbar{height:0}
+        .filter button{border:none;cursor:pointer;font-family:inherit;white-space:nowrap;padding:7px 13px;border-radius:20px;background:var(--card);color:var(--txt-2);font-size:12.5px;font-weight:600;box-shadow:var(--sh)}
+        .filter button.on{background:var(--brand);color:#fff}
+
+        /* ==========================================================
+           9. 浮层
+           ========================================================== */
+        .ovl{position:absolute;inset:0;background:rgba(10,14,20,.45);z-index:40;opacity:0;visibility:hidden;transition:.25s}
+        .ovl.on{opacity:1;visibility:visible}
+        .sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--card);border-radius:24px 24px 0 0;transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:80%;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+        .sheet.on{transform:none}
+        .sheet .grab{width:38px;height:4px;border-radius:4px;background:var(--line);margin:9px auto 0}
+        .sheet .st{padding:12px 18px 6px;font-size:15px;font-weight:700;color:var(--txt)}
+        .sheet .sd{padding:0 18px 8px;font-size:11.5px;color:var(--txt-3);line-height:1.6}
+        .sheet .sb{padding:0 0 18px;overflow-y:auto}
+        .sheet .opt{display:flex;align-items:center;gap:11px;padding:13px 18px;cursor:pointer}
+        .sheet .opt:active{background:var(--field)}
+        .sheet .opt .tx{flex:1;font-size:14.5px;color:var(--txt)}
+        .sheet .opt .tx small{display:block;font-size:11px;color:var(--txt-3);margin-top:3px}
+        .sheet .opt .ck{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;background:transparent;border:2px solid var(--line)}
+        .sheet .opt.sel .ck{background:var(--brand);border-color:var(--brand)}
+        .sheet .opt .oi{width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;color:#fff;flex:0 0 auto}
+        .sheet .acts{display:flex;gap:10px;padding:4px 18px 20px}
+        .sheet .acts .btn{flex:1}
+
+        .dlg{position:absolute;z-index:60;left:50%;top:50%;transform:translate(-50%,-46%) scale(.94);width:296px;background:var(--card);border-radius:22px;padding:22px 20px 16px;box-shadow:var(--sh-lg);opacity:0;visibility:hidden;transition:.22s}
+        .dlg.on{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+        .dlg .t{font-size:16px;font-weight:700;color:var(--txt);text-align:center}
+        .dlg .m{font-size:12.5px;color:var(--txt-2);line-height:1.8;margin-top:11px}
+        .dlg .m.ctr{text-align:center}
+        .dlg .acts{display:flex;gap:10px;margin-top:18px}
+        .dlg .acts .btn{flex:1}
+        .dlg .inp{width:100%;margin-top:14px;border:none;outline:none;background:var(--field);border-radius:12px;padding:12px 14px;font-size:14px;color:var(--txt);font-family:inherit}
+        .dlg .days{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+        .dlg .days button{flex:0 0 calc(33.33% - 6px);padding:10px 0;border-radius:11px;background:var(--field);color:var(--txt-2);border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
+        .dlg .days button.on{background:var(--brand);color:#fff}
+        .dlg .hintline{font-size:11px;color:var(--txt-3);margin-top:12px;line-height:1.6;text-align:center}
+
+        .wheel{display:flex;gap:6px;padding:6px 16px 0;position:relative}
+        .wheel .mk{position:absolute;left:16px;right:16px;top:50%;height:38px;transform:translateY(-50%);border-radius:12px;background:var(--field);pointer-events:none}
+        .wheel .col{flex:1;height:190px;overflow-y:auto;scroll-snap-type:y mandatory;text-align:center;position:relative;padding:76px 0}
+        .wheel .col::-webkit-scrollbar{width:0}
+        .wheel .cell{height:38px;line-height:38px;scroll-snap-align:center;font-size:18px;color:var(--txt-3);font-variant-numeric:tabular-nums;cursor:pointer}
+        .wheel .cell.sel{color:var(--brand);font-weight:800;font-size:21px}
+
+        .toast{position:absolute;left:50%;bottom:96px;transform:translate(-50%,14px);z-index:70;max-width:78%;background:rgba(26,39,51,.92);color:#fff;font-size:12.5px;padding:10px 16px;border-radius:12px;opacity:0;visibility:hidden;transition:.22s;line-height:1.6;text-align:center;box-shadow:var(--sh-lg)}
+        .toast.on{opacity:1;visibility:visible;transform:translate(-50%,0)}
+        html[data-theme="dark"] .toast{background:rgba(231,238,246,.94);color:#131920}
+
+        .ld{position:absolute;inset:0;z-index:75;display:flex;align-items:center;justify-content:center;background:rgba(10,14,20,.3);opacity:0;visibility:hidden;transition:.2s}
+        .ld.on{opacity:1;visibility:visible}
+        .ld .box{background:var(--card);border-radius:16px;padding:20px 26px;display:flex;flex-direction:column;align-items:center;gap:12px;box-shadow:var(--sh-lg)}
+        .ld .spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--brand);animation:sp .8s linear infinite}
+        .ld .tx{font-size:12.5px;color:var(--txt-2)}
+        @keyframes sp{to{transform:rotate(360deg)}}
+
+        .masklayer{position:absolute;inset:0;z-index:80;background:#000;display:flex;align-items:center;justify-content:center;opacity:0;visibility:hidden;transition:opacity .35s}
+        .masklayer.on{opacity:1;visibility:visible}
+        .masklayer .cw{position:absolute;transition:transform 1.2s cubic-bezier(.32,.72,0,1)}
+        .masklayer .ck{font-family:Consolas,"DS-Digital",monospace;font-size:62px;color:rgba(255,255,255,.72);letter-spacing:4px;line-height:1}
+        .masklayer .ht{position:absolute;bottom:78px;left:0;right:0;text-align:center;font-size:11px;color:rgba(255,255,255,.3)}
+
+        .floatwin{position:absolute;right:8px;top:42%;z-index:30;display:flex;align-items:center;gap:8px;background:rgba(12,15,20,.88);color:#fff;border-radius:22px;padding:6px 13px 6px 6px;box-shadow:0 6px 20px rgba(0,0,0,.35);opacity:0;visibility:hidden;transition:.25s;cursor:grab;user-select:none}
+        .floatwin.on{opacity:1;visibility:visible}
+        .floatwin .wave{width:24px;height:24px;border-radius:50%;background:rgba(255,255,255,.14);position:relative;overflow:hidden;flex:0 0 auto;border:1px solid rgba(77,220,100,.85)}
+        .floatwin .wave i{position:absolute;left:-60%;width:220%;height:14px;bottom:0;background:rgba(33,150,243,.75);animation:wv 2.6s linear infinite;border-radius:40% 40% 0 0}
+        .floatwin .wave i:nth-child(2){background:rgba(66,165,245,.5);animation-duration:3.4s;height:16px}
+        .floatwin .wave b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;z-index:2}
+        @keyframes wv{to{transform:translateX(-46%)}}
+        .floatwin .tmv{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;min-width:22px;text-align:center}
+        .floatwin .spx{width:1px;height:18px;background:rgba(255,255,255,.3)}
+    </style>
+</head>
+<body>
+
+<!-- ========================= 演示控制台 ========================= -->
+<aside class="dev">
+    <h1>DailyTask · 界面重设计</h1>
+    <div class="sub">基于现有功能的全新界面原型<br>沿用主色 #3399FF，新增深浅色主题、时间轴任务流、底部导航与通知记录
+    </div>
+
+    <div class="grp">页面导航</div>
+    <button id="navHome" class="on" onclick="show('home')">首页<small>日类型状态 · 重置倒计时 ·
+        任务时间轴</small></button>
+    <button id="navCmd" onclick="show('command')">全部指令<small>10 条远程指令 · 点击复制</small>
+    </button>
+    <button id="navNotice" onclick="show('notice')">通知记录<small>新增页 ·
+        目标应用与辅助四件套</small></button>
+    <button id="navSettings" onclick="show('settings')">设置<small>自动化配置 / 核心服务 /
+        工具</small></button>
+    <button id="navTaskConfig" onclick="show('taskConfig')">任务配置<small>重置 / 超时 / 工作日 /
+        导出</small></button>
+    <button id="navChannel" onclick="show('messageChannel')">消息渠道<small>QQ邮箱 /
+        企业微信</small></button>
+    <button id="navQa" onclick="show('qa')">常见问题<small>手风琴式 10 问 10 答</small></button>
+
+    <div class="grp">模拟状态</div>
+    <button onclick="toggleRun()">▶ / ■ 任务执行<small>演示「待执行 → 执行中 → 已完成」</small>
+    </button>
+    <button onclick="toggleMask()">伪装息屏 / 亮屏<small>等同 DT#息屏 / DT#亮屏（快捷键 V）</small>
+    </button>
+    <button onclick="demoFloat()">悬浮窗倒计时<small>打卡停留倒计时 + 内存占用球</small></button>
+    <div class="row2">
+        <button onclick="devToggle('notice')">监听开关</button>
+        <button onclick="devToggle('capture')">截屏开关</button>
+    </div>
+    <button onclick="devLowBattery()">低电量提醒<small>电量 &lt; 20% 推送，5 分钟节流</small>
+    </button>
+
+    <div class="grp">外观</div>
+    <button id="themeBtn" onclick="toggleTheme()">切换深 / 浅色<small>当前：浅色</small></button>
+
+    <div class="note">
+        交互说明<br>
+        · 任务卡片：单击修改时间，长按删除<br>
+        · 目标应用切到企微 / 飞书 / M3 会强制校验截屏服务<br>
+        · 首次进入设置会弹出「使用须知」<br>
+        · 音量减键（此处快捷键 V）可切换蒙层
+    </div>
+</aside>
+
+<!-- ========================= 手机 ========================= -->
+<main class="stage">
+    <div class="phone">
+        <div class="notch"></div>
+        <div class="frame">
+            <div class="watermark" id="watermark"></div>
+
+            <div class="statusbar">
+                <span id="sbTime">9:41</span>
+                <span class="ri"><span>5G</span><span>▮▮▮</span><span
+                        id="sbBattery">78%</span></span>
+            </div>
+
+            <div class="pages">
+                <!-- ============ 首页 ============ -->
+                <section class="page show has-tab" id="page-home">
+                    <div class="appbar">
+                        <div class="ttl">
+                            <div class="t" id="homeTitle">星期一 · 工作日</div>
+                            <div class="s" id="homeSub">2026年09月22日 09:41:00</div>
+                        </div>
+                        <div class="act" onclick="addTask()" title="添加任务">＋</div>
+                        <div class="act" onclick="goto('settings')" title="设置">⚙</div>
+                    </div>
+
+                    <div class="scroll">
+                        <div class="hero">
+                            <div class="halo"></div>
+                            <div class="top">
+                                <div class="big">
+                                    <div class="day" id="heroDay">距下次任务</div>
+                                    <div class="st" id="heroStatus">任务未启动，点击按钮开始</div>
+                                </div>
+                                <div class="ring" id="heroRing"><b id="heroRingTxt">0%</b></div>
+                            </div>
+                            <div class="bar">
+                                <button class="run-btn" id="runBtn" onclick="toggleRun()">
+                                    <span class="gl" id="runGlyph">▶</span><span
+                                        id="runTxt">启动任务</span>
+                                </button>
+                                <button class="tick-btn" onclick="toggleMask()">◐ 息屏</button>
+                            </div>
+                        </div>
+
+                        <div class="meta-row">
+                            <div class="meta">
+                                <span class="em">⏳</span>
+                                <div style="min-width:0">
+                                    <div class="n" id="resetTick">00小时00分</div>
+                                    <div class="l">后刷新每日任务</div>
+                                </div>
+                            </div>
+                            <div class="meta">
+                                <span class="em">🎯</span>
+                                <div style="min-width:0">
+                                    <div class="n" id="metaTarget">钉钉</div>
+                                    <div class="l" id="metaSource">结果来源 · 通知监听</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="progress"><i id="runProgress" style="width:0%"></i></div>
+
+                        <div class="sec-title" style="padding:14px 20px 2px">
+                            <span class="l">今日任务 · <span id="taskCount">0</span> 个</span>
+                            <span class="r" onclick="addTask()">＋ 添加任务</span>
+                        </div>
+
+                        <div class="tasks" id="taskList"></div>
+                        <div class="empty" id="emptyView" style="display:none">
+                            <div class="art">🗂</div>
+                            <div class="t1">还没有定时任务</div>
+                            <div class="t2">点击右上角「＋」配置第一个打卡时间点</div>
+                            <button class="btn sm" style="margin-top:6px" onclick="addTask()">
+                                添加任务
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ 全部指令 ============ -->
+                <section class="page has-tab" id="page-command">
+                    <div class="appbar">
+                        <div class="ttl">
+                            <div class="t">全部指令</div>
+                            <div class="s">由另一台设备远程发送即可控制本机</div>
+                        </div>
+                    </div>
+                    <div class="scroll">
+                        <div style="padding:14px 18px 8px;font-size:12px;color:var(--txt-3);line-height:1.75">
+                            指令需通过 <b style="color:var(--brand)">微信 / QQ / TIM / 支付宝</b>
+                            发送到本机，
+                            并以 <b style="color:var(--brand)">DT#</b> 开头。点击卡片可复制整条指令。
+                        </div>
+                        <div class="card" id="cmdList" style="margin:2px 14px 18px"></div>
+                    </div>
+                </section>
+
+                <!-- ============ 通知记录 ============ -->
+                <section class="page has-tab" id="page-notice">
+                    <div class="appbar">
+                        <div class="ttl">
+                            <div class="t">通知记录</div>
+                            <div class="s">仅记录目标应用与辅助四件套</div>
+                        </div>
+                    </div>
+                    <div class="filter" id="noticeFilter"></div>
+                    <div class="scroll">
+                        <div class="card" id="noticeList" style="margin:10px 14px 18px"></div>
+                    </div>
+                </section>
+
+                <!-- ============ 设置 ============ -->
+                <section class="page has-tab" id="page-settings">
+                    <div class="appbar">
+                        <div class="nav" onclick="back()">←</div>
+                        <div class="ttl">
+                            <div class="t">设置</div>
+                        </div>
+                    </div>
+                    <div class="scroll pad">
+                        <div class="card" style="margin-bottom:14px">
+                            <div class="hero-info">
+                                <div class="lg">DT</div>
+                                <div style="flex:1;min-width:0">
+                                    <div class="nm">DailyTask</div>
+                                    <div class="sb">自动打卡助手 · 当前版本 2.4.2.2</div>
+                                </div>
+                                <span class="chip soft">v2.4.2.2</span>
+                            </div>
+                        </div>
+
+                        <div class="sec-title"><span class="l">自动化配置</span></div>
+                        <div class="card">
+                            <div class="it" onclick="chooseTargetApp()">
+                                <div class="ico" id="targetIco">钉</div>
+                                <div class="tx">
+                                    <div class="k">目标应用</div>
+                                    <div class="d" id="targetPkg">com.alibaba.android.rimet</div>
+                                </div>
+                                <div class="v brand" id="targetName">钉钉</div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="goto('messageChannel')">
+                                <div class="ico g">✉</div>
+                                <div class="tx">
+                                    <div class="k">消息渠道</div>
+                                    <div class="d">结果推送目的地</div>
+                                </div>
+                                <div class="v" id="channelV">未配置</div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" style="cursor:default">
+                                <div class="ico a">◉</div>
+                                <div class="tx">
+                                    <div class="k">结果来源</div>
+                                    <div class="d">通知监听仅对钉钉有效，其余请用截屏</div>
+                                </div>
+                            </div>
+                            <div style="padding:2px 16px 14px">
+                                <div class="seg">
+                                    <button id="segNotice" class="on" onclick="pickSource(0)">
+                                        通知监听
+                                    </button>
+                                    <button id="segCapture" onclick="pickSource(1)">截屏服务
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="divider full"></div>
+                            <div class="it">
+                                <div class="ico">🖼</div>
+                                <div class="tx">
+                                    <div class="k">返回截图</div>
+                                    <div class="d">开启后，【DT#打卡】倒计时结束会截屏并回传结果</div>
+                                </div>
+                                <label class="sw"><input type="checkbox" id="swRemoteCap"
+                                                         onchange="onRemoteCap(this)"><span
+                                        class="tr"></span><span class="th"></span></label>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="goto('taskConfig')">
+                                <div class="ico">🛠</div>
+                                <div class="tx">
+                                    <div class="k">任务配置</div>
+                                    <div class="d">重置 / 超时 / 工作日 / 随机偏移</div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="updateHoliday()">
+                                <div class="ico">📅</div>
+                                <div class="tx">
+                                    <div class="k">更新节假日数据</div>
+                                    <div class="d" id="holidayDesc">上次同步：— · 数据源
+                                        chinese-days
+                                    </div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                        </div>
+
+                        <div class="sec-title"><span class="l">核心服务</span><span class="r"
+                                                                                    style="color:var(--txt-3);cursor:default">已开启的服务无法关闭</span>
+                        </div>
+                        <div class="card">
+                            <div class="it" onclick="askService('floating')">
+                                <div class="dot" id="dotFloating"></div>
+                                <div class="tx">
+                                    <div class="k">悬浮权限</div>
+                                    <div class="d" id="tipFloating"></div>
+                                </div>
+                                <span class="lock">🔒</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="askService('notice')">
+                                <div class="dot" id="dotNotice"></div>
+                                <div class="tx">
+                                    <div class="k">通知监听</div>
+                                    <div class="d" id="tipNotice"></div>
+                                </div>
+                                <span class="lock">🔒</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="askService('capture')">
+                                <div class="dot" id="dotCapture"></div>
+                                <div class="tx">
+                                    <div class="k">截屏服务</div>
+                                    <div class="d" id="tipCapture"></div>
+                                </div>
+                                <span class="lock">🔒</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it">
+                                <div class="ico">👆</div>
+                                <div class="tx">
+                                    <div class="k">手势辅助</div>
+                                    <div class="d">开启后，支持单手指上下滑动屏幕开启/关闭伪灭屏
+                                    </div>
+                                </div>
+                                <label class="sw"><input type="checkbox" id="swGesture"
+                                                         checked><span class="tr"></span><span
+                                        class="th"></span></label>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it">
+                                <div class="ico">🔋</div>
+                                <div class="tx">
+                                    <div class="k">省电模式</div>
+                                    <div class="d">降低倒计时通知和息屏蒙层动画刷新频率</div>
+                                </div>
+                                <label class="sw"><input type="checkbox" id="swPower"><span
+                                        class="tr"></span><span class="th"></span></label>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it">
+                                <div class="ico">🏠</div>
+                                <div class="tx">
+                                    <div class="k">退回桌面</div>
+                                    <div class="d">开启后，打卡倒计时结束，会先退回桌面再启动本软件
+                                    </div>
+                                </div>
+                                <label class="sw"><input type="checkbox" id="swBackHome"><span
+                                        class="tr"></span><span class="th"></span></label>
+                            </div>
+                        </div>
+
+                        <div class="sec-title"><span class="l">工具</span></div>
+                        <div class="card" style="margin-bottom:20px">
+                            <div class="it" onclick="show('command')">
+                                <div class="ico">⌨</div>
+                                <div class="tx">
+                                    <div class="k">全部指令</div>
+                                    <div class="d">10 条远程控制指令</div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="openTest()">
+                                <div class="ico g">🚀</div>
+                                <div class="tx">
+                                    <div class="k">唤起测试</div>
+                                    <div class="d">立即拉起目标应用</div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="captureTest()">
+                                <div class="ico a">📷</div>
+                                <div class="tx">
+                                    <div class="k">截屏测试</div>
+                                    <div class="d">截图并以「邮箱测试」发送</div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="goto('qa')">
+                                <div class="ico">❓</div>
+                                <div class="tx">
+                                    <div class="k">常见问题</div>
+                                    <div class="d">10 个高频疑问</div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" style="cursor:default">
+                                <div class="ico">ℹ</div>
+                                <div class="tx">
+                                    <div class="k">当前版本</div>
+                                </div>
+                                <div class="v">2.4.2.2</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ 任务配置 ============ -->
+                <section class="page" id="page-taskConfig">
+                    <div class="appbar">
+                        <div class="nav" onclick="back()">←</div>
+                        <div class="ttl">
+                            <div class="t">任务配置</div>
+                        </div>
+                    </div>
+                    <div class="scroll pad">
+                        <div class="card">
+                            <div class="it"
+                                 onclick="pickOption('重置时间','每天几点刷新每日任务（0~23 时）','resetHour',RESET_OPTIONS)">
+                                <div class="ico">🔄</div>
+                                <div class="tx">
+                                    <div class="k">重置时间</div>
+                                    <div class="d">每天该时刻重置当日任务并重新调度</div>
+                                </div>
+                                <div class="v brand" id="vResetHour">每天 0 点</div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it"
+                                 onclick="pickOption('超时时间','停留在目标应用的秒数（>0 秒）','timeout',TIMEOUT_OPTIONS)">
+                                <div class="ico a">⏱</div>
+                                <div class="tx">
+                                    <div class="k">超时时间</div>
+                                    <div class="d">超时未完成则退回主页并兜底截图推送</div>
+                                </div>
+                                <div class="v brand" id="vTimeout">30 秒</div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it"
+                                 onclick="editText('任务口令','远程触发一次打卡的口令内容','command','text')">
+                                <div class="ico g">🔑</div>
+                                <div class="tx">
+                                    <div class="k">任务口令</div>
+                                    <div class="d">DT# + 口令 即可远程打卡</div>
+                                </div>
+                                <div class="v brand" id="vCommand">打卡</div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="chooseWorkdays()">
+                                <div class="ico">📆</div>
+                                <div class="tx">
+                                    <div class="k">工作日设置</div>
+                                    <div class="d">非工作日不执行整套任务</div>
+                                </div>
+                                <div class="v brand" id="vWorkdays">周一 周二 周三 周四 周五</div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it">
+                                <div class="ico">🏖</div>
+                                <div class="tx">
+                                    <div class="k">跳过节假日</div>
+                                    <div class="d">命中法定节假日 / 补班日规则时跳过</div>
+                                </div>
+                                <label class="sw"><input type="checkbox" id="swSkipHoliday" checked
+                                                         onchange="renderHome()"><span
+                                        class="tr"></span><span class="th"></span></label>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" style="cursor:default">
+                                <div class="ico">♾</div>
+                                <div class="tx">
+                                    <div class="k">循环任务</div>
+                                    <div class="d warn">注意：此开关只能通过远程指令修改</div>
+                                </div>
+                                <label class="sw lock"><input type="checkbox" id="swAutoLoop"
+                                                              checked disabled><span
+                                        class="tr"></span><span class="th"></span></label>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it">
+                                <div class="ico">🎲</div>
+                                <div class="tx">
+                                    <div class="k">随机时间</div>
+                                    <div class="d">同一任务每天生成稳定的随机偏移</div>
+                                </div>
+                                <label class="sw"><input type="checkbox" id="swRandom" checked
+                                                         onchange="toggleRange()"><span
+                                        class="tr"></span><span class="th"></span></label>
+                            </div>
+                            <div id="rangeWrap">
+                                <div class="divider"></div>
+                                <div class="it"
+                                     onclick="editText('时间范围','随机偏移的最大分钟数（≥5）','timeRange','num')">
+                                    <div class="ico">↔</div>
+                                    <div class="tx">
+                                        <div class="k">时间范围</div>
+                                        <div class="d">在计划时间基础上偏移 [0, N] 分钟</div>
+                                    </div>
+                                    <div class="v brand" id="vRange">5 分钟</div>
+                                    <div class="chev"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="sec-title"><span class="l">配置迁移</span></div>
+                        <div class="card" style="margin-bottom:20px">
+                            <div class="it" onclick="exportConfig()">
+                                <div class="ico">📤</div>
+                                <div class="tx">
+                                    <div class="k">导出配置</div>
+                                    <div class="d">生成 JSON，可分享到 QQ / 微信 / TIM / 支付宝</div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="it" onclick="importConfig()">
+                                <div class="ico g">📥</div>
+                                <div class="tx">
+                                    <div class="k">导入任务</div>
+                                    <div class="d">粘贴 JSON 一键还原全部配置</div>
+                                </div>
+                                <div class="chev"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ 消息渠道 ============ -->
+                <section class="page" id="page-messageChannel">
+                    <div class="appbar">
+                        <div class="nav" onclick="back()">←</div>
+                        <div class="ttl">
+                            <div class="t">消息渠道</div>
+                            <div class="s">测试成功后自动生效</div>
+                        </div>
+                    </div>
+                    <div class="scroll pad">
+                        <div class="card" style="margin-bottom:14px">
+                            <div class="fld">
+                                <div class="k">消息标题</div>
+                                <input id="inTitle" placeholder="打卡结果通知">
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-bottom:14px">
+                            <div class="it" style="cursor:default">
+                                <div class="ico g">💬</div>
+                                <div class="tx">
+                                    <div class="k">企业微信</div>
+                                    <div class="d">群机器人 Webhook · 每分钟最多 20 条</div>
+                                </div>
+                                <span class="chip" id="wxState">未配置</span>
+                                <button class="btn sm" onclick="sendWxTest()">测试推送</button>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="fld">
+                                <div class="k">key</div>
+                                <input id="inWxKey" placeholder="webhook 地址末尾的 key">
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-bottom:20px">
+                            <div class="it" style="cursor:default">
+                                <div class="ico">📮</div>
+                                <div class="tx">
+                                    <div class="k">QQ邮箱</div>
+                                    <div class="d">SMTP smtp.qq.com:465 · SSL</div>
+                                </div>
+                                <span class="chip" id="mailState">未配置</span>
+                                <button class="btn sm" onclick="sendMailTest()">测试邮件</button>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="fld">
+                                <div class="k">发件箱</div>
+                                <input id="inOutbox" inputmode="numeric" maxlength="15"
+                                       placeholder="123456789">
+                                <span class="sfx">@qq.com</span>
+                            </div>
+                            <div class="divider"></div>
+                            <div class="fld">
+                                <div class="k">授权码</div>
+                                <input id="inAuth" placeholder="SMTP 授权码（非邮箱密码）">
+                            </div>
+                            <div class="divider"></div>
+                            <div class="fld">
+                                <div class="k">收件箱</div>
+                                <input id="inInbox" placeholder="xxxxx@qq.com">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ============ 常见问题 ============ -->
+                <section class="page" id="page-qa">
+                    <div class="appbar">
+                        <div class="nav" onclick="back()">←</div>
+                        <div class="ttl">
+                            <div class="t">常见问题</div>
+                        </div>
+                    </div>
+                    <div class="scroll">
+                        <div class="card" id="qaList" style="margin:14px"></div>
+                        <div style="font-size:11px;color:var(--txt-3);padding:12px 20px 24px;line-height:1.8">
+                            Tips：由于本人不再使用，测试不尽仔细，如有问题请加 QQ
+                            群：560354109（1群）、643595483（2群）、377923252（3群）。
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================= 底部导航 ========================= -->
+                <nav class="tabbar" id="tabbar">
+                    <button class="tb on" id="tbHome" onclick="show('home')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 10.5 12 3l9 7.5"/>
+                            <path d="M5 9.5V21h14V9.5"/>
+                        </svg>
+                        <span>首页</span>
+                    </button>
+                    <button class="tb" id="tbCmd" onclick="show('command')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8 8l-4 4 4 4"/>
+                            <path d="M16 8l4 4-4 4"/>
+                            <path d="M13 6l-2 12"/>
+                        </svg>
+                        <span>指令</span>
+                    </button>
+                    <button class="tb" id="tbNotice" onclick="show('notice')">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7"/>
+                            <path d="M10.5 20a2 2 0 0 0 3 0"/>
+                        </svg>
+                        <span>通知</span><i class="bdg"></i>
+                    </button>
+                    <button class="tb" id="tbSet" onclick="show('settings')">
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="3.2"/>
+                            <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.35a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.65 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.65a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.65a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.35 9V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03z"/>
+                        </svg>
+                        <span>设置</span>
+                    </button>
+                </nav>
+            </div>
+
+            <div class="floatwin" id="floatwin">
+                <div class="wave"><i></i><i></i><b id="fwMem">62</b></div>
+                <span class="spx"></span>
+                <span class="tmv" id="fwTime">30</span>
+                <span style="font-size:10px;opacity:.6">秒</span>
+            </div>
+
+            <div class="ovl" id="ovl" onclick="closeLayers()"></div>
+
+            <div class="sheet" id="sheet">
+                <div class="grab"></div>
+                <div class="st" id="sheetTitle">标题</div>
+                <div class="sd" id="sheetDesc"></div>
+                <div class="sb" id="sheetBody"></div>
+            </div>
+
+            <div class="dlg" id="dlg">
+                <div class="t" id="dlgTitle">标题</div>
+                <div class="m" id="dlgMsg"></div>
+                <div id="dlgExtra"></div>
+                <div class="acts" id="dlgActs"></div>
+            </div>
+
+            <div class="toast" id="toast"></div>
+
+            <div class="ld" id="ld">
+                <div class="box">
+                    <div class="spin"></div>
+                    <span class="tx" id="ldText">请稍后…</span></div>
+            </div>
+
+            <div class="masklayer" id="masklayer" onclick="toggleMask()">
+                <div class="cw" id="maskClockWrap">
+                    <div class="ck" id="maskClock">09:41</div>
+                </div>
+                <div class="ht">伪装息屏中 · 点击屏幕或按音量减键退出</div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<script>
+    /* ==========================================================
+       1. 静态数据（对应 Constant / assets / lite）
+       ========================================================== */
+    const TARGET_APPS = [
+      {name:'钉钉',      short:'钉', pkg:'com.alibaba.android.rimet',      color:'#1F7AEC', cap:true},
+      {name:'企业微信',  short:'企', pkg:'com.tencent.wework',             color:'#2E8CF0', cap:false},
+      {name:'飞书',      short:'飞', pkg:'com.ss.android.lark',            color:'#3370FF', cap:false},
+      {name:'移动办公M3',short:'M3', pkg:'com.seeyon.cmp',                 color:'#3C8CE0', cap:false}
+    ];
+    const AID_APPS = {
+      'com.tencent.mm':{n:'微信',c:'#2BAF5B'},
+      'com.tencent.mobileqq':{n:'手机QQ',c:'#12B7F5'},
+      'com.tencent.tim':{n:'TIM',c:'#2A8CF5'},
+      'com.eg.android.AlipayGphone':{n:'支付宝',c:'#1678FF'}
+    };
+    const COMMANDS = [
+      {cmd:'DT#执行任务', desc:'启动循环任务（默认每天自动执行）', fb:false},
+      {cmd:'DT#终止任务', desc:'停止循环任务（仅停止当天）', fb:true},
+      {cmd:'DT#开启循环', desc:'开启周期循环的标志', fb:true},
+      {cmd:'DT#关闭循环', desc:'关闭循环标志位（永久暂停，直到收到「开启循环」指令）', fb:true},
+      {cmd:'DT#息屏', desc:'开启伪装息屏模式，显示纯黑背景 + 动态时钟', fb:false},
+      {cmd:'DT#亮屏', desc:'退出伪装息屏模式', fb:false},
+      {cmd:'DT#考勤记录', desc:'导出当天考勤记录', fb:true},
+      {cmd:'DT#打卡', desc:'触发一次打卡（默认指令内容为「打卡」）', fb:true},
+      {cmd:'DT#状态查询', desc:'查询当前状态（任务、服务、监听、电量、版本、日期等）', fb:true},
+      {cmd:'DT#截屏', desc:'截取目标应用屏幕并通过消息渠道返回给用户', fb:true}
+    ];
+    const QA = [
+      {q:'怎么使用本软件？', a:'本软件不对目标应用做侵入式攻击，不修改定位数据，可以放心使用。只需要设置好任务时间，本软件会在设置的时间点附近调起目标应用实现自动打卡（初次使用会有个弹框提示，"DailyTask"想要打开的目标应用，勾选"始终允许"），但是需要长亮屏幕，因为锁屏后再解锁，并不会直接进入桌面，会无法调起软件。'},
+      {q:'非工作日怎么停止循环任务？', a:'本软件支持远程发送消息控制任务【启动/停止】，前提是你需要在你打卡手机上安装【QQ、微信、TIM、支付宝】其中的任何一个，并用小号登录，开启通知监听，然后用你的大号给这其中的任意一款软件发送【启动】或者【停止】即可，成功与否都会收到一封反馈邮件，注意查看邮箱！'},
+      {q:'怎么设置打卡？', a:'将目标应用设置为"极速打卡"，打卡时间不要早于你设置目标应用打卡的最早时间，否则会打不上卡。打卡成功与否都会发送一封打卡结果邮件到你自己设置好的邮箱。'},
+      {q:'为什么本软件不能灭屏使用？', a:'如果手机灭屏，在手机没有被 root 的情况下，无法通过常规的代码逻辑实现【亮屏 + 解锁 + 进入桌面】这三个步骤。首先，亮屏这一步可以通过代码逻辑实现，但是第二步和第三步，由于国内各手机厂商对系统底层的修改，导致有的手机系统能够在不设置锁屏密码的情况下直接进入桌面，但是有的却又不能，那些不能直接进入桌面的系统，通过正规的代码也不能直接进入桌面，所以，为了统一性，本软件不能在灭屏情况下使用。'},
+      {q:'支持什么邮箱？', a:'发件箱只测试过 QQ 邮箱，收件箱只要是国内的应该都可以。'},
+      {q:'手机耗电快怎么处理？', a:'首先将手机亮度可以调最低，其次下班后给手机充着电。或者在主界面按音量减小显示伪装灭屏，再或者用智能插座给手机供电。'},
+      {q:'怎么删除设置好的定时任务？', a:'长按任务列表项，然后选择删除即可。'},
+      {q:'收不到打卡成功的邮件，怎么处理？', a:'请先确认好通知栏监听已开启，如不开启将无法监听打卡成功的通知。或者把软件杀掉，然后重启工具并关闭工具的通知监听，最后再重新打开工具的通知监听。随便发条消息到手机，如果能在工具的"所有通知"找到刚刚发的消息，则表示可以正常监听通知，否则重复刚刚的操作。'},
+      {q:'通知栏监听已开启，依旧收不到，怎么处理？', a:'目标应用普通通知能收到，但是收不到打卡通知的，那可能是贵司管理员把打卡通知开关给关了。遇到这种情况的，要么老老实实手动打卡，要么依旧用此工具，只是收不到邮件罢了，问题也不是很大。<br/><a href="https://github.com/AndroidCoderPeng/DailyTask/issues/27" target="_blank">详情点这里</a>'},
+      {q:'打卡失败是什么原因？', a:'1. 账号被自己另一个手机挤下去<br/>2. 目标应用未设置极速打卡<br/>3. 目标应用内部打卡通知或者手机通知被关闭<br/>4. 打卡手机有 2 个以上'}
+    ];
+    const DAY_LABELS = ['周一','周二','周三','周四','周五','周六','周日'];
+    const RESET_OPTIONS = [
+      {v:0,t:'0 点'},{v:1,t:'1 点'},{v:2,t:'2 点'},{v:3,t:'3 点'},
+      {v:4,t:'4 点'},{v:5,t:'5 点'},{v:6,t:'6 点'},{v:-1,t:'自定义（时）'}
+    ];
+    const TIMEOUT_OPTIONS = [{v:15,t:'15 秒'},{v:30,t:'30 秒'},{v:45,t:'45 秒'},{v:-1,t:'自定义（秒）'}];
+    const NOTICES = [
+      {pkg:'com.alibaba.android.rimet', t:'考勤打卡', m:'你已经打卡成功，打卡时间 08:32，很棒！', ts:'2026-09-22 08:32:11', key:true},
+      {pkg:'com.tencent.mm', t:'张三', m:'DT#状态查询', ts:'2026-09-22 08:35:02', key:false},
+      {pkg:'com.alibaba.android.rimet', t:'考勤打卡', m:'你已经打卡成功，打卡时间 18:01，辛苦了！', ts:'2026-09-22 18:01:26', key:true},
+      {pkg:'com.tencent.mobileqq', t:'李四', m:'DT#截屏', ts:'2026-09-22 18:05:44', key:false},
+      {pkg:'com.ss.android.lark', t:'审批助手', m:'你有一个新的审批待处理', ts:'2026-09-22 19:12:30', key:false}
+    ];
+
+    /* ==========================================================
+       2. 状态（对应 SharedPreferences / ConfigStore）
+       ========================================================== */
+    const state = {
+      cur:'home', backTo:'home', history:[],
+      tasks:[{time:'08:30:00'},{time:'18:00:00'}],
+      running:false, curIdx:-1, actual:{},
+      resetHour:0, timeout:30, command:'打卡',
+      workdays:[0,1,2,3,4], skipHoliday:true, random:true, timeRange:5,
+      targetApp:0, resultSource:-1, channel:-1,
+      svc:{floating:true, notice:true, capture:false},
+      battery:78, firstSettings:true, noticeFilter:'all'
+    };
+
+    /* ==========================================================
+       3. 工具
+       ========================================================== */
+    const $ = id => document.getElementById(id);
+    const pad2 = n => String(n).padStart(2,'0');
+    const inDay = i => state.workdays.includes(i);
+    function dayLabel(){
+      return state.workdays.length === 7 ? '每天' : state.workdays.slice().sort((a,b)=>a-b).map(i=>DAY_LABELS[i]).join(' ');
+    }
+    function workdayFlags(){
+      const d = new Date();
+      const tagged = !inDay((d.getDay()+6)%7);
+      if(state.skipHoliday && !tagged) return {type:'工作日', cls:'run'};
+      return tagged ? {type:'休息日', cls:'skip'} : {type:'工作日', cls:'run'};
+    }
+    function toast(msg){
+      const t = $('toast'); t.innerHTML = msg; t.classList.add('on');
+      clearTimeout(t._tm); t._tm = setTimeout(()=>t.classList.remove('on'), 1900);
+    }
+    function loading(on, text){
+      if(text) $('ldText').textContent = text;
+      $('ld').classList.toggle('on', !!on);
+    }
+
+    /* ==========================================================
+       4. 页面栈
+       ========================================================== */
+    const TAB_PAGES = ['home','command','notice','settings'];
+    function show(name){
+      $('page-'+state.cur) && $('page-'+state.cur).classList.remove('show');
+      state.cur = name;
+      $('page-'+name).classList.add('show');
+      $('tabbar').classList.toggle('hide', TAB_PAGES.indexOf(name) < 0);
+      ['home','cmd','notice','settings','taskConfig','channel','qa'].forEach(k=>{
+        const b = $('nav'+k.charAt(0).toUpperCase()+k.slice(1));
+        if(b) b.classList.remove('on');
+        const t = $('tb'+k.charAt(0).toUpperCase()+k.slice(1));
+        if(t) t.classList.remove('on');
+      });
+      const map = {home:'navHome', command:'navCmd', notice:'navNotice', settings:'navSettings', taskConfig:'navTaskConfig', messageChannel:'navChannel', qa:'navQa'};
+      if(map[name]) $(map[name]).classList.add('on');
+      const tmap = {home:'tbHome', command:'tbCmd', notice:'tbNotice', settings:'tbSet'};
+      if(tmap[name]) $(tmap[name]).classList.add('on');
+      const el = $('page-'+name); el.scrollTop = 0;
+      if(name === 'settings' && state.firstSettings){
+        state.firstSettings = false;
+        setTimeout(showNoticeDialog, 260);
+      }
+    }
+    function goto(name){
+      if(TAB_PAGES.indexOf(state.cur) >= 0) state.backTo = state.cur;
+      show(name);
+    }
+    function back(){
+      show(TAB_PAGES.indexOf(state.backTo) >= 0 ? state.backTo : 'home');
+    }
+
+    /* ==========================================================
+       5. 渲染
+       ========================================================== */
+    function renderHome(){
+      const df = workdayFlags();
+      if(state.running){
+        const idx = state.curIdx + 1;
+        $('heroDay').textContent = '正在执行 · 第 ' + Math.min(idx + 1, state.tasks.length) + ' / ' + state.tasks.length + ' 个任务';
+        $('heroStatus').textContent = idx < state.tasks.length
+          ? '准备执行第 ' + (idx + 1) + ' 个任务'
+          : '正在执行最后一个任务';
+        $('heroStatus').className = 'st run';
+      } else if(df.cls === 'skip'){
+        $('heroDay').textContent = '今日 ' + df.type;
+        $('heroStatus').textContent = '今日休息，打卡任务自动跳过';
+        $('heroStatus').className = 'st skip';
+      } else {
+        const done = state.tasks.filter((t,i)=>state.actual[i]).length;
+        $('heroDay').textContent = state.tasks.length ? '今日 ' + df.type : '暂无任务';
+        $('heroStatus').textContent = done >= state.tasks.length && state.tasks.length
+          ? '今日任务已全部执行完毕'
+          : '任务未启动，点击下方按钮开始';
+        $('heroStatus').className = 'st';
+      }
+      const total = state.tasks.length;
+      const done = state.tasks.filter((t,i)=>state.actual[i]).length;
+      const pct = total ? Math.round(done / total * 100) : 0;
+      $('heroRing').style.setProperty('--p', pct + '%');
+      $('heroRingTxt').textContent = pct + '%';
+      $('runProgress').style.width = pct + '%';
+
+      $('runBtn').classList.toggle('stop', state.running);
+      $('runGlyph').textContent = state.running ? '■' : '▶';
+      $('runTxt').textContent = state.running ? '停止任务' : '启动任务';
+
+      const app = TARGET_APPS[state.targetApp];
+      $('metaTarget').textContent = app.name;
+      $('metaSource').textContent = '结果来源 · ' + (state.resultSource === 0 ? '通知监听' : state.resultSource === 1 ? '截屏服务' : '未选择');
+      $('targetIco').textContent = app.short;
+      $('targetIco').style.background = app.color;
+      $('targetIco').style.color = '#fff';
+      $('targetPkg').textContent = app.pkg;
+      $('targetName').textContent = app.name;
+      $('channelV').textContent = state.channel === 0 ? 'QQ邮箱' : state.channel === 1 ? '企业微信' : '未配置';
+      $('channelV').className = 'v' + (state.channel < 0 ? ' err' : ' brand');
+      $('segNotice').classList.toggle('on', state.resultSource === 0);
+      $('segCapture').classList.toggle('on', state.resultSource === 1);
+
+      ['floating','notice','capture'].forEach(k=>{
+        $('dot'+k.charAt(0).toUpperCase()+k.slice(1)).className = 'dot ' + (state.svc[k] ? 'on' : 'off');
+      });
+      $('tipFloating').textContent = state.svc.floating ? '已开启，打卡结束可自动跳回本软件' : '服务未开启，打完卡无法自动跳回本软件';
+      $('tipFloating').className = 'd' + (state.svc.floating ? '' : ' warn');
+      $('tipNotice').textContent = state.svc.notice ? '已开启，可监听打卡结果并接收远程指令' : '服务未开启，无法监听打卡结果和接收远程指令';
+      $('tipNotice').className = 'd' + (state.svc.notice ? '' : ' warn');
+      $('tipCapture').textContent = state.svc.capture ? '已授权，可通过 MediaProjection 获取截图' : '服务未开启，无法获取打卡结果';
+      $('tipCapture').className = 'd' + (state.svc.capture ? '' : ' warn');
+
+      $('vResetHour').textContent = '每天 ' + state.resetHour + ' 点';
+      $('vTimeout').textContent = state.timeout + ' 秒';
+      $('vCommand').textContent = state.command;
+      $('vWorkdays').textContent = dayLabel();
+      $('vRange').textContent = state.timeRange + ' 分钟';
+      $('swSkipHoliday').checked = state.skipHoliday;
+      $('swRandom').checked = state.random;
+      $('rangeWrap').style.display = state.random ? '' : 'none';
+
+      renderTasks();
+      $('taskCount').textContent = state.tasks.length;
+    }
+    function renderTasks(){
+      const box = $('taskList');
+      const done = i => !!state.actual[i];
+      box.innerHTML = state.tasks.map((t,i)=>{
+        const now = state.running && i === state.curIdx;
+        const cls = 'task' + (now ? ' now' : done(i) ? ' done' : '');
+        const chip = now ? '<span class="chip brand">执行中</span>'
+          : done(i) ? '<span class="chip green">已完成</span>'
+          : '<span class="chip soft">待执行</span>';
+        return '<div class="'+cls+'" data-i="'+i+'">'
+          + '<div class="tl"><div class="d"></div><div class="ln"></div></div>'
+          + '<div class="bd">'
+          +   '<div class="hd"><span class="idx">任务 '+(i+1)+'</span>'+chip+'</div>'
+          +   '<div class="tm">'
+          +     '<div class="c"><div class="cap">计划时间</div><div class="v">'+t.time+'</div></div>'
+          +     '<div class="arw">›</div>'
+          +     '<div class="c act"><div class="cap">实际时间</div><div class="v">'+(state.actual[i]||'--:--:--')+'</div></div>'
+          +   '</div>'
+          +   '<div class="src">'+(state.random ? '🎲 随机偏移 0~'+state.timeRange+' 分钟' : '⏱ 准点执行')
+          +   ' · 停留 '+state.timeout+' 秒</div>'
+          + '</div></div>';
+      }).join('');
+      $('emptyView').style.display = state.tasks.length ? 'none' : 'flex';
+      Array.from(box.children).forEach(el=>{
+        const i = +el.dataset.i;
+        let timer = null, longPressed = false;
+        el.addEventListener('pointerdown', ()=>{
+          longPressed = false;
+          timer = setTimeout(()=>{ longPressed = true; confirmDelete(i); }, 520);
+        });
+        el.addEventListener('pointerup', ()=>clearTimeout(timer));
+        el.addEventListener('pointerleave', ()=>clearTimeout(timer));
+        el.addEventListener('click', ()=>{ clearTimeout(timer); if(!longPressed) editTask(i); });
+      });
+    }
+    function renderCommands(){
+      $('cmdList').innerHTML = COMMANDS.map((c,i)=>
+        '<div class="cmd" data-c="'+i+'"'+(i ? ' style="border-top:1px solid var(--line)"' : '')+'>'
+        + '<div class="mn"><div class="r1"><span class="nm">'+c.cmd+'</span>'
+        + '<span class="chip '+(c.fb ? 'green' : 'amber')+'">'+(c.fb ? '有反馈' : '无反馈')+'</span></div>'
+        + '<div class="ds">'+c.desc+'</div></div>'
+        + '<div class="cp">复制</div></div>').join('');
+      Array.from($('cmdList').children).forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const c = COMMANDS[+el.dataset.c];
+          navigator.clipboard && navigator.clipboard.writeText(c.cmd);
+          toast('已复制：<b>'+c.cmd+'</b>');
+        });
+      });
+    }
+    function renderQA(){
+      $('qaList').innerHTML = QA.map((x,i)=>
+        '<div class="qa" data-q="'+i+'">'
+        + '<div class="q"><div class="no">'+(i+1)+'</div><div class="qt">'+x.q+'</div><div class="aw">▾</div></div>'
+        + '<div class="a">'+x.a+'</div></div>').join('');
+      Array.from($('qaList').children).forEach(el=>{
+        el.querySelector('.q').addEventListener('click', ()=>el.classList.toggle('open'));
+      });
+    }
+    function renderNotices(){
+      const fs = [{k:'all',n:'全部'},{k:'target',n:'目标应用'},{k:'aid',n:'辅助四件套'},{k:'key',n:'打卡结果'}];
+      $('noticeFilter').innerHTML = fs.map(f=>
+        '<button class="'+(state.noticeFilter===f.k?'on':'')+'" data-f="'+f.k+'">'+f.n+'</button>').join('');
+      Array.from($('noticeFilter').children).forEach(b=>{
+        b.addEventListener('click', ()=>{ state.noticeFilter = b.dataset.f; renderNotices(); });
+      });
+      const list = NOTICES.filter(n=>{
+        if(state.noticeFilter === 'target') return n.pkg === TARGET_APPS[state.targetApp].pkg;
+        if(state.noticeFilter === 'aid') return !!AID_APPS[n.pkg];
+        if(state.noticeFilter === 'key') return n.key;
+        return true;
+      });
+      $('noticeList').innerHTML = list.length ? list.map((n,i)=>{
+        const meta = n.pkg === TARGET_APPS[state.targetApp].pkg
+          ? {n:TARGET_APPS[state.targetApp].name, c:TARGET_APPS[state.targetApp].color}
+          : (AID_APPS[n.pkg] || {n:'其它', c:'#8A97A5'});
+        return '<div class="notice"'+(i ? ' style="border-top:1px solid var(--line)"' : '')+'>'
+          + '<div class="av" style="background:'+meta.c+'">'+meta.n.slice(0,1)+'</div>'
+          + '<div class="bd"><div class="r1"><span class="ti">'+n.t+'</span><span class="ts">'+n.ts.slice(11)+'</span></div>'
+          + '<div class="ms">'+n.m+'</div>'
+          + (n.key ? '<div style="margin-top:7px"><span class="chip gs">已判定为打卡成功</span></div>' : '')
+          + '</div></div>';
+      }).join('') : '<div style="padding:36px 0;text-align:center;color:var(--txt-3);font-size:12.5px">暂无符合条件的通知</div>';
+    }
+
+    /* ==========================================================
+       6. 浮层
+       ========================================================== */
+    function closeLayers(){
+      $('ovl').classList.remove('on');
+      $('sheet').classList.remove('on');
+      $('dlg').classList.remove('on');
+    }
+    function openSheet(title, desc, html){
+      $('sheetTitle').textContent = title;
+      $('sheetDesc').textContent = desc || '';
+      $('sheetBody').innerHTML = html;
+      $('ovl').classList.add('on');
+      $('sheet').classList.add('on');
+    }
+    function openDialog(opt){
+      $('dlgTitle').textContent = opt.title;
+      $('dlgMsg').innerHTML = opt.msg || '';
+      $('dlgMsg').className = 'm' + (opt.center ? ' ctr' : '');
+      $('dlgExtra').innerHTML = opt.extra || '';
+      $('dlgActs').innerHTML = (opt.actions || [{t:'知道了'}]).map((a,i)=>
+        '<button class="btn '+(a.cls || (i ? 'line' : ''))+'" data-a="'+i+'">'+a.t+'</button>').join('');
+      Array.from($('dlgActs').children).forEach((b,i)=>{
+        b.addEventListener('click', ()=>{
+          closeLayers();
+          if(opt.actions && opt.actions[i].fn) opt.actions[i].fn();
+        });
+      });
+      if(opt.after) setTimeout(opt.after, 30);
+      $('ovl').classList.add('on');
+      $('dlg').classList.add('on');
+    }
+    function showNoticeDialog(){
+      openDialog({
+        title:'使用须知',
+        msg:'本软件为个人兴趣=<b>开源免费</b>=作品，仅用于学习交流。<br/>'+
+            '严禁任何形式的=<b>倒卖、二次打包、收费分发</b>=。<br/>'+
+            '使用前请自行评估风险，由此产生的一切后果由使用者承担。',
+        center:true,
+        actions:[{t:'我已了解', fn:()=>toast('感谢支持 ❤')}]
+      });
+    }
+
+    /* ==========================================================
+       7. 任务：新增 / 修改 / 删除
+       ========================================================== */
+    function timeWheel(title, initial, cb){
+      const p = initial.split(':').map(Number);
+      const sel = {h:p[0], m:p[1], s:p[2]};
+      const cols = [['h',24],['m',60],['s',60]];
+      const html = '<div class="wheel"><div class="mk"></div>'
+        + cols.map(c=>'<div class="col" data-k="'+c[0]+'">'
+          + Array.from({length:c[1]},(_,i)=>'<div class="cell" data-v="'+i+'">'+pad2(i)+'</div>').join('')
+          + '</div>').join('')
+        + '</div>'
+        + '<div class="acts"><button class="btn line" data-act="cancel">取消</button>'
+        + '<button class="btn" data-act="ok">确定</button></div>';
+      openSheet(title, '支持 00:00:00 ~ 23:59:59，写入后会按时间升序排列', html);
+      Array.from($('sheetBody').querySelectorAll('.col')).forEach(col=>{
+        const k = col.dataset.k;
+        col.addEventListener('scroll', ()=>{
+          const idx = Math.round(col.scrollTop / 38);
+          if(col._i !== idx){
+            col._i = idx; sel[k] = idx;
+            Array.from(col.children).forEach((c,i)=>c.classList.toggle('sel', i === idx));
+          }
+        });
+        col.scrollTop = sel[k] * 38;
+        Array.from(col.children).forEach((c,i)=>c.classList.toggle('sel', i === sel[k]));
+        col.addEventListener('click', e=>{
+          const cell = e.target.closest('.cell'); if(!cell) return;
+          col.scrollTo({top: +cell.dataset.v * 38, behavior:'smooth'});
+        });
+      });
+      $('sheetBody').querySelector('[data-act="ok"]').addEventListener('click', ()=>{
+        closeLayers();
+        cb(pad2(sel.h)+':'+pad2(sel.m)+':'+pad2(sel.s));
+      });
+      $('sheetBody').querySelector('[data-act="cancel"]').addEventListener('click', closeLayers);
+    }
+    function addTask(){
+      if(state.running){ toast('任务正在执行，无法添加'); return; }
+      timeWheel('添加任务时间', '08:30:00', v=>{
+        if(state.tasks.some(t=>t.time === v)){ toast('该时间点已存在'); return; }
+        state.tasks.push({time:v});
+        state.tasks.sort((a,b)=>a.time.localeCompare(b.time));
+        renderHome(); toast('已添加：<b>'+v+'</b>');
+      });
+    }
+    function editTask(i){
+      if(state.running){ toast('任务正在执行，无法修改'); return; }
+      timeWheel('修改任务时间', state.tasks[i].time, v=>{
+        if(state.tasks.some((t,k)=>t.time === v && k !== i)){ toast('该时间点已存在'); return; }
+        state.tasks[i].time = v; delete state.actual[i];
+        state.tasks.sort((a,b)=>a.time.localeCompare(b.time));
+        renderHome(); toast('任务时间已更新');
+      });
+    }
+    function confirmDelete(i){
+      if(state.running){ toast('任务正在执行，无法删除'); return; }
+      openDialog({
+        title:'删除任务',
+        msg:'确定删除 <b>'+state.tasks[i].time+'</b> 这个任务吗？删除后不可恢复。',
+        center:true,
+        actions:[
+          {t:'取消', cls:'line'},
+          {t:'删除', cls:'', fn:()=>{
+            state.tasks.splice(i,1); state.actual = {};
+            renderHome(); toast('已删除该任务');
+          }}
+        ]
+      });
+    }
+
+    /* ==========================================================
+       8. 设置项交互
+       ========================================================== */
+    function chooseTargetApp(){
+      const html = TARGET_APPS.map((a,i)=>
+        '<div class="opt'+(i === state.targetApp ? ' sel' : '')+'" data-i="'+i+'">'
+        + '<div class="oi" style="background:'+a.color+'">'+a.short+'</div>'
+        + '<div class="tx">'+a.name+'<small>'+a.pkg+(a.cap ? '' : ' · 仅支持截屏服务')+'</small></div>'
+        + '<div class="ck">✓</div></div>').join('');
+      openSheet('选择目标应用', '钉钉可同时使用通知监听与截屏，其余应用仅支持截屏服务', html);
+      Array.from($('sheetBody').children).forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const i = +el.dataset.i, app = TARGET_APPS[i];
+          closeLayers();
+          if(!app.cap){
+            if(!state.svc.capture){
+              toast('请先打开截屏服务');
+              state.resultSource = -1; renderHome(); return;
+            }
+            state.targetApp = i; state.resultSource = 1;
+            renderHome(); toast('已切换到 <b>'+app.name+'</b>，结果来源自动设为截屏服务'); return;
+          }
+          state.targetApp = i;
+          if(state.svc.notice) state.resultSource = 0;
+          else if(state.svc.capture) state.resultSource = 1;
+          else { state.resultSource = -1; renderHome(); toast('请先打开通知监听或截屏服务'); return; }
+          renderHome(); toast('目标应用：<b>'+app.name+'</b>');
+        });
+      });
+    }
+    function pickSource(n){
+      if(n === 0 && TARGET_APPS[state.targetApp].name !== '钉钉'){
+        toast('仅钉钉支持通知监听'); return;
+      }
+      if(n === 1 && !state.svc.capture){ toast('请先打开截屏服务'); return; }
+      if(n === 0 && !state.svc.notice){ toast('请先打开通知监听服务'); return; }
+      state.resultSource = n; renderHome();
+      toast('结果来源：<b>' + (n ? '截屏服务' : '通知监听') + '</b>');
+    }
+    function onRemoteCap(el){
+      if(el.checked && !state.svc.capture){
+        el.checked = false; toast('请先打开截屏服务'); return;
+      }
+      toast(el.checked ? '远程打卡将返回截图' : '已关闭返回截图');
+    }
+    function askService(k){
+      const map = {
+        floating:{n:'悬浮权限', req:'android.permission.SYSTEM_ALERT_WINDOW'},
+        notice:{n:'通知监听', req:'BIND_NOTIFICATION_LISTENER_SERVICE'},
+        capture:{n:'截屏服务', req:'FOREGROUND_SERVICE_MEDIA_PROJECTION'}
+      }[k];
+      if(state.svc[k]){ toast('核心服务，无法关闭'); return; }
+      openDialog({
+        title:'开启' + map.n,
+        msg:'该权限需在系统设置中授予：<br/><span style="color:var(--brand)">' + map.req + '</span>',
+        actions:[
+          {t:'稍后再说', cls:'line'},
+          {t:'前往开启', fn:()=>{
+            loading(true, '正在唤起系统授权…');
+            setTimeout(()=>{ loading(false); state.svc[k] = true; renderHome(); toast(map.n + '已开启'); }, 1200);
+          }}
+        ]
+      });
+    }
+    function devToggle(k){
+      state.svc[k] = !state.svc[k];
+      if(!state.svc.capture && state.resultSource === 1) state.resultSource = TARGET_APPS[state.targetApp].cap && state.svc.notice ? 0 : -1;
+      if(!state.svc.notice && state.resultSource === 0) state.resultSource = state.svc.capture ? 1 : -1;
+      renderHome();
+    }
+
+    /* ==========================================================
+       9. 任务配置交互
+       ========================================================== */
+    function pickOption(title, desc, key, options){
+      const cur = state[key];
+      openSheet(title, desc, options.map(o=>
+        '<div class="opt'+(o.v === cur ? ' sel' : '')+'" data-v="'+o.v+'">'
+        + '<div class="tx">'+o.t+'</div><div class="ck">✓</div></div>').join(''));
+      Array.from($('sheetBody').children).forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const v = +el.dataset.v;
+          closeLayers();
+          if(v < 0){
+            editText(title, desc, key, 'num');
+            return;
+          }
+          applyValue(key, v);
+        });
+      });
+    }
+    function applyValue(key, v){
+      if(key === 'resetHour'){
+        if(v < 0 || v > 23){ toast('请输入 0 ~ 23 之间的小时数'); return; }
+        state.resetHour = v;
+      } else if(key === 'timeout'){
+        if(!(v > 0)){ toast('超时时间必须大于 0 秒'); return; }
+        state.timeout = v;
+      } else if(key === 'command'){
+        if(!v){ toast('任务口令不能为空'); return; }
+        state.command = v;
+      } else if(key === 'timeRange'){
+        if(v < 5){ toast('时间范围不能小于 5 分钟'); return; }
+        state.timeRange = v;
+      }
+      renderHome(); renderTasks();
+    }
+    function editText(title, desc, key, type){
+      openDialog({
+        title:title, msg:desc,
+        extra:'<input class="inp" id="dlgInput" value="'+ (type === 'num' ? state[key] : (key === 'command' ? state.command : '')) +'" placeholder="'+(type === 'num' ? '请输入数字' : '请输入内容')+'">',
+        actions:[
+          {t:'取消', cls:'line'},
+          {t:'确定', fn:()=>{
+            const raw = $('dlgInput').value.trim();
+            if(type === 'num'){
+              if(!/^\d+$/.test(raw)){ toast('请输入合法数字'); return; }
+              applyValue(key, parseInt(raw, 10));
+            } else { applyValue(key, raw); }
+          }}
+        ],
+        after:()=>{ const i = $('dlgInput'); if(i){ i.focus(); } }
+      });
+    }
+    function chooseWorkdays(){
+      const picked = state.workdays.slice();
+      const html = '<div class="days">' + DAY_LABELS.map((d,i)=>
+        '<button class="'+(picked.includes(i) ? 'on' : '')+'" data-i="'+i+'">'+d+'</button>').join('') + '</div>'
+        + '<div class="hintline">至少保留一天，七天全选时按「每天」处理</div>';
+      openDialog({
+        title:'工作日设置', msg:'仅在选中日执行整套任务',
+        extra:html,
+        actions:[
+          {t:'取消', cls:'line'},
+          {t:'确定', fn:()=>{
+            const arr = Array.from($('dlgExtra').querySelectorAll('.days button'))
+              .filter(b=>b.classList.contains('on')).map(b=>+b.dataset.i);
+            if(!arr.length){ toast('至少选择一天'); return; }
+            state.workdays = arr; state.actual = {};
+            renderHome(); toast('工作日已更新：<b>'+dayLabel()+'</b>');
+          }}
+        ],
+        after:()=>{
+          Array.from($('dlgExtra').querySelectorAll('.days button')).forEach(b=>{
+            b.addEventListener('click', ()=>b.classList.toggle('on'));
+          });
+        }
+      });
+    }
+    function toggleRange(){ state.random = $('swRandom').checked; renderHome(); }
+
+    /* ==========================================================
+       10. 消息渠道 / 导入导出 / 工具
+       ========================================================== */
+    function buildConfigJSON(){
+      return JSON.stringify({
+        resetTime:state.resetHour, overtime:state.timeout, timeRange:state.timeRange,
+        msgChannel:state.channel, targetApp:state.targetApp,
+        remoteCommand:state.command, msgTitle:$('inTitle').value || '打卡结果通知',
+        wxKey:$('inWxKey').value, customWorkdays:state.workdays.map(i=>i+1).join(','),
+        detectGesture:$('swGesture').checked, backToHome:$('swBackHome').checked,
+        autoRecycle:$('swAutoLoop').checked, randomTime:state.random,
+        skipHoliday:state.skipHoliday, savePower:$('swPower').checked,
+        email:[$('inOutbox').value, $('inAuth').value, $('inInbox').value],
+        tasks:state.tasks
+      }, null, 2);
+    }
+    function exportConfig(){
+      const json = buildConfigJSON();
+      openSheet('导出配置', '共 ' + state.tasks.length + ' 个任务，选择分享目标',
+        [['QQ','#12B7F5'],['微信','#2BAF5B'],['TIM','#2A8CF5'],['支付宝','#1678FF'],['复制到剪贴板','#8A97A5']]
+          .map(a=>'<div class="opt"><div class="oi" style="background:'+a[1]+'">'+a[0].slice(0,1)+'</div>'
+            + '<div class="tx">'+a[0]+'</div><div class="chev"></div></div>').join(''));
+      Array.from($('sheetBody').children).forEach(el=>{
+        el.addEventListener('click', ()=>{
+          closeLayers();
+          navigator.clipboard && navigator.clipboard.writeText(json);
+          toast('配置已' + (el.innerText.includes('复制') ? '复制到剪贴板' : '分享到 ' + el.innerText.trim()));
+        });
+      });
+    }
+    function importConfig(){
+      openDialog({
+        title:'导入任务', msg:'粘贴由本软件导出的 JSON 配置',
+        extra:'<textarea class="inp" id="dlgInput" rows="5" style="resize:none;font-size:11px" placeholder=\'{"tasks":[{"time":"08:30:00"}]}\'></textarea>',
+        actions:[
+          {t:'取消', cls:'line'},
+          {t:'导入', fn:()=>{
+            let data = null;
+            try{ data = JSON.parse($('dlgInput').value); }
+            catch(e){ toast('JSON 解析失败'); return; }
+            if(data.tasks) data.tasks.forEach(t=>{ if(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(t.time)) state.tasks.push({time:t.time}); });
+            state.tasks.sort((a,b)=>a.time.localeCompare(b.time));
+            if(typeof data.resetTime === 'number') state.resetHour = Math.max(0, Math.min(23, data.resetTime));
+            if(typeof data.overtime === 'number' && data.overtime > 0) state.timeout = data.overtime;
+            if(typeof data.timeRange === 'number') state.timeRange = Math.max(5, data.timeRange);
+            if(typeof data.targetApp === 'number') state.targetApp = Math.max(0, Math.min(3, data.targetApp));
+            renderHome(); toast('导入成功，共 ' + state.tasks.length + ' 个任务');
+          }}
+        ]
+      });
+    }
+    function sendWxTest(){
+      const key = $('inWxKey').value.trim();
+      if(!key){ shake($('inWxKey')); toast('请先填写 Webhook key'); return; }
+      loading(true, '正在推送企业微信…');
+      setTimeout(()=>{
+        loading(false);
+        state.channel = 1; renderHome();
+        $('wxState').textContent = '已启用'; $('wxState').className = 'chip green';
+        $('mailState').textContent = '未启用'; $('mailState').className = 'chip';
+        toast('企业微信推送成功（errcode: 0）');
+      }, 1200);
+    }
+    function sendMailTest(){
+      const o = $('inOutbox').value.trim(), a = $('inAuth').value.trim(), i = $('inInbox').value.trim();
+      if(!o || !a || !i){ toast('发件箱 / 授权码 / 收件箱不能为空'); return; }
+      loading(true, '正在发送测试邮件…');
+      setTimeout(()=>{
+        loading(false);
+        state.channel = 0; renderHome();
+        $('mailState').textContent = '已启用'; $('mailState').className = 'chip green';
+        $('wxState').textContent = '未启用'; $('wxState').className = 'chip';
+        toast('邮件已发送至 <b>'+i+'</b>');
+      }, 1500);
+    }
+    function shake(el){
+      el.focus();
+      el.style.transition = 'transform .12s';
+      el.style.transform = 'translateX(-6px)';
+      setTimeout(()=>el.style.transform = 'translateX(6px)', 120);
+      setTimeout(()=>el.style.transform = 'none', 240);
+    }
+    function openTest(){
+      const app = TARGET_APPS[state.targetApp];
+      loading(true, '正在唤起 ' + app.name + '…');
+      setTimeout(()=>{ loading(false); toast('已唤起 <b>'+app.name+'</b>（'+app.pkg+'）'); }, 900);
+    }
+    function captureTest(){
+      if(!state.svc.capture){ toast('请先打开截屏服务'); return; }
+      loading(true, '正在截取屏幕…');
+      setTimeout(()=>{ loading(false); toast('截图成功，已发送标题为「邮箱测试」的邮件'); }, 1300);
+    }
+    function updateHoliday(){
+      loading(true, '正在同步节假日数据…');
+      setTimeout(()=>{
+        loading(false);
+        const d = new Date();
+        $('holidayDesc').textContent = '上次同步：' + d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + ' · 数据源 chinese-days';
+        toast('节假日数据已更新至 ' + (d.getFullYear()) + ' 年');
+      }, 1600);
+    }
+    function devLowBattery(){
+      toast('已推送「低电量提醒」：当前电量 ' + state.battery + '%');
+    }
+
+    /* ==========================================================
+       11. 执行流程模拟 / 悬浮窗 / 蒙层
+       ========================================================== */
+    let runTimer = null, floatTimer = null;
+    function toggleRun(){
+      if(state.running){
+        clearTimeout(runTimer); state.running = false; state.curIdx = -1;
+        hideFloat(); renderHome(); toast('任务已终止'); return;
+      }
+      if(!state.tasks.length){ toast('请先添加任务时间点'); return; }
+      if(state.resultSource < 0){ toast('请先在设置中选择结果来源'); return; }
+      if(TARGET_APPS[state.targetApp].cap === false && state.resultSource !== 1){ toast('该目标应用仅支持截屏服务'); return; }
+      state.running = true; state.curIdx = -1; state.actual = {};
+      renderHome();
+      toast('任务已启动，共 ' + state.tasks.length + ' 个');
+      nextTask();
+    }
+    function nextTask(){
+      state.curIdx++;
+      if(state.curIdx >= state.tasks.length){
+        state.running = false; state.curIdx = -1;
+        hideFloat(); renderHome();
+        toast('今日任务已全部执行完毕，结果已推送');
+        return;
+      }
+      renderHome();
+      const t = state.tasks[state.curIdx];
+      toast('正在唤起 <b>'+TARGET_APPS[state.targetApp].name+'</b> 执行 ' + t.time + ' 的任务');
+      showFloat(Math.min(state.timeout, 12));
+      runTimer = setTimeout(()=>{
+        const now = new Date();
+        state.actual[state.curIdx] = pad2(now.getHours())+':'+pad2(now.getMinutes())+':'+pad2(now.getSeconds());
+        NOTICES.unshift({
+          pkg:TARGET_APPS[state.targetApp].pkg, t:'考勤打卡',
+          m: state.resultSource === 1 ? '已截取打卡页面，结果稍后推送' : '你已经打卡成功，打卡时间 ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + '，很棒！',
+          ts: now.toISOString().slice(0,19).replace('T',' '), key:true
+        });
+        renderNotices();
+        hideFloat();
+        nextTask();
+      }, 2400);
+    }
+    let fwTick = null;
+    function showFloat(sec){
+      const win = $('floatwin');
+      win.classList.add('on');
+      let left = sec;
+      $('fwTime').textContent = left;
+      $('fwMem').textContent = 58 + Math.floor(Math.random()*18);
+      clearInterval(fwTick);
+      fwTick = setInterval(()=>{
+        left--;
+        $('fwTime').textContent = Math.max(left, 0);
+        if(left <= 0) hideFloat();
+      }, 1000);
+    }
+    function hideFloat(){ clearInterval(fwTick); $('floatwin').classList.remove('on'); }
+    function demoFloat(){ if(!$('floatwin').classList.contains('on')) showFloat(12); else hideFloat(); }
+    (function enableDrag(){
+      const win = $('floatwin');
+      let sx = 0, sy = 0, ox = 0, oy = 0, dragging = false;
+      win.addEventListener('pointerdown', e=>{
+        dragging = true; sx = e.clientX; sy = e.clientY;
+        ox = win.offsetLeft; oy = win.offsetTop;
+        win.setPointerCapture(e.pointerId);
+      });
+      win.addEventListener('pointermove', e=>{
+        if(!dragging) return;
+        win.style.left = Math.max(0, Math.min(ox + e.clientX - sx, 250)) + 'px';
+        win.style.top = Math.max(0, Math.min(oy + e.clientY - sy, 620)) + 'px';
+        win.style.right = 'auto';
+      });
+      win.addEventListener('pointerup', ()=>{ dragging = false; });
+    })();
+
+    let maskTimer = null;
+    function toggleMask(){
+      const m = $('masklayer');
+      const on = !m.classList.contains('on');
+      m.classList.toggle('on', on);
+      clearInterval(maskTimer);
+      if(on){
+        const move = ()=>{
+          const x = Math.floor(Math.random()*160) - 80;
+          const y = Math.floor(Math.random()*420) - 210;
+          $('maskClockWrap').style.transform = 'translate('+x+'px,'+y+'px)';
+        };
+        move(); maskTimer = setInterval(move, 30000);
+        if(state.running) hideFloat();
+      }
+    }
+    document.addEventListener('keydown', e=>{
+      if(e.key === 'v' || e.key === 'V') toggleMask();
+    });
+
+    /* ==========================================================
+       12. 时钟 / 倒计时 / 主题 / 初始化
+       ========================================================== */
+    function updateClock(){
+      const d = new Date();
+      const w = ['日','一','二','三','四','五','六'][d.getDay()];
+      const df = workdayFlags();
+      $('homeTitle').textContent = '星期' + w + ' · ' + df.type;
+      $('homeSub').textContent = d.getFullYear() + '年' + pad2(d.getMonth()+1) + '月' + pad2(d.getDate()) + '日 '
+        + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+      $('sbTime').textContent = d.getHours() + ':' + pad2(d.getMinutes());
+      $('maskClock').textContent = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
+      const now = d.getHours()*3600 + d.getMinutes()*60 + d.getSeconds();
+      let resetSec = state.resetHour*3600 - now;
+      if(resetSec < 0) resetSec += 86400;
+      $('resetTick').textContent = pad2(Math.floor(resetSec/3600)) + '小时' + pad2(Math.floor(resetSec%3600/60)) + '分';
+    }
+    function toggleTheme(){
+      const dark = document.documentElement.dataset.theme === 'dark';
+      document.documentElement.dataset.theme = dark ? 'light' : 'dark';
+      paintWatermark();
+      $('themeBtn').innerHTML = '切换深 / 浅色<small>当前：' + (dark ? '浅色' : '深色') + '</small>';
+    }
+    function paintWatermark(){
+      const dark = document.documentElement.dataset.theme === 'dark';
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="210" height="150">'
+        + '<text x="0" y="60" fill="' + (dark ? '%23ffffff' : '%23000000') + '" fill-opacity="0.06" font-size="15" '
+        + 'font-family="sans-serif" transform="rotate(-30 30 60)">DailyTask</text></svg>';
+      $('watermark').style.backgroundImage = 'url("data:image/svg+xml;utf8,' + svg + '")';
+    }
+    function init(){
+      renderHome(); renderCommands(); renderQA(); renderNotices();
+      updateClock(); paintWatermark();
+      setInterval(updateClock, 1000);
+      $('swGesture').addEventListener('change', e=>toast(e.target.checked ? '已开启手势辅助' : '已关闭手势辅助'));
+      $('swPower').addEventListener('change', e=>toast(e.target.checked ? '省电模式已开启，刷新频率降低' : '已关闭省电模式'));
+      $('swBackHome').addEventListener('change', e=>toast(e.target.checked ? '打卡结束后会先退回桌面' : '已关闭退回桌面'));
+      $('swSkipHoliday').addEventListener('change', e=>toast(e.target.checked ? '已开启跳过节假日' : '已关闭跳过节假日'));
+      show('home');
+    }
+    init();
+</script>
+</body>
+</html>
