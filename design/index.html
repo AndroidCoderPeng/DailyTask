@@ -382,18 +382,12 @@
         企业微信</small></button>
     <button id="navQa" onclick="show('qa')">常见问题<small>手风琴式 10 问 10 答</small></button>
 
-    <div class="grp">模拟状态</div>
-    <button onclick="toggleRun()">▶ / ■ 任务执行<small>演示「待执行 → 执行中 → 已完成」</small>
+    <div class="grp">演示</div>
+    <button onclick="toggleRun()">▶ / ■ 任务启停<small>切换「执行中 / 已完成」展示态</small>
     </button>
     <button onclick="toggleMask()">伪装息屏 / 亮屏<small>等同 DT#息屏 / DT#亮屏（快捷键 V）</small>
     </button>
     <button onclick="demoFloat()">悬浮窗倒计时<small>打卡停留倒计时 + 内存占用球</small></button>
-    <div class="row2">
-        <button onclick="devToggle('notice')">监听开关</button>
-        <button onclick="devToggle('capture')">截屏开关</button>
-    </div>
-    <button onclick="devLowBattery()">低电量提醒<small>电量 &lt; 20% 推送，5 分钟节流</small>
-    </button>
 
     <div class="grp">外观</div>
     <button id="themeBtn" onclick="toggleTheme()">切换深 / 浅色<small>当前：浅色</small></button>
@@ -584,8 +578,7 @@
                                     <div class="k">返回截图</div>
                                     <div class="d">开启后，【DT#打卡】倒计时结束会截屏并回传结果</div>
                                 </div>
-                                <label class="sw"><input type="checkbox" id="swRemoteCap"
-                                                         onchange="onRemoteCap(this)"><span
+                                <label class="sw"><input type="checkbox" id="swRemoteCap"><span
                                         class="tr"></span><span class="th"></span></label>
                             </div>
                             <div class="divider"></div>
@@ -1365,37 +1358,31 @@
       });
       $('sheetBody').querySelector('[data-act="cancel"]').addEventListener('click', closeLayers);
     }
-    function addTask(){
-      if(state.running){ toast('任务正在执行，无法添加'); return; }
-      timeWheel('添加任务时间', '08:30:00', v=>{
-        if(state.tasks.some(t=>t.time === v)){ toast('该时间点已存在'); return; }
+    function addOrEditTask(i, v){
+      if(i === null){
         state.tasks.push({time:v});
         state.tasks.sort((a,b)=>a.time.localeCompare(b.time));
-        renderHome(); toast('已添加：<b>'+v+'</b>');
-      });
+        toast('已添加：<b>'+v+'</b>');
+      } else {
+        state.tasks[i].time = v;
+        toast('任务时间已更新');
+      }
+      renderHome();
+    }
+    function addTask(){
+      timeWheel('添加任务时间', '08:30:00', v=>addOrEditTask(null, v));
     }
     function editTask(i){
-      if(state.running){ toast('任务正在执行，无法修改'); return; }
-      timeWheel('修改任务时间', state.tasks[i].time, v=>{
-        if(state.tasks.some((t,k)=>t.time === v && k !== i)){ toast('该时间点已存在'); return; }
-        state.tasks[i].time = v; delete state.actual[i];
-        state.tasks.sort((a,b)=>a.time.localeCompare(b.time));
-        renderHome(); toast('任务时间已更新');
-      });
+      timeWheel('修改任务时间', state.tasks[i].time, v=>addOrEditTask(i, v));
     }
     function confirmDelete(i){
-      if(state.running){ toast('任务正在执行，无法删除'); return; }
       openDialog({
         title:'删除任务',
         msg:'确定删除 <b>'+state.tasks[i].time+'</b> 这个任务吗？删除后不可恢复。',
         center:true,
-        actions:[
-          {t:'取消', cls:'line'},
-          {t:'删除', cls:'', fn:()=>{
-            state.tasks.splice(i,1); state.actual = {};
-            renderHome(); toast('已删除该任务');
-          }}
-        ]
+        actions:[{t:'取消', cls:'line'}, {t:'删除', fn:()=>{
+          state.tasks.splice(i,1); renderHome(); toast('已删除该任务');
+        }}]
       });
     }
 
@@ -1403,71 +1390,28 @@
        8. 设置项交互
        ========================================================== */
     function chooseTargetApp(){
-      const html = TARGET_APPS.map((a,i)=>
-        '<div class="opt'+(i === state.targetApp ? ' sel' : '')+'" data-i="'+i+'">'
-        + '<div class="oi" style="background:'+a.color+'">'+a.short+'</div>'
-        + '<div class="tx">'+a.name+'<small>'+a.pkg+(a.cap ? '' : ' · 仅支持截屏服务')+'</small></div>'
-        + '<div class="ck">✓</div></div>').join('');
-      openSheet('选择目标应用', '钉钉可同时使用通知监听与截屏，其余应用仅支持截屏服务', html);
+      openSheet('选择目标应用', '钉钉可同时使用通知监听与截屏，其余应用仅支持截屏服务',
+        TARGET_APPS.map((a,i)=>
+          '<div class="opt'+(i === state.targetApp ? ' sel' : '')+'" data-i="'+i+'">'
+          + '<div class="oi" style="background:'+a.color+'">'+a.short+'</div>'
+          + '<div class="tx">'+a.name+'<small>'+a.pkg+(a.cap ? '' : ' · 仅支持截屏服务')+'</small></div>'
+          + '<div class="ck">✓</div></div>').join(''));
       Array.from($('sheetBody').children).forEach(el=>{
         el.addEventListener('click', ()=>{
-          const i = +el.dataset.i, app = TARGET_APPS[i];
-          closeLayers();
-          if(!app.cap){
-            if(!state.svc.capture){
-              toast('请先打开截屏服务');
-              state.resultSource = -1; renderHome(); return;
-            }
-            state.targetApp = i; state.resultSource = 1;
-            renderHome(); toast('已切换到 <b>'+app.name+'</b>，结果来源自动设为截屏服务'); return;
-          }
-          state.targetApp = i;
-          if(state.svc.notice) state.resultSource = 0;
-          else if(state.svc.capture) state.resultSource = 1;
-          else { state.resultSource = -1; renderHome(); toast('请先打开通知监听或截屏服务'); return; }
-          renderHome(); toast('目标应用：<b>'+app.name+'</b>');
+          state.targetApp = +el.dataset.i;
+          closeLayers(); renderHome();
+          toast('目标应用：<b>'+TARGET_APPS[state.targetApp].name+'</b>');
         });
       });
     }
-    function pickSource(n){
-      if(n === 0 && TARGET_APPS[state.targetApp].name !== '钉钉'){
-        toast('仅钉钉支持通知监听'); return;
-      }
-      if(n === 1 && !state.svc.capture){ toast('请先打开截屏服务'); return; }
-      if(n === 0 && !state.svc.notice){ toast('请先打开通知监听服务'); return; }
-      state.resultSource = n; renderHome();
-      toast('结果来源：<b>' + (n ? '截屏服务' : '通知监听') + '</b>');
-    }
-    function onRemoteCap(el){
-      if(el.checked && !state.svc.capture){
-        el.checked = false; toast('请先打开截屏服务'); return;
-      }
-      toast(el.checked ? '远程打卡将返回截图' : '已关闭返回截图');
-    }
+    function pickSource(n){ state.resultSource = n; renderHome(); }
     function askService(k){
-      const map = {
-        floating:{n:'悬浮权限', req:'android.permission.SYSTEM_ALERT_WINDOW'},
-        notice:{n:'通知监听', req:'BIND_NOTIFICATION_LISTENER_SERVICE'},
-        capture:{n:'截屏服务', req:'FOREGROUND_SERVICE_MEDIA_PROJECTION'}
-      }[k];
-      if(state.svc[k]){ toast('核心服务，无法关闭'); return; }
       openDialog({
-        title:'开启' + map.n,
-        msg:'该权限需在系统设置中授予：<br/><span style="color:var(--brand)">' + map.req + '</span>',
-        actions:[
-          {t:'稍后再说', cls:'line'},
-          {t:'前往开启', fn:()=>{
-            loading(true, '正在唤起系统授权…');
-            setTimeout(()=>{ loading(false); state.svc[k] = true; renderHome(); toast(map.n + '已开启'); }, 1200);
-          }}
-        ]
+        title:'核心服务',
+        msg:'这是核心服务，开启后无法在本页关闭。',
+        center:true,
+        actions:[{t:'知道了'}]
       });
-    }
-    function devToggle(k){
-      state.svc[k] = !state.svc[k];
-      if(!state.svc.capture && state.resultSource === 1) state.resultSource = TARGET_APPS[state.targetApp].cap && state.svc.notice ? 0 : -1;
-      if(!state.svc.notice && state.resultSource === 0) state.resultSource = state.svc.capture ? 1 : -1;
-      renderHome();
     }
 
     /* ==========================================================
@@ -1482,62 +1426,35 @@
         el.addEventListener('click', ()=>{
           const v = +el.dataset.v;
           closeLayers();
-          if(v < 0){
-            editText(title, desc, key, 'num');
-            return;
-          }
+          if(v < 0){ editText(title, desc, key, 'num'); return; }
           applyValue(key, v);
         });
       });
     }
-    function applyValue(key, v){
-      if(key === 'resetHour'){
-        if(v < 0 || v > 23){ toast('请输入 0 ~ 23 之间的小时数'); return; }
-        state.resetHour = v;
-      } else if(key === 'timeout'){
-        if(!(v > 0)){ toast('超时时间必须大于 0 秒'); return; }
-        state.timeout = v;
-      } else if(key === 'command'){
-        if(!v){ toast('任务口令不能为空'); return; }
-        state.command = v;
-      } else if(key === 'timeRange'){
-        if(v < 5){ toast('时间范围不能小于 5 分钟'); return; }
-        state.timeRange = v;
-      }
-      renderHome(); renderTasks();
-    }
+    function applyValue(key, v){ state[key] = v; state.random = $('swRandom').checked; renderHome(); }
     function editText(title, desc, key, type){
       openDialog({
         title:title, msg:desc,
-        extra:'<input class="inp" id="dlgInput" value="'+ (type === 'num' ? state[key] : (key === 'command' ? state.command : '')) +'" placeholder="'+(type === 'num' ? '请输入数字' : '请输入内容')+'">',
+        extra:'<input class="inp" id="dlgInput" value="'+state[key]+'" placeholder="'+(type === 'num' ? '请输入数字' : '请输入内容')+'">',
         actions:[
           {t:'取消', cls:'line'},
-          {t:'确定', fn:()=>{
-            const raw = $('dlgInput').value.trim();
-            if(type === 'num'){
-              if(!/^\d+$/.test(raw)){ toast('请输入合法数字'); return; }
-              applyValue(key, parseInt(raw, 10));
-            } else { applyValue(key, raw); }
-          }}
+          {t:'确定', fn:()=>applyValue(key, type === 'num' ? +$('dlgInput').value : $('dlgInput').value.trim())}
         ],
         after:()=>{ const i = $('dlgInput'); if(i){ i.focus(); } }
       });
     }
     function chooseWorkdays(){
-      const picked = state.workdays.slice();
       const html = '<div class="days">' + DAY_LABELS.map((d,i)=>
-        '<button class="'+(picked.includes(i) ? 'on' : '')+'" data-i="'+i+'">'+d+'</button>').join('') + '</div>'
-        + '<div class="hintline">至少保留一天，七天全选时按「每天」处理</div>';
+        '<button class="'+(state.workdays.includes(i) ? 'on' : '')+'" data-i="'+i+'">'+d+'</button>').join('') + '</div>'
+        + '<div class="hintline">七天全选时按「每天」处理</div>';
       openDialog({
         title:'工作日设置', msg:'仅在选中日执行整套任务',
         extra:html,
         actions:[
           {t:'取消', cls:'line'},
           {t:'确定', fn:()=>{
-            const arr = Array.from($('dlgExtra').querySelectorAll('.days button'))
+            state.workdays = Array.from($('dlgExtra').querySelectorAll('.days button'))
               .filter(b=>b.classList.contains('on')).map(b=>+b.dataset.i);
-            if(!arr.length){ toast('至少选择一天'); return; }
-            state.workdays = arr; state.actual = {};
             renderHome(); toast('工作日已更新：<b>'+dayLabel()+'</b>');
           }}
         ],
@@ -1553,149 +1470,47 @@
     /* ==========================================================
        10. 消息渠道 / 导入导出 / 工具
        ========================================================== */
-    function buildConfigJSON(){
-      return JSON.stringify({
-        resetTime:state.resetHour, overtime:state.timeout, timeRange:state.timeRange,
-        msgChannel:state.channel, targetApp:state.targetApp,
-        remoteCommand:state.command, msgTitle:$('inTitle').value || '打卡结果通知',
-        wxKey:$('inWxKey').value, customWorkdays:state.workdays.map(i=>i+1).join(','),
-        detectGesture:$('swGesture').checked, backToHome:$('swBackHome').checked,
-        autoRecycle:$('swAutoLoop').checked, randomTime:state.random,
-        skipHoliday:state.skipHoliday, savePower:$('swPower').checked,
-        email:[$('inOutbox').value, $('inAuth').value, $('inInbox').value],
-        tasks:state.tasks
-      }, null, 2);
+    function setChannel(n){
+      state.channel = n; renderHome();
+      $('wxState').textContent = n === 1 ? '已启用' : '未启用';
+      $('wxState').className = 'chip' + (n === 1 ? ' green' : '');
+      $('mailState').textContent = n === 0 ? '已启用' : '未启用';
+      $('mailState').className = 'chip' + (n === 0 ? ' green' : '');
     }
     function exportConfig(){
-      const json = buildConfigJSON();
       openSheet('导出配置', '共 ' + state.tasks.length + ' 个任务，选择分享目标',
         [['QQ','#12B7F5'],['微信','#2BAF5B'],['TIM','#2A8CF5'],['支付宝','#1678FF'],['复制到剪贴板','#8A97A5']]
           .map(a=>'<div class="opt"><div class="oi" style="background:'+a[1]+'">'+a[0].slice(0,1)+'</div>'
             + '<div class="tx">'+a[0]+'</div><div class="chev"></div></div>').join(''));
       Array.from($('sheetBody').children).forEach(el=>{
-        el.addEventListener('click', ()=>{
-          closeLayers();
-          navigator.clipboard && navigator.clipboard.writeText(json);
-          toast('配置已' + (el.innerText.includes('复制') ? '复制到剪贴板' : '分享到 ' + el.innerText.trim()));
-        });
+        el.addEventListener('click', ()=>{ closeLayers(); toast('已分享到 <b>'+el.innerText.trim()+'</b>'); });
       });
     }
-    function importConfig(){
-      openDialog({
-        title:'导入任务', msg:'粘贴由本软件导出的 JSON 配置',
-        extra:'<textarea class="inp" id="dlgInput" rows="5" style="resize:none;font-size:11px" placeholder=\'{"tasks":[{"time":"08:30:00"}]}\'></textarea>',
-        actions:[
-          {t:'取消', cls:'line'},
-          {t:'导入', fn:()=>{
-            let data = null;
-            try{ data = JSON.parse($('dlgInput').value); }
-            catch(e){ toast('JSON 解析失败'); return; }
-            if(data.tasks) data.tasks.forEach(t=>{ if(/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(t.time)) state.tasks.push({time:t.time}); });
-            state.tasks.sort((a,b)=>a.time.localeCompare(b.time));
-            if(typeof data.resetTime === 'number') state.resetHour = Math.max(0, Math.min(23, data.resetTime));
-            if(typeof data.overtime === 'number' && data.overtime > 0) state.timeout = data.overtime;
-            if(typeof data.timeRange === 'number') state.timeRange = Math.max(5, data.timeRange);
-            if(typeof data.targetApp === 'number') state.targetApp = Math.max(0, Math.min(3, data.targetApp));
-            renderHome(); toast('导入成功，共 ' + state.tasks.length + ' 个任务');
-          }}
-        ]
-      });
-    }
-    function sendWxTest(){
-      const key = $('inWxKey').value.trim();
-      if(!key){ shake($('inWxKey')); toast('请先填写 Webhook key'); return; }
-      loading(true, '正在推送企业微信…');
-      setTimeout(()=>{
-        loading(false);
-        state.channel = 1; renderHome();
-        $('wxState').textContent = '已启用'; $('wxState').className = 'chip green';
-        $('mailState').textContent = '未启用'; $('mailState').className = 'chip';
-        toast('企业微信推送成功（errcode: 0）');
-      }, 1200);
-    }
-    function sendMailTest(){
-      const o = $('inOutbox').value.trim(), a = $('inAuth').value.trim(), i = $('inInbox').value.trim();
-      if(!o || !a || !i){ toast('发件箱 / 授权码 / 收件箱不能为空'); return; }
-      loading(true, '正在发送测试邮件…');
-      setTimeout(()=>{
-        loading(false);
-        state.channel = 0; renderHome();
-        $('mailState').textContent = '已启用'; $('mailState').className = 'chip green';
-        $('wxState').textContent = '未启用'; $('wxState').className = 'chip';
-        toast('邮件已发送至 <b>'+i+'</b>');
-      }, 1500);
-    }
-    function shake(el){
-      el.focus();
-      el.style.transition = 'transform .12s';
-      el.style.transform = 'translateX(-6px)';
-      setTimeout(()=>el.style.transform = 'translateX(6px)', 120);
-      setTimeout(()=>el.style.transform = 'none', 240);
-    }
-    function openTest(){
-      const app = TARGET_APPS[state.targetApp];
-      loading(true, '正在唤起 ' + app.name + '…');
-      setTimeout(()=>{ loading(false); toast('已唤起 <b>'+app.name+'</b>（'+app.pkg+'）'); }, 900);
-    }
-    function captureTest(){
-      if(!state.svc.capture){ toast('请先打开截屏服务'); return; }
-      loading(true, '正在截取屏幕…');
-      setTimeout(()=>{ loading(false); toast('截图成功，已发送标题为「邮箱测试」的邮件'); }, 1300);
-    }
+    function importConfig(){ toast('粘贴导出的 JSON 即可还原全部配置与任务'); }
+    function sendWxTest(){ setChannel(1); toast('企业微信推送成功（errcode: 0）'); }
+    function sendMailTest(){ setChannel(0); toast('测试邮件已发送'); }
+    function openTest(){ toast('已唤起 <b>'+TARGET_APPS[state.targetApp].name+'</b>'); }
+    function captureTest(){ toast('截图成功，已按「邮箱测试」发送'); }
     function updateHoliday(){
-      loading(true, '正在同步节假日数据…');
-      setTimeout(()=>{
-        loading(false);
-        const d = new Date();
-        $('holidayDesc').textContent = '上次同步：' + d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + ' · 数据源 chinese-days';
-        toast('节假日数据已更新至 ' + (d.getFullYear()) + ' 年');
-      }, 1600);
-    }
-    function devLowBattery(){
-      toast('已推送「低电量提醒」：当前电量 ' + state.battery + '%');
+      const d = new Date();
+      $('holidayDesc').textContent = '上次同步：' + d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()) + ' · 数据源 chinese-days';
+      toast('节假日数据已更新');
     }
 
     /* ==========================================================
        11. 执行流程模拟 / 悬浮窗 / 蒙层
        ========================================================== */
-    let runTimer = null, floatTimer = null;
     function toggleRun(){
+      state.running = !state.running;
       if(state.running){
-        clearTimeout(runTimer); state.running = false; state.curIdx = -1;
-        hideFloat(); renderHome(); toast('任务已终止'); return;
-      }
-      if(!state.tasks.length){ toast('请先添加任务时间点'); return; }
-      if(state.resultSource < 0){ toast('请先在设置中选择结果来源'); return; }
-      if(TARGET_APPS[state.targetApp].cap === false && state.resultSource !== 1){ toast('该目标应用仅支持截屏服务'); return; }
-      state.running = true; state.curIdx = -1; state.actual = {};
-      renderHome();
-      toast('任务已启动，共 ' + state.tasks.length + ' 个');
-      nextTask();
-    }
-    function nextTask(){
-      state.curIdx++;
-      if(state.curIdx >= state.tasks.length){
-        state.running = false; state.curIdx = -1;
-        hideFloat(); renderHome();
-        toast('今日任务已全部执行完毕，结果已推送');
-        return;
+        state.curIdx = 0;
+        state.actual = {};
+        showFloat(state.timeout);
+        toast('任务已启动，共 ' + state.tasks.length + ' 个');
+      } else {
+        state.curIdx = -1; state.actual = {}; hideFloat(); toast('任务已终止');
       }
       renderHome();
-      const t = state.tasks[state.curIdx];
-      toast('正在唤起 <b>'+TARGET_APPS[state.targetApp].name+'</b> 执行 ' + t.time + ' 的任务');
-      showFloat(Math.min(state.timeout, 12));
-      runTimer = setTimeout(()=>{
-        const now = new Date();
-        state.actual[state.curIdx] = pad2(now.getHours())+':'+pad2(now.getMinutes())+':'+pad2(now.getSeconds());
-        NOTICES.unshift({
-          pkg:TARGET_APPS[state.targetApp].pkg, t:'考勤打卡',
-          m: state.resultSource === 1 ? '已截取打卡页面，结果稍后推送' : '你已经打卡成功，打卡时间 ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + '，很棒！',
-          ts: now.toISOString().slice(0,19).replace('T',' '), key:true
-        });
-        renderNotices();
-        hideFloat();
-        nextTask();
-      }, 2400);
     }
     let fwTick = null;
     function showFloat(sec){
