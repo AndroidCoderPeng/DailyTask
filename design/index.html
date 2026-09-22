@@ -10,45 +10,59 @@
            ========================================================== */
         :root{
           --brand:#3399FF;
-          --brand-600:#1f7fe6;
-          --brand-soft:#e9f3ff;
-          --green:#32C95C;
-          --green-soft:#e7f8ed;
-          --red:#FF4D3D;
-          --red-soft:#ffeceb;
-          --amber:#FFA317;
-          --amber-soft:#fff3dd;
-          --bg:#F3F5F8;
+          --brand-600:#1F7FE6;
+          --brand-700:#0F63C4;
+          --brand-soft:#E9F3FF;
+          --green:#2FBF5C;
+          --green-soft:#E6F8ED;
+          --red:#F9503E;
+          --red-soft:#FFEBE9;
+          --amber:#FF9F17;
+          --amber-soft:#FFF2DC;
+          --bg:#F1F4F8;
           --card:#FFFFFF;
-          --txt:#1A2733;
-          --txt-2:#68798C;
-          --txt-3:#A2B0BF;
-          --line:#EAEEF3;
-          --field:#F5F7FA;
-          --r-lg:20px;
-          --r-md:14px;
-          --sh:0 2px 12px rgba(26,39,51,.06);
-          --sh-lg:0 10px 30px rgba(26,39,51,.14);
+          --card-2:#FBFCFE;
+          --txt:#151E29;
+          --txt-2:#63748A;
+          --txt-3:#9AA9BA;
+          --line:#E9EEF4;
+          --line-2:#D6DFEA;
+          --field:#F4F6FA;
+          --tab:rgba(255,255,255,.88);
+          --hero-a:#3C9BFF;
+          --hero-b:#0F63C4;
+          --r-xl:26px;
+          --r-lg:22px;
+          --r-md:16px;
+          --r-sm:12px;
+          --sh:0 1px 2px rgba(16,24,40,.04),0 6px 18px rgba(16,24,40,.06);
+          --sh-lg:0 18px 46px rgba(16,24,40,.18);
         }
         html[data-theme="dark"]{
-          --brand:#4FA6FF;
-          --brand-600:#2f86e0;
-          --brand-soft:#14263A;
-          --green:#3AD672;
-          --green-soft:#122A1C;
-          --red:#FF6558;
-          --red-soft:#2C1715;
-          --amber:#FFB43A;
-          --amber-soft:#2A2113;
-          --bg:#0E1116;
-          --card:#161B22;
-          --txt:#E7EEF6;
-          --txt-2:#93A3B5;
-          --txt-3:#6A7987;
-          --line:#222A34;
-          --field:#1C232C;
-          --sh:0 2px 12px rgba(0,0,0,.35);
-          --sh-lg:0 10px 30px rgba(0,0,0,.5);
+          --brand:#5AA9FF;
+          --brand-600:#2E86E8;
+          --brand-700:#1B69C4;
+          --brand-soft:#13253B;
+          --green:#3BD07A;
+          --green-soft:#11291C;
+          --red:#FF6A5A;
+          --red-soft:#2B1614;
+          --amber:#FFB63E;
+          --amber-soft:#2B2112;
+          --bg:#07090C;
+          --card:#11161C;
+          --card-2:#141A21;
+          --txt:#E9F1F9;
+          --txt-2:#94A5B8;
+          --txt-3:#6C7C8E;
+          --line:#1D242C;
+          --line-2:#28313B;
+          --field:#161C23;
+          --tab:rgba(17,22,28,.88);
+          --hero-a:#2E86E8;
+          --hero-b:#0B3E86;
+          --sh:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.42);
+          --sh-lg:0 20px 50px rgba(0,0,0,.6);
         }
         *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
         html,body{height:100%}
@@ -102,35 +116,59 @@
           transition:transform .3s cubic-bezier(.32,.72,0,1),opacity .3s ease,visibility .3s;
         }
         .page.show{transform:none;opacity:1;visibility:visible;pointer-events:auto}
-        .page.has-tab{padding-bottom:64px}
+        .page.has-tab{padding-bottom:86px}
         .scroll{flex:1;overflow-y:auto;overscroll-behavior:contain}
         .scroll::-webkit-scrollbar{width:0}
 
         /* ==========================================================
            4. 顶栏
            ========================================================== */
-        .appbar{flex:0 0 auto;background:var(--brand);color:#fff;padding:6px 10px 12px 6px;display:flex;align-items:center;gap:2px;min-height:54px}
-        .appbar .nav{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;font-size:19px;flex:0 0 auto}
-        .appbar .nav:active,.appbar .act:active{background:rgba(255,255,255,.2)}
-        .appbar .ttl{flex:1;min-width:0;padding-left:2px}
-        .appbar .ttl .t{font-size:18px;font-weight:700;letter-spacing:.3px}
-        .appbar .ttl .s{font-size:11.5px;opacity:.9;margin-top:2px;font-variant-numeric:tabular-nums}
-        .appbar .act{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;font-size:18px;flex:0 0 auto}
+        .appbar{
+          flex:0 0 auto;color:#fff;padding:6px 10px 12px 6px;display:flex;align-items:center;gap:2px;min-height:54px;
+          background:linear-gradient(120deg,var(--hero-a),var(--hero-b));position:relative;z-index:6;
+          transition:background .25s,box-shadow .25s;
+        }
+        .appbar::after{content:"";position:absolute;inset:0;background:radial-gradient(130% 100% at 86% 0%,rgba(255,255,255,.24),transparent 58%);pointer-events:none}
+        .appbar .nav,.appbar .act{
+          width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:13px;cursor:pointer;
+          font-size:19px;flex:0 0 auto;background:rgba(255,255,255,.16);transition:.16s;position:relative;z-index:1;
+        }
+        .appbar .act{font-size:17px}
+        .appbar .nav:active,.appbar .act:active{transform:scale(.92);background:rgba(255,255,255,.3)}
+        .appbar .ttl{flex:1;min-width:0;padding-left:6px;position:relative;z-index:1}
+        .appbar .ttl .t{font-size:18px;font-weight:800;letter-spacing:.2px}
+        .appbar .ttl .s{font-size:11.5px;opacity:.85;margin-top:2px;font-variant-numeric:tabular-nums}
+
+        /* 首页：顶栏叠在渐变状态区之上，滚动后实体化 */
+        #page-home .appbar{position:absolute;left:0;right:0;top:0;background:transparent;box-shadow:none}
+        #page-home .appbar::after{display:none}
+        #page-home .appbar .ttl .t,#page-home .appbar .ttl .s{opacity:0;transform:translateY(8px);transition:.25s}
+        #page-home .appbar.solid{background:linear-gradient(120deg,var(--hero-a),var(--hero-b));box-shadow:0 10px 24px rgba(15,99,196,.24)}
+        #page-home .appbar.solid .ttl .t,#page-home .appbar.solid .ttl .s{opacity:1;transform:none}
 
         /* ==========================================================
            5. 通用组件
            ========================================================== */
         .pad{padding:14px}
         .card{background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh);overflow:hidden}
-        .sec-title{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 8px}
-        .sec-title .l{font-size:12.5px;font-weight:700;color:var(--txt-2);letter-spacing:.5px}
-        .sec-title .r{font-size:12.5px;color:var(--brand);cursor:pointer;font-weight:600}
+        .sec-title{display:flex;align-items:center;justify-content:space-between;padding:10px 6px 8px}
+        .sec-title .l{
+          font-size:11.5px;font-weight:800;color:var(--txt-2);letter-spacing:1px;
+          display:flex;align-items:center;gap:7px;
+        }
+        .sec-title .l::before{content:"";width:3px;height:13px;border-radius:3px;background:var(--brand)}
+        .sec-title .r{font-size:12.5px;color:var(--brand);cursor:pointer;font-weight:700}
+        .sec-title .r:active{opacity:.6}
         .divider{height:1px;background:var(--line);margin:0 16px}
         .divider.full{margin:0}
 
         .it{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--card);cursor:pointer;transition:background .15s}
         .it:active{background:var(--field)}
-        .it .ico{width:34px;height:34px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:16px;background:var(--brand-soft);color:var(--brand);font-weight:700}
+        .it .ico{
+          width:36px;height:36px;border-radius:12px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+          font-size:16px;background:var(--brand-soft);color:var(--brand);font-weight:700;
+          box-shadow:inset 0 0 0 1px rgba(51,153,255,.12);
+        }
         .it .ico.g{background:var(--green-soft);color:var(--green)}
         .it .ico.r{background:var(--red-soft);color:var(--red)}
         .it .ico.a{background:var(--amber-soft);color:var(--amber)}
@@ -183,18 +221,29 @@
         /* ==========================================================
            6. 首页
            ========================================================== */
-        .hero{margin:14px 14px 0;background:var(--card);border-radius:var(--r-lg);box-shadow:var(--sh);padding:16px;position:relative;overflow:hidden}
-        .hero .halo{position:absolute;width:160px;height:160px;border-radius:50%;top:-78px;right:-56px;background:radial-gradient(circle,var(--brand-soft),transparent 70%)}
-        .hero .top{display:flex;align-items:flex-start;gap:12px;position:relative}
-        .hero .big{flex:1;min-width:0}
-        .hero .day{font-size:12px;color:var(--txt-3);font-weight:700;letter-spacing:.6px}
-        .hero .st{font-size:16.5px;font-weight:700;color:var(--txt);margin-top:6px;line-height:1.45}
-        .hero .st.skip{color:var(--green)}
-        .hero .st.run{color:var(--brand)}
-        .hero .ring{width:58px;height:58px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--brand) var(--p,0%),var(--field) 0);position:relative}
-        .hero .ring::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--card)}
-        .hero .ring b{position:relative;font-size:14px;color:var(--txt);font-weight:800;font-variant-numeric:tabular-nums}
-        .hero .bar{margin-top:14px;display:flex;gap:10px}
+        .hhead{
+          position:relative;padding:66px 20px 18px;color:#fff;overflow:hidden;
+          border-radius:0 0 28px 28px;background:linear-gradient(140deg,var(--hero-a),var(--hero-b));
+          transition:background .4s;
+        }
+        .hhead::before{content:"";position:absolute;inset:0;background:radial-gradient(130% 90% at 86% -12%,rgba(255,255,255,.32),transparent 60%)}
+        .hhead .aur{position:absolute;width:240px;height:240px;right:-80px;top:-130px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.26),transparent 70%)}
+        .hhead.skip{background:linear-gradient(140deg,#3CC86E,#1D8C49)}
+        .hhead .hh-date{position:relative;z-index:1;font-size:11.5px;font-weight:700;letter-spacing:1px;opacity:.85;font-variant-numeric:tabular-nums}
+        .hhead .hh-row{display:flex;align-items:center;gap:14px;margin-top:12px;position:relative;z-index:1}
+        .hhead .hh-txt{flex:1;min-width:0}
+        .hhead .hh-day{font-size:10.5px;font-weight:800;letter-spacing:1.4px;opacity:.72}
+        .hhead .hh-st{font-size:19px;font-weight:800;margin-top:6px;line-height:1.4;letter-spacing:.2px}
+
+        .ring{width:58px;height:58px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:conic-gradient(var(--brand) var(--p,0%),var(--field) 0);position:relative}
+        .ring::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--card)}
+        .ring b{position:relative;z-index:1;font-size:14px;color:var(--txt);font-weight:800;font-variant-numeric:tabular-nums}
+        .ring.lg{width:68px;height:68px;background:conic-gradient(rgba(255,255,255,.95) var(--p,0%),rgba(255,255,255,.2) 0)}
+        #heroRing::after{inset:7px;background:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22)}
+        .ring.lg b{font-size:16px;color:#fff}
+
+        .hero{margin:-16px 14px 0;background:var(--card);border-radius:var(--r-xl);box-shadow:var(--sh);padding:14px;position:relative;z-index:2}
+        .hero .bar{display:flex;gap:10px}
         .run-btn{
           flex:1;border:none;cursor:pointer;font-family:inherit;height:46px;border-radius:14px;font-size:15px;font-weight:700;color:#fff;
           display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s;
@@ -203,83 +252,146 @@
         .run-btn.stop{background:linear-gradient(135deg,#FF6A5C,#E92E1B);box-shadow:0 6px 16px rgba(255,77,61,.3)}
         .run-btn:active{transform:scale(.98)}
         .run-btn .gl{font-size:11px}
-        .tick-btn{border:none;cursor:pointer;font-family:inherit;height:46px;padding:0 15px;border-radius:14px;background:var(--field);color:var(--txt-2);font-size:13px;font-weight:600;flex:0 0 auto}
+        .tick-btn{
+          border:none;cursor:pointer;font-family:inherit;height:46px;padding:0 16px;border-radius:15px;flex:0 0 auto;
+          background:var(--field);color:var(--txt-2);font-size:13px;font-weight:700;
+          box-shadow:inset 0 0 0 1px var(--line);transition:.16s;
+        }
+        .tick-btn:active{transform:scale(.96);background:var(--brand-soft);color:var(--brand)}
 
-        .meta-row{display:flex;gap:10px;margin:10px 14px 0}
-        .meta{flex:1;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh);padding:11px 13px;display:flex;align-items:center;gap:9px;min-width:0}
-        .meta .em{font-size:16px}
-        .meta .n{font-size:12.5px;font-weight:700;color:var(--txt);font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .meta .l{font-size:10.5px;color:var(--txt-3);margin-top:2px}
+        .stat-row{display:flex;gap:10px;margin-top:13px}
+        .stat{flex:1;background:var(--field);border-radius:var(--r-md);padding:11px 12px;min-width:0;position:relative;overflow:hidden}
+        .stat::after{content:"";position:absolute;right:-20px;top:-20px;width:58px;height:58px;border-radius:50%;background:var(--brand-soft);opacity:.6}
+        .stat .si{font-size:15px;position:relative;z-index:1}
+        .stat .sv{
+          font-size:14px;font-weight:800;color:var(--txt);margin-top:5px;position:relative;z-index:1;
+          font-variant-numeric:tabular-nums;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+        }
+        .stat .sl{font-size:10.5px;color:var(--txt-3);margin-top:3px;position:relative;z-index:1}
+
         .progress{margin:12px 14px 0;height:6px;border-radius:6px;background:var(--field);overflow:hidden}
         .progress i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--brand),var(--green));transition:width .5s ease}
+        .progress.ghost{margin:16px 0 0;height:5px;background:rgba(255,255,255,.22)}
+        .progress.ghost i{background:linear-gradient(90deg,rgba(255,255,255,.95),rgba(255,255,255,.55))}
 
-        .tasks{padding:0 14px 16px}
-        .task{display:flex;gap:12px;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh);padding:13px 14px;margin-top:10px;cursor:pointer;border:1.5px solid transparent;transition:.2s}
-        .task.done{opacity:.6}
-        .task.now{border-color:var(--brand);box-shadow:0 6px 18px rgba(51,153,255,.18)}
-        .task:active{transform:scale(.99)}
-        .task .tl{width:14px;flex:0 0 auto;display:flex;flex-direction:column;align-items:center;padding-top:5px}
-        .task .tl .d{width:9px;height:9px;border-radius:50%;background:var(--txt-3)}
-        .task .tl .ln{flex:1;width:1.5px;background:var(--line);margin-top:6px}
-        .task.done .tl .d{background:var(--green)}
-        .task.now .tl .d{background:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
-        .task .bd{flex:1;min-width:0}
+        .tasks{padding:2px 16px 16px;position:relative}
+        .tasks::before{
+          content:"";position:absolute;left:33px;top:38px;bottom:46px;width:2px;border-radius:2px;
+          background:linear-gradient(180deg,var(--brand),var(--line));
+        }
+        .tasks.empty-list::before{display:none}
+        .task{
+          position:relative;background:var(--card);border-radius:var(--r-md);box-shadow:var(--sh);
+          padding:13px 14px 13px 38px;margin-top:10px;cursor:pointer;border:1px solid var(--line);
+          transition:transform .18s,box-shadow .18s,opacity .18s,border-color .18s;
+        }
+        .task::before{
+          content:"";position:absolute;left:12px;top:20px;width:12px;height:12px;border-radius:50%;z-index:2;
+          background:var(--card);box-shadow:inset 0 0 0 2.5px var(--line-2);transition:.2s;
+        }
+        .task.done{opacity:.62}
+        .task.done::before{box-shadow:inset 0 0 0 6px var(--green)}
+        .task.now{border-color:var(--brand);box-shadow:0 10px 24px rgba(51,153,255,.16)}
+        .task.now::before{box-shadow:inset 0 0 0 6px var(--brand),0 0 0 5px var(--brand-soft)}
+        .task:active{transform:scale(.985)}
         .task .hd{display:flex;align-items:center;justify-content:space-between;gap:8px}
-        .task .hd .idx{font-size:11px;color:var(--txt-3);font-weight:700;letter-spacing:.5px}
-        .task .tm{display:flex;align-items:center;gap:10px;margin-top:7px}
-        .task .tm .c .cap{font-size:10px;color:var(--txt-3);font-weight:700;letter-spacing:.6px}
-        .task .tm .c .v{font-size:24px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1.25}
+        .task .hd .idx{font-size:10px;color:var(--txt-3);font-weight:800;letter-spacing:1.2px}
+        .task .tm{display:flex;align-items:center;gap:10px;margin-top:6px}
+        .task .tm .c .cap{font-size:9.5px;color:var(--txt-3);font-weight:800;letter-spacing:1px}
+        .task .tm .c .v{font-size:26px;font-weight:800;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1.2;letter-spacing:-.5px}
         .task .tm .c.act .v{font-size:20px;color:var(--txt-3)}
         .task.now .tm .c.act .v{color:var(--brand)}
-        .task .arw{width:26px;height:26px;border-radius:50%;background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--txt-3);font-size:13px;flex:0 0 auto;transition:transform .3s}
+        .task .arw{width:28px;height:28px;border-radius:50%;background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--txt-3);font-size:13px;flex:0 0 auto;transition:transform .3s,background .3s}
         .task.now .arw{transform:rotate(90deg);color:var(--brand);background:var(--brand-soft)}
-        .task .src{font-size:10.5px;color:var(--txt-3);margin-top:7px}
+        .task .src{font-size:10.5px;color:var(--txt-3);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+        .task .src em{font-style:normal;color:var(--brand);background:var(--brand-soft);padding:2.5px 7px;border-radius:8px;font-weight:700}
 
         .empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--txt-3);gap:12px;padding-bottom:70px}
-        .empty .art{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--card);box-shadow:var(--sh);font-size:36px}
-        .empty .t1{font-size:14.5px;color:var(--txt-2);font-weight:600}
+        .empty .art{
+          width:102px;height:102px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;
+          background:radial-gradient(circle at 30% 24%,var(--brand-soft),var(--field));box-shadow:var(--sh);border:1px solid var(--line);
+        }
+        .empty .t1{font-size:14.5px;color:var(--txt-2);font-weight:700}
         .empty .t2{font-size:12px;color:var(--txt-3)}
 
         /* ==========================================================
            7. 底部导航
            ========================================================== */
-        .tabbar{position:absolute;left:0;right:0;bottom:0;height:64px;z-index:20;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:6px;transition:transform .28s cubic-bezier(.32,.72,0,1)}
-        .tabbar.hide{transform:translateY(110%)}
-        .tabbar .tb{flex:1;border:none;background:transparent;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--txt-3);padding:0;position:relative}
-        .tabbar .tb svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-        .tabbar .tb span{font-size:10px;font-weight:700}
+        .tabbar{
+          position:absolute;left:10px;right:10px;bottom:10px;height:62px;z-index:20;display:flex;align-items:center;
+          background:var(--tab);border:1px solid var(--line);border-radius:22px;padding:0 2px;
+          box-shadow:0 12px 34px rgba(16,24,40,.16);backdrop-filter:blur(16px);
+          transition:transform .3s cubic-bezier(.32,.72,0,1);
+        }
+        .tabbar.hide{transform:translateY(150%)}
+        .tabbar .ind{
+          position:absolute;top:0;left:0;width:26px;height:3px;margin-left:-13px;border-radius:3px;background:var(--brand);
+          transition:transform .34s cubic-bezier(.34,1.36,.5,1);opacity:0;
+        }
+        .tabbar .ind.on{opacity:1}
+        .tabbar .tb{
+          flex:1;height:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;
+          display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--txt-3);padding:0;
+          transition:color .18s;
+        }
+        .tabbar .tb .ic{position:relative;display:flex;align-items:center;justify-content:center;width:46px;height:27px;border-radius:14px;transition:background .26s}
+        .tabbar .tb.on .ic{background:var(--brand-soft)}
+        .tabbar .tb svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;transition:transform .28s cubic-bezier(.34,1.36,.5,1)}
+        .tabbar .tb.on svg{transform:scale(1.08)}
+        .tabbar .tb span{font-size:9.5px;font-weight:800;letter-spacing:.2px}
         .tabbar .tb.on{color:var(--brand)}
-        .tabbar .tb .bdg{position:absolute;top:8px;left:50%;margin-left:8px;width:6px;height:6px;border-radius:50%;background:var(--red)}
+        .tabbar .tb .bdg{position:absolute;top:11px;margin-left:26px;width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--card)}
 
         /* ==========================================================
            8. 其它页
            ========================================================== */
-        .hero-info{display:flex;align-items:center;gap:12px;padding:16px}
-        .hero-info .lg{width:46px;height:46px;border-radius:14px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex:0 0 auto}
+        .hero-info{display:flex;align-items:center;gap:12px;padding:16px;position:relative;overflow:hidden}
+        .hero-info::after{content:"";position:absolute;right:-30px;top:-40px;width:130px;height:130px;border-radius:50%;background:var(--brand-soft);opacity:.7}
+        .hero-info .lg{
+          width:48px;height:48px;border-radius:15px;color:#fff;display:flex;align-items:center;justify-content:center;
+          font-weight:800;font-size:19px;flex:0 0 auto;background:linear-gradient(135deg,var(--hero-a),var(--hero-b));
+          box-shadow:0 8px 18px rgba(51,153,255,.34);position:relative;z-index:1;
+        }
+        .hero-info .nm,.hero-info .sb{position:relative;z-index:1}
         .hero-info .nm{font-size:16px;font-weight:700;color:var(--txt)}
         .hero-info .sb{font-size:11.5px;color:var(--txt-3);margin-top:3px}
 
-        .cmd{padding:13px 16px;cursor:pointer;display:flex;gap:10px;align-items:flex-start}
+        .cmd{padding:13px 16px;cursor:pointer;display:flex;gap:10px;align-items:flex-start;transition:background .15s}
         .cmd:active{background:var(--field)}
         .cmd .mn{flex:1;min-width:0}
         .cmd .r1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-        .cmd .nm{font-size:14.5px;font-weight:700;color:var(--txt)}
-        .cmd .ds{font-size:11.5px;color:var(--txt-3);margin-top:6px;line-height:1.6}
-        .cmd .cp{font-size:11px;color:var(--brand);font-weight:700;flex:0 0 auto;padding:4px 9px;border-radius:8px;background:var(--brand-soft)}
+        .cmd .nm{
+          font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13.5px;font-weight:800;
+          color:var(--brand);background:var(--brand-soft);padding:4px 10px;border-radius:9px;letter-spacing:.3px;
+        }
+        .cmd .ds{font-size:11.5px;color:var(--txt-3);margin-top:7px;line-height:1.6}
+        .cmd .cp{
+          font-size:11px;color:var(--brand);font-weight:800;flex:0 0 auto;padding:5px 11px;border-radius:9px;
+          background:transparent;box-shadow:inset 0 0 0 1.5px var(--brand);margin-top:1px;
+        }
+        .cmd:active .cp{background:var(--brand);color:#fff}
 
         .qa{border-bottom:1px solid var(--line)}
         .qa:last-child{border-bottom:none}
-        .qa .q{display:flex;gap:10px;padding:14px 16px;cursor:pointer;align-items:flex-start}
+        .qa .q{display:flex;gap:10px;padding:14px 16px;cursor:pointer;align-items:flex-start;transition:background .15s}
+        .qa .q:active{background:var(--field)}
         .qa .no{width:20px;height:20px;border-radius:6px;background:var(--brand-soft);color:var(--brand);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto;margin-top:2px}
         .qa .qt{flex:1;font-size:14px;color:var(--txt);font-weight:600;line-height:1.5}
-        .qa .aw{font-size:11px;color:var(--txt-3);transition:transform .25s;margin-top:4px}
-        .qa.open .aw{transform:rotate(180deg)}
-        .qa .a{display:none;font-size:12.5px;color:var(--txt-2);line-height:1.85;padding:0 16px 15px 46px}
-        .qa.open .a{display:block}
+        .qa .aw{font-size:11px;color:var(--txt-3);transition:transform .28s ease;margin-top:4px}
+        .qa.open .aw{transform:rotate(180deg);color:var(--brand)}
+        .qa.open .q .no{background:var(--brand);color:#fff}
+        .qa .a{
+          font-size:12.5px;color:var(--txt-2);line-height:1.85;max-height:0;opacity:0;overflow:hidden;
+          padding:0 16px 0 46px;transition:max-height .34s cubic-bezier(.32,.72,0,1),opacity .22s,padding-bottom .34s;
+        }
+        .qa.open .a{max-height:640px;opacity:1;padding-bottom:15px}
         .qa .a a{color:var(--brand)}
 
         .notice{display:flex;gap:11px;padding:12px 16px}
-        .notice .av{width:32px;height:32px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+        .notice .av{
+          width:34px;height:34px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+          font-size:12px;font-weight:800;color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 2px 6px rgba(16,24,40,.12);
+        }
         .notice .bd{flex:1;min-width:0}
         .notice .r1{display:flex;align-items:center;justify-content:space-between;gap:8px}
         .notice .ti{font-size:13.5px;font-weight:700;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -295,14 +407,15 @@
            ========================================================== */
         .ovl{position:absolute;inset:0;background:rgba(10,14,20,.45);z-index:40;opacity:0;visibility:hidden;transition:.25s}
         .ovl.on{opacity:1;visibility:visible}
-        .sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--card);border-radius:24px 24px 0 0;transform:translateY(102%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:80%;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.18)}
+        .sheet{position:absolute;left:0;right:0;bottom:0;z-index:50;background:var(--card);border-radius:28px 28px 0 0;transform:translateY(102%);transition:transform .34s cubic-bezier(.32,.72,0,1);max-height:82%;display:flex;flex-direction:column;box-shadow:0 -14px 44px rgba(16,24,40,.22)}
         .sheet.on{transform:none}
-        .sheet .grab{width:38px;height:4px;border-radius:4px;background:var(--line);margin:9px auto 0}
-        .sheet .st{padding:12px 18px 6px;font-size:15px;font-weight:700;color:var(--txt)}
-        .sheet .sd{padding:0 18px 8px;font-size:11.5px;color:var(--txt-3);line-height:1.6}
+        .sheet .grab{width:42px;height:5px;border-radius:5px;background:var(--line-2);margin:10px auto 0}
+        .sheet .st{padding:14px 18px 6px;font-size:16px;font-weight:800;color:var(--txt);letter-spacing:.2px}
+        .sheet .sd{padding:0 18px 10px;font-size:11.5px;color:var(--txt-3);line-height:1.6}
         .sheet .sb{padding:0 0 18px;overflow-y:auto}
-        .sheet .opt{display:flex;align-items:center;gap:11px;padding:13px 18px;cursor:pointer}
+        .sheet .opt{display:flex;align-items:center;gap:11px;padding:13px 16px;margin:0 10px;border-radius:14px;cursor:pointer;transition:background .15s}
         .sheet .opt:active{background:var(--field)}
+        .sheet .opt.sel{background:var(--brand-soft)}
         .sheet .opt .tx{flex:1;font-size:14.5px;color:var(--txt)}
         .sheet .opt .tx small{display:block;font-size:11px;color:var(--txt-3);margin-top:3px}
         .sheet .opt .ck{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;background:transparent;border:2px solid var(--line)}
@@ -311,9 +424,9 @@
         .sheet .acts{display:flex;gap:10px;padding:4px 18px 20px}
         .sheet .acts .btn{flex:1}
 
-        .dlg{position:absolute;z-index:60;left:50%;top:50%;transform:translate(-50%,-46%) scale(.94);width:296px;background:var(--card);border-radius:22px;padding:22px 20px 16px;box-shadow:var(--sh-lg);opacity:0;visibility:hidden;transition:.22s}
+        .dlg{position:absolute;z-index:60;left:50%;top:50%;transform:translate(-50%,-46%) scale(.94);width:300px;background:var(--card);border-radius:26px;padding:24px 20px 16px;box-shadow:var(--sh-lg);opacity:0;visibility:hidden;transition:.24s cubic-bezier(.32,.72,0,1)}
         .dlg.on{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
-        .dlg .t{font-size:16px;font-weight:700;color:var(--txt);text-align:center}
+        .dlg .t{font-size:17px;font-weight:800;color:var(--txt);text-align:center;letter-spacing:.2px}
         .dlg .m{font-size:12.5px;color:var(--txt-2);line-height:1.8;margin-top:11px}
         .dlg .m.ctr{text-align:center}
         .dlg .acts{display:flex;gap:10px;margin-top:18px}
@@ -357,6 +470,14 @@
         @keyframes wv{to{transform:translateX(-46%)}}
         .floatwin .tmv{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;min-width:22px;text-align:center}
         .floatwin .spx{width:1px;height:18px;background:rgba(255,255,255,.3)}
+        @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(51,153,255,.45)}70%{box-shadow:0 0 0 12px rgba(51,153,255,0)}100%{box-shadow:0 0 0 0 rgba(51,153,255,0)}}
+        .task.now::before{animation:pulse 2.2s ease-out infinite}
+        .run-btn.stop .gl{animation:blink 1.4s ease-in-out infinite}
+        @keyframes blink{50%{opacity:.45}}
+
+        @media (prefers-reduced-motion:reduce){
+          *{animation-duration:.001ms !important;transition-duration:.01ms !important}
+        }
     </style>
 </head>
 <body>
@@ -417,7 +538,7 @@
             <div class="pages">
                 <!-- ============ 首页 ============ -->
                 <section class="page show has-tab" id="page-home">
-                    <div class="appbar">
+                    <div class="appbar" id="homeAppbar">
                         <div class="ttl">
                             <div class="t" id="homeTitle">星期一 · 工作日</div>
                             <div class="s" id="homeSub">2026年09月22日 09:41:00</div>
@@ -426,16 +547,24 @@
                         <div class="act" onclick="goto('settings')" title="设置">⚙</div>
                     </div>
 
-                    <div class="scroll">
-                        <div class="hero">
-                            <div class="halo"></div>
-                            <div class="top">
-                                <div class="big">
-                                    <div class="day" id="heroDay">距下次任务</div>
-                                    <div class="st" id="heroStatus">任务未启动，点击按钮开始</div>
+                    <div class="scroll" id="homeScroll">
+                        <!-- 渐变状态区 -->
+                        <div class="hhead" id="hhead">
+                            <div class="aur"></div>
+                            <div class="hh-date" id="homeDate">2026年09月22日</div>
+                            <div class="hh-row">
+                                <div class="hh-txt">
+                                    <div class="hh-day" id="heroDay">距下次任务</div>
+                                    <div class="hh-st" id="heroStatus">任务未启动，点击按钮开始</div>
                                 </div>
-                                <div class="ring" id="heroRing"><b id="heroRingTxt">0%</b></div>
+                                <div class="ring lg" id="heroRing"><b id="heroRingTxt">0%</b></div>
                             </div>
+                            <div class="progress ghost"><i id="runProgress" style="width:0%"></i>
+                            </div>
+                        </div>
+
+                        <!-- 操作卡片 -->
+                        <div class="hero">
                             <div class="bar">
                                 <button class="run-btn" id="runBtn" onclick="toggleRun()">
                                     <span class="gl" id="runGlyph">▶</span><span
@@ -443,28 +572,21 @@
                                 </button>
                                 <button class="tick-btn" onclick="toggleMask()">◐ 息屏</button>
                             </div>
-                        </div>
-
-                        <div class="meta-row">
-                            <div class="meta">
-                                <span class="em">⏳</span>
-                                <div style="min-width:0">
-                                    <div class="n" id="resetTick">00小时00分</div>
-                                    <div class="l">后刷新每日任务</div>
+                            <div class="stat-row">
+                                <div class="stat">
+                                    <div class="si">⏳</div>
+                                    <div class="sv" id="resetTick">00小时00分</div>
+                                    <div class="sl">后刷新每日任务</div>
                                 </div>
-                            </div>
-                            <div class="meta">
-                                <span class="em">🎯</span>
-                                <div style="min-width:0">
-                                    <div class="n" id="metaTarget">钉钉</div>
-                                    <div class="l" id="metaSource">结果来源 · 通知监听</div>
+                                <div class="stat">
+                                    <div class="si">🎯</div>
+                                    <div class="sv" id="metaTarget">钉钉</div>
+                                    <div class="sl" id="metaSource">结果来源 · 通知监听</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="progress"><i id="runProgress" style="width:0%"></i></div>
-
-                        <div class="sec-title" style="padding:14px 20px 2px">
+                        <div class="sec-title" style="padding:16px 20px 2px">
                             <span class="l">今日任务 · <span id="taskCount">0</span> 个</span>
                             <span class="r" onclick="addTask()">＋ 添加任务</span>
                         </div>
@@ -924,33 +1046,39 @@
 
                 <!-- ========================= 底部导航 ========================= -->
                 <nav class="tabbar" id="tabbar">
+                    <i class="ind on" id="tabInd"></i>
                     <button class="tb on" id="tbHome" onclick="show('home')">
+                        <span class="ic">
                         <svg viewBox="0 0 24 24">
                             <path d="M3 10.5 12 3l9 7.5"/>
                             <path d="M5 9.5V21h14V9.5"/>
-                        </svg>
+                        </svg></span>
                         <span>首页</span>
                     </button>
                     <button class="tb" id="tbCmd" onclick="show('command')">
+                        <span class="ic">
                         <svg viewBox="0 0 24 24">
                             <path d="M8 8l-4 4 4 4"/>
                             <path d="M16 8l4 4-4 4"/>
                             <path d="M13 6l-2 12"/>
-                        </svg>
+                        </svg></span>
                         <span>指令</span>
                     </button>
                     <button class="tb" id="tbNotice" onclick="show('notice')">
+                        <span class="ic">
                         <svg viewBox="0 0 24 24">
                             <path d="M18 8a6 6 0 1 0-12 0c0 6-2 7-2 7h16s-2-1-2-7"/>
                             <path d="M10.5 20a2 2 0 0 0 3 0"/>
                         </svg>
-                        <span>通知</span><i class="bdg"></i>
+                        <i class="bdg"></i></span>
+                        <span>通知</span>
                     </button>
                     <button class="tb" id="tbSet" onclick="show('settings')">
+                        <span class="ic">
                         <svg viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="3.2"/>
                             <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 9 19.35a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.65 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.65 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.65a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09A1.7 1.7 0 0 0 15 4.65a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.35 9V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03z"/>
-                        </svg>
+                        </svg></span>
                         <span>设置</span>
                     </button>
                 </nav>
@@ -1110,10 +1238,20 @@
       const tmap = {home:'tbHome', command:'tbCmd', notice:'tbNotice', settings:'tbSet'};
       if(tmap[name]) $(tmap[name]).classList.add('on');
       const el = $('page-'+name); el.scrollTop = 0;
+      moveTabInd(name === 'settings' ? 3 : TAB_PAGES.indexOf(name));
       if(name === 'settings' && state.firstSettings){
         state.firstSettings = false;
         setTimeout(showNoticeDialog, 260);
       }
+      if(name === 'home') syncAppbar();
+    }
+    function moveTabInd(i){
+      const order = ['tbHome','tbCmd','tbNotice','tbSet'];
+      const ind = $('tabInd');
+      if(i < 0){ ind.classList.remove('on'); return; }
+      const btn = $(order[i]);
+      ind.classList.add('on');
+      ind.style.transform = 'translateX(' + (btn.offsetLeft + btn.offsetWidth / 2) + 'px)';
     }
     function goto(name){
       if(TAB_PAGES.indexOf(state.cur) >= 0) state.backTo = state.cur;
@@ -1128,24 +1266,21 @@
        ========================================================== */
     function renderHome(){
       const df = workdayFlags();
+      const doneAll = state.tasks.length && state.tasks.every((t,i)=>state.actual[i]);
       if(state.running){
         const idx = state.curIdx + 1;
         $('heroDay').textContent = '正在执行 · 第 ' + Math.min(idx + 1, state.tasks.length) + ' / ' + state.tasks.length + ' 个任务';
-        $('heroStatus').textContent = idx < state.tasks.length
-          ? '准备执行第 ' + (idx + 1) + ' 个任务'
-          : '正在执行最后一个任务';
-        $('heroStatus').className = 'st run';
+        $('heroStatus').textContent = TARGET_APPS[state.targetApp].name + '已唤起，等待打卡结果';
+        $('hhead').classList.remove('skip','rest');
       } else if(df.cls === 'skip'){
-        $('heroDay').textContent = '今日 ' + df.type;
-        $('heroStatus').textContent = '今日休息，打卡任务自动跳过';
-        $('heroStatus').className = 'st skip';
+        $('heroDay').textContent = '今日休息日';
+        $('heroStatus').textContent = '打卡任务今日自动跳过';
+        $('hhead').classList.add('skip');
       } else {
-        const done = state.tasks.filter((t,i)=>state.actual[i]).length;
-        $('heroDay').textContent = state.tasks.length ? '今日 ' + df.type : '暂无任务';
-        $('heroStatus').textContent = done >= state.tasks.length && state.tasks.length
-          ? '今日任务已全部执行完毕'
-          : '任务未启动，点击下方按钮开始';
-        $('heroStatus').className = 'st';
+        $('heroDay').textContent = doneAll ? '今日已完成' : '今日 ' + df.type;
+        $('heroStatus').textContent = doneAll ? '全部任务执行完毕，结果已推送'
+          : (state.tasks.length ? '任务未启动，点击下方按钮开始' : '还没有配置任务时间点');
+        $('hhead').classList.remove('skip');
       }
       const total = state.tasks.length;
       const done = state.tasks.filter((t,i)=>state.actual[i]).length;
@@ -1203,18 +1338,17 @@
           : done(i) ? '<span class="chip green">已完成</span>'
           : '<span class="chip soft">待执行</span>';
         return '<div class="'+cls+'" data-i="'+i+'">'
-          + '<div class="tl"><div class="d"></div><div class="ln"></div></div>'
-          + '<div class="bd">'
           +   '<div class="hd"><span class="idx">任务 '+(i+1)+'</span>'+chip+'</div>'
           +   '<div class="tm">'
           +     '<div class="c"><div class="cap">计划时间</div><div class="v">'+t.time+'</div></div>'
           +     '<div class="arw">›</div>'
           +     '<div class="c act"><div class="cap">实际时间</div><div class="v">'+(state.actual[i]||'--:--:--')+'</div></div>'
           +   '</div>'
-          +   '<div class="src">'+(state.random ? '🎲 随机偏移 0~'+state.timeRange+' 分钟' : '⏱ 准点执行')
-          +   ' · 停留 '+state.timeout+' 秒</div>'
-          + '</div></div>';
+          +   '<div class="src"><em>'+(state.random ? '随机 '+state.timeRange+' 分钟内' : '准点执行')+'</em>'
+          +   '<em>停留 '+state.timeout+' 秒</em></div>'
+          + '</div>';
       }).join('');
+      box.classList.toggle('empty-list', !state.tasks.length);
       $('emptyView').style.display = state.tasks.length ? 'none' : 'flex';
       Array.from(box.children).forEach(el=>{
         const i = +el.dataset.i;
@@ -1575,6 +1709,7 @@
       $('homeTitle').textContent = '星期' + w + ' · ' + df.type;
       $('homeSub').textContent = d.getFullYear() + '年' + pad2(d.getMonth()+1) + '月' + pad2(d.getDate()) + '日 '
         + pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+      $('homeDate').textContent = d.getFullYear() + '年' + pad2(d.getMonth()+1) + '月' + pad2(d.getDate()) + '日 星期' + w;
       $('sbTime').textContent = d.getHours() + ':' + pad2(d.getMinutes());
       $('maskClock').textContent = pad2(d.getHours()) + ':' + pad2(d.getMinutes());
       const now = d.getHours()*3600 + d.getMinutes()*60 + d.getSeconds();
@@ -1595,10 +1730,15 @@
         + 'font-family="sans-serif" transform="rotate(-30 30 60)">DailyTask</text></svg>';
       $('watermark').style.backgroundImage = 'url("data:image/svg+xml;utf8,' + svg + '")';
     }
+    function syncAppbar(){
+      $('homeAppbar').classList.toggle('solid', $('homeScroll').scrollTop > 12);
+    }
     function init(){
       renderHome(); renderCommands(); renderQA(); renderNotices();
       updateClock(); paintWatermark();
       setInterval(updateClock, 1000);
+      $('homeScroll').addEventListener('scroll', syncAppbar);
+      window.addEventListener('resize', ()=>moveTabInd(state.cur === 'settings' ? 3 : TAB_PAGES.indexOf(state.cur)));
       $('swGesture').addEventListener('change', e=>toast(e.target.checked ? '已开启手势辅助' : '已关闭手势辅助'));
       $('swPower').addEventListener('change', e=>toast(e.target.checked ? '省电模式已开启，刷新频率降低' : '已关闭省电模式'));
       $('swBackHome').addEventListener('change', e=>toast(e.target.checked ? '打卡结束后会先退回桌面' : '已关闭退回桌面'));
