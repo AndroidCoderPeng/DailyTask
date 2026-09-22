@@ -329,20 +329,6 @@
         .tabbar .tb.on{color:var(--brand)}
         .tabbar .tb .bdg{position:absolute;top:11px;margin-left:26px;width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 0 2px var(--card)}
 
-        /* ==========================================================
-           8. 其它页
-           ========================================================== */
-        .hero-info{display:flex;align-items:center;gap:12px;padding:16px;position:relative;overflow:hidden}
-        .hero-info::after{content:"";position:absolute;right:-30px;top:-40px;width:130px;height:130px;border-radius:50%;background:var(--brand-soft);opacity:.7}
-        .hero-info .lg{
-          width:48px;height:48px;border-radius:15px;color:#fff;display:flex;align-items:center;justify-content:center;
-          font-weight:800;font-size:19px;flex:0 0 auto;background:linear-gradient(135deg,var(--hero-a),var(--hero-b));
-          box-shadow:0 8px 18px rgba(51,153,255,.34);position:relative;z-index:1;
-        }
-        .hero-info .nm,.hero-info .sb{position:relative;z-index:1}
-        .hero-info .nm{font-size:16px;font-weight:700;color:var(--txt)}
-        .hero-info .sb{font-size:11.5px;color:var(--txt-3);margin-top:3px}
-
         /* —— 指令页 —— */
         .cmd-hero{
           margin:12px 14px 0;padding:14px;border-radius:var(--r-lg);color:#fff;display:flex;gap:12px;align-items:center;
@@ -688,17 +674,6 @@
                         </div>
                     </div>
                     <div class="scroll pad">
-                        <div class="card" style="margin-bottom:14px">
-                            <div class="hero-info">
-                                <div class="lg">DT</div>
-                                <div style="flex:1;min-width:0">
-                                    <div class="nm">DailyTask</div>
-                                    <div class="sb">自动打卡助手 · 当前版本 2.4.2.2</div>
-                                </div>
-                                <span class="chip soft">v2.4.2.2</span>
-                            </div>
-                        </div>
-
                         <div class="sec-title"><span class="l">自动化配置</span></div>
                         <div class="card">
                             <div class="it" onclick="chooseTargetApp()">
@@ -836,14 +811,6 @@
 
                         <div class="sec-title"><span class="l">工具</span></div>
                         <div class="card" style="margin-bottom:20px">
-                            <div class="it" onclick="show('command')">
-                                <div class="ico">⌨</div>
-                                <div class="tx">
-                                    <div class="k">全部指令</div>
-                                    <div class="d">10 条远程控制指令</div>
-                                </div>
-                                <div class="chev"></div>
-                            </div>
                             <div class="divider"></div>
                             <div class="it" onclick="openTest()">
                                 <div class="ico g">🚀</div>
