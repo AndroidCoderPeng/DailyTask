@@ -138,8 +138,14 @@ class NotificationMonitorService : NotificationListenerService() {
         }
 
         // 折叠通知格式形如 "[n条]昵称: DT#执行任务"，截取 DT# 之后的真正指令
-        val command = notice.substring(prefixIndex)
+        val command = notice.substring(prefixIndex).trim()
         Log.d(kTag, "handleRemoteCommand: command = $command")
+
+        val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡").trim()
+        if (key.isNotEmpty() && command == "${Constant.COMMAND_PREFIX}$key") {
+            triggerRemoteClockIn()
+            return
+        }
 
         when {
             command.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
@@ -205,25 +211,21 @@ class NotificationMonitorService : NotificationListenerService() {
                 }
             }
 
-            else -> {
-                // 自定义打卡指令，用户可配置关键词（如 "打卡"），同样需要 DT# 前缀
-                val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
-                if (notice.contains(key)) {
-                    val timeoutSeconds = SaveKeyValues.loadInt(
-                        Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
-                    )
-                    val returnScreenshot = SaveKeyValues.loadBoolean(
-                        Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false
-                    )
-                    openApplication {
-                        emitMonitorEvent(
-                            MonitorEvent.AppOpenedForRemoteClockIn(
-                                timeoutSeconds, returnScreenshot
-                            )
-                        )
-                    }
-                }
-            }
+            else -> Unit
+        }
+    }
+
+    private fun triggerRemoteClockIn() {
+        val timeoutSeconds = SaveKeyValues.loadInt(
+            Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+        )
+        val returnScreenshot = SaveKeyValues.loadBoolean(
+            Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false
+        )
+        openApplication {
+            emitMonitorEvent(
+                MonitorEvent.AppOpenedForRemoteClockIn(timeoutSeconds, returnScreenshot)
+            )
         }
     }
 
