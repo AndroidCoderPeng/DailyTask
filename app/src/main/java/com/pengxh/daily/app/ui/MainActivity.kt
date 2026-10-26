@@ -317,7 +317,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         if (!Settings.canDrawOverlays(this)) {
             "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
         }
-        applyStoredMaskMode()
+        showMaskOnForeground()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -334,7 +334,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
         }
 
-        applyStoredMaskMode(defaultWhenUnset = true)
+        // 回到前台无条件显示蒙层（省电），与任务是否开启无关
+        showMaskOnForeground()
     }
 
     override fun onDestroy() {
@@ -555,12 +556,15 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun applyStoredMaskMode(defaultWhenUnset: Boolean = false) {
-        when (SaveKeyValues.loadInt(Constant.REMOTE_MASK_MODE_KEY, Constant.DEFAULT_INDEX)) {
-            1 -> setMaskVisible(true)
-            0 -> setMaskVisible(false)
-            else -> if (defaultWhenUnset) setMaskVisible(true)
-        }
+    /**
+     * 回到前台一律显示蒙层（省电）：
+     * 1. 不依赖 REMOTE_MASK_MODE_KEY 历史存档，避免上次手动退出蒙层后，再次回前台蒙层不显示
+     * 2. 与任务是否开启无关
+     * 3. 延迟到窗口就绪后执行，保证隐藏系统栏、降低亮度等操作生效
+     * 4. 用户仍可通过上滑手势或者音量下键退出蒙层
+     * */
+    private fun showMaskOnForeground() {
+        window.decorView.post { setMaskVisible(true) }
     }
 
     private fun setMaskVisible(visible: Boolean) {
