@@ -14,6 +14,7 @@ class DailyResetAlarmReceiver : BroadcastReceiver() {
         }
 
         DailyResetAlarmScheduler.schedule(context)
+        TaskScheduler.notifyResetWaiters()
         ContextCompat.startForegroundService(
             context, Intent(context, ForegroundRunningService::class.java)
         )

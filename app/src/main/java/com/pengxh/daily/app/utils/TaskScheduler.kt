@@ -11,6 +11,7 @@ import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.ZoneId
@@ -32,6 +34,13 @@ import java.util.Calendar
  * 任务调度器
  */
 object TaskScheduler {
+    private sealed class DayFlag(val label: String, val shouldSkip: Boolean) {
+        object SubstituteWorkday : DayFlag("补班日", false)
+        object Holiday : DayFlag("节假日", true)
+        object RestDay : DayFlag("休息日", true)
+        object Workday : DayFlag("工作日", false)
+    }
+
     /**
      * 调度器是否在运行中
      * */
@@ -59,6 +68,11 @@ object TaskScheduler {
     private var clockInDeferred: CompletableDeferred<Unit>? = null
 
     private var lastProcessedDate: LocalDate? = null
+    private val resetWaitWakeupChannel = Channel<Unit>(Channel.CONFLATED)
+
+    fun notifyResetWaiters() {
+        resetWaitWakeupChannel.trySend(Unit)
+    }
 
     /**
      * 由 ForegroundRunningService 调用，注入协程作用域
@@ -155,13 +169,7 @@ object TaskScheduler {
      * 获取当日 flag
      * */
     fun getDayFlag(): String {
-        val today = LocalDate.now()
-        return when {
-            ChinaHolidayManager.isWorkday(today) -> "补班日"
-            CustomWorkdayManager.isWeekdayRestDay(today) -> "休息日"
-            ChinaHolidayManager.isHoliday(today) -> "节假日"
-            else -> "工作日"
-        }
+        return classifyDay(LocalDate.now()).label
     }
 
     /**
@@ -296,7 +304,7 @@ object TaskScheduler {
     @Volatile
     var debugWaitSeconds: Long? = null
 
-    private const val RESET_CONFIG_CHECK_INTERVAL_SECONDS = 10 * 60L
+    private const val RESET_CONFIG_CHECK_INTERVAL_MILLIS = 10 * 60 * 1000L
 
     /**
      * 等待到下一个每日重置时间
@@ -310,21 +318,43 @@ object TaskScheduler {
         val initialResetHour = SaveKeyValues.loadInt(
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         )
-        val initialWaitSeconds = calculateSecondsUntilReset(initialResetHour)
+        val initialTargetMillis = nextResetTimeMillis(initialResetHour)
+        val initialWaitSeconds =
+            ((initialTargetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(1)
         LogFileManager.writeLog("等待 ${initialWaitSeconds}s 后进入下一个任务周期")
 
         // 只发一次静态通知，不每秒刷新
         _tipsEvent.emit(TipsEvent.Completed)
         ForegroundRunningService.emitNotificationText("今日任务已执行完毕，等待下次任务")
 
+        var targetResetHour = initialResetHour
+        var targetMillis = initialTargetMillis
+        var alarmScheduledForHour: Int? = null
         while (true) {
             val resetHour = SaveKeyValues.loadInt(
                 Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
             )
-            val waitSeconds = calculateSecondsUntilReset(resetHour)
-            val delaySeconds = minOf(waitSeconds, RESET_CONFIG_CHECK_INTERVAL_SECONDS)
-            delay(delaySeconds * 1000)
-            if (delaySeconds == waitSeconds) {
+            if (resetHour != targetResetHour) {
+                targetResetHour = resetHour
+                targetMillis = nextResetTimeMillis(resetHour)
+            }
+            if (alarmScheduledForHour != resetHour) {
+                DailyResetAlarmScheduler.schedule(DailyTaskApplication.get())
+                alarmScheduledForHour = resetHour
+            }
+
+            val remainingMillis = (targetMillis - System.currentTimeMillis()).coerceAtLeast(1)
+            withTimeoutOrNull(minOf(remainingMillis, RESET_CONFIG_CHECK_INTERVAL_MILLIS)) {
+                resetWaitWakeupChannel.receive()
+            }
+
+            val currentResetHour = SaveKeyValues.loadInt(
+                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
+            )
+            if (currentResetHour != resetHour) {
+                continue
+            }
+            if (System.currentTimeMillis() >= targetMillis) {
                 return
             }
         }
@@ -392,28 +422,32 @@ object TaskScheduler {
         val skipEnabled = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
         if (!skipEnabled) return false
 
-        val today = LocalDate.now()
+        val dayFlag = classifyDay(LocalDate.now())
+        when (dayFlag) {
+            DayFlag.SubstituteWorkday -> {
+                LogFileManager.writeLog("今日为调休补班日，正常执行任务")
+            }
 
-        // 调休补班日（覆盖一切，必须执行）
-        if (ChinaHolidayManager.isWorkday(today)) {
-            LogFileManager.writeLog("今日为调休补班日，正常执行任务")
-            return false
+            DayFlag.Holiday -> {
+                LogFileManager.writeLog("今日为法定节假日，跳过任务")
+            }
+
+            DayFlag.RestDay -> {
+                LogFileManager.writeLog("今日为休息日，跳过任务")
+            }
+
+            DayFlag.Workday -> Unit
         }
+        return dayFlag.shouldSkip
+    }
 
-        // 法定节假日 → 跳过
-        if (ChinaHolidayManager.isHoliday(today)) {
-            LogFileManager.writeLog("今日为法定节假日，跳过任务")
-            return true
+    private fun classifyDay(date: LocalDate): DayFlag {
+        return when {
+            ChinaHolidayManager.isWorkday(date) -> DayFlag.SubstituteWorkday
+            ChinaHolidayManager.isHoliday(date) -> DayFlag.Holiday
+            CustomWorkdayManager.isWeekdayRestDay(date) -> DayFlag.RestDay
+            else -> DayFlag.Workday
         }
-
-        // 一周休息日（默认周六日双休，用户可修改）→ 跳过
-        if (CustomWorkdayManager.isWeekdayRestDay(today)) {
-            LogFileManager.writeLog("今日为休息日，跳过任务")
-            return true
-        }
-
-        // 其余情况 → 正常执行
-        return false
     }
 
     /**
@@ -443,10 +477,8 @@ object TaskScheduler {
         }
     }
 
-    /**
-     * 计算距离下一次重置还有多少秒
-     */
-    private fun calculateSecondsUntilReset(resetHour: Int): Long {
+    /** 计算下一次每日重置的绝对时间点 */
+    private fun nextResetTimeMillis(resetHour: Int): Long {
         val now = Calendar.getInstance()
         val target = now.clone() as Calendar
         target.set(Calendar.HOUR_OF_DAY, resetHour)
@@ -458,7 +490,7 @@ object TaskScheduler {
             target.add(Calendar.DATE, 1)
         }
 
-        return ((target.timeInMillis - now.timeInMillis) / 1000).coerceAtLeast(1)
+        return target.timeInMillis
     }
 
     private data class ScheduledTask(

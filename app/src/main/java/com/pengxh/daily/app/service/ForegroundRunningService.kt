@@ -129,6 +129,7 @@ class ForegroundRunningService : Service() {
             resetTaskTime.collect {
                 updateResetTimeView()
                 DailyResetAlarmScheduler.schedule(this@ForegroundRunningService)
+                TaskScheduler.notifyResetWaiters()
             }
         }
 

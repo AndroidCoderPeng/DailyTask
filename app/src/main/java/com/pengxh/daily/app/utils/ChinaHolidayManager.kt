@@ -3,6 +3,7 @@ package com.pengxh.daily.app.utils
 import android.util.Log
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,7 +16,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okio.IOException
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
@@ -42,7 +42,7 @@ object ChinaHolidayManager {
         data class Error(val message: String) : SyncResult()
     }
 
-    private val scope = CoroutineScope(SupervisorJob())
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
@@ -69,6 +69,11 @@ object ChinaHolidayManager {
                 tryLoadFromCache()
                 if (holidayDates.isNotEmpty()) return@launch
                 fetchAndParse()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(kTag, "Holiday data sync failed", e)
+                notifyError("节假日数据同步失败：${e.message ?: e.javaClass.simpleName}")
             } finally {
                 isSyncing.set(false)
             }
@@ -138,8 +143,10 @@ object ChinaHolidayManager {
                         SyncResult.Success(body)
                     }
                 }
-            } catch (e: IOException) {
-                SyncResult.Error(e.message ?: "Unknown")
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                SyncResult.Error(e.message ?: e.javaClass.simpleName)
             }
         }
     }
