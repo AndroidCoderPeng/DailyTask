@@ -42,7 +42,8 @@ object MessageDispatcher {
         channelOverride: Int? = null,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null,
-        webhookKeyOverride: String? = null
+        webhookKeyOverride: String? = null,
+        emailConfigOverride: EmailManager.EmailConfig? = null
     ) {
         val channelType = channelOverride
             ?: SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
@@ -64,7 +65,8 @@ object MessageDispatcher {
                     title.ifBlank { messageTitle },
                     fullContent,
                     onSuccess,
-                    onFailure
+                    onFailure,
+                    emailConfigOverride
                 )
             }
 

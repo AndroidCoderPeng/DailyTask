@@ -23,7 +23,7 @@ object EmailManager {
     private val kTag = "EmailManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private data class EmailConfig(val outbox: String, val authCode: String, val inbox: String)
+    internal data class EmailConfig(val outbox: String, val authCode: String, val inbox: String)
 
     private fun loadEmailConfig(onFailure: ((String) -> Unit)?): EmailConfig? {
         val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
@@ -59,9 +59,10 @@ object EmailManager {
         title: String,
         content: String,
         onSuccess: (() -> Unit)? = null,
-        onFailure: ((String) -> Unit)? = null
+        onFailure: ((String) -> Unit)? = null,
+        configOverride: EmailConfig? = null
     ) {
-        val config = loadEmailConfig(onFailure) ?: return
+        val config = configOverride ?: loadEmailConfig(onFailure) ?: return
 
         val authenticator = EmailAuthenticator(config.outbox, config.authCode)
         val props = createSmtpProperties()

@@ -7,6 +7,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonObject
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
 import com.pengxh.daily.app.utils.ConfigStore
+import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -113,9 +114,8 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 addProperty("authCode", binding.emailSendCodeView.text.toString())
                 addProperty("inbox", binding.emailInboxView.text.toString())
             }
-            ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, cacheObj)
 
-            sendTestEmail()
+            sendTestEmail(cacheObj)
         }
     }
 
@@ -155,7 +155,12 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             })
     }
 
-    private fun sendTestEmail() {
+    private fun sendTestEmail(config: JsonObject) {
+        val emailConfig = EmailManager.EmailConfig(
+            config.get("outbox").asString,
+            config.get("authCode").asString,
+            config.get("inbox").asString
+        )
         MaterialAlertDialogBuilder(this)
             .setTitle("测试邮件")
             .setMessage("QQ邮箱配置完成，可以发送QQ邮件。\n\n是否继续？")
@@ -165,9 +170,13 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 MessageDispatcher.sendMessage(
                     "邮箱测试", "这是一封测试邮件，不必关注",
                     channelOverride = 0,
+                    emailConfigOverride = emailConfig,
                     onSuccess = {
                         LoadingDialog.dismiss()
                         "发送成功，请注意查收".show(context)
+
+                        // 仅在测试发送成功后才持久化邮箱配置，与企微侧语义对齐（关联 BUG-019 / DT4-002）
+                        ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, config)
 
                         SaveKeyValues.saveString(
                             Constant.MESSAGE_TITLE_KEY,
