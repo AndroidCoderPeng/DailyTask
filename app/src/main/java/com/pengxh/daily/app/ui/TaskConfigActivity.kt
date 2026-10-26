@@ -21,6 +21,7 @@ import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.FloatingWindowController
+import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.isNumber
@@ -30,6 +31,7 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
@@ -86,6 +88,16 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         } else {
             binding.minuteRangeLayout.visibility = View.GONE
         }
+
+        // 运行中排程已按当日 flag 计算，中途改工作日会引入额外判断，故直接锁定入口
+        lifecycleScope.launch {
+            TaskScheduler.isRunning.collectLatest { running ->
+                binding.workdayLayout.apply {
+                    isEnabled = !running
+                    alpha = if (running) 0.5f else 1f
+                }
+            }
+        }
     }
 
     override fun initEvent() {
@@ -132,6 +144,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.workdayLayout.setOnClickListener {
+            if (TaskScheduler.isRunning()) {
+                "任务进行中，无法修改工作日".show(context)
+                return@setOnClickListener
+            }
             showWorkdaySelector()
         }
 
@@ -275,6 +291,12 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             }
             .setNegativeButton("取消", null)
             .setPositiveButton("确定") { _, _ ->
+                // 二次校验：对话框打开期间任务可能被启动
+                if (TaskScheduler.isRunning()) {
+                    "任务进行中，无法修改工作日".show(this)
+                    return@setPositiveButton
+                }
+
                 if (selectedDays.isEmpty()) {
                     "至少保留一天为工作日".show(this)
                     return@setPositiveButton
