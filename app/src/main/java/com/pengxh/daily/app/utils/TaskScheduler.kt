@@ -187,6 +187,7 @@ object TaskScheduler {
         var successCount = 0
         var failureCount = 0
         var skippedCount = 0
+        var screenshotAuthInvalid = false
 
         for (task in schedule) {
             val now = System.currentTimeMillis()
@@ -207,6 +208,7 @@ object TaskScheduler {
             ) {
                 val remainingCount = schedule.size - task.displayIndex + 1
                 skippedCount += remainingCount
+                screenshotAuthInvalid = true
                 LogFileManager.writeLog(
                     "非钉钉目标仅支持截屏来源，截屏授权已失效，跳过剩余 $remainingCount 个任务"
                 )
@@ -342,6 +344,8 @@ object TaskScheduler {
         // ====== 全部完成 ======
         val message = when {
             successCount + failureCount == 0 && skippedCount == 0 -> "无任务可供执行"
+            successCount + failureCount == 0 && screenshotAuthInvalid ->
+                "截屏授权已失效，剩余 $skippedCount 个任务已跳过，需人工重新授权后恢复截屏打卡"
             successCount + failureCount == 0 ->
                 "今日所有任务均已过期，跳过（$skippedCount 个），无需执行"
             skippedCount > 0 ->

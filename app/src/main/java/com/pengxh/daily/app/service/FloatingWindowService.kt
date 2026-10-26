@@ -31,7 +31,7 @@ import kotlinx.coroutines.withContext
 class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
     companion object {
-        private const val MEMORY_WARNING_INTERVAL_MILLIS = 5 * 60 * 1000L
+        private const val MEMORY_WARNING_INTERVAL_MILLIS = 30 * 60 * 1000L
         private val powerSaveModeUpdates = Channel<Unit>(Channel.CONFLATED)
 
         fun notifyPowerSaveModeChanged() {
