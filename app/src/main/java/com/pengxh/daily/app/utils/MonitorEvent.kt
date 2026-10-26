@@ -11,16 +11,6 @@ sealed class MonitorEvent {
     data object ClockInSuccess : MonitorEvent()
 
     /**
-     * 远程"执行任务"指令
-     * */
-    data object StartTaskCommand : MonitorEvent()
-
-    /**
-     * 远程"终止任务"指令
-     * */
-    data object StopTaskCommand : MonitorEvent()
-
-    /**
      * 远程"息屏"指令
      * */
     data object ShowMaskCommand : MonitorEvent()

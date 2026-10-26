@@ -58,7 +58,12 @@ object TaskScheduler {
     /**
      * 打卡信号：外部 notifyClockIn() 触发，解除 select{} 阻塞
      * */
+    @Volatile
     private var clockInDeferred: CompletableDeferred<Unit>? = null
+    @Volatile
+    private var clockInWaitStartedAtMillis: Long? = null
+    @Volatile
+    private var clockInWaitDeadlineMillis: Long? = null
 
     private var lastProcessedDate: LocalDate? = null
     private val resetWaitWakeupChannel = Channel<Unit>(Channel.CONFLATED)
@@ -230,39 +235,53 @@ object TaskScheduler {
                 Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
             )
 
-            DailyTaskApplication.get().openApplication()
-
             // Kotlin语法糖——竞态保护：select 只取先完成的分支，另一个自动取消
             var hasCaptured = false
             var captureDeferred: CompletableDeferred<String?>? = null
-            val timeoutJob = launch {
-                updateCountdownWithNotification(timeoutSeconds * 1000L) { remaining ->
-                    val tick = (remaining / 1000).toInt()
-                    FloatingWindowController.updateTime(tick)
+            val clockInSignal = CompletableDeferred<Unit>()
+            clockInWaitStartedAtMillis = System.currentTimeMillis()
+            clockInWaitDeadlineMillis = null
+            clockInDeferred = clockInSignal
+            var timeoutJob: Job? = null
+            val clockInSuccess = try {
+                DailyTaskApplication.get().openApplication()
+                clockInWaitDeadlineMillis =
+                    System.currentTimeMillis() + timeoutSeconds * 1000L
 
-                    // 最后 5 秒兜底截屏（只触发一次）
-                    if (tick <= 5 && !hasCaptured) {
-                        val resultSource = SaveKeyValues.loadInt(
-                            Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
-                        )
-                        if (resultSource == 1) {
-                            hasCaptured = true
-                            captureDeferred = CaptureImageService.requestCaptureScreen()
+                val activeTimeoutJob = launch {
+                    updateCountdownWithNotification(timeoutSeconds * 1000L) { remaining ->
+                        val tick = (remaining / 1000).toInt()
+                        FloatingWindowController.updateTime(tick)
+
+                        // 最后 5 秒兜底截屏（只触发一次）
+                        if (tick <= 5 && !hasCaptured) {
+                            val resultSource = SaveKeyValues.loadInt(
+                                Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
+                            )
+                            if (resultSource == 1) {
+                                hasCaptured = true
+                                captureDeferred = CaptureImageService.requestCaptureScreen()
+                            }
                         }
                     }
                 }
+                timeoutJob = activeTimeoutJob
+
+                select {
+                    // 分支 A：超时
+                    activeTimeoutJob.onJoin { false }
+
+                    // 分支 B：打卡成功
+                    clockInSignal.onAwait { true }
+                }
+            } finally {
+                timeoutJob?.cancel()
+                if (clockInDeferred === clockInSignal) {
+                    clockInDeferred = null
+                    clockInWaitStartedAtMillis = null
+                    clockInWaitDeadlineMillis = null
+                }
             }
-
-            val clockInSuccess = select {
-                // 分支 A：超时
-                timeoutJob.onJoin { false }
-
-                // 分支 B：打卡成功
-                CompletableDeferred<Unit>().also { clockInDeferred = it }.onAwait { true }
-            }
-
-            timeoutJob.cancel()
-            clockInDeferred = null
 
             // 超时路径——打卡失败，回到主页 + 兜底通知 + 继续下一个任务
             if (!clockInSuccess) {
@@ -381,13 +400,19 @@ object TaskScheduler {
 
     /**
      * 打卡成功通知
-     * 调用链：NotificationMonitorService.onNotificationPosted()
-     *       → MainActivity.onClockInSuccess()
-     *       → TaskScheduler.notifyClockIn()
-     * 效果：完成 clockInDeferred，select{} 走分支 B，推进到下一个任务
+     * 仅接受当前任务等待窗口内的通知，避免迟到通知完成后续任务。
      */
-    fun notifyClockIn() {
-        clockInDeferred?.complete(Unit)
+    fun notifyClockIn(postedAtMillis: Long): Boolean {
+        val signal = clockInDeferred ?: return false
+        val windowStartMillis = clockInWaitStartedAtMillis ?: return false
+        val windowDeadlineMillis = clockInWaitDeadlineMillis
+        if (postedAtMillis < windowStartMillis ||
+            (windowDeadlineMillis != null && postedAtMillis > windowDeadlineMillis)
+        ) {
+            LogFileManager.writeLog("忽略等待窗口外的打卡成功通知：$postedAtMillis")
+            return false
+        }
+        return signal.complete(Unit)
     }
 
     fun stopTask() {

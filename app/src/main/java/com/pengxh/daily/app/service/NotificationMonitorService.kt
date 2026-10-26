@@ -93,6 +93,7 @@ class NotificationMonitorService : NotificationListenerService() {
         // 目标应用打卡通知，如果设置通知监听，那么结果来源只能选通知监听。
         if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0) {
             if (pkg == targetApp && notice.contains("成功")) {
+                TaskScheduler.notifyClockIn(sbn.postTime)
                 emitMonitorEvent(MonitorEvent.ClockInSuccess)
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
@@ -148,9 +149,20 @@ class NotificationMonitorService : NotificationListenerService() {
         }
 
         when {
-            command.contains("执行任务") -> emitMonitorEvent(MonitorEvent.StartTaskCommand)
+            command.contains("执行任务") -> {
+                if (!TaskScheduler.isRunning()) {
+                    TaskScheduler.startTask()
+                }
+            }
 
-            command.contains("终止任务") -> emitMonitorEvent(MonitorEvent.StopTaskCommand)
+            command.contains("终止任务") -> {
+                if (TaskScheduler.isRunning()) {
+                    TaskScheduler.stopTask()
+                    MessageDispatcher.sendMessage(
+                        "停止任务通知", "任务停止成功，请及时打开下次任务"
+                    )
+                }
+            }
 
             command.contains("开启循环") -> {
                 SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
