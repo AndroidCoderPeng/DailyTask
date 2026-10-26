@@ -23,11 +23,6 @@ import kotlin.coroutines.resume
  * 封装邮件和企业微信两种渠道的分流逻辑，全局复用同一个协程作用域。
  *
  * 必须在 [com.pengxh.daily.app.DailyTaskApplication.onCreate] 中初始化。
- *
- * 无人值守保障：
- *  1. 电量等元数据的读取全程失败降级，保证"告警路径自身"不会抛异常；
- *  2. 后台告警（无人监听发送结果）在主渠道失败时自动切换备用渠道重试，确保至少一次送达；
- *  3. 取消"无回调即静默丢弃失败"的旧逻辑，所有失败都会兜底重发或至少落日志。
  */
 object MessageDispatcher {
 
@@ -36,13 +31,10 @@ object MessageDispatcher {
 
     private const val CHANNEL_EMAIL = 0
     private const val CHANNEL_WECHAT = 1
-
-    /** 单渠道发送超时：超时即判定失败并触发备用渠道，避免永久挂起拖垮兜底 */
     private const val SEND_TIMEOUT_MILLIS = 60_000L
 
     /**
-     * 用可空类型持有，避免未初始化时抛 UninitializedPropertyAccessException
-     * ——那会让"发告警"这个动作本身炸穿调用方（如调度主循环）。
+     * 用可空类型持有，避免未初始化时抛 UninitializedPropertyAccessException，会让"发告警"这个动作本身炸穿主循环。
      */
     private var batteryManager: BatteryManager? = null
 
@@ -55,9 +47,6 @@ object MessageDispatcher {
         }
     }
 
-    /**
-     * 安全读取电量：未初始化或读取异常一律降级为 -1（未知）
-     */
     private fun readBatteryLevel(): Int {
         return try {
             batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
@@ -74,13 +63,6 @@ object MessageDispatcher {
         append("版本号：${BuildConfig.VERSION_NAME}")
     }
 
-    /**
-     * 是否允许在主渠道失败后切换备用渠道兜底。
-     *
-     * 规则：调用方"显式指定了渠道"或"提供了成功回调"时，说明它需要该渠道的真实结论
-     * （典型场景：渠道测试页），此时不做兜底，避免主渠道故障被备用渠道掩盖成"发送成功"。
-     * 其余场景即无人值守的后台告警（无人监听结果），一律启用兜底，保证至少一次送达。
-     */
     private fun shouldFallback(channelOverride: Int?, onSuccess: (() -> Unit)?): Boolean {
         return channelOverride == null && onSuccess == null
     }

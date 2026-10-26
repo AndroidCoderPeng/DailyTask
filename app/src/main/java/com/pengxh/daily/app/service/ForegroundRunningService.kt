@@ -13,11 +13,11 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyResetAlarmScheduler
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.TaskScheduler
-import com.pengxh.daily.app.utils.AppConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -77,11 +77,11 @@ class ForegroundRunningService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        // 注入协程作用域给 TaskScheduler
-        // 恢复判断必须与 checkAndTriggerReset 对齐：
-        //  - 仍在运行则恢复；
-        //  - 或"曾运行 且 今天尚未跑完 且 允许自动循环"才恢复。
-        // 否则会出现两类冗余：关掉循环开关后仍被强行恢复、或当天已跑完又被整体重跑一遍。
+        /***
+         * 恢复判断必须与 checkAndTriggerReset 对齐：
+         *  - 仍在运行则恢复；
+         *  - 或"曾运行 且 今天尚未跑完 且 允许自动循环"才恢复。
+         */
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
         val shouldResumeTask = TaskScheduler.isRunning() ||
                 (AppConfig.loadBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)

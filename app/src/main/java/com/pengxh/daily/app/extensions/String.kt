@@ -3,9 +3,6 @@ package com.pengxh.daily.app.extensions
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 
-/**
- * String扩展方法
- */
 fun String.getResponseHeader(): Pair<Int, String> {
     if (this.isBlank()) {
         return Pair(404, "Invalid Response")

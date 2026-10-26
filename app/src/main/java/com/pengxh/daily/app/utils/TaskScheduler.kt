@@ -36,9 +36,6 @@ import java.util.Calendar
  * 任务调度器
  */
 object TaskScheduler {
-    /**
-     * 调度器是否在运行中
-     * */
     private val _isRunning = MutableStateFlow(false)
     val isRunning = _isRunning.asStateFlow()
 
@@ -70,10 +67,10 @@ object TaskScheduler {
     private var lastProcessedDate: LocalDate? = null
     private val resetWaitWakeupChannel = Channel<Unit>(Channel.CONFLATED)
 
-    /** 单次异常后最大自动重试次数，超过则彻底停止并告警，避免永久性错误疯狂重试 */
+    // 单次异常后最大自动重试次数，超过则彻底停止并告警，避免永久性错误疯狂重试
     private const val MAX_AUTO_RECOVERY_COUNT = 3
 
-    /** 异常重试退避时长，给外部条件（网络/数据库/投影服务）恢复的时间 */
+    // 异常重试退避时长，给外部条件（网络/数据库/投影服务）恢复的时间
     private const val AUTO_RECOVERY_DELAY_MILLIS = 30_000L
 
     fun notifyResetWaiters() {
@@ -145,7 +142,7 @@ object TaskScheduler {
                         continue
                     }
 
-                    var completionMessage: String? = null
+                    var completionMessage: String?
                     var emitCompletionEvent = true
                     val skipReason = getTodaySkipReason()
                     if (skipReason != null) {
@@ -295,7 +292,7 @@ object TaskScheduler {
                 Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
             )
 
-            // Kotlin语法糖——竞态保护：select 只取先完成的分支，另一个自动取消
+            // 竞态保护：select 只取先完成的分支，另一个自动取消
             var hasCaptured = false
             var captureDeferred: CompletableDeferred<String?>? = null
             val clockInSignal = CompletableDeferred<Unit>()
@@ -627,7 +624,6 @@ object TaskScheduler {
         }
     }
 
-    /** 计算下一次每日重置的绝对时间点 */
     private fun nextResetTimeMillis(resetHour: Int): Long {
         val now = Calendar.getInstance()
         val target = now.clone() as Calendar

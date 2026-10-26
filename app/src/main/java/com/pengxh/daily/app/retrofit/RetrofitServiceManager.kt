@@ -27,8 +27,7 @@ object RetrofitServiceManager {
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val keyMap = HashMap<String, String>()
-        keyMap["key"] = webhookKeyOverride
-            ?: AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "")
+        keyMap["key"] = webhookKeyOverride ?: AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "")
         return api.sendMessage(requestBody, keyMap).string()
     }
 

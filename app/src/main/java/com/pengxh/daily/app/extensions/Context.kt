@@ -69,11 +69,9 @@ fun Context.openApplication(onOpened: (() -> Unit)? = null): Boolean {
             onOpened?.invoke()
             true
         } catch (e: ActivityNotFoundException) {
-            Log.e("Ex-Context", "Target app launch activity disappeared", e)
             "无法启动指定的目标软件".show(this)
             false
         } catch (e: SecurityException) {
-            Log.e("Ex-Context", "Target app launch was denied", e)
             "启动指定的目标软件失败".show(this)
             false
         }

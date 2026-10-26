@@ -28,6 +28,7 @@ import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
@@ -47,7 +48,6 @@ import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.toJson
-import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
@@ -347,10 +347,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     // ================================================================
     // NotificationMonitorService 状态观察 → UI 更新
     // ================================================================
-
-    /**
-     * 根据 MonitorEvent 驱动 UI 变化
-     */
     private fun handleMonitorEvent(event: MonitorEvent) {
         when (event) {
             is MonitorEvent.ClockInSuccess -> {
@@ -368,10 +364,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             is MonitorEvent.ReturnToApp -> backToMainActivity()
         }
     }
-
-    // ================================================================
-    // 用户交互
-    // ================================================================
 
     /**
      * 列表项单击
@@ -588,10 +580,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
         return super.dispatchTouchEvent(ev)
     }
-
-    // ================================================================
-    // 辅助方法
-    // ================================================================
 
     private fun doStopTask() {
         if (!TaskScheduler.isRunning()) return

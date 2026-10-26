@@ -160,10 +160,9 @@ class TaskDataManager() {
     }
 
     sealed class ImportResult {
-        /** 导入成功，count 为成功导入的任务数量 */
-        data class Success(val count: Int, val warnings: List<String> = emptyList()) : ImportResult()
+        data class Success(val count: Int, val warnings: List<String> = emptyList()) :
+            ImportResult()
 
-        /** 导入失败，message 为错误信息 */
         data class Error(val message: String) : ImportResult()
     }
 }
