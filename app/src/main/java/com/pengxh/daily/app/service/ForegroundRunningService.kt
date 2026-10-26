@@ -243,11 +243,7 @@ class ForegroundRunningService : Service() {
         }
 
         if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
-            TaskScheduler.startTask { started ->
-                if (started) {
-                    SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
-                }
-            }
+            TaskScheduler.startTask()
         }
     }
 

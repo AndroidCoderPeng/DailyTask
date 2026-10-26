@@ -151,6 +151,7 @@ object TaskScheduler {
                 }
 
                 lastProcessedDate = today
+                SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today.toString())
 
                 // 今天结束，睡到明天
                 if (isActive) waitUntilNextReset(completionMessage, emitCompletionEvent)

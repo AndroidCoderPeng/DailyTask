@@ -625,11 +625,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         // 今天还未重置，执行重置（覆盖 Alarm 未触发的场景）
         LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
         if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
-            TaskScheduler.startTask { started ->
-                if (started) {
-                    SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today)
-                }
-            }
+            TaskScheduler.startTask()
         }
     }
 
