@@ -289,14 +289,19 @@ object TaskScheduler {
 
                 // 发送兜底截图给用户
                 if (hasCaptured) {
-                    // Deferred 内部已有 3s 超时兜底，await() 不会无限挂起
-                    val imagePath = captureDeferred?.await() ?: ""
-                    if (imagePath.isNotEmpty()) {
-                        MessageDispatcher.sendAttachmentMessage(
+                    // Deferred 内部已有 5s 超时兜底，await() 不会无限挂起
+                    when (val imagePath = captureDeferred?.await()) {
+                        null -> MessageDispatcher.sendMessage(
+                            "任务执行结果通知", "截屏请求超时，无法获取截图"
+                        )
+
+                        "" -> MessageDispatcher.sendMessage(
+                            "任务执行结果通知", "截屏失败，无法获取图像"
+                        )
+
+                        else -> MessageDispatcher.sendAttachmentMessage(
                             "任务执行结果通知", "任务执行结果见附件", imagePath
                         )
-                    } else {
-                        MessageDispatcher.sendMessage("任务执行结果通知", "截屏失败，imagePath 为空")
                     }
                 } else {
                     // 通知模式：无截图，纯文本提醒

@@ -24,14 +24,15 @@ import androidx.core.graphics.get
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
-import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
 import com.pengxh.kt.lite.extensions.saveImage
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.SupervisorJob
@@ -76,19 +77,26 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
          * 触发截屏，返回 CompletableDeferred 供调用方 await 结果
          *
          * 内部逻辑：
-         *   1. 发射截屏请求到 captureScreenRequest
-         *   2. 启动协程订阅 captureResults 等待截屏结果
-         *   3. 超时 3 秒兜底（覆盖 captureScreen 内部黑屏重试的 ~2.3s）
-         *   4. complete Deferred → 调用方 await() 即时返回
+         *   1. 先订阅截屏结果，避免快速失败/成功发生在订阅之前
+         *   2. 发射截屏请求
+         *   3. 超时返回 null，截屏失败返回空字符串
          */
         fun requestCaptureScreen(): CompletableDeferred<String?> {
-            _captureScreenRequest.tryEmit(Unit)
             val deferred = CompletableDeferred<String?>()
-            captureScope.launch {
-                val result = withTimeoutOrNull(5000L) {
-                    captureResults.first()
+            val waiterJob = captureScope.launch(start = CoroutineStart.UNDISPATCHED) {
+                try {
+                    val result = withTimeoutOrNull(5000L) {
+                        captureResults.first()
+                    }
+                    deferred.complete(result)
+                } catch (e: CancellationException) {
+                    deferred.complete(null)
+                    throw e
                 }
-                deferred.complete(result ?: "")
+            }
+            if (!_captureScreenRequest.tryEmit(Unit)) {
+                waiterJob.cancel()
+                deferred.complete("")
             }
             return deferred
         }
@@ -245,35 +253,39 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     }
 
     private fun captureScreen() {
-        if (!ProjectionSession.isStateActive()) {
-            MessageDispatcher.sendMessage(
-                "截屏失败", "MediaProjection not active. state=${ProjectionSession.getState()}"
-            )
-            return
-        }
-
-        val projection = ProjectionSession.getProjection()
-        if (projection == null) {
-            MessageDispatcher.sendMessage("截屏失败", "MediaProjection not available")
-            return
-        }
-
-        // 如果资源未初始化，先初始化
-        if (!isCapturingInitialized || imageReader == null || virtualDisplay == null) {
-            Log.w(kTag, "Capture resources not initialized, reinitializing...")
-            // 先释放可能残留的脏资源，避免 VirtualDisplay 泄漏或状态不一致
-            releaseCaptureResources()
-            initializeCaptureResources(projection)
-            if (!isCapturingInitialized) {
-                MessageDispatcher.sendMessage("截屏失败", "截屏资源初始化失败")
+        try {
+            if (!ProjectionSession.isStateActive()) {
+                emitCaptureResult("")
                 return
             }
+
+            val projection = ProjectionSession.getProjection()
+            if (projection == null) {
+                emitCaptureResult("")
+                return
+            }
+
+            // 如果资源未初始化，先初始化
+            if (!isCapturingInitialized || imageReader == null || virtualDisplay == null) {
+                Log.w(kTag, "Capture resources not initialized, reinitializing...")
+                // 先释放可能残留的脏资源，避免 VirtualDisplay 泄漏或状态不一致
+                releaseCaptureResources()
+                initializeCaptureResources(projection)
+                if (!isCapturingInitialized) {
+                    emitCaptureResult("")
+                    return
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(kTag, "Failed to prepare capture", e)
+            emitCaptureResult("")
+            return
         }
 
         launch {
             try {
                 val reader = imageReader ?: run {
-                    MessageDispatcher.sendMessage("截屏失败", "ImageReader 为空")
+                    emitCaptureResult("")
                     return@launch
                 }
 
@@ -281,7 +293,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 Log.d(kTag, "================== 开始截屏 ==================")
 
                 // 不排空旧帧：后台环境下 VirtualDisplay 帧率被系统限速，排空后等新帧依赖时机运气，直接用 buffer 中已有的帧更可靠
-                val image = withTimeoutOrNull(1000L) {
+                val image = withTimeoutOrNull(800L) {
                     Log.d(kTag, "进入等待......")
                     waitForImageAvailable(reader)
                 }
@@ -289,6 +301,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 val elapsed = System.currentTimeMillis() - startTime
                 if (image == null) {
                     Log.e(kTag, "获取图像失败: acquireNextImage返回null, 总耗时: ${elapsed}ms")
+                    emitCaptureResult("")
                     return@launch
                 }
                 Log.d(kTag, "图像获取成功, 耗时: ${elapsed}ms")
@@ -347,17 +360,19 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 Log.w(kTag, "RemoteException during capture")
                 ProjectionSession.markStoppedNeedAuth()
                 emitProjectionEvent(ProjectionEvent.Failed)
+                emitCaptureResult("")
                 releaseCaptureResources()
                 isCapturingInitialized = false
             } catch (_: SecurityException) {
                 Log.w(kTag, "SecurityException during capture")
                 ProjectionSession.markStoppedNeedAuth()
                 emitProjectionEvent(ProjectionEvent.Failed)
+                emitCaptureResult("")
                 releaseCaptureResources()
                 isCapturingInitialized = false
             } catch (e: Exception) {
                 Log.e(kTag, "截屏失败: ${e.message}", e)
-                MessageDispatcher.sendMessage("截屏失败", "${e.message}")
+                emitCaptureResult("")
             }
         }
     }

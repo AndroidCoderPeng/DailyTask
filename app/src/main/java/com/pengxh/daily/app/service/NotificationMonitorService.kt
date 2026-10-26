@@ -318,7 +318,9 @@ class NotificationMonitorService : NotificationListenerService() {
         failureMessage: String
     ) {
         val imagePath = CaptureImageService.requestCaptureScreen().await()
-        if (imagePath.isNullOrEmpty()) {
+        if (imagePath == null) {
+            sendCommandReceipt(title, "截屏请求超时")
+        } else if (imagePath.isEmpty()) {
             sendCommandReceipt(title, failureMessage)
         } else {
             MessageDispatcher.sendAttachmentMessage(
