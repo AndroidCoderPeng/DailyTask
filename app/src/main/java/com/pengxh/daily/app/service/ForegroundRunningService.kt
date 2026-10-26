@@ -78,8 +78,15 @@ class ForegroundRunningService : Service() {
     override fun onCreate() {
         super.onCreate()
         // 注入协程作用域给 TaskScheduler
+        // 恢复判断必须与 checkAndTriggerReset 对齐：
+        //  - 仍在运行则恢复；
+        //  - 或"曾运行 且 今天尚未跑完 且 允许自动循环"才恢复。
+        // 否则会出现两类冗余：关掉循环开关后仍被强行恢复、或当天已跑完又被整体重跑一遍。
+        val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
         val shouldResumeTask = TaskScheduler.isRunning() ||
-                SaveKeyValues.loadBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+                (SaveKeyValues.loadBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+                        && SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "") != today
+                        && SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true))
         TaskScheduler.attach(serviceScope, shouldResumeTask)
         checkAndTriggerReset()
         DailyResetAlarmScheduler.schedule(this)
