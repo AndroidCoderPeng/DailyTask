@@ -68,7 +68,7 @@ class ForegroundRunningService : Service() {
         }
     }
 
-    private val batteryManager by lazy { getSystemService(BatteryManager::class.java) }
+    private val batteryManager: BatteryManager? by lazy { getSystemService(BatteryManager::class.java) }
     private var lastRemindTime = 0L
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -221,14 +221,18 @@ class ForegroundRunningService : Service() {
     }
 
     private fun checkLowBattery() {
-        val battery = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        val battery = batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            ?: return  // 读不到电量就不提醒，绝不抛异常，避免前台服务启动失败
         if (battery < 20) {
             val currentTime = System.currentTimeMillis()
             if (currentTime - lastRemindTime < 5 * 60 * 1000) {
                 return
             }
 
-            MessageDispatcher.sendMessage("低电量提醒", "手机电量低于20%，请及时充电")
+            MessageDispatcher.sendMessage(
+                "低电量提醒", "手机电量低于20%，请及时充电",
+                onFailure = { emitNotificationText("低电量提醒发送失败：$it") }
+            )
             lastRemindTime = currentTime
         } else {
             // 电量恢复到20%以上，重置提醒时间

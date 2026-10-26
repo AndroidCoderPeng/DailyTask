@@ -17,6 +17,7 @@ import com.pengxh.daily.app.databinding.WindowFloatingBinding
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.MessageDispatcher
+import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -147,15 +148,22 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             val availMem = memoryInfo.availMem
             val usedMem = totalMem - availMem
             val usagePercent = ((usedMem * 100.0) / totalMem).toInt()
+            // availMem 包含大量可瞬间回收的缓存，用 total-avail 算"已用"会严重虚高，
+            // 正常手机几乎必然 ≥90% 而误报。改用系统自身的低内存判定：可用内存低于系统临界值。
+            val lowMemory = memoryInfo.availMem <= memoryInfo.threshold
 
             withContext(Dispatchers.Main) {
                 binding.waveProgressView.setProgress(usagePercent)
-                if (usagePercent >= 90) {
+                if (lowMemory) {
                     val now = SystemClock.elapsedRealtime()
                     val lastWarning = lastMemoryWarningTime
                     if (lastWarning == null || now - lastWarning >= MEMORY_WARNING_INTERVAL_MILLIS) {
                         MessageDispatcher.sendMessage(
-                            "内存使用预警", "当前内存使用已超过90%，请关注设备运行情况"
+                            "内存使用预警",
+                            "系统可用内存已低于临界值（低内存状态），请关注设备运行情况",
+                            onFailure = {
+                                ForegroundRunningService.emitNotificationText("内存预警发送失败：$it")
+                            }
                         )
                         lastMemoryWarningTime = now
                     }
