@@ -182,9 +182,13 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 SaveKeyValues.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
             exportData.timeRange =
                 SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
-            exportData.msgChannel =
-                SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+            exportData.msgChannel = SaveKeyValues.loadInt(
+                Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX
+            ).takeIf { it in 0..1 }
             exportData.targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+            exportData.resultSource = SaveKeyValues.loadInt(
+                Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
+            ).takeIf { it in 0..1 }
 
             // String
             exportData.remoteCommand = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")

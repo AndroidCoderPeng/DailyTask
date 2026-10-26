@@ -13,8 +13,9 @@ public class ExportDataModel {
     private int resetTime; // 重置时间
     private int overtime; // 超时时间
     private int timeRange; // 时间范围
-    private int msgChannel; // 消息渠道
+    private Integer msgChannel; // 消息渠道，null 表示未配置
     private int targetApp; // 目标应用
+    private Integer resultSource; // 结果来源，null 表示未配置
 
     private String remoteCommand; // 口令
     private String msgTitle; // 打卡消息标题
@@ -55,7 +56,7 @@ public class ExportDataModel {
         this.timeRange = timeRange;
     }
 
-    public int getMsgChannel() {
+    public Integer getMsgChannel() {
         return msgChannel;
     }
 
@@ -67,8 +68,16 @@ public class ExportDataModel {
         this.targetApp = targetApp;
     }
 
-    public void setMsgChannel(int msgChannel) {
+    public void setMsgChannel(Integer msgChannel) {
         this.msgChannel = msgChannel;
+    }
+
+    public Integer getResultSource() {
+        return resultSource;
+    }
+
+    public void setResultSource(Integer resultSource) {
+        this.resultSource = resultSource;
     }
 
     public String getRemoteCommand() {

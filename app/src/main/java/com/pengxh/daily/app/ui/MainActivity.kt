@@ -600,7 +600,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                                     ForegroundRunningService.emitResetTaskTime()
                                     checkMissedReset()
                                 }
-                                "任务导入成功".show(context)
+                                if (result.warnings.isEmpty()) {
+                                    "任务导入成功".show(context)
+                                } else {
+                                    MaterialAlertDialogBuilder(this@MainActivity)
+                                        .setTitle("导入完成")
+                                        .setMessage(
+                                            "任务导入成功\n\n${result.warnings.joinToString("\n")}"
+                                        )
+                                        .setPositiveButton("知道了", null)
+                                        .show()
+                                }
                             }
 
                             is TaskDataManager.ImportResult.Error -> {
