@@ -220,13 +220,15 @@ class NotificationMonitorService : NotificationListenerService() {
             }
 
             command.contains("息屏") -> {
+                SaveKeyValues.saveInt(Constant.REMOTE_MASK_MODE_KEY, 1)
                 emitMonitorEvent(MonitorEvent.ShowMaskCommand)
-                sendCommandReceipt("息屏指令通知", "息屏指令已排队，主界面可用时执行")
+                sendCommandReceipt("息屏指令通知", "息屏状态已记录，主界面可用时生效")
             }
 
             command.contains("亮屏") -> {
+                SaveKeyValues.saveInt(Constant.REMOTE_MASK_MODE_KEY, 0)
                 emitMonitorEvent(MonitorEvent.HideMaskCommand)
-                sendCommandReceipt("亮屏指令通知", "亮屏指令已排队，主界面可用时执行")
+                sendCommandReceipt("亮屏指令通知", "亮屏状态已记录，主界面可用时生效")
             }
 
             command.contains("考勤记录") -> {

@@ -17,7 +17,9 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
  * @param maskViewController 蒙层视图控制器
  */
 class GestureController(
-    private val context: Context, private val maskViewController: MaskViewController
+    private val context: Context,
+    private val maskViewController: MaskViewController,
+    private val onMaskVisibilityChanged: (Boolean) -> Unit
 ) {
 
     private val minFlingDistance = 1000f
@@ -101,6 +103,7 @@ class GestureController(
     private fun handleShowMask() {
         if (!maskViewController.isMaskVisible()) {
             maskViewController.showMaskView()
+            onMaskVisibilityChanged(true)
         }
     }
 
@@ -110,6 +113,7 @@ class GestureController(
     private fun handleHideMask() {
         if (maskViewController.isMaskVisible()) {
             maskViewController.hideMaskView()
+            onMaskVisibilityChanged(false)
         }
     }
 }

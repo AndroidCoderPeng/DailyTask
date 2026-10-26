@@ -75,7 +75,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         WindowCompat.getInsetsController(window, binding.rootView)
     }
     private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
-    private val gestureController by lazy { GestureController(this, maskViewController) }
+    private val gestureController by lazy {
+        GestureController(this, maskViewController, ::saveMaskMode)
+    }
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
 
     private var taskBeans = mutableListOf<DailyTaskBean>()
@@ -315,6 +317,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         if (!Settings.canDrawOverlays(this)) {
             "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
         }
+        applyStoredMaskMode()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -331,9 +334,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
         }
 
-        if (!maskViewController.isMaskVisible()) {
-            maskViewController.showMaskView()
-        }
+        applyStoredMaskMode(defaultWhenUnset = true)
     }
 
     override fun onDestroy() {
@@ -356,15 +357,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }
 
             is MonitorEvent.ShowMaskCommand -> {
-                if (!maskViewController.isMaskVisible()) {
-                    maskViewController.showMaskView()
-                }
+                setMaskVisible(true)
             }
 
             is MonitorEvent.HideMaskCommand -> {
-                if (maskViewController.isMaskVisible()) {
-                    maskViewController.hideMaskView()
-                }
+                setMaskVisible(false)
             }
 
             is MonitorEvent.ReturnToApp -> backToMainActivity()
@@ -551,14 +548,34 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            if (maskViewController.isMaskVisible()) {
-                maskViewController.hideMaskView()
-            } else {
-                maskViewController.showMaskView()
-            }
+            val maskVisible = !maskViewController.isMaskVisible()
+            setMaskVisible(maskVisible)
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    private fun applyStoredMaskMode(defaultWhenUnset: Boolean = false) {
+        when (SaveKeyValues.loadInt(Constant.REMOTE_MASK_MODE_KEY, Constant.DEFAULT_INDEX)) {
+            1 -> setMaskVisible(true)
+            0 -> setMaskVisible(false)
+            else -> if (defaultWhenUnset) setMaskVisible(true)
+        }
+    }
+
+    private fun setMaskVisible(visible: Boolean) {
+        saveMaskMode(visible)
+        if (visible && !maskViewController.isMaskVisible()) {
+            maskViewController.showMaskView()
+        } else if (!visible && maskViewController.isMaskVisible()) {
+            maskViewController.hideMaskView()
+        }
+    }
+
+    private fun saveMaskMode(visible: Boolean) {
+        SaveKeyValues.saveInt(
+            Constant.REMOTE_MASK_MODE_KEY, if (visible) 1 else 0
+        )
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
