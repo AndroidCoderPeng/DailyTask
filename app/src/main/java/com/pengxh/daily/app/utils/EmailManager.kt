@@ -23,7 +23,7 @@ object EmailManager {
     private val kTag = "EmailManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    internal data class EmailConfig(val outbox: String, val authCode: String, val inbox: String)
+    data class EmailConfig(val outbox: String, val authCode: String, val inbox: String)
 
     private fun loadEmailConfig(onFailure: ((String) -> Unit)?): EmailConfig? {
         val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
