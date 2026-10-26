@@ -254,7 +254,7 @@ object TaskScheduler {
                         FloatingWindowController.updateTime(tick)
 
                         // 最后 5 秒兜底截屏（只触发一次）
-                        if (tick <= 5 && !hasCaptured) {
+                        if (timeoutSeconds > 5 && tick <= 5 && !hasCaptured) {
                             val resultSource = SaveKeyValues.loadInt(
                                 Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
                             )
