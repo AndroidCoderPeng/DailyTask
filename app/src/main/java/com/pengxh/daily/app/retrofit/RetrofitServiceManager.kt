@@ -15,7 +15,7 @@ object RetrofitServiceManager {
         RetrofitFactory.createRetrofit<RetrofitService>(Constant.WX_WEB_HOOK_URL)
     }
 
-    suspend fun sendMessage(content: String): String {
+    suspend fun sendMessage(content: String, webhookKeyOverride: String? = null): String {
         val jsonBody = JSONObject().apply {
             put("msgtype", "text")
             put("text", JSONObject().apply {
@@ -27,7 +27,8 @@ object RetrofitServiceManager {
             .toRequestBody("application/json; charset=utf-8".toMediaType())
 
         val keyMap = HashMap<String, String>()
-        keyMap["key"] = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
+        keyMap["key"] = webhookKeyOverride
+            ?: SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
         return api.sendMessage(requestBody, keyMap).string()
     }
 

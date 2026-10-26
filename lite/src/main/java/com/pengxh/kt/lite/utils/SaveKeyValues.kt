@@ -55,6 +55,25 @@ object SaveKeyValues {
         }
     }
 
+    fun saveStringAndIntAtomically(
+        stringKey: String,
+        stringValue: String,
+        intKey: String,
+        intValue: Int
+    ): Boolean {
+        if (stringKey.isBlank() || intKey.isBlank() || !::sp.isInitialized) return false
+        return try {
+            sp.edit {
+                putString(stringKey, stringValue)
+                putInt(intKey, intValue)
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     fun saveLong(key: String, value: Long) {
         if (key.isBlank()) return
         if (!::sp.isInitialized) return

@@ -41,7 +41,8 @@ object MessageDispatcher {
         content: String,
         channelOverride: Int? = null,
         onSuccess: (() -> Unit)? = null,
-        onFailure: ((String) -> Unit)? = null
+        onFailure: ((String) -> Unit)? = null,
+        webhookKeyOverride: String? = null
     ) {
         val channelType = channelOverride
             ?: SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
@@ -68,7 +69,7 @@ object MessageDispatcher {
             }
 
             1 -> {
-                sendViaWechat(fullContent, onSuccess, onFailure)
+                sendViaWechat(fullContent, onSuccess, onFailure, webhookKeyOverride)
             }
 
             else -> {
@@ -124,11 +125,12 @@ object MessageDispatcher {
     private fun sendViaWechat(
         fullContent: String,
         onSuccess: (() -> Unit)?,
-        onFailure: ((String) -> Unit)?
+        onFailure: ((String) -> Unit)?,
+        webhookKeyOverride: String?
     ) {
         scope.launch {
             try {
-                val response = RetrofitServiceManager.sendMessage(fullContent)
+                val response = RetrofitServiceManager.sendMessage(fullContent, webhookKeyOverride)
                 handleWechatResponse(response, onSuccess, onFailure)
             } catch (e: Exception) {
                 e.printStackTrace()

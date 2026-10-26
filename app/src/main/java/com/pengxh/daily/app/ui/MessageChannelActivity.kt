@@ -58,22 +58,18 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
     override fun initEvent() {
         binding.sendWxButton.setOnClickListener {
-            val key = binding.wxKeyView.text.toString()
+            val key = binding.wxKeyView.text.toString().trim()
             if (key.isBlank()) {
                 "企业微信消息 Webhook key 为空".show(this)
                 return@setOnClickListener
             }
 
-            SaveKeyValues.saveString(
-                Constant.WX_WEB_HOOK_KEY, binding.wxKeyView.text.toString()
-            )
-
             MaterialAlertDialogBuilder(this)
                 .setTitle("测试消息")
-                .setMessage("企业微信配置完成，可以发送企业微信消息。\n\n是否继续？")
+                .setMessage("先发送测试消息验证 Webhook，验证成功后才会保存配置。\n\n是否继续？")
                 .setCancelable(false)
                 .setPositiveButton("继续") { _, _ ->
-                    sendTestMessage()
+                    sendTestMessage(key)
                 }.setNegativeButton("取消", null).show()
         }
 
@@ -123,7 +119,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         }
     }
 
-    private fun sendTestMessage() {
+    private fun sendTestMessage(webhookKey: String) {
         val message = buildString {
             appendLine("你好！")
             append("这是来自 DailyTask 的测试消息 🎉")
@@ -136,11 +132,21 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
 
+                if (!SaveKeyValues.saveStringAndIntAtomically(
+                        Constant.WX_WEB_HOOK_KEY,
+                        webhookKey,
+                        Constant.MSG_CHANNEL_KEY,
+                        1
+                    )
+                ) {
+                    "测试消息发送成功，但配置保存失败，请重试".show(context)
+                    return@sendMessage
+                }
+
                 SaveKeyValues.saveString(
                     Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
                 )
-
-                SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, 1)
+                "企业微信配置验证并保存成功".show(context)
             },
             onFailure = {
                 if (isFinishing || isDestroyed) return@sendMessage
