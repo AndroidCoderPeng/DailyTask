@@ -254,10 +254,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             TaskScheduler.tipsEvent.collectLatest { event ->
                 when (event) {
                     is TipsEvent.Skip -> {
-                        binding.tipsView.text = "今日为周末，跳过任务"
+                        val reason = "今日为${event.dayFlag.label}"
+                        binding.tipsView.text = "$reason，跳过任务"
                         binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
                         MessageDispatcher.sendMessage(
-                            "任务跳过通知", "当前为节假日，任务已自动跳过，请注意下次打卡时间"
+                            "任务跳过通知",
+                            "$reason，任务已自动跳过，请注意下次打卡时间"
                         )
                     }
 

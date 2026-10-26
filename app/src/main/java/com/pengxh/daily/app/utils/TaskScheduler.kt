@@ -34,13 +34,6 @@ import java.util.Calendar
  * 任务调度器
  */
 object TaskScheduler {
-    private sealed class DayFlag(val label: String, val shouldSkip: Boolean) {
-        object SubstituteWorkday : DayFlag("补班日", false)
-        object Holiday : DayFlag("节假日", true)
-        object RestDay : DayFlag("休息日", true)
-        object Workday : DayFlag("工作日", false)
-    }
-
     /**
      * 调度器是否在运行中
      * */
@@ -132,10 +125,14 @@ object TaskScheduler {
                 }
 
                 var completionMessage: String? = null
-                if (shouldSkipToday()) {
+                var emitCompletionEvent = true
+                val skipReason = getTodaySkipReason()
+                if (skipReason != null) {
                     reportStart(true)
-                    _tipsEvent.emit(TipsEvent.Skip)
-                    ForegroundRunningService.emitNotificationText("今日休息，任务已跳过")
+                    _tipsEvent.emit(TipsEvent.Skip(skipReason))
+                    completionMessage = "今日为${skipReason.label}，任务已跳过"
+                    ForegroundRunningService.emitNotificationText(completionMessage)
+                    emitCompletionEvent = false
                 } else {
                     val schedule = buildTodaySchedule()
                     if (schedule.isEmpty()) {
@@ -151,7 +148,7 @@ object TaskScheduler {
                 lastProcessedDate = today
 
                 // 今天结束，睡到明天
-                if (isActive) waitUntilNextReset(completionMessage)
+                if (isActive) waitUntilNextReset(completionMessage, emitCompletionEvent)
             }
         }
         job = tempJob
@@ -318,7 +315,10 @@ object TaskScheduler {
     /**
      * 等待到下一个每日重置时间
      */
-    private suspend fun waitUntilNextReset(completionMessage: String? = null) {
+    private suspend fun waitUntilNextReset(
+        completionMessage: String? = null,
+        emitCompletionEvent: Boolean = true
+    ) {
         debugWaitSeconds?.let {
             delay(it * 1000)
             return
@@ -333,7 +333,9 @@ object TaskScheduler {
         LogFileManager.writeLog("等待 ${initialWaitSeconds}s 后进入下一个任务周期")
 
         // 只发一次静态通知，不每秒刷新
-        _tipsEvent.emit(TipsEvent.Completed(completionMessage))
+        if (emitCompletionEvent) {
+            _tipsEvent.emit(TipsEvent.Completed(completionMessage))
+        }
         ForegroundRunningService.emitNotificationText(
             "${completionMessage ?: "今日任务已全部执行完毕"}，等待下次任务"
         )
@@ -429,9 +431,9 @@ object TaskScheduler {
         }
     }
 
-    private fun shouldSkipToday(): Boolean {
+    private fun getTodaySkipReason(): DayFlag? {
         val skipEnabled = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
-        if (!skipEnabled) return false
+        if (!skipEnabled) return null
 
         val dayFlag = classifyDay(LocalDate.now())
         when (dayFlag) {
@@ -449,7 +451,7 @@ object TaskScheduler {
 
             DayFlag.Workday -> Unit
         }
-        return dayFlag.shouldSkip
+        return dayFlag.takeIf { it.shouldSkip }
     }
 
     private fun classifyDay(date: LocalDate): DayFlag {
