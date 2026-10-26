@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.extensions
 
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -8,7 +9,6 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.extensions.show
 
 /**
@@ -40,14 +40,14 @@ fun Context.isApplicationExist(packageName: String): Boolean {
  * 打开指定包名的 apk，之后执行回调
  *
  * @param onOpened 目标 App 成功打开后执行的回调（如启动超时计时器）
+ * @return 是否成功启动目标 App
  */
-fun Context.openApplication(onOpened: (() -> Unit)? = null) {
+fun Context.openApplication(onOpened: (() -> Unit)? = null): Boolean {
     val targetApp = Constant.getTargetApp()
     Log.d("Ex-Context", "openApplication: $targetApp")
     if (!isApplicationExist(targetApp)) {
         "未安装指定的目标软件，无法执行任务".show(this)
-        TaskScheduler.requestStopDueToError("未安装指定的目标软件，无法执行任务")
-        return
+        return false
     }
 
     // 跳转目标应用
@@ -64,9 +64,21 @@ fun Context.openApplication(onOpened: (() -> Unit)? = null) {
     if (activities.isNotEmpty()) {
         val info = activities.first()
         intent.component = ComponentName(info.activityInfo.packageName, info.activityInfo.name)
-        startActivity(intent)
-        onOpened?.invoke()
+        return try {
+            startActivity(intent)
+            onOpened?.invoke()
+            true
+        } catch (e: ActivityNotFoundException) {
+            Log.e("Ex-Context", "Target app launch activity disappeared", e)
+            "无法启动指定的目标软件".show(this)
+            false
+        } catch (e: SecurityException) {
+            Log.e("Ex-Context", "Target app launch was denied", e)
+            "启动指定的目标软件失败".show(this)
+            false
+        }
     } else {
-        TaskScheduler.requestStopDueToError("未找到目标应用的 Launcher Activity，包名：$targetApp")
+        "未找到目标应用的启动入口，包名：$targetApp".show(this)
+        return false
     }
 }

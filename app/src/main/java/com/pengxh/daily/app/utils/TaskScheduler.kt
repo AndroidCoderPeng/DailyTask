@@ -147,7 +147,7 @@ object TaskScheduler {
 
                     reportStart(true)
                     LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
-                    completionMessage = executeSchedule(schedule)
+                    completionMessage = executeSchedule(schedule) ?: return@launch
                 }
 
                 lastProcessedDate = today
@@ -182,7 +182,7 @@ object TaskScheduler {
      *   阶段2 - openApplication() + select{超时|打卡} 竞态等待
      *   阶段3 - 推进到下一个任务（或全部完成 emit Completed）
      */
-    private suspend fun CoroutineScope.executeSchedule(schedule: List<ScheduledTask>): String {
+    private suspend fun CoroutineScope.executeSchedule(schedule: List<ScheduledTask>): String? {
         var successCount = 0
         var failureCount = 0
         var skippedCount = 0
@@ -244,7 +244,10 @@ object TaskScheduler {
             clockInDeferred = clockInSignal
             var timeoutJob: Job? = null
             val clockInSuccess = try {
-                DailyTaskApplication.get().openApplication()
+                if (!DailyTaskApplication.get().openApplication()) {
+                    requestStopDueToError("无法打开目标应用，任务已停止")
+                    return null
+                }
                 clockInWaitDeadlineMillis =
                     System.currentTimeMillis() + timeoutSeconds * 1000L
 
@@ -436,7 +439,6 @@ object TaskScheduler {
 
     /**
      * 因外部错误请求停止（目标 App 未安装、启动失败等）
-     * 由 Context.openApplication() 在无法打开目标 App 时调用
      *
      * 与 stopTask() 的区别：
      *   stopTask()     — 用户主动点击"停止"，发消息通知
@@ -444,10 +446,15 @@ object TaskScheduler {
      */
     fun requestStopDueToError(reason: String) {
         LogFileManager.writeLog("因错误请求停止：$reason")
+        val shouldNotify = _isRunning.value
         job?.cancel()
         job = null
         _isRunning.value = false
         SaveKeyValues.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+        if (shouldNotify) {
+            ForegroundRunningService.emitNotificationText(reason)
+            MessageDispatcher.sendMessage("任务停止通知", reason)
+        }
     }
 
     /**
