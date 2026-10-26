@@ -20,13 +20,22 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
 
 class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Main) {
+
+    companion object {
+        private val powerSaveModeUpdates = Channel<Unit>(Channel.CONFLATED)
+
+        fun notifyPowerSaveModeChanged() {
+            powerSaveModeUpdates.trySend(Unit)
+        }
+    }
 
     private val kTag = "FloatingWindowService"
     private val windowManager by lazy { getSystemService(WindowManager::class.java) }
@@ -111,18 +120,16 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
     }
 
     private fun startMemoryMonitoring() {
-        val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
-        val interval = if (mode) {
-            60_000L
-        } else {
-            1_000L
-        }
         memoryMonitorJob = launch {
             // 立即更新一次
             updateMemoryInfo()
 
             while (isActive) {
-                delay(interval)
+                val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+                val interval = if (mode) 60_000L else 1_000L
+                withTimeoutOrNull(interval) {
+                    powerSaveModeUpdates.receive()
+                }
                 updateMemoryInfo()
             }
         }

@@ -358,6 +358,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 return@setOnCheckedChangeListener
             }
             SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
+            FloatingWindowService.notifyPowerSaveModeChanged()
         }
 
         binding.remoteClockInCaptureSwitch.setOnCheckedChangeListener { _, isChecked ->
