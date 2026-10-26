@@ -150,7 +150,7 @@ object TaskScheduler {
                     val skipReason = getTodaySkipReason()
                     if (skipReason != null) {
                         reportStart(true)
-                        _tipsEvent.emit(TipsEvent.Skip(skipReason))
+                        _tipsEvent.tryEmit(TipsEvent.Skip(skipReason))
                         completionMessage = "今日为${skipReason.label}，任务已跳过"
                         ForegroundRunningService.emitNotificationText(completionMessage)
                         emitCompletionEvent = false
@@ -262,7 +262,7 @@ object TaskScheduler {
 
             // ====== 阶段 1：倒计时等待 ======
             val delayMs = task.actualTimeMillis - now
-            _tipsEvent.emit(
+            _tipsEvent.tryEmit(
                 TipsEvent.Executing(
                     task.displayIndex,
                     schedule.size,
@@ -356,7 +356,7 @@ object TaskScheduler {
                 // 超时路径——打卡失败，回到主页 + 兜底通知 + 继续下一个任务
                 // （在执行权内完成，避免与远程指令抢同一帧）
                 if (result == TaskOutcome.TIMEOUT) {
-                    _returnToApp.emit(Unit)
+                    _returnToApp.tryEmit(Unit)
 
                     // 发送兜底截图给用户
                     if (hasCaptured) {
@@ -449,7 +449,7 @@ object TaskScheduler {
 
         // 只发一次静态通知，不每秒刷新
         if (emitCompletionEvent) {
-            _tipsEvent.emit(TipsEvent.Completed(completionMessage))
+            _tipsEvent.tryEmit(TipsEvent.Completed(completionMessage))
         }
         ForegroundRunningService.emitNotificationText(
             "${completionMessage ?: "今日任务已全部执行完毕"}，等待下次任务"

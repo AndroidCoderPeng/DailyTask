@@ -312,7 +312,7 @@ class NotificationMonitorService : NotificationListenerService() {
             AutomationGate.withDevice(AutomationGate.Owner.REMOTE) {
                 val waitHint = waitHint(System.currentTimeMillis() - waitStartMillis)
                 try {
-                    if (!openApplication()) {
+                    if (!withContext(Dispatchers.Main) { openApplication() }) {
                         sendCommandReceipt(
                             "打卡指令通知",
                             "无法打开目标应用，远程打卡未执行$waitHint"
@@ -341,7 +341,7 @@ class NotificationMonitorService : NotificationListenerService() {
         serviceScope.launch {
             AutomationGate.withDevice(AutomationGate.Owner.REMOTE) {
                 val waitHint = waitHint(System.currentTimeMillis() - waitStartMillis)
-                if (!openApplication()) {
+                if (!withContext(Dispatchers.Main) { openApplication() }) {
                     sendCommandReceipt(
                         "截屏状态通知",
                         "无法打开目标应用，截屏未执行$waitHint"
