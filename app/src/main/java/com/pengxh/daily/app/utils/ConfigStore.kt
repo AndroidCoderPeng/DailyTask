@@ -1,10 +1,12 @@
 package com.pengxh.daily.app.utils
 
+import android.util.AtomicFile
 import android.util.Log
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
 import java.io.File
+import java.io.FileOutputStream
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -108,12 +110,18 @@ class ConfigStore private constructor(private val filePath: String) {
     }
 
     private fun writeToFileSafe() {
+        val atomicFile = AtomicFile(File(filePath))
+        var outputStream: FileOutputStream? = null
         try {
             val root = JsonObject()
             data.forEach { (key, value) -> root.add(key, value) }
             val text = gson.toJson(root)
-            File(filePath).writeText(text)
+            val stream = atomicFile.startWrite()
+            outputStream = stream
+            stream.write(text.toByteArray(Charsets.UTF_8))
+            atomicFile.finishWrite(stream)
         } catch (e: Exception) {
+            outputStream?.let(atomicFile::failWrite)
             Log.e(kTag, "Failed to write config file: $filePath", e)
         }
     }
