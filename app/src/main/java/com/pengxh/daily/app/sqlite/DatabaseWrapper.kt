@@ -35,6 +35,10 @@ object DatabaseWrapper {
         return noticeDao.loadCurrentDayNotice("${LocalDate.now()}")
     }
 
+    suspend fun deleteNoticesBefore(cutoff: String): Int {
+        return noticeDao.deleteNoticesBefore(cutoff)
+    }
+
     suspend fun insertNotice(bean: NotificationBean) {
         noticeDao.insert(bean)
     }

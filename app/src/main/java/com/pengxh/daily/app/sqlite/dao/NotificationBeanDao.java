@@ -13,6 +13,9 @@ public interface NotificationBeanDao {
     @Query("SELECT * FROM notice_record_table WHERE postTime LIKE :date || '%'")
     List<NotificationBean> loadCurrentDayNotice(String date);
 
+    @Query("DELETE FROM notice_record_table WHERE postTime IS NULL OR postTime < :cutoff")
+    int deleteNoticesBefore(String cutoff);
+
     @Insert
     void insert(NotificationBean bean);
 }

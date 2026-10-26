@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
 
 /**
  * @description: 状态栏监听服务
@@ -67,6 +68,8 @@ class NotificationMonitorService : NotificationListenerService() {
     private val auxiliaryApp = arrayOf(Constant.WECHAT, Constant.QQ, Constant.TIM, Constant.ZFB)
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var listenerConnected = false
+    private val noticeCleanupLock = Any()
+    private var lastNoticeCleanupDate: LocalDate? = null
 
     /**
      * 有可用的并且和通知管理器连接成功时回调
@@ -74,6 +77,7 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onListenerConnected() {
         listenerConnected = true
         emitListenerState(true)
+        cleanupOldNoticesIfNeeded()
     }
 
     /**
@@ -92,6 +96,7 @@ class NotificationMonitorService : NotificationListenerService() {
         if (notice.isNullOrBlank()) {
             return
         }
+        cleanupOldNoticesIfNeeded()
         val targetApp = Constant.getTargetApp()
 
         // 保存指定包名的通知，其他的一律不保存
@@ -128,6 +133,31 @@ class NotificationMonitorService : NotificationListenerService() {
                     DatabaseWrapper.insertNotice(it)
                 } catch (e: Exception) {
                     Log.e(kTag, "Insert notice failed", e)
+                }
+            }
+        }
+    }
+
+    private fun cleanupOldNoticesIfNeeded() {
+        val today = LocalDate.now()
+        synchronized(noticeCleanupLock) {
+            if (lastNoticeCleanupDate == today) return
+            lastNoticeCleanupDate = today
+        }
+
+        val cutoff = today.minusDays(90).toString()
+        serviceScope.launch {
+            try {
+                val deletedCount = DatabaseWrapper.deleteNoticesBefore(cutoff)
+                if (deletedCount > 0) {
+                    Log.d(kTag, "Deleted $deletedCount notification records older than $cutoff")
+                }
+            } catch (e: Exception) {
+                Log.e(kTag, "Failed to clean up old notification records", e)
+                synchronized(noticeCleanupLock) {
+                    if (lastNoticeCleanupDate == today) {
+                        lastNoticeCleanupDate = null
+                    }
                 }
             }
         }
