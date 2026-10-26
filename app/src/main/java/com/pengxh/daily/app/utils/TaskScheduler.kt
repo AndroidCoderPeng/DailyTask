@@ -213,10 +213,16 @@ object TaskScheduler {
                         "延迟=${delayMs / 1000}s"
             )
 
-            updateCountdownWithNotification(delayMs) { remaining ->
+            updateCountdownWithNotification(
+                delayMs,
+                tickIntervalMillis = { remaining ->
+                    if (remaining < 60_000L) 1_000L else 10_000L
+                }
+            ) { remaining ->
                 val seconds = (remaining / 1000).toInt()
-                // 更新通知栏
-                ForegroundRunningService.emitNotificationText("${seconds.formatTime()}后执行第${task.displayIndex}个任务")
+                ForegroundRunningService.emitNotificationText(
+                    "${seconds.formatTime()}后执行第${task.displayIndex}个任务"
+                )
             }
 
             // ====== 阶段 2：打开目标 App，等待打卡或超时 ======
@@ -419,14 +425,16 @@ object TaskScheduler {
      * 使用 elapsedRealtime 确保休眠唤醒后剩余时间准确。
      */
     private suspend fun CoroutineScope.updateCountdownWithNotification(
-        totalMs: Long, onTick: (remainingMs: Long) -> Unit
+        totalMs: Long,
+        tickIntervalMillis: (remainingMs: Long) -> Long = { 1_000L },
+        onTick: (remainingMs: Long) -> Unit
     ) {
         val target = SystemClock.elapsedRealtime() + totalMs
         while (isActive) {
             val remaining = target - SystemClock.elapsedRealtime()
             if (remaining <= 0) break
             onTick(remaining)
-            val step = minOf(1000L, remaining).coerceAtLeast(1)
+            val step = minOf(tickIntervalMillis(remaining), remaining).coerceAtLeast(1)
             delay(step)
         }
     }
