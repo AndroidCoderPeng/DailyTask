@@ -19,6 +19,7 @@ import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
 import com.pengxh.daily.app.utils.AppConfig
+import com.pengxh.daily.app.utils.AutomationGate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -183,10 +184,12 @@ class NotificationMonitorService : NotificationListenerService() {
 
         val key = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡").trim()
         if (key.isNotEmpty() && command == "${Constant.COMMAND_PREFIX}$key") {
-            val opened = triggerRemoteClockIn()
+            val busy = AutomationGate.isBusy()
+            triggerRemoteClockIn()
             sendCommandReceipt(
                 "打卡指令通知",
-                if (opened) "远程打卡指令已接收" else "无法打开目标应用，远程打卡未执行"
+                if (busy) "远程打卡指令已接收，设备正被占用将排队等待"
+                else "远程打卡指令已接收"
             )
             return
         }
@@ -278,11 +281,12 @@ class NotificationMonitorService : NotificationListenerService() {
 
             command.contains("截屏") -> {
                 if (ProjectionSession.isStateActive()) {
-                    val opened = openTargetAppForScreenshot()
+                    val busy = AutomationGate.isBusy()
+                    openTargetAppForScreenshot()
                     sendCommandReceipt(
                         "截屏状态通知",
-                        if (opened) "截屏指令已接收，正在处理"
-                        else "无法打开目标应用，截屏未执行"
+                        if (busy) "截屏指令已接收，设备正被占用将排队等待"
+                        else "截屏指令已接收，正在处理"
                     )
                 } else {
                     sendCommandReceipt("截屏状态通知", "截屏服务已断开，截屏失败")
@@ -293,47 +297,71 @@ class NotificationMonitorService : NotificationListenerService() {
         }
     }
 
-    private fun triggerRemoteClockIn(): Boolean {
+    private fun triggerRemoteClockIn() {
         val timeoutSeconds = AppConfig.loadInt(
             Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
         )
         val returnScreenshot = AppConfig.loadBoolean(
             Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false
         )
-        var opened = false
-        openApplication {
-            opened = true
-            serviceScope.launch {
-                countdownTargetApp(timeoutSeconds)
-                if (returnScreenshot) {
-                    captureAndSendResult(
-                        "打卡结果通知",
-                        "打卡完成，结果见附件",
-                        "打卡完成，但是无法获取截图"
-                    )
+        // 记录远程打卡时刻，供定时任务区分"被指令代打卡"与"真的超时"
+        AutomationGate.markRemoteClockInQueued()
+        val waitStartMillis = System.currentTimeMillis()
+        // 占用设备执行权：谁先到谁先执行，后到的排队等待
+        serviceScope.launch {
+            AutomationGate.withDevice(AutomationGate.Owner.REMOTE) {
+                val waitHint = waitHint(System.currentTimeMillis() - waitStartMillis)
+                try {
+                    if (!openApplication()) {
+                        sendCommandReceipt(
+                            "打卡指令通知",
+                            "无法打开目标应用，远程打卡未执行$waitHint"
+                        )
+                        return@withDevice
+                    }
+                    countdownTargetApp(timeoutSeconds)
+                    if (returnScreenshot) {
+                        captureAndSendResult(
+                            "打卡结果通知",
+                            "打卡完成，结果见附件$waitHint",
+                            "打卡完成，但是无法获取截图$waitHint"
+                        )
+                    }
+                    emitMonitorEvent(MonitorEvent.ReturnToApp)
+                } finally {
+                    AutomationGate.markRemoteClockInFinished()
                 }
-                emitMonitorEvent(MonitorEvent.ReturnToApp)
             }
         }
-        return opened
     }
 
-    private fun openTargetAppForScreenshot(): Boolean {
-        var opened = false
-        openApplication {
-            opened = true
-            serviceScope.launch {
+    private fun openTargetAppForScreenshot() {
+        val waitStartMillis = System.currentTimeMillis()
+        // 占用设备执行权：谁先到谁先执行，后到的排队等待
+        serviceScope.launch {
+            AutomationGate.withDevice(AutomationGate.Owner.REMOTE) {
+                val waitHint = waitHint(System.currentTimeMillis() - waitStartMillis)
+                if (!openApplication()) {
+                    sendCommandReceipt(
+                        "截屏状态通知",
+                        "无法打开目标应用，截屏未执行$waitHint"
+                    )
+                    return@withDevice
+                }
                 countdownTargetApp(10)
                 captureAndSendResult(
                     "截屏状态通知",
-                    "截图完成",
-                    "截图完成，但是无法获取截图"
+                    "截图完成$waitHint",
+                    "截图完成，但是无法获取截图$waitHint"
                 )
                 emitMonitorEvent(MonitorEvent.ReturnToApp)
             }
         }
-        return opened
     }
+
+    // 排队等待提示：等待超过 3 秒才有感知意义
+    private fun waitHint(waitedMillis: Long): String =
+        if (waitedMillis >= 3000) "（等待设备空闲 ${waitedMillis / 1000} 秒）" else ""
 
     private suspend fun countdownTargetApp(countdownSeconds: Int) {
         val target = SystemClock.elapsedRealtime() + countdownSeconds * 1000L

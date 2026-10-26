@@ -36,6 +36,9 @@ import java.util.Calendar
  * 任务调度器
  */
 object TaskScheduler {
+    // 单个任务的执行结果
+    private enum class TaskOutcome { SUCCESS, TIMEOUT, STOPPED }
+
     private val _isRunning = MutableStateFlow(false)
     val isRunning = _isRunning.asStateFlow()
 
@@ -296,83 +299,103 @@ object TaskScheduler {
             var hasCaptured = false
             var captureDeferred: CompletableDeferred<String?>? = null
             val clockInSignal = CompletableDeferred<Unit>()
-            clockInWaitStartedAtMillis = System.currentTimeMillis()
-            clockInWaitDeadlineMillis = null
-            clockInDeferred = clockInSignal
             var timeoutJob: Job? = null
-            val clockInSuccess = try {
-                if (!DailyTaskApplication.get().openApplication()) {
-                    requestStopDueToError("无法打开目标应用，任务已停止")
-                    return null
-                }
-                clockInWaitDeadlineMillis =
-                    System.currentTimeMillis() + timeoutSeconds * 1000L
+            val schedulerScope = this
 
-                val activeTimeoutJob = launch {
-                    updateCountdownWithNotification(timeoutSeconds * 1000L) { remaining ->
-                        val tick = (remaining / 1000).toInt()
-                        FloatingWindowController.updateTime(tick)
+            // 设备执行权：同一时刻只允许一条流程驱动目标 App/悬浮窗/截屏。
+            // 谁先到谁先执行，后到的排队等待（互斥，不抢占）。
+            val outcome = AutomationGate.withDevice(AutomationGate.Owner.SCHEDULED) {
+                clockInWaitStartedAtMillis = System.currentTimeMillis()
+                clockInWaitDeadlineMillis = null
+                clockInDeferred = clockInSignal
+                var result = TaskOutcome.TIMEOUT
+                try {
+                    if (!DailyTaskApplication.get().openApplication()) {
+                        requestStopDueToError("无法打开目标应用，任务已停止")
+                        result = TaskOutcome.STOPPED
+                    } else {
+                        clockInWaitDeadlineMillis =
+                            System.currentTimeMillis() + timeoutSeconds * 1000L
 
-                        // 最后 5 秒兜底截屏（只触发一次）
-                        if (timeoutSeconds > 5 && tick <= 5 && !hasCaptured) {
-                            val resultSource = AppConfig.loadInt(
-                                Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
-                            )
-                            if (resultSource == 1) {
-                                hasCaptured = true
-                                captureDeferred = CaptureImageService.requestCaptureScreen()
+                        val activeTimeoutJob = schedulerScope.launch {
+                            updateCountdownWithNotification(timeoutSeconds * 1000L) { remaining ->
+                                val tick = (remaining / 1000).toInt()
+                                FloatingWindowController.updateTime(tick)
+
+                                // 最后 5 秒兜底截屏（只触发一次）
+                                if (timeoutSeconds > 5 && tick <= 5 && !hasCaptured) {
+                                    val resultSource = AppConfig.loadInt(
+                                        Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
+                                    )
+                                    if (resultSource == 1) {
+                                        hasCaptured = true
+                                        captureDeferred = CaptureImageService.requestCaptureScreen()
+                                    }
+                                }
                             }
                         }
+                        timeoutJob = activeTimeoutJob
+
+                        result = select {
+                            // 分支 A：超时
+                            activeTimeoutJob.onJoin { TaskOutcome.TIMEOUT }
+
+                            // 分支 B：打卡成功
+                            clockInSignal.onAwait { TaskOutcome.SUCCESS }
+                        }
+                    }
+                } finally {
+                    timeoutJob?.cancel()
+                    if (clockInDeferred === clockInSignal) {
+                        clockInDeferred = null
+                        clockInWaitStartedAtMillis = null
+                        clockInWaitDeadlineMillis = null
                     }
                 }
-                timeoutJob = activeTimeoutJob
 
-                select {
-                    // 分支 A：超时
-                    activeTimeoutJob.onJoin { false }
+                // 超时路径——打卡失败，回到主页 + 兜底通知 + 继续下一个任务
+                // （在执行权内完成，避免与远程指令抢同一帧）
+                if (result == TaskOutcome.TIMEOUT) {
+                    _returnToApp.emit(Unit)
 
-                    // 分支 B：打卡成功
-                    clockInSignal.onAwait { true }
+                    // 发送兜底截图给用户
+                    if (hasCaptured) {
+                        // Deferred 内部已有 5s 超时兜底，await() 不会无限挂起
+                        when (val imagePath = captureDeferred?.await()) {
+                            null -> MessageDispatcher.sendMessage(
+                                "任务执行结果通知", "截屏请求超时，无法获取截图"
+                            )
+
+                            "" -> MessageDispatcher.sendMessage(
+                                "任务执行结果通知", "截屏失败，无法获取图像"
+                            )
+
+                            else -> MessageDispatcher.sendAttachmentMessage(
+                                "任务执行结果通知", "任务执行结果见附件", imagePath
+                            )
+                        }
+                    } else {
+                        // 通知模式：无截图，纯文本提醒
+                        // 期间若有远程打卡指令，本次未监听到成功属正常（已被指令代打卡）
+                        val remoteHint = if (AutomationGate.hasRecentRemoteClockIn()) {
+                            "（由远程打卡指令处理），请以指令结果为准"
+                        } else {
+                            "，请手动检查是否打卡成功"
+                        }
+                        MessageDispatcher.sendMessage(
+                            "任务执行结果通知", "本次任务未监听到打卡成功$remoteHint"
+                        )
+                    }
                 }
-            } finally {
-                timeoutJob?.cancel()
-                if (clockInDeferred === clockInSignal) {
-                    clockInDeferred = null
-                    clockInWaitStartedAtMillis = null
-                    clockInWaitDeadlineMillis = null
-                }
+                result
             }
 
-            // 超时路径——打卡失败，回到主页 + 兜底通知 + 继续下一个任务
-            if (!clockInSuccess) {
-                _returnToApp.emit(Unit)
-
-                // 发送兜底截图给用户
-                if (hasCaptured) {
-                    // Deferred 内部已有 5s 超时兜底，await() 不会无限挂起
-                    when (val imagePath = captureDeferred?.await()) {
-                        null -> MessageDispatcher.sendMessage(
-                            "任务执行结果通知", "截屏请求超时，无法获取截图"
-                        )
-
-                        "" -> MessageDispatcher.sendMessage(
-                            "任务执行结果通知", "截屏失败，无法获取图像"
-                        )
-
-                        else -> MessageDispatcher.sendAttachmentMessage(
-                            "任务执行结果通知", "任务执行结果见附件", imagePath
-                        )
-                    }
-                } else {
-                    // 通知模式：无截图，纯文本提醒
-                    MessageDispatcher.sendMessage(
-                        "任务执行结果通知", "任务超时，请手动检查是否打卡成功"
-                    )
-                }
+            if (outcome == TaskOutcome.STOPPED) {
+                return null
             }
 
             // ====== 阶段 3：回到主界面，处理结果 ======
-            if (clockInSuccess) {
+            if (outcome == TaskOutcome.SUCCESS) {
                 successCount++
             } else {
                 failureCount++
@@ -477,6 +500,11 @@ object TaskScheduler {
             (windowDeadlineMillis != null && postedAtMillis > windowDeadlineMillis)
         ) {
             LogFileManager.writeLog("忽略等待窗口外的打卡成功通知：$postedAtMillis")
+            return false
+        }
+        // 远程打卡指令已代打卡：其"成功"通知不计入定时任务
+        if (AutomationGate.belongsToRemoteDrive(postedAtMillis)) {
+            LogFileManager.writeLog("忽略远程打卡指令产生的成功通知：$postedAtMillis")
             return false
         }
         return signal.complete(Unit)
