@@ -263,7 +263,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
         binding.updateHolidayLayout.setOnClickListener {
             LoadingDialog.show(this, "更新中，请稍后...")
-            ChinaHolidayManager.updateChinaHolidayData()
+            ChinaHolidayManager.updateChinaHolidayData(forceRefresh = true)
         }
 
         binding.floatingSwitch.setOnClickListener {
