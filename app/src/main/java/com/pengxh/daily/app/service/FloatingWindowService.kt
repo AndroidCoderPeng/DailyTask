@@ -6,6 +6,7 @@ import android.app.Service
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.IBinder
+import android.os.SystemClock
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -30,6 +31,7 @@ import kotlinx.coroutines.withContext
 class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
     companion object {
+        private const val MEMORY_WARNING_INTERVAL_MILLIS = 5 * 60 * 1000L
         private val powerSaveModeUpdates = Channel<Unit>(Channel.CONFLATED)
 
         fun notifyPowerSaveModeChanged() {
@@ -47,6 +49,7 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
     private var initialTouchX = 0f
     private var initialTouchY = 0f
     private var memoryMonitorJob: Job? = null
+    private var lastMemoryWarningTime: Long? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -148,7 +151,16 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             withContext(Dispatchers.Main) {
                 binding.waveProgressView.setProgress(usagePercent)
                 if (usagePercent >= 90) {
-                    MessageDispatcher.sendMessage("内存使用预警", "当前内存使用已超过90%，请关注设备运行情况")
+                    val now = SystemClock.elapsedRealtime()
+                    val lastWarning = lastMemoryWarningTime
+                    if (lastWarning == null || now - lastWarning >= MEMORY_WARNING_INTERVAL_MILLIS) {
+                        MessageDispatcher.sendMessage(
+                            "内存使用预警", "当前内存使用已超过90%，请关注设备运行情况"
+                        )
+                        lastMemoryWarningTime = now
+                    }
+                } else {
+                    lastMemoryWarningTime = null
                 }
             }
         }
