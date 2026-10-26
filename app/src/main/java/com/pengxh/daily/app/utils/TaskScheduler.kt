@@ -131,6 +131,7 @@ object TaskScheduler {
                     continue
                 }
 
+                var completionMessage: String? = null
                 if (shouldSkipToday()) {
                     reportStart(true)
                     _tipsEvent.emit(TipsEvent.Skip)
@@ -144,13 +145,13 @@ object TaskScheduler {
 
                     reportStart(true)
                     LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
-                    executeSchedule(schedule)
+                    completionMessage = executeSchedule(schedule)
                 }
 
                 lastProcessedDate = today
 
                 // 今天结束，睡到明天
-                if (isActive) waitUntilNextReset()
+                if (isActive) waitUntilNextReset(completionMessage)
             }
         }
         job = tempJob
@@ -179,8 +180,9 @@ object TaskScheduler {
      *   阶段2 - openApplication() + select{超时|打卡} 竞态等待
      *   阶段3 - 推进到下一个任务（或全部完成 emit Completed）
      */
-    private suspend fun CoroutineScope.executeSchedule(schedule: List<ScheduledTask>) {
-        var executedCount = 0
+    private suspend fun CoroutineScope.executeSchedule(schedule: List<ScheduledTask>): String {
+        var successCount = 0
+        var failureCount = 0
         var skippedCount = 0
 
         for (task in schedule) {
@@ -283,18 +285,25 @@ object TaskScheduler {
             }
 
             // ====== 阶段 3：回到主界面，处理结果 ======
-            executedCount++
+            if (clockInSuccess) {
+                successCount++
+            } else {
+                failureCount++
+            }
         }
 
         // ====== 全部完成 ======
         val message = when {
-            executedCount + skippedCount == 0 -> "无任务可供执行"
-            executedCount == 0 -> "今日所有任务均已过期，跳过（$skippedCount 个），无需执行"
-            skippedCount > 0 -> "今日任务已全部执行完毕（执行 $executedCount 个，跳过 $skippedCount 个）"
-            else -> "今日任务已全部执行完毕"
+            successCount + failureCount == 0 && skippedCount == 0 -> "无任务可供执行"
+            successCount + failureCount == 0 ->
+                "今日所有任务均已过期，跳过（$skippedCount 个），无需执行"
+            skippedCount > 0 ->
+                "今日任务处理完毕（成功 $successCount 个，失败 $failureCount 个，跳过 $skippedCount 个）"
+            else -> "今日任务处理完毕（成功 $successCount 个，失败 $failureCount 个）"
         }
         LogFileManager.writeLog(message)
         ForegroundRunningService.emitNotificationText(message)
+        return message
     }
 
     /**
@@ -309,7 +318,7 @@ object TaskScheduler {
     /**
      * 等待到下一个每日重置时间
      */
-    private suspend fun waitUntilNextReset() {
+    private suspend fun waitUntilNextReset(completionMessage: String? = null) {
         debugWaitSeconds?.let {
             delay(it * 1000)
             return
@@ -324,8 +333,10 @@ object TaskScheduler {
         LogFileManager.writeLog("等待 ${initialWaitSeconds}s 后进入下一个任务周期")
 
         // 只发一次静态通知，不每秒刷新
-        _tipsEvent.emit(TipsEvent.Completed)
-        ForegroundRunningService.emitNotificationText("今日任务已执行完毕，等待下次任务")
+        _tipsEvent.emit(TipsEvent.Completed(completionMessage))
+        ForegroundRunningService.emitNotificationText(
+            "${completionMessage ?: "今日任务已全部执行完毕"}，等待下次任务"
+        )
 
         var targetResetHour = initialResetHour
         var targetMillis = initialTargetMillis

@@ -276,10 +276,13 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
                     is TipsEvent.Completed -> {
                         dailyTaskAdapter.updateCurrentTaskState(-1)
-                        binding.tipsView.text = "今日任务已全部执行完毕，等待下次任务"
-                        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
-                        LogFileManager.writeLog("今日任务已全部执行完毕")
-                        MessageDispatcher.sendMessage("任务状态通知", "今日任务已全部执行完毕")
+                        val message = event.message ?: "今日任务已全部执行完毕"
+                        binding.tipsView.text = "$message，等待下次任务"
+                        val statusColor =
+                            if (event.message?.contains("失败") == true) R.color.red else R.color.ios_green
+                        binding.tipsView.setTextColor(statusColor.convertColor(this@MainActivity))
+                        LogFileManager.writeLog(message)
+                        MessageDispatcher.sendMessage("任务状态通知", message)
                     }
                 }
             }

@@ -16,8 +16,6 @@ sealed class TipsEvent {
         val plannedTime: String
     ) : TipsEvent()
 
-    /**
-     * 当日所有任务已完成
-     * */
-    data object Completed : TipsEvent()
+    /** 当日任务结果汇总 */
+    data class Completed(val message: String? = null) : TipsEvent()
 }
