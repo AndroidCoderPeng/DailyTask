@@ -24,6 +24,7 @@ import androidx.core.graphics.get
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
@@ -169,6 +170,9 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     Log.w(kTag, "MediaProjection stopped by system")
                     ProjectionSession.markStoppedNeedAuth()
                     SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                    MessageDispatcher.sendMessage(
+                        "截屏服务通知", "截屏授权已失效，需人工重新授权后恢复截屏打卡"
+                    )
                     releaseCaptureResources()
                     isCapturingInitialized = false
                 }

@@ -200,6 +200,22 @@ object TaskScheduler {
                 continue
             }
 
+            // 非钉钉目标仅支持截屏来源，投影失效则剩余任务均无法获取打卡结果，跳过并说明根因
+            if (Constant.getTargetApp() != Constant.DING_DING &&
+                SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) != 1
+            ) {
+                val remainingCount = schedule.size - task.displayIndex + 1
+                skippedCount += remainingCount
+                LogFileManager.writeLog(
+                    "非钉钉目标仅支持截屏来源，截屏授权已失效，跳过剩余 $remainingCount 个任务"
+                )
+                MessageDispatcher.sendMessage(
+                    "任务跳过通知",
+                    "截屏授权已失效，剩余 $remainingCount 个任务已跳过，需人工重新授权后恢复"
+                )
+                break
+            }
+
             // ====== 阶段 1：倒计时等待 ======
             val delayMs = task.actualTimeMillis - now
             _tipsEvent.emit(

@@ -102,9 +102,10 @@ class NotificationMonitorService : NotificationListenerService() {
         // 保存指定包名的通知，其他的一律不保存
         saveTargetNotice(pkg, targetApp, title, notice)
 
-        // 截屏模式选中 + 钉钉手动打卡 → 通知被第 99 行拦截，仅测试场景会出现
-        // 目标应用打卡通知，如果设置通知监听，那么结果来源只能选通知监听。
-        if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0) {
+        // 结果来源=通知监听时，仅钉钉支持该判定通道（其他应用只能走截屏服务）
+        if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0 &&
+            targetApp == Constant.DING_DING
+        ) {
             if (pkg == targetApp && notice.contains("成功")) {
                 TaskScheduler.notifyClockIn(sbn.postTime)
                 emitMonitorEvent(MonitorEvent.ClockInSuccess)
