@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.utils
 
 import android.os.SystemClock
+import android.util.Log
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
@@ -10,7 +11,9 @@ import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.kt.lite.utils.SaveKeyValues
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +71,12 @@ object TaskScheduler {
     private var lastProcessedDate: LocalDate? = null
     private val resetWaitWakeupChannel = Channel<Unit>(Channel.CONFLATED)
 
+    /** 单次异常后最大自动重试次数，超过则彻底停止并告警，避免永久性错误疯狂重试 */
+    private const val MAX_AUTO_RECOVERY_COUNT = 3
+
+    /** 异常重试退避时长，给外部条件（网络/数据库/投影服务）恢复的时间 */
+    private const val AUTO_RECOVERY_DELAY_MILLIS = 30_000L
+
     fun notifyResetWaiters() {
         resetWaitWakeupChannel.trySend(Unit)
     }
@@ -117,44 +126,77 @@ object TaskScheduler {
             }
         }
 
-        val tempJob = currentScope.launch {
+        // 最后一道防线：任何逃离主循环 try/catch 的异常都在此收口，
+        // 保证"调度器挂了"这件事一定被用户感知，而不是静默消失
+        val crashHandler = CoroutineExceptionHandler { _, throwable ->
+            notifySchedulerError("任务调度器发生未捕获异常并已停止，今日打卡可能无法完成：$throwable", true)
+        }
+
+        val tempJob = currentScope.launch(crashHandler) {
+            var recoveryCount = 0
             while (isActive) {
-                val today = LocalDate.now()
+                try {
+                    val today = LocalDate.now()
 
-                // 今天已经处理过了，不再重复
-                if (lastProcessedDate == today) {
-                    reportStart(true)
-                    LogFileManager.writeLog("今日已处理，等待下一次重置")
-                    if (isActive) waitUntilNextReset()
-                    continue
-                }
+                    // 今天已经处理过了，不再重复
+                    if (lastProcessedDate == today) {
+                        reportStart(true)
+                        LogFileManager.writeLog("今日已处理，等待下一次重置")
+                        if (isActive) waitUntilNextReset()
+                        continue
+                    }
 
-                var completionMessage: String? = null
-                var emitCompletionEvent = true
-                val skipReason = getTodaySkipReason()
-                if (skipReason != null) {
-                    reportStart(true)
-                    _tipsEvent.emit(TipsEvent.Skip(skipReason))
-                    completionMessage = "今日为${skipReason.label}，任务已跳过"
-                    ForegroundRunningService.emitNotificationText(completionMessage)
-                    emitCompletionEvent = false
-                } else {
-                    val schedule = buildTodaySchedule()
-                    if (schedule.isEmpty()) {
-                        LogFileManager.writeLog("任务列表为空，停止调度")
+                    var completionMessage: String? = null
+                    var emitCompletionEvent = true
+                    val skipReason = getTodaySkipReason()
+                    if (skipReason != null) {
+                        reportStart(true)
+                        _tipsEvent.emit(TipsEvent.Skip(skipReason))
+                        completionMessage = "今日为${skipReason.label}，任务已跳过"
+                        ForegroundRunningService.emitNotificationText(completionMessage)
+                        emitCompletionEvent = false
+                    } else {
+                        val schedule = buildTodaySchedule()
+                        if (schedule.isEmpty()) {
+                            LogFileManager.writeLog("任务列表为空，停止调度")
+                            return@launch
+                        }
+
+                        reportStart(true)
+                        LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
+                        completionMessage = executeSchedule(schedule) ?: return@launch
+                    }
+
+                    lastProcessedDate = today
+                    SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today.toString())
+
+                    // 今天结束，睡到明天
+                    if (isActive) waitUntilNextReset(completionMessage, emitCompletionEvent)
+
+                    // 完整跑完一轮，说明已恢复正常，清零自愈计数
+                    recoveryCount = 0
+                } catch (ce: CancellationException) {
+                    // 主动取消（停止按钮 / 服务销毁）不是故障，必须原样抛出
+                    throw ce
+                } catch (throwable: Throwable) {
+                    LogFileManager.writeLog("任务调度异常：$throwable")
+                    if (recoveryCount >= MAX_AUTO_RECOVERY_COUNT) {
+                        notifySchedulerError(
+                            "任务调度连续异常，自动恢复 $MAX_AUTO_RECOVERY_COUNT 次仍未成功，" +
+                                    "今日任务已停止，需人工检查。最后一次错误：$throwable",
+                            true
+                        )
                         return@launch
                     }
 
-                    reportStart(true)
-                    LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
-                    completionMessage = executeSchedule(schedule) ?: return@launch
+                    recoveryCount++
+                    notifySchedulerError(
+                        "任务调度发生异常，将在 ${AUTO_RECOVERY_DELAY_MILLIS / 1000}s 后自动重试" +
+                                "（第 $recoveryCount/$MAX_AUTO_RECOVERY_COUNT 次）。错误：$throwable",
+                        false
+                    )
+                    delay(AUTO_RECOVERY_DELAY_MILLIS)
                 }
-
-                lastProcessedDate = today
-                SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today.toString())
-
-                // 今天结束，睡到明天
-                if (isActive) waitUntilNextReset(completionMessage, emitCompletionEvent)
             }
         }
         job = tempJob
@@ -456,6 +498,36 @@ object TaskScheduler {
         _isRunning.value = false
         SaveKeyValues.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
         ForegroundRunningService.emitNotificationText("为保证程序正常运行，请勿移除此通知")
+    }
+
+    /**
+     * 发送调度异常告警，并确保"告警动作本身"不会二次崩溃。
+     *
+     * 无人值守的关键：调度挂了必须让用户知道。因此日志、通知栏、消息渠道三条路都尝试，
+     * 且每一路各自 try/catch 互不牵连——即使渠道或文件 IO 故障，也不会因此把主循环再炸一次。
+     *
+     * @param fatal true 表示调度已彻底停止（不再自愈）
+     */
+    private fun notifySchedulerError(message: String, fatal: Boolean) {
+        try {
+            LogFileManager.writeLog(message)
+        } catch (e: Exception) {
+            Log.e("TaskScheduler", "写入调度日志失败", e)
+        }
+        try {
+            ForegroundRunningService.emitNotificationText(
+                if (fatal) "任务调度已异常停止，请检查" else "任务调度异常，正在重试"
+            )
+        } catch (e: Exception) {
+            Log.e("TaskScheduler", "更新通知栏失败", e)
+        }
+        try {
+            MessageDispatcher.sendMessage(
+                if (fatal) "任务异常告警（已停止）" else "任务异常告警", message
+            )
+        } catch (e: Exception) {
+            Log.e("TaskScheduler", "发送异常告警失败", e)
+        }
     }
 
     /**
