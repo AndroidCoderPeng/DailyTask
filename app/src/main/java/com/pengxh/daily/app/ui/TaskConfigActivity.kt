@@ -17,7 +17,7 @@ import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.daily.app.utils.ConfigStore
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.FloatingWindowController
@@ -27,7 +27,6 @@ import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.isNumber
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.toJson
-import com.pengxh.kt.lite.utils.SaveKeyValues
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
@@ -63,27 +62,27 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val hour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
+        val hour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         binding.resetTimeView.text = "每天${hour}点"
 
-        val time = SaveKeyValues.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
+        val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         binding.timeoutTextView.text = "${time}s"
 
-        binding.keyTextView.text = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
+        binding.keyTextView.text = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
 
         updateCustomWorkdaySummary(CustomWorkdayManager.loadWorkdays())
 
         binding.autoTaskSwitch.isChecked =
-            SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
+            AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
 
         binding.skipHolidaySwitch.isChecked =
-            SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+            AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
 
-        val needRandom = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
+        val needRandom = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
         binding.randomTimeSwitch.isChecked = needRandom
         if (needRandom) {
             binding.minuteRangeLayout.visibility = View.VISIBLE
-            val value = SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
+            val value = AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
             binding.minuteRangeView.text = "${value}分钟"
         } else {
             binding.minuteRangeLayout.visibility = View.GONE
@@ -135,7 +134,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 .setOnDialogButtonClickListener(object :
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
-                        SaveKeyValues.saveString(Constant.REMOTE_COMMAND_KEY, value)
+                        AppConfig.saveString(Constant.REMOTE_COMMAND_KEY, value)
                         binding.keyTextView.text = value
                     }
 
@@ -152,11 +151,11 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.randomTimeSwitch.setOnCheckedChangeListener { _, isChecked ->
-            SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, isChecked)
+            AppConfig.saveBoolean(Constant.RANDOM_TIME_KEY, isChecked)
             if (isChecked) {
                 binding.minuteRangeLayout.visibility = View.VISIBLE
                 val value =
-                    SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
+                    AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
                 binding.minuteRangeView.text = "${value}分钟"
             } else {
                 binding.minuteRangeLayout.visibility = View.GONE
@@ -164,7 +163,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.skipHolidaySwitch.setOnCheckedChangeListener { _, isChecked ->
-            SaveKeyValues.saveBoolean(Constant.SKIP_HOLIDAY_KEY, isChecked)
+            AppConfig.saveBoolean(Constant.SKIP_HOLIDAY_KEY, isChecked)
         }
 
         binding.minuteRangeLayout.setOnClickListener {
@@ -193,41 +192,41 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
             // Int
             exportData.resetTime =
-                SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
+                AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
             exportData.overtime =
-                SaveKeyValues.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
+                AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
             exportData.timeRange =
-                SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
-            exportData.msgChannel = SaveKeyValues.loadInt(
+                AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
+            exportData.msgChannel = AppConfig.loadInt(
                 Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX
             ).takeIf { it in 0..1 }
-            exportData.targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
-            exportData.resultSource = SaveKeyValues.loadInt(
+            exportData.targetApp = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
+            exportData.resultSource = AppConfig.loadInt(
                 Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
             ).takeIf { it in 0..1 }
 
             // String
-            exportData.remoteCommand = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
+            exportData.remoteCommand = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
             exportData.msgTitle =
-                SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
-            exportData.wxKey = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
+                AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
+            exportData.wxKey = AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "")
             exportData.customWorkdays = CustomWorkdayManager.serializeWorkdays(
                 CustomWorkdayManager.loadWorkdays()
             )
 
             // Boolean
             exportData.isDetectGesture =
-                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
-            exportData.isBackToHome = SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
+                AppConfig.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
+            exportData.isBackToHome = AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
             exportData.isAutoRecycle =
-                SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
-            exportData.isRandomTime = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
-            exportData.isSkipHoliday = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+                AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
+            exportData.isRandomTime = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
+            exportData.isSkipHoliday = AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
             exportData.isSavePower =
-                SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+                AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
 
             // EmailConfig
-            val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
+            val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
             if (!obj.isEmpty) {
                 val outbox = obj.get("outbox").asString
                 val authCode = obj.get("authCode").asString
@@ -348,7 +347,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     private fun setTaskResetTime(hour: Int) {
-        SaveKeyValues.saveInt(Constant.RESET_TIME_KEY, hour)
+        AppConfig.saveInt(Constant.RESET_TIME_KEY, hour)
         // 通知 Service 更新倒计时显示
         ForegroundRunningService.emitResetTaskTime()
     }
@@ -384,7 +383,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             return
         }
         binding.timeoutTextView.text = "${time}s"
-        SaveKeyValues.saveInt(Constant.STAY_OVERTIME_KEY, time)
+        AppConfig.saveInt(Constant.STAY_OVERTIME_KEY, time)
         FloatingWindowController.setOvertime(time)
     }
 
@@ -412,6 +411,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             return
         }
         binding.minuteRangeView.text = "${value}分钟"
-        SaveKeyValues.saveInt(Constant.TIME_RANGE_KEY, value)
+        AppConfig.saveInt(Constant.TIME_RANGE_KEY, value)
     }
 }

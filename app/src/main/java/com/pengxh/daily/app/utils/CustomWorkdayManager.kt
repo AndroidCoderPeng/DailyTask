@@ -1,6 +1,6 @@
 package com.pengxh.daily.app.utils
 
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -28,7 +28,7 @@ object CustomWorkdayManager {
     )
 
     fun loadWorkdays(): Set<DayOfWeek> {
-        val raw = SaveKeyValues.loadString(
+        val raw = AppConfig.loadString(
             Constant.CUSTOM_WORKDAYS_KEY, serializeWorkdays(defaultWorkdays)
         )
         return loadWorkdaysFromRaw(raw)
@@ -44,7 +44,7 @@ object CustomWorkdayManager {
     }
 
     fun saveWorkdays(workdays: Set<DayOfWeek>) {
-        SaveKeyValues.saveString(Constant.CUSTOM_WORKDAYS_KEY, serializeWorkdays(workdays))
+        AppConfig.saveString(Constant.CUSTOM_WORKDAYS_KEY, serializeWorkdays(workdays))
     }
 
     fun serializeWorkdays(workdays: Set<DayOfWeek>): String {

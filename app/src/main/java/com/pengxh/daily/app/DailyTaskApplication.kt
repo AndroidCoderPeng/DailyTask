@@ -5,6 +5,7 @@ import android.os.Environment
 import androidx.room.Room.databaseBuilder
 import com.pengxh.daily.app.sqlite.DailyTaskDataBase
 import com.pengxh.daily.app.utils.ChinaHolidayManager
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
@@ -50,6 +51,7 @@ class DailyTaskApplication : Application() {
             }
         }
         ConfigStore.init(file.absolutePath)
+        AppConfig.init()
 
         dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db").build()
 

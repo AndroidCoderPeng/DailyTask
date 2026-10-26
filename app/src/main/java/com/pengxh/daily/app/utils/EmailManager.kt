@@ -26,7 +26,7 @@ object EmailManager {
     data class EmailConfig(val outbox: String, val authCode: String, val inbox: String)
 
     private fun loadEmailConfig(onFailure: ((String) -> Unit)?): EmailConfig? {
-        val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
+        val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
         if (obj.isEmpty) {
             onFailure?.invoke("邮箱未配置，无法发送邮件")
             return null

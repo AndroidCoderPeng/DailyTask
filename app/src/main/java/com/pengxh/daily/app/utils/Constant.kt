@@ -1,7 +1,5 @@
 package com.pengxh.daily.app.utils
 
-import com.pengxh.kt.lite.utils.SaveKeyValues
-
 /**
  * @author: Pengxh
  * @email: 290677893@qq.com
@@ -75,7 +73,7 @@ object Constant {
 
     // 目标APP
     fun getTargetApp(): String {
-        return when (SaveKeyValues.loadInt(TARGET_APP_KEY, 0)) {
+        return when (AppConfig.loadInt(TARGET_APP_KEY, 0)) {
             0 -> DING_DING
             1 -> WEWORK
             2 -> FEI_SHU

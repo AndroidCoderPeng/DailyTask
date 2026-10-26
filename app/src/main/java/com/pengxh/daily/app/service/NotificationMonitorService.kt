@@ -18,7 +18,7 @@ import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.timestampToCompleteDate
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -103,7 +103,7 @@ class NotificationMonitorService : NotificationListenerService() {
         saveTargetNotice(pkg, targetApp, title, notice)
 
         // 结果来源=通知监听时，仅钉钉支持该判定通道（其他应用只能走截屏服务）
-        if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0 &&
+        if (AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 0 &&
             targetApp == Constant.DING_DING
         ) {
             if (pkg == targetApp && notice.contains("成功")) {
@@ -111,7 +111,7 @@ class NotificationMonitorService : NotificationListenerService() {
                 emitMonitorEvent(MonitorEvent.ClockInSuccess)
                 "即将发送通知邮件，请注意查收".show(this)
                 val messageTitle =
-                    SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
+                    AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
                 MessageDispatcher.sendMessage(title.ifBlank { messageTitle }, notice)
             }
         }
@@ -181,7 +181,7 @@ class NotificationMonitorService : NotificationListenerService() {
         val command = notice.substring(prefixIndex).trim()
         Log.d(kTag, "handleRemoteCommand: command = $command")
 
-        val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡").trim()
+        val key = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡").trim()
         if (key.isNotEmpty() && command == "${Constant.COMMAND_PREFIX}$key") {
             val opened = triggerRemoteClockIn()
             sendCommandReceipt(
@@ -211,23 +211,23 @@ class NotificationMonitorService : NotificationListenerService() {
             }
 
             command.contains("开启循环") -> {
-                SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
+                AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
                 sendCommandReceipt("循环任务状态通知", "循环任务状态已更新为：开启")
             }
 
             command.contains("关闭循环") -> {
-                SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
+                AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
                 sendCommandReceipt("循环任务状态通知", "循环任务状态已更新为：关闭")
             }
 
             command.contains("息屏") -> {
-                SaveKeyValues.saveInt(Constant.REMOTE_MASK_MODE_KEY, 1)
+                AppConfig.saveInt(Constant.REMOTE_MASK_MODE_KEY, 1)
                 emitMonitorEvent(MonitorEvent.ShowMaskCommand)
                 sendCommandReceipt("息屏指令通知", "息屏状态已记录，主界面可用时生效")
             }
 
             command.contains("亮屏") -> {
-                SaveKeyValues.saveInt(Constant.REMOTE_MASK_MODE_KEY, 0)
+                AppConfig.saveInt(Constant.REMOTE_MASK_MODE_KEY, 0)
                 emitMonitorEvent(MonitorEvent.HideMaskCommand)
                 sendCommandReceipt("亮屏指令通知", "亮屏状态已记录，主界面可用时生效")
             }
@@ -259,7 +259,7 @@ class NotificationMonitorService : NotificationListenerService() {
             }
 
             command.contains("状态查询") -> {
-                val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+                val type = AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
                 val content = buildString {
                     appendLine("任务状态：${if (TaskScheduler.isRunning()) "运行中" else "已停止"}")
                     appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
@@ -294,10 +294,10 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun triggerRemoteClockIn(): Boolean {
-        val timeoutSeconds = SaveKeyValues.loadInt(
+        val timeoutSeconds = AppConfig.loadInt(
             Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
         )
-        val returnScreenshot = SaveKeyValues.loadBoolean(
+        val returnScreenshot = AppConfig.loadBoolean(
             Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false
         )
         var opened = false

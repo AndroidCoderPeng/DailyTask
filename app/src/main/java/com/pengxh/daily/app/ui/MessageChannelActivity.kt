@@ -6,7 +6,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonObject
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
-import com.pengxh.daily.app.utils.ConfigStore
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.MessageDispatcher
@@ -14,7 +14,6 @@ import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
-import com.pengxh.kt.lite.utils.SaveKeyValues
 
 class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>() {
 
@@ -34,15 +33,15 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val title = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
+        val title = AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         binding.messageTitleView.setText(title)
 
-        val key = SaveKeyValues.loadString(Constant.WX_WEB_HOOK_KEY, "")
+        val key = AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "")
         if (!key.isBlank()) {
             binding.wxKeyView.setText(key)
         }
 
-        val obj = ConfigStore.get().load(Constant.EMAIL_CONFIG_KEY)
+        val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
         if (!obj.isEmpty) {
             val outbox = obj.get("outbox").asString
             val authCode = obj.get("authCode").asString
@@ -132,18 +131,12 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
 
-                if (!SaveKeyValues.saveStringAndIntAtomically(
-                        Constant.WX_WEB_HOOK_KEY,
-                        webhookKey,
-                        Constant.MSG_CHANNEL_KEY,
-                        1
-                    )
-                ) {
+                if (!AppConfig.saveWebhookAndChannel(webhookKey, 1)) {
                     "测试消息发送成功，但配置保存失败，请重试".show(context)
                     return@sendMessage
                 }
 
-                SaveKeyValues.saveString(
+                AppConfig.saveString(
                     Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
                 )
                 "企业微信配置验证并保存成功".show(context)
@@ -176,14 +169,14 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                         "发送成功，请注意查收".show(context)
 
                         // 仅在测试发送成功后才持久化邮箱配置，与企微侧语义对齐（关联 BUG-019 / DT4-002）
-                        ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, config)
+                        AppConfig.saveJson(Constant.EMAIL_CONFIG_KEY, config)
 
-                        SaveKeyValues.saveString(
+                        AppConfig.saveString(
                             Constant.MESSAGE_TITLE_KEY,
                             binding.messageTitleView.text.toString().trim()
                         )
 
-                        SaveKeyValues.saveInt(Constant.MSG_CHANNEL_KEY, 0)
+                        AppConfig.saveInt(Constant.MSG_CHANNEL_KEY, 0)
                     },
                     onFailure = {
                         LoadingDialog.dismiss()

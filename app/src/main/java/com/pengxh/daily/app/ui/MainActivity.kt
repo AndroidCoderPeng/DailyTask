@@ -47,7 +47,7 @@ import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.extensions.toJson
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
@@ -328,9 +328,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             LogFileManager.writeLog("截屏服务正常：MediaProjection 有效")
         } else {
             LogFileManager.writeLog("截屏服务异常：MediaProjection 已失效")
-            if (SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 1) {
+            if (AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 1) {
                 "截屏服务已断开，请重新授权".show(this)
-                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
             }
         }
 
@@ -577,7 +577,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     private fun saveMaskMode(visible: Boolean) {
-        SaveKeyValues.saveInt(
+        AppConfig.saveInt(
             Constant.REMOTE_MASK_MODE_KEY, if (visible) 1 else 0
         )
     }
@@ -600,7 +600,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     private fun backToMainActivity() {
-        if (SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)) {
+        if (AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)) {
             //模拟点击Home键
             startActivity(Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) })
             lifecycleScope.launch(Dispatchers.IO) {
@@ -618,7 +618,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * 兜底检查：覆盖 Alarm 未触发的场景
      * */
     private fun checkMissedReset() {
-        val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
+        val lastResetDate = AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "")
         val today = dateFormat.format(Date())
 
         // 今天已重置，跳过（防止重复执行）
@@ -628,7 +628,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         // 今天还未重置，执行重置（覆盖 Alarm 未触发的场景）
         LogFileManager.writeLog("检测到今日尚未重置，执行重置操作")
-        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
+        if (AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
             TaskScheduler.startTask()
         }
     }

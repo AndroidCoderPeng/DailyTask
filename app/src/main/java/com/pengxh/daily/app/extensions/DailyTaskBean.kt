@@ -4,7 +4,7 @@ import com.github.gzuliyujiang.wheelpicker.entity.TimeEntity
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.extensions.appendZero
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Locale
@@ -25,7 +25,7 @@ fun DailyTaskBean.resolveExecutionTime(): String {
 }
 
 private fun DailyTaskBean.resolveExecutionSeconds(): Int {
-    val needRandom = SaveKeyValues.loadBoolean(Constant.RANDOM_TIME_KEY, true)
+    val needRandom = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
 
     //18:00:59
     val array = this.time.split(":")
@@ -34,7 +34,7 @@ private fun DailyTaskBean.resolveExecutionSeconds(): Int {
     // 随机时间
     if (needRandom) {
         val minuteRange =
-            SaveKeyValues.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
+            AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
 
         // 生成随机种子, 保证每天的随机时间是一致的
         val key = "${LocalDate.now()}|$id|$time|$minuteRange"

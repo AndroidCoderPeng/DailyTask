@@ -17,7 +17,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyResetAlarmScheduler
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.TaskScheduler
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,9 +84,9 @@ class ForegroundRunningService : Service() {
         // 否则会出现两类冗余：关掉循环开关后仍被强行恢复、或当天已跑完又被整体重跑一遍。
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
         val shouldResumeTask = TaskScheduler.isRunning() ||
-                (SaveKeyValues.loadBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
-                        && SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "") != today
-                        && SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true))
+                (AppConfig.loadBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+                        && AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "") != today
+                        && AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true))
         TaskScheduler.attach(serviceScope, shouldResumeTask)
         checkAndTriggerReset()
         DailyResetAlarmScheduler.schedule(this)
@@ -180,7 +180,7 @@ class ForegroundRunningService : Service() {
     }
 
     private fun updateResetTimeView() {
-        val resetHour = SaveKeyValues.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
+        val resetHour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         val seconds = resetTaskSeconds(resetHour)
 
         val hours = seconds / 3600
@@ -246,14 +246,14 @@ class ForegroundRunningService : Service() {
      */
     private fun checkAndTriggerReset() {
         val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
-        val lastResetDate = SaveKeyValues.loadString(Constant.LAST_RESET_DATE_KEY, "")
+        val lastResetDate = AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "")
 
         // 今天已重置，跳过
         if (lastResetDate == today) {
             return
         }
 
-        if (SaveKeyValues.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
+        if (AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
             TaskScheduler.startTask()
         }
     }

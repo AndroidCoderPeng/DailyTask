@@ -33,7 +33,7 @@ import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -81,7 +81,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val index = (SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)).coerceIn(0, icons.lastIndex)
+        val index = (AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)).coerceIn(0, icons.lastIndex)
         binding.iconView.setBackgroundResource(icons[index])
 
         binding.appVersion.text = BuildConfig.VERSION_NAME
@@ -115,9 +115,9 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     binding.noticeSwitch.isChecked = true
                     binding.noticeTipsView.visibility = View.GONE
                     val sourceType =
-                        SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+                        AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
                     val targetApp =
-                        SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, Constant.DEFAULT_INDEX)
+                        AppConfig.loadInt(Constant.TARGET_APP_KEY, Constant.DEFAULT_INDEX)
                     if (sourceType == 0 && targetApp == 0) {
                         binding.noticeRadioButton.isChecked = true
                         binding.captureRadioButton.isChecked = false
@@ -138,7 +138,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     ProjectionEvent.Ready -> {
                         binding.captureSwitch.isChecked = true
                         binding.captureTipsView.visibility = View.GONE
-                        val sourceType = SaveKeyValues.loadInt(
+                        val sourceType = AppConfig.loadInt(
                             Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
                         )
                         if (sourceType == 1) {
@@ -153,9 +153,9 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         binding.captureTipsView.text = "截屏服务未开启，无法获取打卡结果"
                         binding.captureTipsView.setTextColor(Color.RED)
                         binding.captureTipsView.visibility = View.VISIBLE
-                        val targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+                        val targetApp = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
                         if (notificationEnable() && targetApp == 0) {
-                            SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                            AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                             binding.noticeRadioButton.isChecked = true
                             "截屏服务已断开，已切换到通知模式".show(context)
                         } else {
@@ -179,7 +179,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 .setItemTextColor(R.color.theme_color.convertColor(this))
                 .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
                     override fun onActionItemClick(position: Int) {
-                        val oldPosition = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+                        val oldPosition = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
 
                         // 如果 position 没有变化，直接返回
                         if (oldPosition == position) {
@@ -192,11 +192,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                                 // 钉钉：默认通知监听，通知未开则降级截屏，两者都未开则阻断
                                 if (binding.noticeSwitch.isChecked) {
                                     binding.noticeRadioButton.isChecked = true
-                                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                                     binding.captureRadioButton.isChecked = false
                                 } else if (binding.captureSwitch.isChecked) {
                                     binding.captureRadioButton.isChecked = true
-                                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
                                     binding.noticeRadioButton.isChecked = false
                                 } else {
                                     "请先打开通知监听或截屏服务".show(context)
@@ -208,7 +208,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                                 // 企业微信、飞书、移动办公M3：只能截屏
                                 if (binding.captureSwitch.isChecked) {
                                     binding.captureRadioButton.isChecked = true
-                                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
                                     binding.noticeRadioButton.isChecked = false
                                 } else {
                                     "请先打开截屏服务".show(context)
@@ -219,7 +219,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
                         // 只有通过所有校验后才写入配置
                         binding.iconView.setBackgroundResource(icons[position])
-                        SaveKeyValues.saveInt(Constant.TARGET_APP_KEY, position)
+                        AppConfig.saveInt(Constant.TARGET_APP_KEY, position)
                     }
                 }).build().show()
         }
@@ -229,7 +229,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.noticeRadioButton.setOnClickListener {
-            val index = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+            val index = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
             if (index != 0) {
                 "通知监听仅支持钉钉打卡".show(this)
                 binding.noticeRadioButton.isChecked = false
@@ -238,7 +238,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
             if (binding.noticeSwitch.isChecked) {
                 binding.noticeRadioButton.isChecked = true
-                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                 binding.captureRadioButton.isChecked = false
             } else {
                 "请先打开通知监听".show(this)
@@ -249,7 +249,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         binding.captureRadioButton.setOnClickListener {
             if (binding.captureSwitch.isChecked) {
                 binding.captureRadioButton.isChecked = true
-                SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
                 binding.noticeRadioButton.isChecked = false
             } else {
                 "请先打开截屏服务".show(this)
@@ -347,21 +347,21 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             if (syncingSwitchState) {
                 return@setOnCheckedChangeListener
             }
-            SaveKeyValues.saveBoolean(Constant.GESTURE_DETECTOR_KEY, isChecked)
+            AppConfig.saveBoolean(Constant.GESTURE_DETECTOR_KEY, isChecked)
         }
 
         binding.backToHomeSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (syncingSwitchState) {
                 return@setOnCheckedChangeListener
             }
-            SaveKeyValues.saveBoolean(Constant.BACK_TO_HOME_KEY, isChecked)
+            AppConfig.saveBoolean(Constant.BACK_TO_HOME_KEY, isChecked)
         }
 
         binding.powerSaveSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (syncingSwitchState) {
                 return@setOnCheckedChangeListener
             }
-            SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
+            AppConfig.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
             FloatingWindowService.notifyPowerSaveModeChanged()
         }
 
@@ -376,7 +376,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 "请先打开截屏服务".show(this)
                 return@setOnCheckedChangeListener
             }
-            SaveKeyValues.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, isChecked)
+            AppConfig.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, isChecked)
         }
 
         binding.introduceLayout.setOnClickListener {
@@ -432,7 +432,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.floatingTipsView.text = "服务未开启，打完卡无法自动跳回本软件"
         }
 
-        val type = SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+        val type = AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
         if (type in 0..channels.lastIndex) {
             binding.channelView.text = channels[type]
             binding.channelView.setTextColor(R.color.theme_color.convertColor(this))
@@ -471,8 +471,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         // 最后再根据 sourceType 设置 radio button（此时 switch 状态已同步）
-        val sourceType = SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
-        val targetApp = SaveKeyValues.loadInt(Constant.TARGET_APP_KEY, 0)
+        val sourceType = AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+        val targetApp = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
         if (sourceType == 0) {
             if (notificationEnable() && targetApp == 0) {
                 binding.noticeRadioButton.isChecked = true
@@ -498,13 +498,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         syncingSwitchState = true
         try {
             binding.gestureDetectSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
+                AppConfig.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
             binding.backToHomeSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
+                AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
             binding.powerSaveSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+                AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
             binding.remoteClockInCaptureSwitch.isChecked =
-                SaveKeyValues.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false)
+                AppConfig.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false)
         } finally {
             syncingSwitchState = false
         }

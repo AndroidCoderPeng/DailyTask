@@ -18,7 +18,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.service.ForegroundRunningService
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -102,7 +102,7 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             FloatingWindowController.visibility.collect { visible ->
                 if (visible) {
                     binding.root.alpha = 1.0f
-                    val time = SaveKeyValues.loadInt(
+                    val time = AppConfig.loadInt(
                         Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
                     )
                     binding.timeView.text = "${time}s"
@@ -114,7 +114,7 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
         }
 
         // 获取目标应用任务超时时间
-        val time = SaveKeyValues.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
+        val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         binding.timeView.text = "${time}s"
 
         // 移动悬浮窗
@@ -129,7 +129,7 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             updateMemoryInfo()
 
             while (isActive) {
-                val mode = SaveKeyValues.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+                val mode = AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
                 val interval = if (mode) 60_000L else 1_000L
                 withTimeoutOrNull(interval) {
                     powerSaveModeUpdates.receive()

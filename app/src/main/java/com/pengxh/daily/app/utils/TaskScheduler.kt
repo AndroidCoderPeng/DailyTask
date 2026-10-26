@@ -10,7 +10,6 @@ import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -116,7 +115,7 @@ object TaskScheduler {
         }
 
         _isRunning.value = true
-        SaveKeyValues.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, true)
+        AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, true)
 
         var startReported = false
         fun reportStart(success: Boolean) {
@@ -168,7 +167,7 @@ object TaskScheduler {
                     }
 
                     lastProcessedDate = today
-                    SaveKeyValues.saveString(Constant.LAST_RESET_DATE_KEY, today.toString())
+                    AppConfig.saveString(Constant.LAST_RESET_DATE_KEY, today.toString())
 
                     // 今天结束，睡到明天
                     if (isActive) waitUntilNextReset(completionMessage, emitCompletionEvent)
@@ -204,7 +203,7 @@ object TaskScheduler {
             if (job === tempJob) {
                 job = null
                 _isRunning.value = false
-                SaveKeyValues.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+                AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
             }
             reportStart(false)
         }
@@ -246,7 +245,7 @@ object TaskScheduler {
 
             // 非钉钉目标仅支持截屏来源，投影失效则剩余任务均无法获取打卡结果，跳过并说明根因
             if (Constant.getTargetApp() != Constant.DING_DING &&
-                SaveKeyValues.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) != 1
+                AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) != 1
             ) {
                 val remainingCount = schedule.size - task.displayIndex + 1
                 skippedCount += remainingCount
@@ -292,7 +291,7 @@ object TaskScheduler {
             }
 
             // ====== 阶段 2：打开目标 App，等待打卡或超时 ======
-            val timeoutSeconds = SaveKeyValues.loadInt(
+            val timeoutSeconds = AppConfig.loadInt(
                 Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
             )
 
@@ -319,7 +318,7 @@ object TaskScheduler {
 
                         // 最后 5 秒兜底截屏（只触发一次）
                         if (timeoutSeconds > 5 && tick <= 5 && !hasCaptured) {
-                            val resultSource = SaveKeyValues.loadInt(
+                            val resultSource = AppConfig.loadInt(
                                 Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
                             )
                             if (resultSource == 1) {
@@ -420,7 +419,7 @@ object TaskScheduler {
             return
         }
 
-        val initialResetHour = SaveKeyValues.loadInt(
+        val initialResetHour = AppConfig.loadInt(
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         )
         val initialTargetMillis = nextResetTimeMillis(initialResetHour)
@@ -440,7 +439,7 @@ object TaskScheduler {
         var targetMillis = initialTargetMillis
         var alarmScheduledForHour: Int? = null
         while (true) {
-            val resetHour = SaveKeyValues.loadInt(
+            val resetHour = AppConfig.loadInt(
                 Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
             )
             if (resetHour != targetResetHour) {
@@ -457,7 +456,7 @@ object TaskScheduler {
                 resetWaitWakeupChannel.receive()
             }
 
-            val currentResetHour = SaveKeyValues.loadInt(
+            val currentResetHour = AppConfig.loadInt(
                 Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
             )
             if (currentResetHour != resetHour) {
@@ -496,7 +495,7 @@ object TaskScheduler {
         job?.cancel()
         job = null
         _isRunning.value = false
-        SaveKeyValues.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+        AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
         ForegroundRunningService.emitNotificationText("为保证程序正常运行，请勿移除此通知")
     }
 
@@ -543,7 +542,7 @@ object TaskScheduler {
         job?.cancel()
         job = null
         _isRunning.value = false
-        SaveKeyValues.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+        AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
         if (shouldNotify) {
             ForegroundRunningService.emitNotificationText(reason)
             MessageDispatcher.sendMessage("任务停止通知", reason)
@@ -570,7 +569,7 @@ object TaskScheduler {
     }
 
     private fun getTodaySkipReason(): DayFlag? {
-        val skipEnabled = SaveKeyValues.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+        val skipEnabled = AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
         if (!skipEnabled) return null
 
         val dayFlag = classifyDay(LocalDate.now())

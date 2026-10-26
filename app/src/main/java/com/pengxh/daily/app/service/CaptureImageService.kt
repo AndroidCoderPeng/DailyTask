@@ -29,7 +29,7 @@ import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
 import com.pengxh.kt.lite.extensions.saveImage
-import com.pengxh.kt.lite.utils.SaveKeyValues
+import com.pengxh.daily.app.utils.AppConfig
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -169,7 +169,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     super.onStop()
                     Log.w(kTag, "MediaProjection stopped by system")
                     ProjectionSession.markStoppedNeedAuth()
-                    SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                     MessageDispatcher.sendMessage(
                         "截屏服务通知", "截屏授权已失效，需人工重新授权后恢复截屏打卡"
                     )
@@ -186,7 +186,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
 
             emitProjectionEvent(ProjectionEvent.Ready)
 
-            SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+            AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
         } catch (e: Exception) {
             Log.w(kTag, "createMediaProjection failed: ${e.message}", e)
             emitProjectionEvent(ProjectionEvent.Failed)
@@ -399,7 +399,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()
-        SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+        AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
         isCapturingInitialized = false
         stopForeground(STOP_FOREGROUND_REMOVE)
     }

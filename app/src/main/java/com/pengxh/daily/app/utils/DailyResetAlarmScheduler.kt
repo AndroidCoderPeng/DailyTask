@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import com.pengxh.kt.lite.utils.SaveKeyValues
 import java.util.Calendar
 
 object DailyResetAlarmScheduler {
@@ -20,7 +19,7 @@ object DailyResetAlarmScheduler {
             Intent(context, DailyResetAlarmReceiver::class.java).setAction(ACTION_DAILY_RESET),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val resetHour = SaveKeyValues.loadInt(
+        val resetHour = AppConfig.loadInt(
             Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
         )
 

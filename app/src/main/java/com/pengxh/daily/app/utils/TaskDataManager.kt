@@ -9,7 +9,6 @@ import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.kt.lite.utils.SaveKeyValues
 
 class TaskDataManager() {
 
@@ -53,12 +52,12 @@ class TaskDataManager() {
     private fun saveConfiguration(config: ExportDataModel): List<String> {
         val warnings = mutableListOf<String>()
         //
-        SaveKeyValues.saveInt(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
-        SaveKeyValues.saveInt(
+        AppConfig.saveInt(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
+        AppConfig.saveInt(
             Constant.STAY_OVERTIME_KEY,
             config.overtime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
         )
-        SaveKeyValues.saveInt(
+        AppConfig.saveInt(
             Constant.TIME_RANGE_KEY,
             config.timeRange.coerceAtLeast(0)
         )
@@ -66,12 +65,12 @@ class TaskDataManager() {
         if (messageChannel == null) {
             warnings += "消息渠道未配置，请在设置页完成配置。"
         }
-        SaveKeyValues.saveInt(
+        AppConfig.saveInt(
             Constant.MSG_CHANNEL_KEY, messageChannel ?: Constant.DEFAULT_INDEX
         )
 
         val targetApp = config.targetApp.coerceIn(0, 3)
-        SaveKeyValues.saveInt(Constant.TARGET_APP_KEY, targetApp)
+        AppConfig.saveInt(Constant.TARGET_APP_KEY, targetApp)
         val importedResultSource = config.resultSource?.takeIf { it in 0..1 }
             ?: Constant.DEFAULT_INDEX
         val resultSource = when {
@@ -104,18 +103,18 @@ class TaskDataManager() {
 
             else -> importedResultSource
         }
-        SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, resultSource)
+        AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, resultSource)
 
         //
-        SaveKeyValues.saveString(
+        AppConfig.saveString(
             Constant.REMOTE_COMMAND_KEY,
             config.remoteCommand?.takeIf { it.isNotBlank() } ?: "打卡"
         )
-        SaveKeyValues.saveString(
+        AppConfig.saveString(
             Constant.MESSAGE_TITLE_KEY,
             config.msgTitle?.takeIf { it.isNotBlank() } ?: "打卡结果通知"
         )
-        SaveKeyValues.saveString(Constant.WX_WEB_HOOK_KEY, config.wxKey ?: "")
+        AppConfig.saveString(Constant.WX_WEB_HOOK_KEY, config.wxKey ?: "")
         val workdays = config.customWorkdays
             ?.takeIf { it.isNotBlank() }
             ?.let {
@@ -126,15 +125,15 @@ class TaskDataManager() {
             ?: CustomWorkdayManager.serializeWorkdays(
                 CustomWorkdayManager.getOrderedDays().take(5).toSet()
             )
-        SaveKeyValues.saveString(Constant.CUSTOM_WORKDAYS_KEY, workdays)
+        AppConfig.saveString(Constant.CUSTOM_WORKDAYS_KEY, workdays)
 
         //
-        SaveKeyValues.saveBoolean(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
-        SaveKeyValues.saveBoolean(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
-        SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, config.isAutoRecycle)
-        SaveKeyValues.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
-        SaveKeyValues.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
-        SaveKeyValues.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isSavePower)
+        AppConfig.saveBoolean(Constant.GESTURE_DETECTOR_KEY, config.isDetectGesture)
+        AppConfig.saveBoolean(Constant.BACK_TO_HOME_KEY, config.isBackToHome)
+        AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, config.isAutoRecycle)
+        AppConfig.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
+        AppConfig.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
+        AppConfig.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isSavePower)
 
         //
         val email = config.emailConfig
@@ -151,7 +150,7 @@ class TaskDataManager() {
                 addProperty("authCode", authCode)
                 addProperty("inbox", inbox)
             }
-            ConfigStore.get().save(Constant.EMAIL_CONFIG_KEY, cacheObj)
+            AppConfig.saveJson(Constant.EMAIL_CONFIG_KEY, cacheObj)
         }
         return warnings
     }

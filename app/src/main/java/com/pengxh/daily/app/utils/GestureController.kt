@@ -3,7 +3,6 @@ package com.pengxh.daily.app.utils
 import android.content.Context
 import android.view.GestureDetector
 import android.view.MotionEvent
-import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
  * 手势控制器
@@ -47,7 +46,7 @@ class GestureController(
             e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float
         ): Boolean {
             val isGestureEnabled =
-                SaveKeyValues.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
+                AppConfig.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
             // 如果手势未启用，则不处理
             if (!isGestureEnabled) {
                 return false

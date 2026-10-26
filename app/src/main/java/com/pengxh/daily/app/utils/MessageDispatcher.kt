@@ -6,7 +6,6 @@ import android.util.Log
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.extensions.getResponseHeader
 import com.pengxh.daily.app.retrofit.RetrofitServiceManager
-import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -101,8 +100,8 @@ object MessageDispatcher {
         emailConfigOverride: EmailManager.EmailConfig? = null
     ) {
         val primaryChannel = channelOverride
-            ?: SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-        val messageTitle = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
+            ?: AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+        val messageTitle = AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         val finalTitle = title.ifBlank { messageTitle }
 
         // 统一拼接元数据，所有渠道都用同一个完整内容
@@ -139,8 +138,8 @@ object MessageDispatcher {
         onFailure: ((String) -> Unit)? = null
     ) {
         val primaryChannel = channelOverride
-            ?: SaveKeyValues.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-        val messageTitle = SaveKeyValues.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
+            ?: AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+        val messageTitle = AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         val finalTitle = title.ifBlank { messageTitle }
         val fullContent = buildString {
             appendLine(content)
