@@ -32,15 +32,12 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -59,51 +56,24 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             _projectionEvents.tryEmit(event)
         }
 
-        // 等待截屏结果的协程作用域
-        @Volatile
-        private var captureScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-
-        // 截屏结果流，仅供 requestCaptureScreen() 内部使用
-        private val _captureResults = MutableSharedFlow<String>(extraBufferCapacity = 1)
-        private val captureResults = _captureResults.asSharedFlow()
-
-        private fun emitCaptureResult(imagePath: String) {
-            _captureResults.tryEmit(imagePath)
-        }
-
-        private val _captureScreenRequest = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+        private val captureRequestLock = Any()
+        private var serviceReady = false
+        private val captureRequests = Channel<CompletableDeferred<String?>>(Channel.UNLIMITED)
 
         /**
          * 触发截屏，返回 CompletableDeferred 供调用方 await 结果
          *
-         * 内部逻辑：
-         *   1. 先订阅截屏结果，避免快速失败/成功发生在订阅之前
-         *   2. 发射截屏请求
-         *   3. 超时返回 null，截屏失败返回空字符串
+         * 每个请求携带自己的 Deferred，null 表示处理超时，空字符串表示截屏失败。
          */
         fun requestCaptureScreen(): CompletableDeferred<String?> {
             val deferred = CompletableDeferred<String?>()
-            val waiterJob = captureScope.launch(start = CoroutineStart.UNDISPATCHED) {
-                try {
-                    val result = withTimeoutOrNull(5000L) {
-                        captureResults.first()
-                    }
-                    deferred.complete(result)
-                } catch (e: CancellationException) {
-                    deferred.complete(null)
-                    throw e
-                }
+            val queued = synchronized(captureRequestLock) {
+                serviceReady && captureRequests.trySend(deferred).isSuccess
             }
-            if (!_captureScreenRequest.tryEmit(Unit)) {
-                waiterJob.cancel()
+            if (!queued) {
                 deferred.complete("")
             }
             return deferred
-        }
-
-        private fun resetCaptureScope() {
-            captureScope.cancel()
-            captureScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         }
     }
 
@@ -128,11 +98,9 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
     private var isCapturingInitialized = false
-    private var captureRetryCount = 0
 
     override fun onCreate() {
         super.onCreate()
-        resetCaptureScope()
         val name = "${resources.getString(R.string.app_name)}截屏服务"
         val channel = NotificationChannel(
             "capture_image_service_channel", name, NotificationManager.IMPORTANCE_LOW
@@ -155,8 +123,15 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             startForeground(Constant.CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID, notification)
         }
 
+        synchronized(captureRequestLock) {
+            serviceReady = true
+        }
         launch {
-            _captureScreenRequest.collect { captureScreen() }
+            for (request in captureRequests) {
+                if (!request.isCompleted) {
+                    captureScreen(request)
+                }
+            }
         }
     }
 
@@ -222,7 +197,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             return
         }
 
-        captureRetryCount = 0
         val metrics = resources.displayMetrics
         val width = metrics.widthPixels
         val height = metrics.heightPixels
@@ -252,16 +226,16 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         }
     }
 
-    private fun captureScreen() {
+    private suspend fun captureScreen(request: CompletableDeferred<String?>) {
         try {
             if (!ProjectionSession.isStateActive()) {
-                emitCaptureResult("")
+                request.complete("")
                 return
             }
 
             val projection = ProjectionSession.getProjection()
             if (projection == null) {
-                emitCaptureResult("")
+                request.complete("")
                 return
             }
 
@@ -272,109 +246,101 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                 releaseCaptureResources()
                 initializeCaptureResources(projection)
                 if (!isCapturingInitialized) {
-                    emitCaptureResult("")
+                    request.complete("")
                     return
                 }
             }
-        } catch (e: Exception) {
-            Log.e(kTag, "Failed to prepare capture", e)
-            emitCaptureResult("")
-            return
-        }
 
-        launch {
-            try {
-                val reader = imageReader ?: run {
-                    emitCaptureResult("")
-                    return@launch
-                }
-
-                val startTime = System.currentTimeMillis()
-                Log.d(kTag, "================== 开始截屏 ==================")
-
-                // 不排空旧帧：后台环境下 VirtualDisplay 帧率被系统限速，排空后等新帧依赖时机运气，直接用 buffer 中已有的帧更可靠
-                val image = withTimeoutOrNull(800L) {
-                    Log.d(kTag, "进入等待......")
-                    waitForImageAvailable(reader)
-                }
-
-                val elapsed = System.currentTimeMillis() - startTime
-                if (image == null) {
-                    Log.e(kTag, "获取图像失败: acquireNextImage返回null, 总耗时: ${elapsed}ms")
-                    emitCaptureResult("")
-                    return@launch
-                }
-                Log.d(kTag, "图像获取成功, 耗时: ${elapsed}ms")
-
-                val width = image.width
-                val height = image.height
-                val planes = image.planes
-                val buffer = planes[0].buffer
-                val pixelStride = planes[0].pixelStride
-                val rowStride = planes[0].rowStride
-                val rowPadding = rowStride - pixelStride * width
-
-                val bitmap = createBitmap(width + rowPadding / pixelStride, height)
-                bitmap.copyPixelsFromBuffer(buffer)
-                image.close()
-
-                val cropped = if (rowPadding != 0) {
-                    Bitmap.createBitmap(bitmap, 0, 0, width, height)
-                } else bitmap
-
-                // 只取中间那部分截图
-                val y = (cropped.height * 0.2f).toInt()
-                val halfHeight = y + cropped.height / 2
-
-                // 边界检查
-                val validY = y.coerceAtLeast(0).coerceAtMost(cropped.height - 1)
-                val validHeight = halfHeight.coerceAtLeast(1).coerceAtMost(cropped.height - validY)
-                val topHalf = if (validY >= 0 && validHeight > 0
-                    && validY + validHeight <= cropped.height
-                ) {
-                    Bitmap.createBitmap(cropped, 0, validY, cropped.width, validHeight)
-                } else {
-                    cropped
-                }
-
-                if (isBitmapMostlyBlack(topHalf)) {
-                    if (captureRetryCount < 2) {
-                        captureRetryCount++
-                        Log.w(kTag, "检测到黑色画面，第${captureRetryCount}次重试")
-                        delay(1000)
-                        captureScreen()
-                        return@launch
-                    } else {
-                        Log.w(kTag, "黑色画面重试已耗尽，使用当前图像")
-                        captureRetryCount = 0
-                    }
-                } else {
-                    captureRetryCount = 0
-                }
-
-                val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
-                topHalf.saveImage(imagePath)
-                LogFileManager.writeLog("截屏成功: $imagePath")
-                emitCaptureResult(imagePath)
-            } catch (_: RemoteException) {
-                Log.w(kTag, "RemoteException during capture")
-                ProjectionSession.markStoppedNeedAuth()
-                emitProjectionEvent(ProjectionEvent.Failed)
-                emitCaptureResult("")
-                releaseCaptureResources()
-                isCapturingInitialized = false
-            } catch (_: SecurityException) {
-                Log.w(kTag, "SecurityException during capture")
-                ProjectionSession.markStoppedNeedAuth()
-                emitProjectionEvent(ProjectionEvent.Failed)
-                emitCaptureResult("")
-                releaseCaptureResources()
-                isCapturingInitialized = false
-            } catch (e: Exception) {
-                Log.e(kTag, "截屏失败: ${e.message}", e)
-                emitCaptureResult("")
+            val reader = imageReader ?: run {
+                request.complete("")
+                return
             }
+            request.complete(withTimeoutOrNull(5000L) { captureImage(reader) })
+        } catch (e: CancellationException) {
+            request.complete(null)
+            throw e
+        } catch (_: RemoteException) {
+            Log.w(kTag, "RemoteException during capture")
+            failProjectionCapture(request)
+        } catch (_: SecurityException) {
+            Log.w(kTag, "SecurityException during capture")
+            failProjectionCapture(request)
+        } catch (e: Exception) {
+            Log.e(kTag, "截屏失败: ${e.message}", e)
+            request.complete("")
         }
+    }
+
+    private suspend fun captureImage(reader: ImageReader): String {
+        var retryCount = 0
+        while (true) {
+            val startTime = System.currentTimeMillis()
+            Log.d(kTag, "================== 开始截屏 ==================")
+            val image = withTimeoutOrNull(800L) {
+                Log.d(kTag, "进入等待......")
+                waitForImageAvailable(reader)
+            } ?: run {
+                Log.e(kTag, "获取图像失败，等待超时")
+                return ""
+            }
+            Log.d(kTag, "图像获取成功, 耗时: ${System.currentTimeMillis() - startTime}ms")
+
+            val width = image.width
+            val height = image.height
+            val planes = image.planes
+            val buffer = planes[0].buffer
+            val pixelStride = planes[0].pixelStride
+            val rowStride = planes[0].rowStride
+            val rowPadding = rowStride - pixelStride * width
+            val bitmap = createBitmap(width + rowPadding / pixelStride, height)
+            try {
+                bitmap.copyPixelsFromBuffer(buffer)
+            } finally {
+                image.close()
+            }
+
+            val cropped = if (rowPadding != 0) {
+                Bitmap.createBitmap(bitmap, 0, 0, width, height)
+            } else bitmap
+
+            // 只取中间那部分截图
+            val y = (cropped.height * 0.2f).toInt()
+            val halfHeight = y + cropped.height / 2
+
+            // 边界检查
+            val validY = y.coerceAtLeast(0).coerceAtMost(cropped.height - 1)
+            val validHeight = halfHeight.coerceAtLeast(1).coerceAtMost(cropped.height - validY)
+            val topHalf = if (validY >= 0 && validHeight > 0
+                && validY + validHeight <= cropped.height
+            ) {
+                Bitmap.createBitmap(cropped, 0, validY, cropped.width, validHeight)
+            } else {
+                cropped
+            }
+
+            if (isBitmapMostlyBlack(topHalf) && retryCount < 2) {
+                retryCount++
+                Log.w(kTag, "检测到黑色画面，第${retryCount}次重试")
+                delay(1000)
+                continue
+            }
+            if (retryCount >= 2) {
+                Log.w(kTag, "黑色画面重试已耗尽，使用当前图像")
+            }
+
+            val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
+            topHalf.saveImage(imagePath)
+            LogFileManager.writeLog("截屏成功: $imagePath")
+            return imagePath
+        }
+    }
+
+    private fun failProjectionCapture(request: CompletableDeferred<String?>) {
+        ProjectionSession.markStoppedNeedAuth()
+        emitProjectionEvent(ProjectionEvent.Failed)
+        releaseCaptureResources()
+        isCapturingInitialized = false
+        request.complete("")
     }
 
     private suspend fun waitForImageAvailable(imageReader: ImageReader): Image? {
@@ -418,9 +384,15 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     }
 
     override fun onDestroy() {
+        synchronized(captureRequestLock) {
+            serviceReady = false
+            while (true) {
+                val request = captureRequests.tryReceive().getOrNull() ?: break
+                request.complete(null)
+            }
+        }
         super.onDestroy()
         cancel()
-        captureScope.cancel()
         releaseCaptureResources()
         ProjectionSession.clear()
         SaveKeyValues.saveInt(Constant.RESULT_SOURCE_KEY, 0)
