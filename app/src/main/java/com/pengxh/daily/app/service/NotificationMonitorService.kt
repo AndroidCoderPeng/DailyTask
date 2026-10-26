@@ -2,6 +2,7 @@ package com.pengxh.daily.app.service
 
 import android.app.Notification
 import android.content.ComponentName
+import android.os.SystemClock
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
@@ -10,6 +11,7 @@ import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.NotificationBean
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.MonitorEvent
 import com.pengxh.daily.app.utils.ProjectionSession
@@ -20,9 +22,12 @@ import com.pengxh.kt.lite.utils.SaveKeyValues
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -34,14 +39,17 @@ import kotlinx.coroutines.withContext
  */
 class NotificationMonitorService : NotificationListenerService() {
     companion object {
-        private val _events = MutableSharedFlow<MonitorEvent>(extraBufferCapacity = 2)
-        val events = _events.asSharedFlow()
+        private val eventChannel = Channel<MonitorEvent>(Channel.UNLIMITED)
+        val events = eventChannel.receiveAsFlow()
 
         /**
          * 发送事件
          */
         fun emitMonitorEvent(event: MonitorEvent) {
-            _events.tryEmit(event)
+            val result = eventChannel.trySend(event)
+            if (result.isFailure) {
+                Log.e("MonitorService", "Failed to queue monitor event", result.exceptionOrNull())
+            }
         }
 
         private val _listenerState = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1)
@@ -144,39 +152,52 @@ class NotificationMonitorService : NotificationListenerService() {
 
         val key = SaveKeyValues.loadString(Constant.REMOTE_COMMAND_KEY, "打卡").trim()
         if (key.isNotEmpty() && command == "${Constant.COMMAND_PREFIX}$key") {
-            triggerRemoteClockIn()
+            val opened = triggerRemoteClockIn()
+            sendCommandReceipt(
+                "打卡指令通知",
+                if (opened) "远程打卡指令已接收" else "无法打开目标应用，远程打卡未执行"
+            )
             return
         }
 
         when {
             command.contains("执行任务") -> {
-                if (!TaskScheduler.isRunning()) {
-                    TaskScheduler.startTask()
+                val message = when {
+                    TaskScheduler.isRunning() -> "任务已在运行中"
+                    TaskScheduler.startTask() -> "任务启动指令已接收"
+                    else -> "任务启动失败，请检查前台服务状态"
                 }
+                sendCommandReceipt("任务指令通知", message)
             }
 
             command.contains("终止任务") -> {
                 if (TaskScheduler.isRunning()) {
                     TaskScheduler.stopTask()
-                    MessageDispatcher.sendMessage(
-                        "停止任务通知", "任务停止成功，请及时打开下次任务"
-                    )
+                    sendCommandReceipt("停止任务通知", "任务停止成功，请及时打开下次任务")
+                } else {
+                    sendCommandReceipt("停止任务通知", "当前没有正在运行的任务")
                 }
             }
 
             command.contains("开启循环") -> {
                 SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
-                MessageDispatcher.sendMessage("循环任务状态通知", "循环任务状态已更新为：开启")
+                sendCommandReceipt("循环任务状态通知", "循环任务状态已更新为：开启")
             }
 
             command.contains("关闭循环") -> {
                 SaveKeyValues.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
-                MessageDispatcher.sendMessage("循环任务状态通知", "循环任务状态已更新为：关闭")
+                sendCommandReceipt("循环任务状态通知", "循环任务状态已更新为：关闭")
             }
 
-            command.contains("息屏") -> emitMonitorEvent(MonitorEvent.ShowMaskCommand)
+            command.contains("息屏") -> {
+                emitMonitorEvent(MonitorEvent.ShowMaskCommand)
+                sendCommandReceipt("息屏指令通知", "息屏指令已排队，主界面可用时执行")
+            }
 
-            command.contains("亮屏") -> emitMonitorEvent(MonitorEvent.HideMaskCommand)
+            command.contains("亮屏") -> {
+                emitMonitorEvent(MonitorEvent.HideMaskCommand)
+                sendCommandReceipt("亮屏指令通知", "亮屏指令已排队，主界面可用时执行")
+            }
 
             command.contains("考勤记录") -> {
                 serviceScope.launch {
@@ -197,8 +218,9 @@ class NotificationMonitorService : NotificationListenerService() {
                         }
                     }
 
+                    val content = record.ifBlank { "当天暂无考勤打卡记录" }
                     withContext(Dispatchers.Main) {
-                        MessageDispatcher.sendMessage("当天考勤记录通知", record)
+                        sendCommandReceipt("当天考勤记录通知", content)
                     }
                 }
             }
@@ -210,16 +232,27 @@ class NotificationMonitorService : NotificationListenerService() {
                     appendLine("悬浮权限：${if (Settings.canDrawOverlays(this@NotificationMonitorService)) "已获取" else "被拒绝"}")
                     appendLine("通知监听：${if (listenerConnected) "正常" else "断开"}")
                     appendLine("截图服务：${if (ProjectionSession.isStateActive()) "正常" else "断开"}")
-                    append("消息渠道：${if (type == 0) "QQ邮箱" else "企业微信"}")
+                    append(
+                        "消息渠道：${when (type) {
+                            0 -> "QQ邮箱"
+                            1 -> "企业微信"
+                            else -> "未配置"
+                        }}"
+                    )
                 }
-                MessageDispatcher.sendMessage("状态查询通知", content)
+                sendCommandReceipt("状态查询通知", content)
             }
 
             command.contains("截屏") -> {
                 if (ProjectionSession.isStateActive()) {
-                    openApplication { emitMonitorEvent(MonitorEvent.AppOpenedForScreenshot) }
+                    val opened = openTargetAppForScreenshot()
+                    sendCommandReceipt(
+                        "截屏状态通知",
+                        if (opened) "截屏指令已接收，正在处理"
+                        else "无法打开目标应用，截屏未执行"
+                    )
                 } else {
-                    MessageDispatcher.sendMessage("截屏状态通知", "截屏服务已断开，截屏失败")
+                    sendCommandReceipt("截屏状态通知", "截屏服务已断开，截屏失败")
                 }
             }
 
@@ -227,18 +260,88 @@ class NotificationMonitorService : NotificationListenerService() {
         }
     }
 
-    private fun triggerRemoteClockIn() {
+    private fun triggerRemoteClockIn(): Boolean {
         val timeoutSeconds = SaveKeyValues.loadInt(
             Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
         )
         val returnScreenshot = SaveKeyValues.loadBoolean(
             Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false
         )
+        var opened = false
         openApplication {
-            emitMonitorEvent(
-                MonitorEvent.AppOpenedForRemoteClockIn(timeoutSeconds, returnScreenshot)
+            opened = true
+            serviceScope.launch {
+                countdownTargetApp(timeoutSeconds)
+                if (returnScreenshot) {
+                    captureAndSendResult(
+                        "打卡结果通知",
+                        "打卡完成，结果见附件",
+                        "打卡完成，但是无法获取截图"
+                    )
+                }
+                emitMonitorEvent(MonitorEvent.ReturnToApp)
+            }
+        }
+        return opened
+    }
+
+    private fun openTargetAppForScreenshot(): Boolean {
+        var opened = false
+        openApplication {
+            opened = true
+            serviceScope.launch {
+                countdownTargetApp(10)
+                captureAndSendResult(
+                    "截屏状态通知",
+                    "截图完成",
+                    "截图完成，但是无法获取截图"
+                )
+                emitMonitorEvent(MonitorEvent.ReturnToApp)
+            }
+        }
+        return opened
+    }
+
+    private suspend fun countdownTargetApp(countdownSeconds: Int) {
+        val target = SystemClock.elapsedRealtime() + countdownSeconds * 1000L
+        while (true) {
+            val remaining = target - SystemClock.elapsedRealtime()
+            if (remaining <= 0) break
+            FloatingWindowController.updateTime((remaining / 1000).toInt())
+            delay(minOf(1_000L, remaining).coerceAtLeast(1))
+        }
+    }
+
+    private suspend fun captureAndSendResult(
+        title: String,
+        successMessage: String,
+        failureMessage: String
+    ) {
+        val imagePath = CaptureImageService.requestCaptureScreen().await()
+        if (imagePath.isNullOrEmpty()) {
+            sendCommandReceipt(title, failureMessage)
+        } else {
+            MessageDispatcher.sendAttachmentMessage(
+                title,
+                successMessage,
+                imagePath,
+                onFailure = { error ->
+                    Log.w(kTag, "Failed to send capture result: $error")
+                    ForegroundRunningService.emitNotificationText("截屏结果发送失败：$error")
+                }
             )
         }
+    }
+
+    private fun sendCommandReceipt(title: String, content: String) {
+        MessageDispatcher.sendMessage(
+            title,
+            content,
+            onFailure = { error ->
+                Log.w(kTag, "Failed to send command receipt: $error")
+                ForegroundRunningService.emitNotificationText("指令回执发送失败：$error")
+            }
+        )
     }
 
     /**

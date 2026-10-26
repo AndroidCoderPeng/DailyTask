@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
@@ -24,7 +23,6 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.extensions.convertToTimeEntity
-import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -32,7 +30,6 @@ import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
-import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
@@ -370,70 +367,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 }
             }
 
-            is MonitorEvent.AppOpenedForScreenshot -> {
-                captureTargetAppAndReturn(
-                    countdownSeconds = 10,
-                    messageTitle = "截屏状态通知",
-                    successMessage = "截图完成",
-                    failureMessage = "截图完成，但是无法获取截图"
-                )
-            }
-
-            is MonitorEvent.AppOpenedForRemoteClockIn -> {
-                if (event.returnScreenshot) {
-                    captureTargetAppAndReturn(
-                        countdownSeconds = event.countdownSeconds,
-                        messageTitle = "打卡结果通知",
-                        successMessage = "打卡完成，结果见附件",
-                        failureMessage = "打卡完成，但是无法获取截图"
-                    )
-                } else {
-                    returnAfterCountdown(event.countdownSeconds)
-                }
-            }
-        }
-    }
-
-    private fun returnAfterCountdown(countdownSeconds: Int) {
-        lifecycleScope.launch {
-            countdownTargetApp(countdownSeconds)
-            backToMainActivity()
-        }
-    }
-
-    /**
-     * 远程截屏与远程打卡的公共流程：倒计时 → 截屏 → 返回 → 发送结果。
-     */
-    private fun captureTargetAppAndReturn(
-        countdownSeconds: Int,
-        messageTitle: String,
-        successMessage: String,
-        failureMessage: String
-    ) {
-        lifecycleScope.launch {
-            countdownTargetApp(countdownSeconds)
-
-            // 在返回前等待截屏结果，避免 Activity 生命周期变化导致结果丢失。
-            val imagePath = CaptureImageService.requestCaptureScreen().await()
-            backToMainActivity()
-
-            if (imagePath.isNullOrEmpty()) {
-                MessageDispatcher.sendMessage(messageTitle, failureMessage)
-            } else {
-                MessageDispatcher.sendAttachmentMessage(
-                    messageTitle, successMessage, imagePath
-                )
-            }
-        }
-    }
-
-    private suspend fun countdownTargetApp(countdownSeconds: Int) {
-        val countdownTarget = SystemClock.elapsedRealtime() + countdownSeconds * 1000L
-        while (true) {
-            val remaining = countdownTarget - SystemClock.elapsedRealtime()
-            if (remaining <= 0) break
-            FloatingWindowController.updateTime((remaining / 1000).toInt())
-            delay(minOf(1000L, remaining).coerceAtLeast(1))
+            is MonitorEvent.ReturnToApp -> backToMainActivity()
         }
     }
 

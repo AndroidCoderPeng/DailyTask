@@ -21,15 +21,7 @@ sealed class MonitorEvent {
     data object HideMaskCommand : MonitorEvent()
 
     /**
-     * 远程"截屏"指令
+     * 服务端远程操作完成后返回应用
      * */
-    data object AppOpenedForScreenshot : MonitorEvent()
-
-    /**
-     * 目标应用已为远程"打卡"指令打开
-     * */
-    data class AppOpenedForRemoteClockIn(
-        val countdownSeconds: Int,
-        val returnScreenshot: Boolean
-    ) : MonitorEvent()
+    data object ReturnToApp : MonitorEvent()
 }
