@@ -127,6 +127,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         MessageDispatcher.sendMessage(
             "测试消息", message,
             channelOverride = 1,
+            webhookKeyOverride = webhookKey,
             onSuccess = {
                 if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
