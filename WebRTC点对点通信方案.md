@@ -22,23 +22,52 @@
 
 ## 2. 整体架构
 
-```
-公司手机 A                              家里手机 B
-   │  ▲                                     ▲  │
-   │  │   ① 通过 MQTT Broker 交换 SDP 信令       │  │
-   │  └──────── broker.emqx.io ───────────────┼──┘
-   │                                          │
-   │  ② STUN 辅助发现公网地址                   │
-   │     stun:stun.aliyun.com:3478 等           │
-   │                                          │
-   └────────── ③ WebRTC DataChannel 直连 ────────┘
-              文字 + <200K 图片，点对点传输
+```mermaid
+flowchart TB
+    subgraph DEV_A["手机 A · App A（公司）"]
+        direction TB
+        A_APP["应用层：UI / 状态机"]
+        A_MM["MQTT 客户端"]
+        A_WM["WebRTC 引擎：PeerConnection + DataChannel"]
+        A_APP --> A_MM
+        A_APP --> A_WM
+    end
+
+    subgraph DEV_B["手机 B · App B（家里）"]
+        direction TB
+        B_APP["应用层：UI / 状态机"]
+        B_MM["MQTT 客户端"]
+        B_WM["WebRTC 引擎：PeerConnection + DataChannel"]
+        B_APP --> B_MM
+        B_APP --> B_WM
+    end
+
+    subgraph CLOUD["公共基础设施（无自有服务器）"]
+        MQTT["MQTT Broker
+        ssl://broker.emqx.io:8883"]
+        STUN["STUN 服务器
+        aliyun / tencent / cloudflare / google"]
+        TURN["TURN 服务器（可选兜底）
+        Open Relay"]
+    end
+
+    A_MM -- "① 信令 offer/answer/ice_candidate，QoS 1 + TLS + retained" --> MQTT
+    MQTT -- "订阅推送" --> B_MM
+    B_MM -- "应答信令" --> MQTT
+    MQTT -- "订阅推送" --> A_MM
+
+    A_WM -. "② ICE 候选：查询公网地址" .- STUN
+    B_WM -. "② ICE 候选：查询公网地址" .- STUN
+    A_WM -. "打洞失败时中继兜底" .- TURN
+    B_WM -. "中继兜底" .- TURN
+
+    A_WM == "③ P2P 数据直连：文字 + 图片，DTLS 加密，不经任何服务器" ==> B_WM
 ```
 
 | 路径 | 类型 | 内容 | 是否经过服务器 |
 |---|---|---|---|
-| ① MQTT | 信令流 | SDP 文本（几 KB） | 经过公共 MQTT Broker |
-| ② STUN | 地址发现 | 查询公网 IP:端口 | 经过公共 STUN |
+| ① MQTT | 信令流 | SDP + ICE 候选（几 KB） | 经过公共 MQTT Broker（TLS） |
+| ② STUN / TURN | 地址发现 / 兜底中继 | 查询公网 IP:端口；打洞失败时中继 | 经过公共 STUN / TURN |
 | ③ DataChannel | 业务数据流 | 文字、图片 | **不经过任何服务器** |
 
 ---
