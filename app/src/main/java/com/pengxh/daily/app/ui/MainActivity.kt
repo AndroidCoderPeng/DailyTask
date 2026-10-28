@@ -349,18 +349,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     // ================================================================
     private fun handleMonitorEvent(event: MonitorEvent) {
         when (event) {
-            is MonitorEvent.ClockInSuccess -> {
-                backToMainActivity()
-            }
-
-            is MonitorEvent.ShowMaskCommand -> {
-                setMaskVisible(true)
-            }
-
-            is MonitorEvent.HideMaskCommand -> {
-                setMaskVisible(false)
-            }
-
+            is MonitorEvent.ClockInSuccess -> backToMainActivity()
+            is MonitorEvent.ShowMaskCommand -> setMaskVisible(true)
+            is MonitorEvent.HideMaskCommand -> setMaskVisible(false)
             is MonitorEvent.ReturnToApp -> backToMainActivity()
         }
     }
@@ -590,7 +581,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private fun backToMainActivity() {
         if (AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)) {
             //模拟点击Home键
-            startActivity(Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) })
+            startActivity(Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+            })
             lifecycleScope.launch(Dispatchers.IO) {
                 delay(1000)
                 withContext(Dispatchers.Main) {
