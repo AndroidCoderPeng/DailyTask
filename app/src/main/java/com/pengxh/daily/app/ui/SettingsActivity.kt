@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.ui
 
+import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -10,20 +11,24 @@ import android.provider.Settings
 import android.util.Log
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
+import com.pengxh.daily.app.extensions.isApplicationExist
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.NotificationMonitorService
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
+import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
@@ -33,12 +38,12 @@ import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
-import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.io.File
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
@@ -379,8 +384,49 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             AppConfig.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, isChecked)
         }
 
+        binding.sendLogLayout.setOnClickListener {
+            if (!isApplicationExist(Constant.QQ)) {
+                "请先安装QQ".show(context)
+                return@setOnClickListener
+            }
+            LoadingDialog.show(context, "日志打包中，请稍后...")
+            lifecycleScope.launch(Dispatchers.IO) {
+                val zipFile = LogFileManager.exportLogFiles(context)
+                launch(Dispatchers.Main) {
+                    LoadingDialog.dismiss()
+                    if (zipFile == null) {
+                        "暂无可发送的日志".show(context)
+                        return@launch
+                    }
+                    shareLogToQQ(zipFile)
+                }
+            }
+        }
+
         binding.introduceLayout.setOnClickListener {
             navigatePageTo<QuestionAndAnswerActivity>()
+        }
+    }
+
+    /**
+     * 把日志压缩包通过 QQ 发送出去
+     * */
+    private fun shareLogToQQ(zipFile: File) {
+        val uri = FileProvider.getUriForFile(context, "${packageName}.fileprovider", zipFile)
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/zip"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            setPackage(Constant.QQ)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            e.printStackTrace()
+            "无法唤起QQ".show(context)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+            "日志分享失败".show(context)
         }
     }
 

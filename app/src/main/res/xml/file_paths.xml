@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- 日志导出包：cacheDir/log_export/ -->
+    <cache-path
+        name="log_export"
+        path="log_export/" />
+
+    <!-- 原始日志文件：getExternalFilesDir(Documents)/ -->
+    <external-files-path
+        name="documents"
+        path="Documents/" />
+</paths>

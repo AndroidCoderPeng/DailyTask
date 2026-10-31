@@ -505,6 +505,28 @@
                 </RelativeLayout>
 
                 <RelativeLayout
+                    android:id="@+id/sendLogLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/itemLayoutHeight"
+                    android:background="@color/white"
+                    android:paddingHorizontal="@dimen/dp_16">
+
+                    <com.google.android.material.textview.MaterialTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerVertical="true"
+                        android:text="发送日志"
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+
+                    <ImageView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_centerVertical="true"
+                        android:background="@drawable/ic_arrow_right" />
+                </RelativeLayout>
+
+                <RelativeLayout
                     android:id="@+id/introduceLayout"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/itemLayoutHeight"
