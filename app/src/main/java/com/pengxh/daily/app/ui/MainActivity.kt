@@ -545,16 +545,33 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * 2. 与任务是否开启无关
      * 3. 延迟到窗口就绪后执行，保证隐藏系统栏、降低亮度等操作生效
      * 4. 用户仍可通过上滑手势或者音量下键退出蒙层
+     * 5. 隐藏系统栏由 setMaskVisible(true) 无条件负责，此处不再重复处理
      * */
     private fun showMaskOnForeground() {
         window.decorView.post { setMaskVisible(true) }
     }
 
+    /**
+     * 窗口重新获得焦点时兜底隐藏系统栏
+     *
+     * decorView.post 执行的时机可能早于窗口真正拿到焦点，此时 hide() 可能失效，
+     * 因此这里再补一次，确保伪灭屏状态下状态栏一定是隐藏的
+     * */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && maskViewController.isMaskVisible()) {
+            maskViewController.hideSystemBars()
+        }
+    }
+
     private fun setMaskVisible(visible: Boolean) {
         saveMaskMode(visible)
-        if (visible && !maskViewController.isMaskVisible()) {
-            maskViewController.showMaskView()
-        } else if (!visible && maskViewController.isMaskVisible()) {
+        if (visible) {
+            maskViewController.hideSystemBars()
+            if (!maskViewController.isMaskVisible()) {
+                maskViewController.showMaskView()
+            }
+        } else if (maskViewController.isMaskVisible()) {
             maskViewController.hideMaskView()
         }
     }

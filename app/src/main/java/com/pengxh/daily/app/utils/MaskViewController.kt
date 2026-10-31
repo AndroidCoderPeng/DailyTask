@@ -25,16 +25,27 @@ class MaskViewController(
     private val random = Random()
     private var clockAnimationRunnable: Runnable? = null
 
-    fun showMaskView() {
-        // 隐藏悬浮窗
-        FloatingWindowController.hide()
-
-        // 隐藏系统栏
+    /**
+     * 隐藏系统栏（状态栏 + 导航栏）
+     *
+     * 单独抽出来且允许重复调用的原因：
+     * 1. 窗口失焦进入后台后，系统会接管并显示状态栏，回到前台必须重新 hide 一次
+     * 2. hide() 只有在窗口持有焦点时才可靠生效，需要一个可重试的入口做兜底
+     * */
+    fun hideSystemBars() {
         insetsController.apply {
             hide(WindowInsetsCompat.Type.statusBars())
             hide(WindowInsetsCompat.Type.navigationBars())
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
+    }
+
+    fun showMaskView() {
+        // 隐藏悬浮窗
+        FloatingWindowController.hide()
+
+        // 隐藏系统栏
+        hideSystemBars()
 
         // 显示蒙层
         binding.maskView.visibility = View.VISIBLE
