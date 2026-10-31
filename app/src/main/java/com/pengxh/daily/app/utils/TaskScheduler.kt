@@ -308,7 +308,7 @@ object TaskScheduler {
                 clockInWaitStartedAtMillis = System.currentTimeMillis()
                 clockInWaitDeadlineMillis = null
                 clockInDeferred = clockInSignal
-                var result = TaskOutcome.TIMEOUT
+                var result: TaskOutcome
                 try {
                     if (!DailyTaskApplication.get().openApplication()) {
                         requestStopDueToError("无法打开目标应用，任务已停止")
@@ -520,6 +520,9 @@ object TaskScheduler {
         job?.cancel()
         job = null
         _isRunning.value = false
+        // 手动停止后"今日已处理"作废：
+        // 否则停止 → 新增任务 → 再点启动时，主循环会走"今日已处理，等待下一次重置"的
+        lastProcessedDate = null
         AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
         ForegroundRunningService.emitNotificationText("为保证程序正常运行，请勿移除此通知")
     }
@@ -567,6 +570,8 @@ object TaskScheduler {
         job?.cancel()
         job = null
         _isRunning.value = false
+        // 与 stopTask() 同理：异常停止后"今日已处理"作废，手动重启时重新评估当天剩余任务
+        lastProcessedDate = null
         AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
         if (shouldNotify) {
             ForegroundRunningService.emitNotificationText(reason)
