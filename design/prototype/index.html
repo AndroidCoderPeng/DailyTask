@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DailyTask · 界面原型 v2</title>
+<link rel="stylesheet" href="assets/prototype.css">
+</head>
+<body>
+<div class="stage">
+
+  <!-- ============ 侧栏（评审用，非 App 内容） ============ -->
+  <aside class="sidenav">
+    <div class="brand">
+      <div class="brand-logo">DT</div>
+      <div class="brand-text">
+        <h1>DailyTask</h1>
+        <p>无人值守打卡 · 界面原型 v2</p>
+      </div>
+    </div>
+
+    <div class="sidenav-block">
+      <h2>页面</h2>
+      <ul class="nav-list">
+        <li><button class="nav-item is-active" data-goto="main"><i class="nav-ico">◎</i>首页 · 任务调度</button></li>
+        <li><button class="nav-item" data-goto="settings"><i class="nav-ico">⚙</i>设置 · 总览</button></li>
+        <li><button class="nav-item" data-goto="taskconfig"><i class="nav-ico">◷</i>任务配置</button></li>
+        <li><button class="nav-item" data-goto="channel"><i class="nav-ico">✉</i>消息渠道</button></li>
+        <li><button class="nav-item" data-goto="command"><i class="nav-ico">⌘</i>全部指令</button></li>
+        <li><button class="nav-item" data-goto="qa"><i class="nav-ico">?</i>常见问题</button></li>
+      </ul>
+    </div>
+
+    <div class="sidenav-block">
+      <h2>本次改版要点</h2>
+      <ul class="note-list">
+        <li>首页用 <b>状态卡片 + 单一主操作</b> 取代原来分散的顶栏/提示/按钮三段式，运行态一眼可辨。</li>
+        <li>任务卡片补齐 <b>状态标签 / 随机窗口 / 剩余倒计时</b>，不再只有计划时间与实际时间两行。</li>
+        <li>设置页按 <b>打卡目标 / 服务权限 / 行为偏好 / 工具</b> 四组收敛，异常提示内联到对应行。</li>
+        <li>指令页把整块红绿底改为 <b>等宽指令 + 中性标签</b>，有/无回执一眼可辨且不刺眼。</li>
+        <li>消息渠道改 <b>分段切换</b>，企业微信与 QQ 邮箱互斥展示，各自独立校验状态。</li>
+      </ul>
+    </div>
+
+    <div class="sidenav-block">
+      <h2>配色 / 字号</h2>
+      <div class="swatches">
+        <span class="sw" style="--c:#3399FF">主色 #3399FF</span>
+        <span class="sw" style="--c:#22C55E">成功 #22C55E</span>
+        <span class="sw" style="--c:#F59E0B">提醒 #F59E0B</span>
+        <span class="sw" style="--c:#EF4444">失败 #EF4444</span>
+        <span class="sw" style="--c:#F2F4F8">底色 #F2F4F8</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ 手机 ============ -->
+  <div class="device-wrap">
+    <div class="phone">
+      <div class="phone-island"></div>
+      <div class="phone-statusbar">
+        <span id="statusClock">17:20</span>
+        <span class="statusbar-icons">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M2 17h2v3H2zM6 13h2v7H6zM10 9h2v11h-2zM14 5h2v15h-2zM18 2h2v18h-2z" fill="currentColor"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 20a8 8 0 100-16 8 8 0 000 16zm0-3a5 5 0 110-10 5 5 0 010 10z" fill="currentColor"/></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 3l3 4h-2v5h5V10l4 3-4 3v-2h-5v5h2l-3 4-3-4h2v-5H6v2l-4-3 4-3v2h5V7H9z" fill="currentColor"/></svg>
+        </span>
+      </div>
+
+      <div class="viewport" id="viewport">
+
+        <!-- ================= 首页 ================= -->
+        <section class="screen is-active" data-screen="main">
+          <header class="appbar">
+            <div class="appbar-text">
+              <p class="appbar-sub" id="mainDate">2026年10月31日 星期六</p>
+              <h1 class="appbar-title" id="mainTitle">今日任务待启动</h1>
+            </div>
+            <div class="appbar-actions">
+              <button class="icon-btn" id="maskToggle" aria-label="伪灭屏预览">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
+              </button>
+              <button class="icon-btn" id="settingsBtn" aria-label="设置">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 15.5A3.5 3.5 0 1115.5 12 3.5 3.5 0 0112 15.5zm7.4-2.6a7.7 7.7 0 000-1.8l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-1.6-.9L15 3H9l-.4 2.2a7.6 7.6 0 00-1.6.9l-2.4-1-2 3.4 2 1.6a7.7 7.7 0 000 1.8l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 001.6.9L9 21h6l.4-2.2a7.6 7.6 0 001.6-.9l2.4 1 2-3.4z" fill="currentColor"/></svg>
+              </button>
+            </div>
+          </header>
+
+          <div class="scroll">
+            <section class="card hero">
+              <div class="hero-head">
+                <span class="pill pill-idle" id="runPill"><i class="dot"></i><span id="runPillText">未运行</span></span>
+                <span class="hero-clock" id="heroClock">17:20:33</span>
+              </div>
+              <p class="hero-desc" id="heroDesc">点击下方按钮启动今日任务，到点后自动拉起钉钉完成打卡。</p>
+              <div class="hero-reset">
+                <span class="hero-reset-ico">
+                  <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 5v5.2l4 2.3-1 1.7-5-2.9V7z" fill="currentColor"/></svg>
+                </span>
+                <div class="hero-reset-text">
+                  <span class="hero-reset-label">距下次重置</span>
+                  <span class="hero-reset-value" id="resetCountdown">12:39:41</span>
+                </div>
+                <span class="hero-reset-sub">每天 6:00 重置</span>
+              </div>
+            </section>
+
+            <button class="btn btn-primary btn-block" id="runBtn">
+              <svg viewBox="0 0 24 24" width="18" height="18"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+              <span id="runBtnText">启动今日任务</span>
+            </button>
+
+            <div class="tipbar" id="tipBar" data-tone="info">
+              <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>
+              <span id="tipText">准备就绪，启动后将按时间点依次执行打卡。</span>
+            </div>
+
+            <div class="section-head">
+              <h2>今日任务 <span class="badge" id="taskCount">3</span></h2>
+              <div class="section-actions">
+                <button class="link-btn" data-act="import">导入</button>
+                <button class="link-btn" data-act="export">导出</button>
+              </div>
+            </div>
+
+            <div class="task-list" id="taskList"></div>
+
+            <div class="empty" id="emptyState" hidden>
+              <div class="empty-ico">
+                <svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 5v5.2l4 2.3-1 1.7-5-2.9V7z" fill="currentColor"/></svg>
+              </div>
+              <h3>还没有打卡时间点</h3>
+              <p>添加上班、下班等时间点，到点后自动完成打卡并回传结果。</p>
+              <button class="btn btn-soft" data-act="add">添加第一个任务</button>
+            </div>
+          </div>
+
+          <button class="fab" id="fabAdd" aria-label="添加任务">
+            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" fill="currentColor"/></svg>
+          </button>
+
+          <!-- 伪灭屏蒙层 -->
+          <div class="mask" id="maskOverlay" hidden>
+            <div class="mask-clock" id="maskClock">17:20</div>
+            <p class="mask-tip">上滑屏幕或按音量下键退出</p>
+          </div>
+        </section>
+
+        <!-- ================= 设置 ================= -->
+        <section class="screen" data-screen="settings">
+          <header class="appbar appbar-nav">
+            <button class="icon-btn" data-back><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.4 4.6L14 3.2 5.2 12l8.8 8.8 1.4-1.4L7.9 12z" fill="currentColor"/></svg></button>
+            <div class="appbar-text"><h1 class="appbar-title">设置</h1></div>
+          </header>
+
+          <div class="scroll">
+            <section class="group">
+              <h2 class="group-title">打卡目标</h2>
+              <div class="group-body">
+                <button class="row row-tap" data-goto="channel">
+                  <span class="row-ico" style="--ico:#3399FF">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 4h16v16H4zm2 4v2h12V8zm0 4v2h12v-2zm0 4v2h8v-2z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main">
+                    <span class="row-title">目标应用</span>
+                    <span class="row-desc">钉钉 · 极速打卡</span>
+                  </span>
+                  <span class="row-value">钉钉</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+
+                <button class="row row-tap" data-goto="channel">
+                  <span class="row-ico" style="--ico:#22C55E">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3 5h18v14H3zm2 2v.4l7 5 7-5V7z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main">
+                    <span class="row-title">消息渠道</span>
+                    <span class="row-desc">打卡结果回推渠道</span>
+                  </span>
+                  <span class="row-value ok">企业微信</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+
+                <div class="row row-block">
+                  <div class="row-head">
+                    <span class="row-main">
+                      <span class="row-title">结果来源</span>
+                      <span class="row-desc">用哪种方式判定「打卡成功」</span>
+                    </span>
+                  </div>
+                  <div class="segmented" id="sourceSegment">
+                    <button class="seg is-active" data-value="notice">通知监听</button>
+                    <button class="seg" data-value="capture">截屏服务</button>
+                  </div>
+                </div>
+
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">返回截图</span>
+                    <span class="row-desc">【DT#打卡】倒计时结束截屏并回传</span>
+                  </span>
+                  <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">服务与权限</h2>
+              <div class="group-body">
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">悬浮权限</span>
+                    <span class="row-desc">核心服务，用于打卡后自动跳回本软件</span>
+                  </span>
+                  <label class="switch switch-locked"><input type="checkbox" checked disabled><span class="slider"></span></label>
+                </div>
+
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">通知监听</span>
+                    <span class="row-desc">监听打卡结果与远程指令</span>
+                  </span>
+                  <label class="switch switch-locked"><input type="checkbox" checked disabled><span class="slider"></span></label>
+                </div>
+
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">截屏服务</span>
+                    <span class="row-desc">MediaProjection 授权，用于兜底截取打卡结果</span>
+                  </span>
+                  <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+                <p class="row-note danger" id="captureNote">截屏服务未开启，无法获取打卡结果</p>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">行为偏好</h2>
+              <div class="group-body">
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">手势辅助</span>
+                    <span class="row-desc">单指上下滑动开启 / 关闭伪灭屏</span>
+                  </span>
+                  <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">省电模式</span>
+                    <span class="row-desc">降低倒计时与蒙层动画刷新频率</span>
+                  </span>
+                  <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">退回桌面</span>
+                    <span class="row-desc">打卡结束后先回桌面再启动本软件</span>
+                  </span>
+                  <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">任务</h2>
+              <div class="group-body">
+                <button class="row row-tap" data-goto="taskconfig">
+                  <span class="row-ico" style="--ico:#8B5CF6">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 10.6l4 2.3-1 1.7-5-2.9V6h2z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main">
+                    <span class="row-title">任务配置</span>
+                    <span class="row-desc">重置时间、超时、口令、工作日</span>
+                  </span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <button class="row row-tap" data-act="updateHoliday">
+                  <span class="row-ico" style="--ico:#F59E0B">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M7 2v2H5a2 2 0 00-2 2v13a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2h-2V2h-2v2H9V2zm12 8v9H5v-9z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main">
+                    <span class="row-title">更新节假日数据</span>
+                    <span class="row-desc">同步当年与次年法定节假日</span>
+                  </span>
+                  <span class="row-value">2026-10-31</span>
+                </button>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">工具</h2>
+              <div class="group-body">
+                <button class="row row-tap" data-goto="command">
+                  <span class="row-ico" style="--ico:#0EA5E9">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 5h16v2H4zm2 4h12v2H6zm-2 4h16v2H4zm4 4h8v2H8z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main"><span class="row-title">全部指令</span></span>
+                  <span class="row-value">10 条</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <button class="row row-tap" data-act="openTest">
+                  <span class="row-ico" style="--ico:#64748B">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M14 3v2h3.6l-9 9 1.4 1.4 9-9V10h2V3zM5 5h5V3H3v18h18v-7h-2v5H5z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main">
+                    <span class="row-title">唤起测试</span>
+                    <span class="row-desc">验证 QQ / 微信 / 支付宝拉起目标应用</span>
+                  </span>
+                </button>
+                <button class="row row-tap" data-act="captureTest">
+                  <span class="row-ico" style="--ico:#64748B">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3zm3 5a5 5 0 110 10 5 5 0 010-10z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main">
+                    <span class="row-title">截屏测试</span>
+                    <span class="row-desc">截屏并通过消息渠道发送测试图片</span>
+                  </span>
+                </button>
+                <button class="row row-tap" data-act="sendLog">
+                  <span class="row-ico" style="--ico:#64748B">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zm-1 7V3.5L18.5 9zM8 13h8v2H8zm0 4h8v2H8z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main">
+                    <span class="row-title">发送日志</span>
+                    <span class="row-desc">打包后通过 QQ 发送，便于排查问题</span>
+                  </span>
+                </button>
+                <button class="row row-tap" data-goto="qa">
+                  <span class="row-ico" style="--ico:#64748B">
+                    <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2zm1.8-6.3l-.9.9c-.7.7-.9 1.1-.9 2.4h-2v-.5c0-.9.4-1.7 1-2.3l1.2-1.3c.4-.3.6-.8.6-1.4A2 2 0 0011 7a2 2 0 00-2 1.7H7A4 4 0 0115 10c0 .8-.3 1.5-.8 2.1z" fill="currentColor"/></svg>
+                  </span>
+                  <span class="row-main"><span class="row-title">常见问题</span></span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">关于</h2>
+              <div class="group-body">
+                <div class="row">
+                  <span class="row-main"><span class="row-title">当前版本</span></span>
+                  <span class="row-value">2.4.3.0</span>
+                </div>
+                <div class="row">
+                  <span class="row-main"><span class="row-title">数据存储</span><span class="row-desc">全部配置保存在本机，不上传服务器</span></span>
+                </div>
+              </div>
+            </section>
+
+            <p class="footer-note">本软件仅供内部学习研究使用，请勿商用或倒卖。</p>
+          </div>
+        </section>
+
+        <!-- ================= 任务配置 ================= -->
+        <section class="screen" data-screen="taskconfig">
+          <header class="appbar appbar-nav">
+            <button class="icon-btn" data-back><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.4 4.6L14 3.2 5.2 12l8.8 8.8 1.4-1.4L7.9 12z" fill="currentColor"/></svg></button>
+            <div class="appbar-text"><h1 class="appbar-title">任务配置</h1></div>
+          </header>
+
+          <div class="scroll">
+            <section class="group">
+              <h2 class="group-title">时间与口令</h2>
+              <div class="group-body">
+                <button class="row row-tap" data-act="resetTime">
+                  <span class="row-main"><span class="row-title">重置时间</span><span class="row-desc">每天几点重新开始计算当日任务</span></span>
+                  <span class="row-value">每天 6 点</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <button class="row row-tap" data-act="timeout">
+                  <span class="row-main"><span class="row-title">超时时间</span><span class="row-desc">停留超时后触发兜底截屏</span></span>
+                  <span class="row-value">60s</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <button class="row row-tap" data-act="commandKey">
+                  <span class="row-main"><span class="row-title">任务口令</span><span class="row-desc">远程触发打卡时使用的指令内容</span></span>
+                  <span class="row-value">打卡</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+                <button class="row row-tap" data-act="workday">
+                  <span class="row-main"><span class="row-title">工作日设置</span><span class="row-desc">非工作日自动跳过任务</span></span>
+                  <span class="row-value">周一至周五</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">执行策略</h2>
+              <div class="group-body">
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">循环任务</span>
+                    <span class="row-desc danger-text">仅能通过远程指令「DT#开启/关闭循环」修改</span>
+                  </span>
+                  <label class="switch switch-locked"><input type="checkbox" checked disabled><span class="slider"></span></label>
+                </div>
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">跳过节假日</span>
+                    <span class="row-desc">法定节假日不执行打卡</span>
+                  </span>
+                  <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">随机时间</span>
+                    <span class="row-desc">在时间范围内随机取点执行</span>
+                  </span>
+                  <label class="switch" id="randomSwitch"><input type="checkbox" checked><span class="slider"></span></label>
+                </div>
+                <button class="row row-tap row-sub" id="rangeRow" data-act="minuteRange">
+                  <span class="row-main"><span class="row-title">时间范围</span></span>
+                  <span class="row-value">30 分钟</span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">配置迁移</h2>
+              <div class="group-body">
+                <button class="row row-tap" data-act="export">
+                  <span class="row-main">
+                    <span class="row-title">导出配置</span>
+                    <span class="row-desc">分享到 QQ / 微信 / TIM / 支付宝，或复制到剪贴板</span>
+                  </span>
+                  <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ================= 消息渠道 ================= -->
+        <section class="screen" data-screen="channel">
+          <header class="appbar appbar-nav">
+            <button class="icon-btn" data-back><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.4 4.6L14 3.2 5.2 12l8.8 8.8 1.4-1.4L7.9 12z" fill="currentColor"/></svg></button>
+            <div class="appbar-text"><h1 class="appbar-title">消息渠道</h1></div>
+          </header>
+
+          <div class="scroll">
+            <section class="group">
+              <div class="group-body">
+                <div class="field">
+                  <label class="field-label" for="msgTitle">消息标题</label>
+                  <input class="input" id="msgTitle" value="打卡结果通知" placeholder="如：打卡结果通知（非必填）">
+                </div>
+              </div>
+            </section>
+
+            <div class="segmented segmented-lg" id="channelSegment">
+              <button class="seg is-active" data-value="wx">企业微信</button>
+              <button class="seg" data-value="mail">QQ 邮箱</button>
+            </div>
+
+            <section class="group" data-panel="wx">
+              <h2 class="group-title">企业微信</h2>
+              <div class="group-body">
+                <div class="field">
+                  <label class="field-label" for="wxKey">Webhook Key</label>
+                  <div class="field-inline">
+                    <input class="input" id="wxKey" value="a8f3c2e1-6b4d-4f70-9c2a-1de5f80b7a31">
+                    <button class="btn btn-soft btn-sm" data-act="testWx">测试推送</button>
+                  </div>
+                  <p class="field-hint">群聊设置 → 消息推送 → 复制地址末尾的 key</p>
+                </div>
+                <div class="status-line" id="wxStatus">
+                  <span class="pill pill-ok"><i class="dot"></i>已验证</span>
+                  <span class="status-text">配置保存于 2026-10-28 14:02</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="group" data-panel="mail" hidden>
+              <h2 class="group-title">QQ 邮箱</h2>
+              <div class="group-body">
+                <div class="field">
+                  <label class="field-label" for="mailOut">发件箱</label>
+                  <div class="field-inline">
+                    <input class="input" id="mailOut" value="123456789">
+                    <span class="input-affix">@qq.com</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="mailCode">授权码</label>
+                  <input class="input" id="mailCode" type="password" value="abcd1234efgh5678">
+                  <p class="field-hint">使用 SMTP 授权码，非邮箱登录密码</p>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="mailIn">收件箱</label>
+                  <input class="input" id="mailIn" value="123456789@qq.com">
+                </div>
+                <div class="status-line">
+                  <span class="pill pill-idle"><i class="dot"></i>未验证</span>
+                  <span class="status-text">测试邮件发送成功后才保存</span>
+                </div>
+                <button class="btn btn-primary btn-block" data-act="testMail">发送测试邮件</button>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <!-- ================= 全部指令 ================= -->
+        <section class="screen" data-screen="command">
+          <header class="appbar appbar-nav">
+            <button class="icon-btn" data-back><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.4 4.6L14 3.2 5.2 12l8.8 8.8 1.4-1.4L7.9 12z" fill="currentColor"/></svg></button>
+            <div class="appbar-text"><h1 class="appbar-title">全部指令</h1></div>
+          </header>
+
+          <div class="scroll">
+            <div class="notice-card">
+              <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>
+              <p>所有指令必须以 <code>DT#</code> 开头，否则会被当作普通聊天忽略。建议用小号发送。</p>
+            </div>
+
+            <div class="cmd-list" id="cmdList">
+              <button class="cmd-item" data-cmd="DT#执行任务">
+                <span class="cmd-code">DT#执行任务</span>
+                <span class="cmd-desc">启动循环任务（默认每天自动执行）</span>
+                <span class="tag tag-plain">无回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#终止任务">
+                <span class="cmd-code">DT#终止任务</span>
+                <span class="cmd-desc">停止循环任务（仅停止当天）</span>
+                <span class="tag tag-reply">有回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#开启循环">
+                <span class="cmd-code">DT#开启循环</span>
+                <span class="cmd-desc">开启周期循环的标志位</span>
+                <span class="tag tag-reply">有回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#关闭循环">
+                <span class="cmd-code">DT#关闭循环</span>
+                <span class="cmd-desc">永久暂停，直到收到「开启循环」指令</span>
+                <span class="tag tag-reply">有回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#息屏">
+                <span class="cmd-code">DT#息屏</span>
+                <span class="cmd-desc">开启伪装灭屏模式，显示纯黑背景 + 动态时钟</span>
+                <span class="tag tag-plain">无回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#亮屏">
+                <span class="cmd-code">DT#亮屏</span>
+                <span class="cmd-desc">退出伪装灭屏模式</span>
+                <span class="tag tag-plain">无回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#考勤记录">
+                <span class="cmd-code">DT#考勤记录</span>
+                <span class="cmd-desc">导出当天考勤记录</span>
+                <span class="tag tag-reply">有回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#打卡">
+                <span class="cmd-code">DT#打卡</span>
+                <span class="cmd-desc">触发一次打卡（默认口令内容为「打卡」）</span>
+                <span class="tag tag-reply">有回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#状态查询">
+                <span class="cmd-code">DT#状态查询</span>
+                <span class="cmd-desc">查询任务、服务、监听、电量、版本等状态</span>
+                <span class="tag tag-reply">有回执</span>
+              </button>
+              <button class="cmd-item" data-cmd="DT#截屏">
+                <span class="cmd-code">DT#截屏</span>
+                <span class="cmd-desc">截取目标应用屏幕并通过消息渠道返回</span>
+                <span class="tag tag-reply">有回执</span>
+              </button>
+            </div>
+
+            <p class="footer-note">点击任意指令即可复制到剪贴板。</p>
+          </div>
+        </section>
+
+        <!-- ================= 常见问题 ================= -->
+        <section class="screen" data-screen="qa">
+          <header class="appbar appbar-nav">
+            <button class="icon-btn" data-back><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15.4 4.6L14 3.2 5.2 12l8.8 8.8 1.4-1.4L7.9 12z" fill="currentColor"/></svg></button>
+            <div class="appbar-text"><h1 class="appbar-title">常见问题</h1></div>
+          </header>
+
+          <div class="scroll">
+            <div class="accordion" id="qaList">
+              <div class="acc-item">
+                <button class="acc-head"><span>手机重启后不再自动打卡怎么办？</span><i class="acc-ico"></i></button>
+                <div class="acc-body"><p>软件不监听开机广播，重启后需手动打开一次 DailyTask，调度与通知监听才会恢复。</p></div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head"><span>提示「未监听到打卡成功」，但实际已打卡？</span><i class="acc-ico"></i></button>
+                <div class="acc-body"><p>多为刚执行过 <code>DT#打卡</code> 指令，属正常现象，以指令回执与截图结果为准。</p></div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head"><span>回执提示「设备正被占用将排队等待」</span><i class="acc-ico"></i></button>
+                <div class="acc-body"><p>定时任务正在操作设备，指令会排队等待，完成后回执会附带实际等待时长。</p></div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head"><span>打卡结果一直收不到</span><i class="acc-ico"></i></button>
+                <div class="acc-body"><p>先发送 <code>DT#状态查询</code> 检查通知监听、截屏服务、消息渠道状态，再查看应用内日志。</p></div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head"><span>钉钉监听不到打卡结果怎么办？</span><i class="acc-ico"></i></button>
+                <div class="acc-body"><p>请在设置中开启「截屏服务」，授权时选择「整个屏幕」，结果来源切换为截屏服务。</p></div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head"><span>灭屏后打卡失效？</span><i class="acc-ico"></i></button>
+                <div class="acc-body"><p>灭屏状态下前台服务可能被系统回收，请在开发者模式中打开「充电不息屏」。</p></div>
+              </div>
+              <div class="acc-item">
+                <button class="acc-head"><span>哪些行为会被判定为作弊？</span><i class="acc-ico"></i></button>
+                <div class="acc-body"><p>Root、模拟定位、远程控制软件、ADB 模拟点击风险极高；开启无障碍服务、连接电脑数据线也有中等风险。</p></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- /viewport -->
+
+      <!-- ============ 弹层：置于机身内，随机身裁切 ============ -->
+
+<!-- ================= 底部弹窗：任务时间 ================= -->
+<div class="sheet-mask" id="sheetTime" hidden>
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <h3 class="sheet-title" id="timeSheetTitle">添加任务</h3>
+    <p class="sheet-desc">选择打卡时间点，到点后自动执行</p>
+    <div class="tp-head"><span>时</span><span>分</span><span>秒</span></div>
+    <div class="timepicker">
+      <div class="tp-col" data-col="hour"></div>
+      <div class="tp-col" data-col="min"></div>
+      <div class="tp-col" data-col="sec"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" data-sheet-close>取消</button>
+      <button class="btn btn-primary" id="timeSheetOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 底部弹窗：通用列表 ================= -->
+<div class="sheet-mask" id="sheetList" hidden>
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <h3 class="sheet-title" id="listSheetTitle">选择</h3>
+    <div class="opt-list" id="listSheetBody"></div>
+    <div class="sheet-actions"><button class="btn btn-ghost" data-sheet-close>取消</button></div>
+  </div>
+</div>
+
+<!-- ================= 底部弹窗：工作日 ================= -->
+<div class="sheet-mask" id="sheetWorkday" hidden>
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <h3 class="sheet-title">选择工作日</h3>
+    <p class="sheet-desc">至少保留一天为工作日</p>
+    <div class="day-grid" id="workdayGrid"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" data-sheet-close>取消</button>
+      <button class="btn btn-primary" id="workdayOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 对话框 ================= -->
+<div class="dialog-mask" id="dialogMask" hidden>
+  <div class="dialog" id="dialogBox">
+    <h3 class="dialog-title" id="dialogTitle">提示</h3>
+    <p class="dialog-msg" id="dialogMsg">提示内容</p>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost" id="dialogCancel">取消</button>
+      <button class="btn btn-primary" id="dialogOk">确定</button>
+    </div>
+  </div>
+</div>
+
+      <div class="toast" id="toast" hidden></div>
+
+    </div><!-- /phone -->
+
+    <!-- ============ 页面切换条（仅原型评审用，不属于 App 内容） ============ -->
+    <div class="proto-switch" id="protoSwitch">
+      <button class="is-active" data-goto="main">首页</button>
+      <button data-goto="settings">设置</button>
+      <button data-goto="taskconfig">任务配置</button>
+      <button data-goto="channel">消息渠道</button>
+      <button data-goto="command">全部指令</button>
+      <button data-goto="qa">常见问题</button>
+      <button class="proto-overview-btn" id="overviewBtn" title="一屏看全">总览</button>
+    </div>
+
+  </div><!-- /device-wrap -->
+</div><!-- /stage -->
+
+<script src="assets/prototype.js"></script>
+</body>
+</html> 
