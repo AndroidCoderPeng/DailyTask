@@ -13,11 +13,11 @@ import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,8 +26,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Calendar
@@ -145,14 +145,14 @@ object TaskScheduler {
                         continue
                     }
 
-                    var completionMessage: String?
+                    var completion: TaskCompletion?
                     var emitCompletionEvent = true
                     val skipReason = getTodaySkipReason()
                     if (skipReason != null) {
                         reportStart(true)
                         _tipsEvent.tryEmit(TipsEvent.Skip(skipReason))
-                        completionMessage = "今日为${skipReason.label}，任务已跳过"
-                        ForegroundRunningService.emitNotificationText(completionMessage)
+                        completion = TaskCompletion("今日为${skipReason.label}，任务已跳过")
+                        ForegroundRunningService.emitNotificationText(completion.message)
                         emitCompletionEvent = false
                     } else {
                         val schedule = buildTodaySchedule()
@@ -163,14 +163,14 @@ object TaskScheduler {
 
                         reportStart(true)
                         LogFileManager.writeLog("开始执行每日任务，共 ${schedule.size} 个")
-                        completionMessage = executeSchedule(schedule) ?: return@launch
+                        completion = executeSchedule(schedule) ?: return@launch
                     }
 
                     lastProcessedDate = today
-                    AppConfig.saveString(Constant.LAST_RESET_DATE_KEY, today.toString())
+                    AppConfig.saveString(Constant.LAST_RESET_DATE_KEY, todayDateKey())
 
                     // 今天结束，睡到明天
-                    if (isActive) waitUntilNextReset(completionMessage, emitCompletionEvent)
+                    if (isActive) waitUntilNextReset(completion, emitCompletionEvent)
 
                     // 完整跑完一轮，说明已恢复正常，清零自愈计数
                     recoveryCount = 0
@@ -218,13 +218,23 @@ object TaskScheduler {
     }
 
     /**
+     * 一轮任务的执行结果
+     *
+     * 把"是否失败"作为结构化字段传出去，UI 层不再依赖文案关键字判断状态
+     * */
+    private data class TaskCompletion(
+        val message: String,
+        val hasFailure: Boolean = false
+    )
+
+    /**
      * 链式任务主循环
      * for 循环保证顺序执行，每个任务经历三个阶段：
      *   阶段1 - delay(到任务时间) + 通知栏秒级倒计时
      *   阶段2 - openApplication() + select{超时|打卡} 竞态等待
      *   阶段3 - 推进到下一个任务（或全部完成 emit Completed）
      */
-    private suspend fun CoroutineScope.executeSchedule(schedule: List<ScheduledTask>): String? {
+    private suspend fun CoroutineScope.executeSchedule(schedule: List<ScheduledTask>): TaskCompletion? {
         var successCount = 0
         var failureCount = 0
         var skippedCount = 0
@@ -415,7 +425,7 @@ object TaskScheduler {
         }
         LogFileManager.writeLog(message)
         ForegroundRunningService.emitNotificationText(message)
-        return message
+        return TaskCompletion(message, hasFailure = failureCount > 0 || screenshotAuthInvalid)
     }
 
     /**
@@ -431,7 +441,7 @@ object TaskScheduler {
      * 等待到下一个每日重置时间
      */
     private suspend fun waitUntilNextReset(
-        completionMessage: String? = null,
+        completion: TaskCompletion? = null,
         emitCompletionEvent: Boolean = true
     ) {
         debugWaitSeconds?.let {
@@ -449,10 +459,15 @@ object TaskScheduler {
 
         // 只发一次静态通知，不每秒刷新
         if (emitCompletionEvent) {
-            _tipsEvent.tryEmit(TipsEvent.Completed(completionMessage))
+            _tipsEvent.tryEmit(
+                TipsEvent.Completed(
+                    message = completion?.message,
+                    hasFailure = completion?.hasFailure == true
+                )
+            )
         }
         ForegroundRunningService.emitNotificationText(
-            "${completionMessage ?: "今日任务已全部执行完毕"}，等待下次任务"
+            "${completion?.message ?: "今日任务已全部执行完毕"}，等待下次任务"
         )
 
         var targetResetHour = initialResetHour

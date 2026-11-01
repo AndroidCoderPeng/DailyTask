@@ -16,6 +16,15 @@ sealed class TipsEvent {
         val plannedTime: String
     ) : TipsEvent()
 
-    /** 当日任务结果汇总 */
-    data class Completed(val message: String? = null) : TipsEvent()
+    /**
+     * 当日任务结果汇总
+     *
+     * @param message 展示文案
+     * @param hasFailure 是否存在失败项，由调度器显式给出，
+     *                   不要在 UI 层用 "文案里是否包含某个词" 来推断状态
+     * */
+    data class Completed(
+        val message: String? = null,
+        val hasFailure: Boolean = false
+    ) : TipsEvent()
 }

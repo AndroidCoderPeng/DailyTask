@@ -16,8 +16,16 @@ import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.extensions.convertColor
 
 @SuppressLint("NotifyDataSetChanged")
-class DailyTaskAdapter(private val dataBeans: MutableList<DailyTaskBean>) :
-    RecyclerView.Adapter<ViewHolder>() {
+class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
+
+    /**
+     * adapter 自持的数据副本
+     *
+     * 不与外部共享同一个 List 引用，避免外部替换 List 后
+     * "页面数据源" 与 "adapter 数据源" 变成两个对象，
+     * 一旦改成增量更新就会直接错位。
+     * */
+    private val dataBeans = mutableListOf<DailyTaskBean>()
 
     var mPosition = -1
     private var actualTime = "--:--:--"
@@ -87,11 +95,16 @@ class DailyTaskAdapter(private val dataBeans: MutableList<DailyTaskBean>) :
         }
     }
 
-    fun refresh(newRows: MutableList<DailyTaskBean>) {
+    fun refresh(newRows: List<DailyTaskBean>) {
         dataBeans.clear()
         dataBeans.addAll(newRows)
         notifyDataSetChanged()
     }
+
+    /**
+     * 当前列表快照，供外部按索引取用时保持与展示顺序一致
+     * */
+    fun itemAt(position: Int): DailyTaskBean? = dataBeans.getOrNull(position)
 
     interface OnItemClickListener {
         fun onItemClick(position: Int)

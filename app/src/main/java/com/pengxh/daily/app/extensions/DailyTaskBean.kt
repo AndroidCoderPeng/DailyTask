@@ -2,18 +2,30 @@ package com.pengxh.daily.app.extensions
 
 import com.github.gzuliyujiang.wheelpicker.entity.TimeEntity
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.kt.lite.extensions.appendZero
-import com.pengxh.daily.app.utils.AppConfig
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.util.Locale
+import java.time.LocalTime
+import java.time.ZoneId
+import java.util.Date
 import java.util.Random
 
-fun DailyTaskBean.convertToTimeEntity(): TimeEntity {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA)
-    val date = dateFormat.parse("${LocalDate.now()} ${this.time}")!!
-    return TimeEntity.target(date)
+/**
+ * "HH:mm:ss" → 当天的 TimeEntity
+ *
+ * 用于时间选择弹窗的初始选中值，解析失败时按 00:00:00 兜底
+ * */
+fun String.toTimeEntity(): TimeEntity {
+    val parts = split(":")
+    val hour = parts.getOrNull(0)?.toIntOrNull() ?: 0
+    val minute = parts.getOrNull(1)?.toIntOrNull() ?: 0
+    val second = parts.getOrNull(2)?.toIntOrNull() ?: 0
+    val date = LocalDate.now()
+        .atTime(LocalTime.of(hour, minute, second))
+        .atZone(ZoneId.systemDefault())
+        .toInstant()
+    return TimeEntity.target(Date.from(date))
 }
 
 fun DailyTaskBean.resolveExecutionTime(): String {
