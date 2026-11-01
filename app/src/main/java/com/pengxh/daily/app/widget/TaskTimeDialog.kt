@@ -1,4 +1,4 @@
-package com.pengxh.daily.app.ui.main
+package com.pengxh.daily.app.widget
 
 import android.content.Context
 import android.view.LayoutInflater
@@ -41,7 +41,7 @@ object TaskTimeDialog {
         initialTime?.let { timePicker.setDefaultValue(it.toTimeEntity()) }
 
         view.findViewById<MaterialButton>(R.id.saveButton).setOnClickListener {
-            val time = String.format(
+            val time = String.Companion.format(
                 Locale.getDefault(), "%02d:%02d:%02d",
                 timePicker.selectedHour,
                 timePicker.selectedMinute,

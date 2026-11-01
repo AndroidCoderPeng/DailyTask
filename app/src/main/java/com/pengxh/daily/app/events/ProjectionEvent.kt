@@ -1,4 +1,4 @@
-package com.pengxh.daily.app.utils
+package com.pengxh.daily.app.events
 
 /**
  * 投影截屏服务 → UI 事件

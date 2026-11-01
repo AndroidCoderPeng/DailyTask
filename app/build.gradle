@@ -116,6 +116,9 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'com.google.android.material:material:1.13.0'
     implementation 'androidx.recyclerview:recyclerview:1.4.0'
+    //MVVM
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7'
+    implementation 'androidx.activity:activity-ktx:1.9.3'
     //数据库框架
     implementation 'androidx.room:room-runtime:2.8.2'
     annotationProcessor 'androidx.room:room-compiler:2.8.2'

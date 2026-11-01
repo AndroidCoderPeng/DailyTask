@@ -25,7 +25,7 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
-import com.pengxh.daily.app.utils.ProjectionEvent
+import com.pengxh.daily.app.events.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.kt.lite.extensions.createImageFileDir
 import com.pengxh.kt.lite.extensions.saveImage

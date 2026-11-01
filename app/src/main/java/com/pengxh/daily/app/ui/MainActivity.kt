@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
@@ -17,39 +18,36 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.databinding.ActivityMainBinding
+import com.pengxh.daily.app.events.MainEvent
+import com.pengxh.daily.app.events.MonitorEvent
+import com.pengxh.daily.app.events.TipsEvent
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
-import com.pengxh.daily.app.sqlite.DatabaseWrapper
-import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.daily.app.ui.main.TaskTimeDialog
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
+import com.pengxh.daily.app.utils.MainDialogManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
-import com.pengxh.daily.app.utils.MonitorEvent
 import com.pengxh.daily.app.utils.ProjectionSession
-import com.pengxh.daily.app.utils.TaskDataManager
+import com.pengxh.daily.app.utils.TaskListState
 import com.pengxh.daily.app.utils.TaskScheduler
-import com.pengxh.daily.app.utils.TipsEvent
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.utils.todayDateKey
+import com.pengxh.daily.app.vm.MainViewModel
+import com.pengxh.daily.app.widget.TaskTimeDialog
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemBorder
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
-import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
-import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Calendar
 import java.util.Locale
 
@@ -57,7 +55,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private val marginOffset by lazy { 16.dp2px(this) }
     private val permissionContract = ActivityResultContracts.StartActivityForResult()
-    private val taskDataManager by lazy { TaskDataManager() }
+
+    private val mainViewModel: MainViewModel by viewModels()
 
     private val insetsController by lazy {
         WindowCompat.getInsetsController(window, binding.rootView)
@@ -67,14 +66,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         GestureController(this, maskViewController, ::saveMaskMode)
     }
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
-
-    /**
-     * 当前任务列表快照
-     *
-     * 只读引用，adapter 内部持有自己的副本，两者不共享同一个 List 对象，
-     * 避免页面数据源与 adapter 数据源分叉后错位。
-     * */
-    private var taskBeans: List<DailyTaskBean> = emptyList()
 
     private val dailyTaskAdapter by lazy {
         DailyTaskAdapter().apply {
@@ -144,6 +135,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         setupTaskList()
         startCoreServices()
 
+        observeTaskListState()
+        observeMainEvents()
         observeResetCountdown()
         observeMonitorEvents()
         observeSchedulerState()
@@ -160,10 +153,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 doStopTask()
             } else {
                 lifecycleScope.launch {
-                    val isEmpty = withContext(Dispatchers.IO) {
-                        DatabaseWrapper.loadAllTask().isEmpty()
-                    }
-                    if (isEmpty) {
+                    if (!mainViewModel.hasTasks()) {
                         "循环任务启动失败，请先添加任务时间点".show(this@MainActivity)
                         return@launch
                     }
@@ -177,10 +167,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             true
         }
     }
-
-    // ================================================================
-    // 生命周期回调
-    // ================================================================
 
     override fun onResume() {
         super.onResume()
@@ -254,9 +240,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.contentView.background = WatermarkDrawable(this, DailyTask.getWatermarkText())
     }
 
-    /**
-     * 任务列表：绑定 adapter、分割线，并做首次加载
-     * */
     private fun setupTaskList() {
         binding.recyclerView.adapter = dailyTaskAdapter
         binding.recyclerView.addItemDecoration(
@@ -264,10 +247,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
             )
         )
-
-        lifecycleScope.launch {
-            reloadTasks()
-        }
     }
 
     /**
@@ -293,6 +272,44 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     // 每个 lifecycleScope.launch 都是独立的协程，互斥，
     // 不能为了省事把协程合并，否则只会执行第一个协程的业务，其他的业务被挂起
     // ================================================================
+
+    /**
+     * 订阅任务列表状态 → 渲染列表与空态
+     * */
+    private fun observeTaskListState() {
+        lifecycleScope.launch {
+            mainViewModel.taskListState.collect { state ->
+                when (state) {
+                    // 还没加载完，保持布局默认状态，避免空态闪一下
+                    is TaskListState.Initial -> Unit
+
+                    is TaskListState.Loaded -> {
+                        dailyTaskAdapter.refresh(state.tasks)
+                        updateEmptyState(state.tasks.isEmpty())
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 订阅 ViewModel 一次性事件 → 提示 / 联动
+     * */
+    private fun observeMainEvents() {
+        lifecycleScope.launch {
+            mainViewModel.events.collect { event ->
+                when (event) {
+                    MainEvent.TaskTimeExists -> "任务时间点已存在".show(this@MainActivity)
+
+                    MainEvent.TaskAdded -> checkMissedReset()
+
+                    is MainEvent.ImportSuccess -> handleImportSuccess(event)
+
+                    is MainEvent.ImportError -> event.message.show(this@MainActivity)
+                }
+            }
+        }
+    }
 
     /**
      * 订阅每日重置时间倒计时
@@ -407,21 +424,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
-    /**
-     * 重新从数据库加载任务列表并刷新 UI
-     *
-     * 所有"增删改之后刷新列表"的场景统一走这里，
-     * 避免加载、刷新、空态切换三段逻辑散落在多个回调里。
-     * */
-    private suspend fun reloadTasks() {
-        val list = withContext(Dispatchers.IO) {
-            DatabaseWrapper.loadAllTask()
-        }
-        taskBeans = list
-        dailyTaskAdapter.refresh(list)
-        updateEmptyState(list.isEmpty())
-    }
-
     private fun updateEmptyState(isEmpty: Boolean) {
         binding.recyclerView.visibility = if (isEmpty) View.GONE else View.VISIBLE
         binding.emptyView.visibility = if (isEmpty) View.VISIBLE else View.GONE
@@ -435,17 +437,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             showTaskRunningToast("修改")
             return
         }
-        // 协程外先取快照，避免协程执行时列表已刷新导致下标越界
-        val item = taskBeans.getOrNull(position) ?: return
-
+        val item = dailyTaskAdapter.itemAt(position) ?: return
         TaskTimeDialog.show(this, "修改任务时间", item.time) { time ->
-            lifecycleScope.launch {
-                item.time = time
-                withContext(Dispatchers.IO) {
-                    DatabaseWrapper.updateTask(item)
-                }
-                reloadTasks()
-            }
+            mainViewModel.updateTaskTime(item, time)
         }
     }
 
@@ -457,90 +451,37 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             showTaskRunningToast("删除")
             return
         }
-        // 协程外先取快照，避免协程执行时列表已刷新导致下标越界
-        val item = taskBeans.getOrNull(position) ?: return
-
+        val item = dailyTaskAdapter.itemAt(position) ?: return
         MaterialAlertDialogBuilder(this)
             .setTitle("删除任务")
             .setMessage("确定要删除这个任务吗？")
             .setCancelable(false) // 禁止点击外部关闭
-            .setPositiveButton("确定") { _, _ ->
-                lifecycleScope.launch {
-                    withContext(Dispatchers.IO) {
-                        DatabaseWrapper.deleteTask(item)
-                    }
-                    // 为了确保数据一致性，重新从数据库加载数据
-                    reloadTasks()
-                }
-            }.setNegativeButton("取消", null).show()
+            .setPositiveButton("确定") { _, _ -> mainViewModel.deleteTask(item) }
+            .setNegativeButton("取消", null).show()
     }
 
     private fun createTask() {
         TaskTimeDialog.show(this, "添加任务") { time ->
-            lifecycleScope.launch {
-                val exist = withContext(Dispatchers.IO) {
-                    DatabaseWrapper.isTaskTimeExist(time)
-                }
-                if (exist) {
-                    "任务时间点已存在".show(this@MainActivity)
-                    return@launch
-                }
-                val bean = DailyTaskBean().apply {
-                    this.time = time
-                }
-                withContext(Dispatchers.IO) {
-                    DatabaseWrapper.insert(bean)
-                }
-                reloadTasks()
-                checkMissedReset()
-            }
+            mainViewModel.addTask(time)
         }
     }
 
     private fun importTask() {
-        AlertInputDialog.Builder()
-            .setContext(this)
-            .setTitle("导入任务")
-            .setHintMessage("请将导出的任务粘贴到这里")
-            .setNegativeButton("取消")
-            .setPositiveButton("确定")
-            .setOnDialogButtonClickListener(object :
-                AlertInputDialog.OnDialogButtonClickListener {
-                override fun onConfirmClick(value: String) {
-                    // 同一个业务，可以使用同一个协程作用域，避免重复创建
-                    lifecycleScope.launch {
-                        val result = withContext(Dispatchers.IO) {
-                            taskDataManager.importTasks(value)
-                        }
-                        when (result) {
-                            is TaskDataManager.ImportResult.Success -> {
-                                if (result.count > 0) {
-                                    reloadTasks()
-                                    ForegroundRunningService.emitResetTaskTime()
-                                    checkMissedReset()
-                                }
-                                if (result.warnings.isEmpty()) {
-                                    "任务导入成功".show(this@MainActivity)
-                                } else {
-                                    MaterialAlertDialogBuilder(this@MainActivity)
-                                        .setTitle("导入完成")
-                                        .setMessage(
-                                            "任务导入成功\n\n${result.warnings.joinToString("\n")}"
-                                        )
-                                        .setPositiveButton("知道了", null)
-                                        .show()
-                                }
-                            }
+        MainDialogManager.showImportInput(this) { json ->
+            mainViewModel.importTasks(json)
+        }
+    }
 
-                            is TaskDataManager.ImportResult.Error -> {
-                                result.message.show(this@MainActivity)
-                            }
-                        }
-                    }
-                }
-
-                override fun onCancelClick() {}
-            }).build().show()
+    private fun handleImportSuccess(event: MainEvent.ImportSuccess) {
+        if (event.count > 0) {
+            ForegroundRunningService.emitResetTaskTime()
+            checkMissedReset()
+        }
+        if (event.warnings.isEmpty()) {
+            "任务导入成功".show(this@MainActivity)
+        } else {
+            MainDialogManager.showImportResult(this@MainActivity, event.warnings)
+        }
     }
 
     private fun onToolbarMenuClick(itemId: Int) {
@@ -551,42 +492,21 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     return
                 }
 
-                if (taskBeans.isNotEmpty()) {
+                if (dailyTaskAdapter.itemCount > 0) {
                     createTask()
                 } else {
-                    showAddOrImportSheet()
+                    MainDialogManager.showAddOrImportSheet(
+                        this,
+                        onAdd = { createTask() },
+                        onImport = { importTask() }
+                    )
                 }
             }
 
-            R.id.menu_settings -> showUsageNotice()
+            R.id.menu_settings -> MainDialogManager.showUsageNotice(this) {
+                navigatePageTo<SettingsActivity>()
+            }
         }
-    }
-
-    /**
-     * 任务列表为空时，让用户选择"添加"还是"导入"
-     * */
-    private fun showAddOrImportSheet() {
-        BottomActionSheet.Builder()
-            .setContext(this)
-            .setActionItemTitle(arrayListOf("添加任务", "导入任务"))
-            .setItemTextColor(R.color.theme_color.convertColor(this))
-            .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-                override fun onActionItemClick(position: Int) {
-                    when (position) {
-                        0 -> createTask()
-                        1 -> importTask()
-                    }
-                }
-            }).build().show()
-    }
-
-    private fun showUsageNotice() {
-        MaterialAlertDialogBuilder(this)
-            .setTitle("使用须知")
-            .setMessage("本软件完全免费！仅供内部使用！严禁商用或者用作其他非法用途！\r\n近期发现有人在咸鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！")
-            .setCancelable(false)
-            .setPositiveButton("知道了") { _, _ -> navigatePageTo<SettingsActivity>() }
-            .show()
     }
 
     /**

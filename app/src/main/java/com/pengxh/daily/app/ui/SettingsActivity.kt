@@ -30,7 +30,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
-import com.pengxh.daily.app.utils.ProjectionEvent
+import com.pengxh.daily.app.events.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.kt.lite.base.KotlinBaseActivity

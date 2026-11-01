@@ -3,6 +3,7 @@ package com.pengxh.daily.app.utils
 import android.os.SystemClock
 import android.util.Log
 import com.pengxh.daily.app.DailyTaskApplication
+import com.pengxh.daily.app.events.TipsEvent
 import com.pengxh.daily.app.extensions.formatTime
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.resolveExecutionTime

@@ -1,4 +1,6 @@
-package com.pengxh.daily.app.utils
+package com.pengxh.daily.app.events
+
+import com.pengxh.daily.app.utils.DayFlag
 
 sealed class TipsEvent {
     /**
