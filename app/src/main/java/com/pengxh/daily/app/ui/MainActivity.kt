@@ -72,7 +72,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * 当前任务列表快照
      *
      * 只读引用，adapter 内部持有自己的副本，两者不共享同一个 List 对象，
-     * 避免"页面数据源"与"adapter 数据源"分叉后错位。
+     * 避免页面数据源与 adapter 数据源分叉后错位。
      * */
     private var taskBeans: List<DailyTaskBean> = emptyList()
 
@@ -90,9 +90,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
-    /**
-     * 悬浮窗权限启动器
-     * */
     private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
         startFloatingWindowService()
     }
@@ -140,119 +137,18 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         // 显示时间
         mainHandler.post(timeUpdateRunnable)
-
-        binding.toolbar.setOnMenuItemClickListener { menuItem ->
-            onToolbarMenuClick(menuItem.itemId)
-            true
-        }
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        binding.contentView.background = WatermarkDrawable(this, DailyTask.getWatermarkText())
+        setupWatermark()
+        setupTaskList()
+        startCoreServices()
 
-        binding.recyclerView.adapter = dailyTaskAdapter
-        binding.recyclerView.addItemDecoration(
-            RecyclerViewItemBorder(
-                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
-            )
-        )
-
-        // 加载任务列表
-        lifecycleScope.launch {
-            reloadTasks()
-        }
-
-        // 显示悬浮窗
-        if (Settings.canDrawOverlays(this)) {
-            startFloatingWindowService()
-        } else {
-            // 悬浮窗权限并显示悬浮窗
-            overlayPermissionLauncher.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
-        }
-
-        // 前台服务（保活 + 托管 TaskScheduler 协程作用域 + 每日重置）
-        Intent(this, ForegroundRunningService::class.java).apply { startForegroundService(this) }
-
-        // ================================================================
-        // 每个 lifecycleScope.launch 都是独立的协程，互斥，不能为了省事把协程合并，否则只会执行第一个协程的业务，其他的业务被挂起
-        // ================================================================
-
-        // 订阅每日重置时间倒计时
-        lifecycleScope.launch {
-            ForegroundRunningService.resetTickTime.collect { text ->
-                binding.repeatTimeView.text = text
-            }
-        }
-
-        // 订阅通知监听事件
-        lifecycleScope.launch {
-            NotificationMonitorService.events.collect { event -> handleMonitorEvent(event) }
-        }
-
-        // 订阅调度器运行状态 → 按钮 UI
-        lifecycleScope.launch {
-            TaskScheduler.isRunning.collectLatest { running ->
-                if (running) {
-                    binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-                    binding.executeTaskButton.setIconTintResource(R.color.red)
-                    binding.executeTaskButton.text = "停止"
-                } else {
-                    dailyTaskAdapter.updateCurrentTaskState(-1)
-                    binding.tipsView.text = ""
-                    binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-                    binding.executeTaskButton.setIconTintResource(R.color.ios_green)
-                    binding.executeTaskButton.text = "启动"
-                }
-            }
-        }
-
-        // 订阅超时回主页信号
-        lifecycleScope.launch {
-            TaskScheduler.returnToApp.collectLatest {
-                backToMainActivity()
-            }
-        }
-
-        // 订阅 TipsEvent → tipsView + adapter 高亮
-        lifecycleScope.launch {
-            TaskScheduler.tipsEvent.collectLatest { event ->
-                when (event) {
-                    is TipsEvent.Skip -> {
-                        val reason = "今日为${event.dayFlag.label}"
-                        binding.tipsView.text = "$reason，跳过任务"
-                        binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
-                        MessageDispatcher.sendMessage(
-                            "任务跳过通知",
-                            "$reason，任务已自动跳过，请注意下次打卡时间"
-                        )
-                    }
-
-                    is TipsEvent.Executing -> {
-                        binding.tipsView.text = "准备执行第 ${event.index} 个任务"
-                        binding.tipsView.setTextColor(R.color.theme_color.convertColor(this@MainActivity))
-                        dailyTaskAdapter.updateCurrentTaskState(event.index - 1, event.actualTime)
-
-                        val content = buildString {
-                            appendLine("准备执行第 ${event.index} 个任务")
-                            appendLine("计划时间：${event.plannedTime}")
-                            append("实际时间：${event.actualTime}")
-                        }
-                        MessageDispatcher.sendMessage("任务执行通知", content)
-                    }
-
-                    is TipsEvent.Completed -> {
-                        dailyTaskAdapter.updateCurrentTaskState(-1)
-                        val message = event.message ?: "今日任务已全部执行完毕"
-                        binding.tipsView.text = "$message，等待下次任务"
-                        val statusColor =
-                            if (event.hasFailure) R.color.red else R.color.ios_green
-                        binding.tipsView.setTextColor(statusColor.convertColor(this@MainActivity))
-                        LogFileManager.writeLog(message)
-                        MessageDispatcher.sendMessage("任务状态通知", message)
-                    }
-                }
-            }
-        }
+        observeResetCountdown()
+        observeMonitorEvents()
+        observeSchedulerState()
+        observeReturnToApp()
+        observeTipsEvents()
 
         // 兜底检查是否有错过的每日重置
         checkMissedReset()
@@ -275,7 +171,16 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 }
             }
         }
+
+        binding.toolbar.setOnMenuItemClickListener { menuItem ->
+            onToolbarMenuClick(menuItem.itemId)
+            true
+        }
     }
+
+    // ================================================================
+    // 生命周期回调
+    // ================================================================
 
     override fun onResume() {
         super.onResume()
@@ -309,9 +214,198 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         maskViewController.destroy()
     }
 
+    /**
+     * 窗口重新获得焦点时兜底隐藏系统栏
+     *
+     * decorView.post 执行的时机可能早于窗口真正拿到焦点，此时 hide() 可能失效，
+     * 因此这里再补一次，确保伪灭屏状态下状态栏一定是隐藏的
+     * */
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && maskViewController.isMaskVisible()) {
+            maskViewController.hideSystemBars()
+        }
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            val maskVisible = !maskViewController.isMaskVisible()
+            setMaskVisible(maskVisible)
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
+        ev?.let {
+            gestureController.onTouchEvent(it)
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     // ================================================================
-    // 任务列表
+    // 初始化子步骤
     // ================================================================
+
+    /**
+     * 水印背景
+     * */
+    private fun setupWatermark() {
+        binding.contentView.background = WatermarkDrawable(this, DailyTask.getWatermarkText())
+    }
+
+    /**
+     * 任务列表：绑定 adapter、分割线，并做首次加载
+     * */
+    private fun setupTaskList() {
+        binding.recyclerView.adapter = dailyTaskAdapter
+        binding.recyclerView.addItemDecoration(
+            RecyclerViewItemBorder(
+                marginOffset, marginOffset shr 1, marginOffset, marginOffset shr 1
+            )
+        )
+
+        lifecycleScope.launch {
+            reloadTasks()
+        }
+    }
+
+    /**
+     * 启动核心服务：悬浮窗 + 前台服务
+     *
+     * 前台服务负责保活、托管 TaskScheduler 协程作用域以及每日重置
+     * */
+    private fun startCoreServices() {
+        // 显示悬浮窗
+        if (Settings.canDrawOverlays(this)) {
+            startFloatingWindowService()
+        } else {
+            // 悬浮窗权限并显示悬浮窗
+            overlayPermissionLauncher.launch(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION))
+        }
+
+        Intent(this, ForegroundRunningService::class.java).apply { startForegroundService(this) }
+    }
+
+    // ================================================================
+    // Flow 订阅
+    //
+    // 每个 lifecycleScope.launch 都是独立的协程，互斥，
+    // 不能为了省事把协程合并，否则只会执行第一个协程的业务，其他的业务被挂起
+    // ================================================================
+
+    /**
+     * 订阅每日重置时间倒计时
+     * */
+    private fun observeResetCountdown() {
+        lifecycleScope.launch {
+            ForegroundRunningService.resetTickTime.collect { text ->
+                binding.repeatTimeView.text = text
+            }
+        }
+    }
+
+    /**
+     * 订阅通知监听事件
+     * */
+    private fun observeMonitorEvents() {
+        lifecycleScope.launch {
+            NotificationMonitorService.events.collect { event -> handleMonitorEvent(event) }
+        }
+    }
+
+    /**
+     * 订阅调度器运行状态 → 按钮 UI
+     * */
+    private fun observeSchedulerState() {
+        lifecycleScope.launch {
+            TaskScheduler.isRunning.collectLatest { running ->
+                if (running) {
+                    binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
+                    binding.executeTaskButton.setIconTintResource(R.color.red)
+                    binding.executeTaskButton.text = "停止"
+                } else {
+                    dailyTaskAdapter.updateCurrentTaskState(-1)
+                    binding.tipsView.text = ""
+                    binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
+                    binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+                    binding.executeTaskButton.text = "启动"
+                }
+            }
+        }
+    }
+
+    /**
+     * 订阅超时回主页信号
+     * */
+    private fun observeReturnToApp() {
+        lifecycleScope.launch {
+            TaskScheduler.returnToApp.collectLatest {
+                backToMainActivity()
+            }
+        }
+    }
+
+    /**
+     * 订阅 TipsEvent → tipsView + adapter 高亮
+     * */
+    private fun observeTipsEvents() {
+        lifecycleScope.launch {
+            TaskScheduler.tipsEvent.collectLatest { event -> handleTipsEvent(event) }
+        }
+    }
+
+    /**
+     * NotificationMonitorService 状态观察 → UI 更新
+     * */
+    private fun handleMonitorEvent(event: MonitorEvent) {
+        when (event) {
+            is MonitorEvent.ClockInSuccess -> backToMainActivity()
+            is MonitorEvent.ShowMaskCommand -> setMaskVisible(true)
+            is MonitorEvent.HideMaskCommand -> setMaskVisible(false)
+            is MonitorEvent.ReturnToApp -> backToMainActivity()
+        }
+    }
+
+    /**
+     * TaskScheduler 任务事件 → UI 更新
+     * */
+    private fun handleTipsEvent(event: TipsEvent) {
+        when (event) {
+            is TipsEvent.Skip -> {
+                val reason = "今日为${event.dayFlag.label}"
+                binding.tipsView.text = "$reason，跳过任务"
+                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
+                MessageDispatcher.sendMessage(
+                    "任务跳过通知",
+                    "$reason，任务已自动跳过，请注意下次打卡时间"
+                )
+            }
+
+            is TipsEvent.Executing -> {
+                binding.tipsView.text = "准备执行第 ${event.index} 个任务"
+                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this@MainActivity))
+                dailyTaskAdapter.updateCurrentTaskState(event.index - 1, event.actualTime)
+
+                val content = buildString {
+                    appendLine("准备执行第 ${event.index} 个任务")
+                    appendLine("计划时间：${event.plannedTime}")
+                    append("实际时间：${event.actualTime}")
+                }
+                MessageDispatcher.sendMessage("任务执行通知", content)
+            }
+
+            is TipsEvent.Completed -> {
+                dailyTaskAdapter.updateCurrentTaskState(-1)
+                val message = event.message ?: "今日任务已全部执行完毕"
+                binding.tipsView.text = "$message，等待下次任务"
+                val statusColor = if (event.hasFailure) R.color.red else R.color.ios_green
+                binding.tipsView.setTextColor(statusColor.convertColor(this@MainActivity))
+                LogFileManager.writeLog(message)
+                MessageDispatcher.sendMessage("任务状态通知", message)
+            }
+        }
+    }
 
     /**
      * 重新从数据库加载任务列表并刷新 UI
@@ -449,10 +543,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             }).build().show()
     }
 
-    // ================================================================
-    // 工具栏菜单
-    // ================================================================
-
     private fun onToolbarMenuClick(itemId: Int) {
         when (itemId) {
             R.id.menu_add_task -> {
@@ -499,27 +589,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             .show()
     }
 
-    // ================================================================
-    // NotificationMonitorService 状态观察 → UI 更新
-    // ================================================================
-    private fun handleMonitorEvent(event: MonitorEvent) {
-        when (event) {
-            is MonitorEvent.ClockInSuccess -> backToMainActivity()
-            is MonitorEvent.ShowMaskCommand -> setMaskVisible(true)
-            is MonitorEvent.HideMaskCommand -> setMaskVisible(false)
-            is MonitorEvent.ReturnToApp -> backToMainActivity()
-        }
-    }
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-            val maskVisible = !maskViewController.isMaskVisible()
-            setMaskVisible(maskVisible)
-            return true
-        }
-        return super.onKeyDown(keyCode, event)
-    }
-
     /**
      * 回到前台一律显示蒙层（省电）：
      * 1. 不依赖 REMOTE_MASK_MODE_KEY 历史存档，避免上次手动退出蒙层后，再次回前台蒙层不显示
@@ -533,18 +602,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     /**
-     * 窗口重新获得焦点时兜底隐藏系统栏
-     *
-     * decorView.post 执行的时机可能早于窗口真正拿到焦点，此时 hide() 可能失效，
-     * 因此这里再补一次，确保伪灭屏状态下状态栏一定是隐藏的
+     * 切换蒙层显示状态，并同步隐藏系统栏
      * */
-    override fun onWindowFocusChanged(hasFocus: Boolean) {
-        super.onWindowFocusChanged(hasFocus)
-        if (hasFocus && maskViewController.isMaskVisible()) {
-            maskViewController.hideSystemBars()
-        }
-    }
-
     private fun setMaskVisible(visible: Boolean) {
         saveMaskMode(visible)
         if (visible) {
@@ -564,17 +623,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             AppConfig.saveInt(Constant.REMOTE_MASK_MODE_KEY, value)
         }
     }
-
-    override fun dispatchTouchEvent(ev: MotionEvent?): Boolean {
-        ev?.let {
-            gestureController.onTouchEvent(it)
-        }
-        return super.dispatchTouchEvent(ev)
-    }
-
-    // ================================================================
-    // 任务调度
-    // ================================================================
 
     private fun doStopTask() {
         if (!TaskScheduler.isRunning()) return
@@ -615,10 +663,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             TaskScheduler.startTask()
         }
     }
-
-    // ================================================================
-    // 悬浮窗
-    // ================================================================
 
     /**
      * 启动悬浮窗服务（无悬浮窗权限时直接跳过）
