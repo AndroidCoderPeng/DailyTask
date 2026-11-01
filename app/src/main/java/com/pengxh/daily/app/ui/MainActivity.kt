@@ -345,7 +345,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     dailyTaskAdapter.updateCurrentTaskState(-1)
                     binding.tipsView.text = ""
                     binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-                    binding.executeTaskButton.setIconTintResource(R.color.ios_green)
+                    binding.executeTaskButton.setIconTintResource(R.color.success_color)
                     binding.executeTaskButton.text = "启动"
                 }
             }
@@ -392,7 +392,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             is TipsEvent.Skip -> {
                 val reason = "今日为${event.dayFlag.label}"
                 binding.tipsView.text = "$reason，跳过任务"
-                binding.tipsView.setTextColor(R.color.ios_green.convertColor(this@MainActivity))
+                binding.tipsView.setTextColor(R.color.success_color.convertColor(this@MainActivity))
                 MessageDispatcher.sendMessage(
                     "任务跳过通知",
                     "$reason，任务已自动跳过，请注意下次打卡时间"
@@ -416,7 +416,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 dailyTaskAdapter.updateCurrentTaskState(-1)
                 val message = event.message ?: "今日任务已全部执行完毕"
                 binding.tipsView.text = "$message，等待下次任务"
-                val statusColor = if (event.hasFailure) R.color.red else R.color.ios_green
+                val statusColor = if (event.hasFailure) R.color.red else R.color.success_color
                 binding.tipsView.setTextColor(statusColor.convertColor(this@MainActivity))
                 LogFileManager.writeLog(message)
                 MessageDispatcher.sendMessage("任务状态通知", message)

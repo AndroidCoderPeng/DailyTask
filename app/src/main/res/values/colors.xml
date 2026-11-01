@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="theme_color">#3399FF</color>
-    <color name="ios_green">#4DDC64</color>
-    <color name="back_ground_color">#F1F1F1</color>
+
+    <color name="success_color">#22C55E</color>
+    <color name="warning_color">#F59E0B</color>
+    <color name="failure_color">#EF4444</color>
+
+    <color name="back_ground_color">#F2F4F8</color>
+    <color name="border_color">#EDEFF4</color>
+
+    <color name="text_default_color">#111827</color>
     <color name="text_hint_color">#CCCCCC</color>
-    <color name="text_default_color">#424242</color>
 
     <color name="black">#000000</color>
     <color name="white">#FFFFFF</color>

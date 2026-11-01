@@ -73,7 +73,7 @@
                         android:layout_marginStart="@dimen/dp_16"
                         android:text="启动"
                         app:icon="@mipmap/ic_start"
-                        app:iconTint="@color/ios_green" />
+                        app:iconTint="@color/success_color" />
                 </LinearLayout>
             </LinearLayout>
 

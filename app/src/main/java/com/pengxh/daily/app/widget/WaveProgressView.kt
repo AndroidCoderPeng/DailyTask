@@ -57,7 +57,7 @@ class WaveProgressView @JvmOverloads constructor(
             isAntiAlias = true
             style = Paint.Style.STROKE
             strokeWidth = 3f
-            color = R.color.ios_green.convertColor(context)
+            color = R.color.success_color.convertColor(context)
         }
     }
 

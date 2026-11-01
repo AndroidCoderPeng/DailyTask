@@ -57,7 +57,7 @@ class CommandActivity : KotlinBaseActivity<ActivityCommandBinding>() {
 
                 val cardView = viewHolder.getView<MaterialCardView>(R.id.cardView)
                 if (item.third) {
-                    cardView.setCardBackgroundColor(R.color.ios_green.convertColor(context))
+                    cardView.setCardBackgroundColor(R.color.success_color.convertColor(context))
                 } else {
                     cardView.setCardBackgroundColor(R.color.orange.convertColor(context))
                 }
