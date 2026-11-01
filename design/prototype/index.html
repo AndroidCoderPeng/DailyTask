@@ -32,6 +32,13 @@
     </div>
 
     <div class="sidenav-block">
+      <h2>评审辅助</h2>
+      <button class="aux-btn" id="maskToggle" type="button">
+        <i class="nav-ico">◐</i>伪灭屏预览
+      </button>
+    </div>
+
+    <div class="sidenav-block">
       <h2>本次改版要点</h2>
       <ul class="note-list">
         <li>首页用 <b>状态卡片 + 单一主操作</b> 取代原来分散的顶栏/提示/按钮三段式，运行态一眼可辨。</li>
@@ -44,12 +51,33 @@
 
     <div class="sidenav-block">
       <h2>配色 / 字号</h2>
-      <div class="swatches">
-        <span class="sw" style="--c:#3399FF">主色 #3399FF</span>
-        <span class="sw" style="--c:#22C55E">成功 #22C55E</span>
-        <span class="sw" style="--c:#F59E0B">提醒 #F59E0B</span>
-        <span class="sw" style="--c:#EF4444">失败 #EF4444</span>
-        <span class="sw" style="--c:#F2F4F8">底色 #F2F4F8</span>
+
+      <div class="sw-theme sw-theme-light">
+        <div class="sw-theme-label">浅色主题 Light</div>
+        <div class="swatches">
+          <span class="sw" style="--c:#3399FF">主色 #3399FF</span>
+          <span class="sw" style="--c:#22C55E">成功 #22C55E</span>
+          <span class="sw" style="--c:#F59E0B">提醒 #F59E0B</span>
+          <span class="sw" style="--c:#EF4444">失败 #EF4444</span>
+          <span class="sw" style="--c:#F2F4F8">底色 #F2F4F8</span>
+          <span class="sw" style="--c:#FFFFFF">卡片 #FFFFFF</span>
+          <span class="sw" style="--c:#111827">文字 #111827</span>
+          <span class="sw" style="--c:#EDEFF4">描边 #EDEFF4</span>
+        </div>
+      </div>
+
+      <div class="sw-theme sw-theme-dark">
+        <div class="sw-theme-label">暗色主题 Dark</div>
+        <div class="swatches">
+          <span class="sw" style="--c:#5AA9FF">主色 #5AA9FF</span>
+          <span class="sw" style="--c:#4ADE80">成功 #4ADE80</span>
+          <span class="sw" style="--c:#FBBF24">提醒 #FBBF24</span>
+          <span class="sw" style="--c:#F87171">失败 #F87171</span>
+          <span class="sw" style="--c:#0F1217">底色 #0F1217</span>
+          <span class="sw" style="--c:#171B22">卡片 #171B22</span>
+          <span class="sw" style="--c:#E7EBF3">文字 #E7EBF3</span>
+          <span class="sw" style="--c:#232935">描边 #232935</span>
+        </div>
       </div>
     </div>
   </aside>
@@ -73,12 +101,12 @@
         <section class="screen is-active" data-screen="main">
           <header class="appbar">
             <div class="appbar-text">
-              <p class="appbar-sub" id="mainDate">2026年10月31日 星期六</p>
+              <p class="appbar-sub"><span id="mainDate">2026年10月31日 星期六</span><span class="day-tag" id="dayTag" hidden>休息日</span></p>
               <h1 class="appbar-title" id="mainTitle">今日任务待启动</h1>
             </div>
             <div class="appbar-actions">
-              <button class="icon-btn" id="maskToggle" aria-label="伪灭屏预览">
-                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
+              <button class="icon-btn icon-btn-primary" id="addTaskBtn" aria-label="新建任务">
+                <svg viewBox="0 0 24 24" width="20" height="20"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" fill="currentColor"/></svg>
               </button>
               <button class="icon-btn" id="settingsBtn" aria-label="设置">
                 <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 15.5A3.5 3.5 0 1115.5 12 3.5 3.5 0 0112 15.5zm7.4-2.6a7.7 7.7 0 000-1.8l2-1.6-2-3.4-2.4 1a7.6 7.6 0 00-1.6-.9L15 3H9l-.4 2.2a7.6 7.6 0 00-1.6.9l-2.4-1-2 3.4 2 1.6a7.7 7.7 0 000 1.8l-2 1.6 2 3.4 2.4-1a7.6 7.6 0 001.6.9L9 21h6l.4-2.2a7.6 7.6 0 001.6-.9l2.4 1 2-3.4z" fill="currentColor"/></svg>
@@ -94,14 +122,14 @@
               </div>
               <p class="hero-desc" id="heroDesc">点击下方按钮启动今日任务，到点后自动拉起钉钉完成打卡。</p>
               <div class="hero-reset">
-                <span class="hero-reset-ico">
-                  <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 5v5.2l4 2.3-1 1.7-5-2.9V7z" fill="currentColor"/></svg>
+                <span class="hero-reset-ico" id="resetIco">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.1 1.8"/></svg>
                 </span>
                 <div class="hero-reset-text">
-                  <span class="hero-reset-label">距下次重置</span>
+                  <span class="hero-reset-label" id="resetLabel">距下次重置</span>
                   <span class="hero-reset-value" id="resetCountdown">12:39:41</span>
                 </div>
-                <span class="hero-reset-sub">每天 6:00 重置</span>
+                <span class="hero-reset-sub" id="resetHint">每天 6:00 重置</span>
               </div>
             </section>
 
@@ -110,13 +138,8 @@
               <span id="runBtnText">启动今日任务</span>
             </button>
 
-            <div class="tipbar" id="tipBar" data-tone="info">
-              <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>
-              <span id="tipText">准备就绪，启动后将按时间点依次执行打卡。</span>
-            </div>
-
             <div class="section-head">
-              <h2>今日任务 <span class="badge" id="taskCount">3</span></h2>
+              <h2>今日任务 <span class="badge" id="taskCount">3</span><span class="rest-tag" id="restTag" hidden>休息日已跳过</span></h2>
               <div class="section-actions">
                 <button class="link-btn" data-act="import">导入</button>
                 <button class="link-btn" data-act="export">导出</button>
@@ -134,10 +157,6 @@
               <button class="btn btn-soft" data-act="add">添加第一个任务</button>
             </div>
           </div>
-
-          <button class="fab" id="fabAdd" aria-label="添加任务">
-            <svg viewBox="0 0 24 24" width="24" height="24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z" fill="currentColor"/></svg>
-          </button>
 
           <!-- 伪灭屏蒙层 -->
           <div class="mask" id="maskOverlay" hidden>
@@ -157,15 +176,15 @@
             <section class="group">
               <h2 class="group-title">打卡目标</h2>
               <div class="group-body">
-                <button class="row row-tap" data-goto="channel">
-                  <span class="row-ico" style="--ico:#3399FF">
+                <button class="row row-tap" data-act="pickTargetApp">
+                  <span class="row-ico" id="targetAppIco" style="--ico:#3399FF">
                     <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 4h16v16H4zm2 4v2h12V8zm0 4v2h12v-2zm0 4v2h8v-2z" fill="currentColor"/></svg>
                   </span>
                   <span class="row-main">
                     <span class="row-title">目标应用</span>
-                    <span class="row-desc">钉钉 · 极速打卡</span>
+                    <span class="row-desc" id="targetAppDesc">钉钉 · 极速打卡</span>
                   </span>
-                  <span class="row-value">钉钉</span>
+                  <span class="row-value" id="targetAppName">钉钉</span>
                   <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
 
@@ -496,7 +515,10 @@
                   <span class="pill pill-idle"><i class="dot"></i>未验证</span>
                   <span class="status-text">测试邮件发送成功后才保存</span>
                 </div>
-                <button class="btn btn-primary btn-block" data-act="testMail">发送测试邮件</button>
+                <button class="btn btn-outline btn-inset" data-act="testMail">
+                  <svg class="btn-ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.6"/><path d="m4.2 7.4 6.8 4.9a2.2 2.2 0 0 0 2 0l6.8-4.9"/></svg>
+                  <span>发送测试邮件</span>
+                </button>
               </div>
             </section>
           </div>
@@ -580,36 +602,60 @@
           </header>
 
           <div class="scroll">
-            <div class="accordion" id="qaList">
-              <div class="acc-item">
-                <button class="acc-head"><span>手机重启后不再自动打卡怎么办？</span><i class="acc-ico"></i></button>
-                <div class="acc-body"><p>软件不监听开机广播，重启后需手动打开一次 DailyTask，调度与通知监听才会恢复。</p></div>
+            <section class="group">
+              <h2 class="group-title">常见问题</h2>
+              <div class="group-body" id="qaList">
+                <div class="acc-item">
+                  <button class="acc-head">
+                    <span>手机重启后不再自动打卡怎么办？</span>
+                    <svg class="acc-ico" viewBox="0 0 24 24" width="16" height="16"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="acc-body"><p>软件不监听开机广播，重启后需手动打开一次 DailyTask，调度与通知监听才会恢复。</p></div>
+                </div>
+                <div class="acc-item">
+                  <button class="acc-head">
+                    <span>提示「未监听到打卡成功」，但实际已打卡？</span>
+                    <svg class="acc-ico" viewBox="0 0 24 24" width="16" height="16"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="acc-body"><p>多为刚执行过 <code>DT#打卡</code> 指令，属正常现象，以指令回执与截图结果为准。</p></div>
+                </div>
+                <div class="acc-item">
+                  <button class="acc-head">
+                    <span>回执提示「设备正被占用将排队等待」</span>
+                    <svg class="acc-ico" viewBox="0 0 24 24" width="16" height="16"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="acc-body"><p>定时任务正在操作设备，指令会排队等待，完成后回执会附带实际等待时长。</p></div>
+                </div>
+                <div class="acc-item">
+                  <button class="acc-head">
+                    <span>打卡结果一直收不到</span>
+                    <svg class="acc-ico" viewBox="0 0 24 24" width="16" height="16"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="acc-body"><p>先发送 <code>DT#状态查询</code> 检查通知监听、截屏服务、消息渠道状态，再查看应用内日志。</p></div>
+                </div>
+                <div class="acc-item">
+                  <button class="acc-head">
+                    <span>钉钉监听不到打卡结果怎么办？</span>
+                    <svg class="acc-ico" viewBox="0 0 24 24" width="16" height="16"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="acc-body"><p>请在设置中开启「截屏服务」，授权时选择「整个屏幕」，结果来源切换为截屏服务。</p></div>
+                </div>
+                <div class="acc-item">
+                  <button class="acc-head">
+                    <span>灭屏后打卡失效？</span>
+                    <svg class="acc-ico" viewBox="0 0 24 24" width="16" height="16"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="acc-body"><p>灭屏状态下前台服务可能被系统回收，请在开发者模式中打开「充电不息屏」。</p></div>
+                </div>
+                <div class="acc-item">
+                  <button class="acc-head">
+                    <span>哪些行为会被判定为作弊？</span>
+                    <svg class="acc-ico" viewBox="0 0 24 24" width="16" height="16"><path d="m7 10 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </button>
+                  <div class="acc-body"><p>Root、模拟定位、远程控制软件、ADB 模拟点击风险极高；开启无障碍服务、连接电脑数据线也有中等风险。</p></div>
+                </div>
               </div>
-              <div class="acc-item">
-                <button class="acc-head"><span>提示「未监听到打卡成功」，但实际已打卡？</span><i class="acc-ico"></i></button>
-                <div class="acc-body"><p>多为刚执行过 <code>DT#打卡</code> 指令，属正常现象，以指令回执与截图结果为准。</p></div>
-              </div>
-              <div class="acc-item">
-                <button class="acc-head"><span>回执提示「设备正被占用将排队等待」</span><i class="acc-ico"></i></button>
-                <div class="acc-body"><p>定时任务正在操作设备，指令会排队等待，完成后回执会附带实际等待时长。</p></div>
-              </div>
-              <div class="acc-item">
-                <button class="acc-head"><span>打卡结果一直收不到</span><i class="acc-ico"></i></button>
-                <div class="acc-body"><p>先发送 <code>DT#状态查询</code> 检查通知监听、截屏服务、消息渠道状态，再查看应用内日志。</p></div>
-              </div>
-              <div class="acc-item">
-                <button class="acc-head"><span>钉钉监听不到打卡结果怎么办？</span><i class="acc-ico"></i></button>
-                <div class="acc-body"><p>请在设置中开启「截屏服务」，授权时选择「整个屏幕」，结果来源切换为截屏服务。</p></div>
-              </div>
-              <div class="acc-item">
-                <button class="acc-head"><span>灭屏后打卡失效？</span><i class="acc-ico"></i></button>
-                <div class="acc-body"><p>灭屏状态下前台服务可能被系统回收，请在开发者模式中打开「充电不息屏」。</p></div>
-              </div>
-              <div class="acc-item">
-                <button class="acc-head"><span>哪些行为会被判定为作弊？</span><i class="acc-ico"></i></button>
-                <div class="acc-body"><p>Root、模拟定位、远程控制软件、ADB 模拟点击风险极高；开启无障碍服务、连接电脑数据线也有中等风险。</p></div>
-              </div>
-            </div>
+            </section>
           </div>
         </section>
 
@@ -685,6 +731,10 @@
       <button data-goto="command">全部指令</button>
       <button data-goto="qa">常见问题</button>
       <button class="proto-overview-btn" id="overviewBtn" title="一屏看全">总览</button>
+      <button class="proto-theme-btn" id="themeBtn" title="切换深色 / 浅色" aria-label="切换深色 / 浅色">
+        <svg class="ico-sun" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="4.1" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.4 5.4l1.4 1.4M17.2 17.2l1.4 1.4M18.6 5.4l-1.4 1.4M6.8 17.2l-1.4 1.4"/></g></svg>
+        <svg class="ico-moon" viewBox="0 0 24 24" width="16" height="16"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
+      </button>
     </div>
 
   </div><!-- /device-wrap -->

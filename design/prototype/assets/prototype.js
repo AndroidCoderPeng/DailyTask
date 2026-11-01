@@ -23,8 +23,34 @@
     nextId: 4,
     workday: [1, 2, 3, 4, 5],
     editingId: null,
-    sheetTimeMode: 'add'
+    sheetTimeMode: 'add',
+    targetApp: 'dingtalk'
   };
+
+  /* 可作为打卡目标的应用（与唤起测试支持的渠道一致） */
+  const TARGET_APPS = [
+    { value: 'dingtalk', label: '钉钉', desc: '钉钉 · 极速打卡', color: '#3399FF' },
+    { value: 'wxwork', label: '企业微信', desc: '企业微信 · 打卡', color: '#22C55E' },
+    { value: 'qq', label: 'QQ', desc: 'QQ · 打卡', color: '#12B7F5' },
+    { value: 'wechat', label: '微信', desc: '微信 · 打卡', color: '#07C160' },
+    { value: 'tim', label: 'TIM', desc: 'TIM · 打卡', color: '#2B7FFF' },
+    { value: 'alipay', label: '支付宝', desc: '支付宝 · 打卡', color: '#1677FF' }
+  ];
+
+  function targetAppInfo() {
+    return TARGET_APPS.filter(function (a) { return a.value === state.targetApp; })[0] || TARGET_APPS[0];
+  }
+
+  /* 目标应用变化时同步设置页与首页任务卡 */
+  function renderTargetApp() {
+    const app = targetAppInfo();
+    const nameEl = $('#targetAppName');
+    const descEl = $('#targetAppDesc');
+    const icoEl = $('#targetAppIco');
+    if (nameEl) nameEl.textContent = app.label;
+    if (descEl) descEl.textContent = app.desc;
+    if (icoEl) icoEl.style.setProperty('--ico', app.color);
+  }
 
   /* ---------------------------------------------------------
      工具
@@ -33,6 +59,41 @@
   function nowTime() { const d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
   function fmt(d) { return d.getFullYear() + '年' + pad(d.getMonth() + 1) + '月' + pad(d.getDate()) + '日 ' + '周' + '日一二三四五六'.charAt(d.getDay()); }
 
+  /* ---------------------------------------------------------
+     工作日 / 休息日
+     getDay() 里周日是 0，这里统一映射成 7（周一=1 … 周日=7）
+  --------------------------------------------------------- */
+  const WEEK_NAME = { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' };
+
+  function weekdayIndex(d) { const g = d.getDay(); return g === 0 ? 7 : g; }
+  function isRestDay(d) { return state.workday.indexOf(weekdayIndex(d || new Date())) < 0; }
+
+  /* 休息日时告诉用户下一次自动执行是什么时候 */
+  function nextWorkdayMoment() {
+    const base = new Date();
+    const first = state.tasks[0];
+    const hm = (first ? first.time : '08:30:00').split(':');
+    for (let i = 1; i <= 8; i++) {
+      const nd = new Date(base.getTime() + i * 86400000);
+      if (state.workday.indexOf(weekdayIndex(nd)) < 0) continue;
+      nd.setHours(parseInt(hm[0], 10) || 0, parseInt(hm[1], 10) || 0, parseInt(hm[2], 10) || 0, 0);
+      if (nd > base) return nd;
+    }
+    return null;
+  }
+
+  function nextWorkdayText() {
+    const base = new Date();
+    for (let i = 1; i <= 8; i++) {
+      const nd = new Date(base.getTime() + i * 86400000);
+      if (state.workday.indexOf(weekdayIndex(nd)) >= 0) {
+        const first = state.tasks[0];
+        return '下次执行 ' + WEEK_NAME[weekdayIndex(nd)] + ' ' + (first ? first.time : '08:30:00');
+      }
+    }
+    return '每天 6:00 重置';
+  }
+
   let toastTimer = null;
   function toast(text) {
     const el = $('#toast');
@@ -40,6 +101,16 @@
     el.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { el.hidden = true; }, 1800);
+  }
+
+  /* ---------------------------------------------------------
+     深 / 浅色主题
+  --------------------------------------------------------- */
+  function applyTheme(dark) {
+    document.body.classList.toggle('dark', dark);
+    const btn = $('#themeBtn');
+    if (btn) btn.setAttribute('aria-label', dark ? '切换到浅色主题' : '切换到深色主题');
+    try { localStorage.setItem('dt-theme', dark ? 'dark' : 'light'); } catch (e) { /* file:// 下可能不可用 */ }
   }
 
   /* ---------------------------------------------------------
@@ -104,17 +175,54 @@
     $('#heroClock').textContent = t;
     $('#maskClock').textContent = t.slice(0, 5);
     $('#mainDate').textContent = fmt(new Date());
+
+    // 休息日标记
+    const rest = isRestDay();
+    const tag = $('#dayTag');
+    const restTag = $('#restTag');
+    if (tag) tag.hidden = !rest;
+    if (restTag) restTag.hidden = !rest;
   }
 
   function tickCountdown() {
     const now = new Date();
-    const reset = new Date(now);
-    reset.setHours(6, 0, 0, 0);
-    if (reset <= now) reset.setDate(reset.getDate() + 1);
-    let diff = Math.floor((reset - now) / 1000);
+    const rest = isRestDay();
+
+    // 工作日：倒计时到每天 6:00 重置；休息日：倒计时到下一个工作日的首个任务
+    let target = null;
+    let label = '距下次重置';
+    let hint = '每天 6:00 重置';
+    let kind = 'reset';
+    if (rest) {
+      target = nextWorkdayMoment();
+      label = '距下次执行';
+      hint = nextWorkdayText();
+      kind = 'plan';
+    } else {
+      target = new Date(now);
+      target.setHours(6, 0, 0, 0);
+      if (target <= now) target.setDate(target.getDate() + 1);
+    }
+    if (!target) return;
+
+    let diff = Math.floor((target - now) / 1000);
     const h = Math.floor(diff / 3600); diff -= h * 3600;
     const m = Math.floor(diff / 60); diff -= m * 60;
     $('#resetCountdown').textContent = pad(h) + ':' + pad(m) + ':' + pad(diff);
+
+    const labelEl = $('#resetLabel');
+    const hintEl = $('#resetHint');
+    if (labelEl) labelEl.textContent = label;
+    if (hintEl) hintEl.textContent = hint;
+
+    // 图标随语义切换：工作日=重置时钟，休息日=下次执行日历
+    const ico = $('#resetIco');
+    if (ico && ico.dataset.kind !== kind) {
+      ico.dataset.kind = kind;
+      ico.innerHTML = kind === 'plan'
+        ? '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.6" y="5" width="16.8" height="15.4" rx="3.2"/><path d="M8 3.2v3.6M16 3.2v3.6M3.6 10.2h16.8"/></svg>'
+        : '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.4"/><path d="M12 7.4V12l3.1 1.8"/></svg>';
+    }
   }
 
   /* ---------------------------------------------------------
@@ -134,29 +242,37 @@
     }
     empty.hidden = true;
 
-    list.innerHTML = state.tasks.map(function (t, i) {
-      const foot = t.state === 'running'
-        ? '<span class="task-actual">倒计时 38s</span>'
-        : '<span class="task-actual">' + (t.actual ? '实际 ' + t.actual : '实际 --:--:--') + '</span>';
+    // 非工作日：全部任务视为跳过
+    const rest = isRestDay();
+    const restTag = $('#restTag');
+    if (restTag) restTag.hidden = !rest;
+
+    list.innerHTML = state.tasks.map(function (t) {
+      const st = rest ? 'skipped' : t.state;
+      const foot = st === 'running'
+        ? '<span class="task-actual">进行中</span>'
+        : (rest
+          ? '<span class="task-actual">非工作日已跳过</span>'
+          : '<span class="task-actual">' + (t.actual ? '实际 ' + t.actual : '实际 --:--:--') + '</span>');
       return '' +
-        '<article class="task" data-state="' + t.state + '" data-id="' + t.id + '">' +
+        '<article class="task" data-state="' + st + '" data-id="' + t.id + '">' +
           '<div class="task-top">' +
-            '<span class="task-idx">' + (i + 1) + '</span>' +
             '<div class="task-time">' + t.time + '</div>' +
             '<div class="task-meta">' +
-              '<span class="task-state">' + STATE_TEXT[t.state] + '</span>' +
+              '<span class="task-state">' + STATE_TEXT[st] + '</span>' +
               '<span class="task-window">随机 ' + t.window + '</span>' +
             '</div>' +
           '</div>' +
-          (t.state === 'running'
-            ? '<div class="task-progress"><i style="width:' + t.progress + '%"></i></div>'
-            : '') +
           '<div class="task-foot">' +
-            '<span>钉钉 · 极速打卡</span><span class="sep">·</span><span>超时 60s</span>' + foot +
+            '<span>' + targetAppInfo().desc + '</span><span class="sep">·</span><span>超时 60s</span>' + foot +
           '</div>' +
         '</article>';
     }).join('');
   }
+
+  /* 进度以 Android 系统通知栏为准，首页状态卡只做摘要。
+     原型阶段进度只是示意，不做真实推进，也不显示剩余秒数。 */
+  const DEMO_PROGRESS = 42;
 
   /* ---------------------------------------------------------
      首页：运行状态
@@ -166,9 +282,24 @@
     const text = $('#runPillText');
     const btn = $('#runBtn');
     const btnText = $('#runBtnText');
-    const tip = $('#tipBar');
-    const tipText = $('#tipText');
     const title = $('#mainTitle');
+    const desc = $('#heroDesc');
+    const rest = isRestDay();
+
+    // 非工作日：任务全部跳过，不提供启动入口
+    if (rest && !state.running) {
+      pill.className = 'pill pill-rest';
+      text.textContent = '休息日';
+      btn.className = 'btn btn-quiet btn-block';
+      btnText.textContent = '今日无需执行';
+      btn.disabled = true;
+      btn.querySelector('svg').innerHTML = '<rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"/>';
+      title.textContent = '今日休息';
+      desc.textContent = '今天不是工作日，' + state.tasks.length + ' 个打卡任务将自动跳过，不会拉起钉钉。';
+      return;
+    }
+
+    btn.disabled = false;
 
     if (state.running) {
       pill.className = 'pill pill-running';
@@ -176,30 +307,31 @@
       btn.className = 'btn btn-danger btn-block';
       btnText.textContent = '停止今日任务';
       btn.querySelector('svg').innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>';
-      tip.dataset.tone = 'info';
-      tipText.textContent = '准备执行第 2 个任务 · 计划 12:30:00';
       title.textContent = '今日任务执行中';
+      desc.textContent = '今日任务正在按时间点执行，到点后自动拉起钉钉完成打卡。';
     } else {
       pill.className = 'pill pill-idle';
       text.textContent = '未运行';
       btn.className = 'btn btn-primary btn-block';
       btnText.textContent = '启动今日任务';
       btn.querySelector('svg').innerHTML = '<path d="M8 5v14l11-7z" fill="currentColor"/>';
-      tip.dataset.tone = 'warn';
-      tipText.textContent = '任务已停止，点击按钮可重新启动今日任务。';
       title.textContent = '今日任务待启动';
+      desc.textContent = '点击下方按钮启动今日任务，到点后自动拉起钉钉完成打卡。';
     }
   }
 
   /* ---------------------------------------------------------
-     启动 / 停止
+    启动 / 停止
   --------------------------------------------------------- */
   function toggleRun() {
+    // 休息日没有任务，不提供启动入口
+    if (isRestDay() && !state.running) return;
+
     state.running = !state.running;
 
     if (state.running) {
       const next = state.tasks.filter(function (t) { return t.state === 'pending'; })[0];
-      if (next) { next.state = 'running'; next.progress = 8; }
+      if (next) { next.state = 'running'; next.progress = DEMO_PROGRESS; }
       simulate();
     } else {
       state.tasks.forEach(function (t) {
@@ -214,21 +346,19 @@
   let simTimer = null;
   function simulate() {
     clearInterval(simTimer);
+    // 只做“任务接力”的演示：进度条为静态示意值，不逐帧推进
     simTimer = setInterval(function () {
       if (!state.running) return;
       const cur = state.tasks.filter(function (t) { return t.state === 'running'; })[0];
       if (!cur) return;
-      cur.progress = Math.min(96, cur.progress + 4);
-      if (cur.progress >= 96) {
-        cur.state = 'done';
-        cur.actual = nowTime();
-        cur.progress = 100;
-        const next = state.tasks.filter(function (t) { return t.state === 'pending'; })[0];
-        if (next) { next.state = 'running'; next.progress = 4; }
-        toast('第 ' + (state.tasks.indexOf(cur) + 1) + ' 个任务已完成');
-      }
+      cur.state = 'done';
+      cur.actual = nowTime();
+      const next = state.tasks.filter(function (t) { return t.state === 'pending'; })[0];
+      if (next) { next.state = 'running'; next.progress = DEMO_PROGRESS; }
+      toast('第 ' + (state.tasks.indexOf(cur) + 1) + ' 个任务已完成');
+      renderRunState();
       renderTasks();
-    }, 900);
+    }, 6000);
   }
 
   /* ---------------------------------------------------------
@@ -389,16 +519,14 @@
     const d = state.workday.slice().sort();
     if (d.join() === '1,2,3,4,5') return '周一至周五';
     if (d.join() === '1,2,3,4,5,6,7') return '每天';
-    const names = { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' };
-    return d.map(function (i) { return names[i]; }).join('、');
+    return d.map(function (i) { return WEEK_NAME[i]; }).join('、');
   }
 
   function renderWorkday() {
     const grid = $('#workdayGrid');
-    const names = { 1: '周一', 2: '周二', 3: '周三', 4: '周四', 5: '周五', 6: '周六', 7: '周日' };
     let html = '';
     for (let i = 1; i <= 7; i++) {
-      html += '<button class="day-chip' + (state.workday.indexOf(i) >= 0 ? ' is-on' : '') + '" data-day="' + i + '">' + names[i] + '</button>';
+      html += '<button class="day-chip' + (state.workday.indexOf(i) >= 0 ? ' is-on' : '') + '" data-day="' + i + '">' + WEEK_NAME[i] + '</button>';
     }
     grid.innerHTML = html;
     $$('#workdayGrid .day-chip').forEach(function (c) {
@@ -428,7 +556,7 @@
     });
 
     $('#runBtn').addEventListener('click', toggleRun);
-    $('#fabAdd').addEventListener('click', function () { openTimeSheet('add', null); });
+    $('#addTaskBtn').addEventListener('click', function () { openTimeSheet('add', null); });
     $('#timeSheetOk').addEventListener('click', commitTimeSheet);
 
     // 任务卡：点击编辑，长按删除
@@ -488,15 +616,18 @@
       toast('指令「' + item.dataset.cmd + '」已复制');
     });
 
-    // FAQ 折叠
+    // FAQ 折叠：先解除高度限制再测量内容高度，避免量到被裁切后的尺寸
     $('#qaList').addEventListener('click', function (e) {
       const head = e.target.closest('.acc-head');
       if (!head) return;
       const item = head.parentElement;
       const body = item.querySelector('.acc-body');
+      const content = body.firstElementChild;
       const open = item.classList.contains('is-open');
       item.classList.toggle('is-open', !open);
-      body.style.maxHeight = open ? '0px' : body.scrollHeight + 20 + 'px';
+      body.style.maxHeight = 'none';
+      const h = content ? content.offsetHeight : body.scrollHeight;
+      body.style.maxHeight = open ? '0px' : h + 'px';
     });
 
     // 随机时间联动
@@ -511,6 +642,11 @@
       $$('.row-tap').forEach(function () {});
       const row = $('[data-act="workday"] .row-value');
       if (row) row.textContent = workdayText();
+      // 工作日变化会直接影响首页是否执行任务
+      if (isRestDay()) state.running = false;
+      renderRunState();
+      renderTasks();
+      tickClock();
       toast('工作日已更新为 ' + workdayText());
     });
 
@@ -544,6 +680,17 @@
         ], function (v) { toast(v === 'clip' ? '已复制到剪贴板' : '已通过 ' + v.toUpperCase() + ' 分享'); });
       }
       else if (act === 'updateHoliday') { toast('节假日数据已是最新（2026-10-31）'); }
+      else if (act === 'pickTargetApp') {
+        const opts = TARGET_APPS.map(function (a) {
+          return { label: a.desc, value: a.value, checked: a.value === state.targetApp };
+        });
+        openListSheet('选择目标应用', opts, function (v) {
+          state.targetApp = v;
+          renderTargetApp();
+          renderTasks();
+          toast('目标应用已切换为' + targetAppInfo().label);
+        });
+      }
       else if (act === 'openTest') { toast('已唤起目标应用，请检查屏幕'); }
       else if (act === 'captureTest') { toast('截屏成功，正在通过消息渠道发送'); }
       else if (act === 'sendLog') { toast('日志已打包，正在唤起 QQ'); }
@@ -597,14 +744,16 @@
       }
     });
 
-    // 伪灭屏
+    // 伪灭屏（评审辅助入口在左侧栏）
     $('#maskToggle').addEventListener('click', function () {
       state.mask = !state.mask;
       $('#maskOverlay').hidden = !state.mask;
+      this.classList.toggle('is-on', state.mask);
     });
     $('#maskOverlay').addEventListener('click', function () {
       state.mask = false;
       $('#maskOverlay').hidden = true;
+      $('#maskToggle').classList.remove('is-on');
     });
 
     // 进入设置前先看使用须知（对齐原 App 行为）
@@ -623,6 +772,11 @@
       const on = $('.stage').classList.toggle('is-overview');
       this.classList.toggle('is-on', on);
       this.textContent = on ? '返回单页' : '总览';
+    });
+
+    // 深 / 浅色切换
+    $('#themeBtn').addEventListener('click', function () {
+      applyTheme(!document.body.classList.contains('dark'));
     });
 
     // 遮罩点击关闭
@@ -673,14 +827,32 @@
   function init() {
     buildTimePicker();
     bind();
+
+    // 非工作日默认不启动任务
+    state.running = !isRestDay();
+    if (!state.running) {
+      // 未启动就不该存在“执行中”的任务，避免列表与状态卡打架
+      state.tasks.forEach(function (t) {
+        if (t.state === 'running') { t.state = 'pending'; t.progress = 0; }
+      });
+    }
+
     renderTasks();
     renderRunState();
     renderWorkday();
+    renderTargetApp();
     tickClock();
     tickCountdown();
     setInterval(tickClock, 1000);
     setInterval(tickCountdown, 1000);
     simulate();
+
+    // 主题：URL 参数 > 本地记忆
+    try {
+      const saved = localStorage.getItem('dt-theme');
+      if (saved === 'dark') applyTheme(true);
+    } catch (e) { /* 忽略 */ }
+    if (/[?&]theme=dark/.test(location.search)) applyTheme(true);
 
     // 支持 #settings 之类的直达链接，便于评审时分享具体页面
     const hash = location.hash.slice(1);
