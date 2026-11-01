@@ -14,10 +14,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.pengxh.daily.app.BuildConfig
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivitySettingsBinding
+import com.pengxh.daily.app.events.ProjectionEvent
 import com.pengxh.daily.app.extensions.isApplicationExist
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
@@ -30,7 +32,6 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
-import com.pengxh.daily.app.events.ProjectionEvent
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.kt.lite.base.KotlinBaseActivity
@@ -77,11 +78,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun setupTopBarLayout() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            view.setPadding(0, statusBarHeight, 0, 0)
-            insets
+        ViewCompat.setOnApplyWindowInsetsListener(binding.rootView) { view, insets ->
+            val topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            view.setPadding(view.paddingLeft, topInset, view.paddingRight, view.paddingBottom)
+            WindowInsetsCompat.CONSUMED
         }
+
+        WindowInsetsControllerCompat(window, binding.rootView).isAppearanceLightStatusBars = true
         binding.toolbar.setNavigationOnClickListener { finish() }
     }
 

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/rootView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -11,10 +12,10 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/theme_color"
         app:navigationIcon="@drawable/ic_title_left"
         app:title="设置"
-        app:titleTextColor="@color/white" />
+        app:titleTextAppearance="@style/TextAppearance.Material3.TitleMedium.Emphasized"
+        app:titleTextColor="@color/text_default_color" />
 
     <androidx.core.widget.NestedScrollView
         android:id="@+id/contentView"
@@ -25,553 +26,781 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:padding="@dimen/dp_16">
+            android:paddingHorizontal="@dimen/dp_16">
 
-            <LinearLayout
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="任务目标"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/bg_solid_layout_white_16"
-                android:divider="@drawable/divider_line"
-                android:dividerPadding="@dimen/dp_16"
-                android:orientation="vertical"
-                android:showDividers="middle">
+                android:layout_marginTop="@dimen/dp_4"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
 
-                <RelativeLayout
-                    android:id="@+id/targetAppLayout"
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/dp_16"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="目标应用"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <androidx.constraintlayout.utils.widget.ImageFilterView
-                        android:id="@+id/iconView"
-                        android:layout_width="28dp"
-                        android:layout_height="28dp"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="#F1F1F1"
-                        app:roundPercent="1.0" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:id="@+id/msgChannelLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="消息渠道"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/channelView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <LinearLayout
+                    <RelativeLayout
+                        android:id="@+id/targetAppLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="@dimen/dp_72"
-                        android:orientation="vertical">
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="返回截图"
+                            android:layout_centerVertical="true"
+                            android:text="目标应用"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                        <androidx.constraintlayout.utils.widget.ImageFilterView
+                            android:id="@+id/iconView"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="#F1F1F1"
+                            app:roundPercent="1.0"
+                            tools:src="@drawable/ic_ding_ding" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/msgChannelLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_centerVertical="true"
+                                android:text="消息渠道"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:singleLine="true"
+                                android:text="打卡结果回推渠道"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:id="@+id/channelView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+                            android:textColor="@color/theme_color"
+                            tools:text="@string/app_name" />
+                    </RelativeLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="结果来源"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/dp_4"
-                            android:singleLine="true"
-                            android:text="开启后，【DT#打卡】倒计时结束会截屏并发送结果"
+                            android:text="用哪种方式判定「打卡成功」"
                             android:textSize="@dimen/sp_10" />
+
+                        <RadioGroup
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/noticeRadioButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="通知监听"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/captureRadioButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="截屏服务"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+                        </RadioGroup>
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/remoteClockInCaptureSwitch"
-                        android:layout_width="wrap_content"
+                    <RelativeLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
 
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="@dimen/dp_72"
+                            android:orientation="vertical">
 
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="结果来源"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="返回截图"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:orientation="horizontal">
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:singleLine="true"
+                                android:text="开启后，【DT#打卡】倒计时结束会截屏并发送结果"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
 
-                        <com.google.android.material.radiobutton.MaterialRadioButton
-                            android:id="@+id/noticeRadioButton"
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/remoteClockInCaptureSwitch"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="通知监听"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                        <com.google.android.material.radiobutton.MaterialRadioButton
-                            android:id="@+id/captureRadioButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="截屏服务"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-                    </LinearLayout>
-                </RelativeLayout>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginBottom="@dimen/dp_4"
+                android:text="服务与权限"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
 
-                <RelativeLayout
-                    android:id="@+id/taskConfigLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:gravity="center_vertical"
-                        android:text="任务配置"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:id="@+id/updateHolidayLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:gravity="center_vertical"
-                        android:text="更新节假日数据"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-            </LinearLayout>
-
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginVertical="@dimen/dp_16"
-                android:background="@drawable/bg_solid_layout_white_16"
-                android:divider="@drawable/divider_line"
-                android:dividerPadding="@dimen/dp_16"
-                android:orientation="vertical"
-                android:showDividers="middle">
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
 
-                <RelativeLayout
+                <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/dp_16"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
 
-                    <LinearLayout
-                        android:layout_width="wrap_content"
+                    <RelativeLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical">
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="悬浮权限"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/floatingTipsView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="核心服务，用于打卡后自动跳回本软件"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/floatingSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="通知监听"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/noticeTipsView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="监听打卡结果与远程指令"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/noticeSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="截屏服务"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:id="@+id/captureTipsView"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="截屏服务未开启，无法获取打卡结果"
+                                android:textColor="@color/failure_color"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/captureSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginBottom="@dimen/dp_4"
+                android:text="行为偏好"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/dp_16"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="手势辅助"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:singleLine="true"
+                                android:text="单指上下滑动开启 / 关闭伪灭屏"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/gestureDetectSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:layout_marginEnd="@dimen/dp_72"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="省电模式"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:singleLine="true"
+                                android:text="降低倒计时与蒙层动画刷新频率"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/powerSaveSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="退回桌面"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:singleLine="true"
+                                android:text="打卡结束后先回桌面再启动本软件"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/backToHomeSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginBottom="@dimen/dp_4"
+                android:text="任务"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/dp_16"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
+
+                    <RelativeLayout
+                        android:id="@+id/taskConfigLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:text="任务配置"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:singleLine="true"
+                                android:text="重置时间、超时、口令、工作日"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/updateHolidayLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:text="更新节假日数据"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:singleLine="true"
+                                android:text="同步当年与次年的法定节假日"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginBottom="@dimen/dp_4"
+                android:text="工具"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/dp_16"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
+
+                    <RelativeLayout
+                        android:id="@+id/commandLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="悬浮权限"
+                            android:layout_centerVertical="true"
+                            android:text="全部指令"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/openTestLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:text="唤起测试"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:singleLine="true"
+                                android:text="验证 QQ / 微信 / 支付宝拉起目标应用"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/captureTestLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:text="截屏测试"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:singleLine="true"
+                                android:text="截屏并通过消息渠道发送测试图片"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/sendLogLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:orientation="vertical">
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:text="发送日志"
+                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                            <com.google.android.material.textview.MaterialTextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="end"
+                                android:singleLine="true"
+                                android:text="打包后通过 QQ 发送，便于排查问题"
+                                android:textSize="@dimen/sp_10" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+
+                    <RelativeLayout
+                        android:id="@+id/introduceLayout"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:text="常见问题"
+                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:background="@drawable/ic_arrow_right" />
+                    </RelativeLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginBottom="@dimen/dp_4"
+                android:text="关于"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/dp_16"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/dp_16"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
+
+                    <RelativeLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
+
+                        <com.google.android.material.textview.MaterialTextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_centerVertical="true"
+                            android:gravity="center_vertical"
+                            android:text="当前版本"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
-                            android:id="@+id/floatingTipsView"
+                            android:id="@+id/appVersion"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/dp_4"
-                            android:text="服务未开启，打完卡无法自动跳回本软件"
-                            android:textColor="@color/red"
-                            android:textSize="@dimen/sp_10" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/floatingSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical">
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="通知监听"
+                            android:layout_alignParentEnd="true"
+                            android:layout_centerVertical="true"
+                            android:gravity="center_vertical"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:id="@+id/noticeTipsView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/dp_4"
-                            android:text="服务未开启，无法监听打卡结果和接收远程指令"
-                            android:textColor="@color/red"
-                            android:textSize="@dimen/sp_10" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/noticeSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical">
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="截屏服务"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:id="@+id/captureTipsView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/dp_4"
-                            android:text="服务未开启，无法获取打卡结果"
-                            android:textColor="@color/red"
-                            android:textSize="@dimen/sp_10" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/captureSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical">
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="手势辅助"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="end"
-                            android:layout_marginTop="@dimen/dp_4"
-                            android:singleLine="true"
-                            android:text="开启后，支持单手指上下滑动屏幕开启/关闭伪灭屏"
-                            android:textSize="@dimen/sp_10" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/gestureDetectSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
+                    </RelativeLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:layout_marginEnd="@dimen/dp_72"
-                        android:orientation="vertical">
+                        android:orientation="vertical"
+                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingVertical="@dimen/dp_12">
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="省电模式"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/dp_4"
-                            android:singleLine="true"
-                            android:text="降低倒计时通知和息屏蒙层动画刷新频率"
-                            android:textSize="@dimen/sp_10" />
-                    </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/powerSaveSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical">
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="退回桌面"
+                            android:gravity="center_vertical"
+                            android:text="数据存储"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
                         <com.google.android.material.textview.MaterialTextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_gravity="end"
-                            android:layout_marginTop="@dimen/dp_4"
                             android:singleLine="true"
-                            android:text="开启后，打卡倒计时结束，会先退回桌面再启动本软件"
+                            android:text="全部配置保存在本机，不上传服务器"
                             android:textSize="@dimen/sp_10" />
                     </LinearLayout>
-
-                    <com.google.android.material.switchmaterial.SwitchMaterial
-                        android:id="@+id/backToHomeSwitch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true" />
-                </RelativeLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_solid_layout_white_16"
-                android:divider="@drawable/divider_line"
-                android:dividerPadding="@dimen/dp_16"
-                android:orientation="vertical"
-                android:showDividers="middle">
-
-                <RelativeLayout
-                    android:id="@+id/commandLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="全部指令"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:id="@+id/openTestLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="唤起测试"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:id="@+id/captureTestLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="截屏测试"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:id="@+id/sendLogLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@color/white"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="发送日志"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:id="@+id/introduceLayout"
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@color/white"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:text="常见问题"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
-
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="@dimen/itemLayoutHeight"
-                    android:background="@drawable/bg_solid_layout_white_16"
-                    android:paddingHorizontal="@dimen/dp_16">
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:gravity="center_vertical"
-                        android:text="当前版本"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-
-                    <com.google.android.material.textview.MaterialTextView
-                        android:id="@+id/appVersion"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:gravity="center_vertical"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-                </RelativeLayout>
-            </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>
