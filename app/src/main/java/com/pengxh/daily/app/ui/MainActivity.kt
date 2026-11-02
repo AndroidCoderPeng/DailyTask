@@ -42,7 +42,6 @@ import com.pengxh.daily.app.utils.todayDateKey
 import com.pengxh.daily.app.vm.MainViewModel
 import com.pengxh.daily.app.widget.TaskTimeDialog
 import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import kotlinx.coroutines.delay
@@ -53,7 +52,6 @@ import java.util.Locale
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
-    private val marginOffset by lazy { 16.dp2px(this) }
     private val permissionContract = ActivityResultContracts.StartActivityForResult()
 
     private val mainViewModel: MainViewModel by viewModels()
