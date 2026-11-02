@@ -76,7 +76,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     private fun refreshChannelState() {
         val wxSaved = AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "").isNotBlank()
         binding.stateTextView.text = if (wxSaved) "已配置" else "未配置"
-        binding.stateTextView.setTextColor(getColor(if (wxSaved) R.color.success_color else R.color.text_default_color))
+        binding.stateTextView.setTextColor(getColor(if (wxSaved) R.color.success_color else R.color.text_secondary_color))
         binding.stateCardView.setCardBackgroundColor(pillBackgroundColor(wxSaved))
         binding.updateTimeView.text = if (wxSaved) {
             "配置保存于 ${AppConfig.loadString(Constant.WX_CONFIG_SAVE_TIME_KEY, "")}"
@@ -86,7 +86,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
 
         val mailSaved = !AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY).isEmpty
         binding.qqStateTextView.text = if (mailSaved) "已配置" else "未配置"
-        binding.qqStateTextView.setTextColor(getColor(if (mailSaved) R.color.success_color else R.color.text_default_color))
+        binding.qqStateTextView.setTextColor(getColor(if (mailSaved) R.color.success_color else R.color.text_secondary_color))
         binding.qqStateCardView.setCardBackgroundColor(pillBackgroundColor(mailSaved))
         binding.qqUpdateTimeView.text = if (mailSaved) {
             "配置保存于 ${AppConfig.loadString(Constant.EMAIL_CONFIG_SAVE_TIME_KEY, "")}"

@@ -186,7 +186,7 @@ class ForegroundRunningService : Service() {
         val hours = seconds / 3600
         val minutes = (seconds % 3600) / 60
         val time = String.format(Locale.getDefault(), "%02d小时%02d分钟", hours, minutes)
-        emitResetTickTime("${time}后刷新每日任务")
+        emitResetTickTime(time)
     }
 
     private fun resetTaskSeconds(hour: Int): Int {

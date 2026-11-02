@@ -168,11 +168,8 @@
                         android:id="@+id/minuteRangeItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
                         app:itemRightType="text"
-                        app:itemTitle="时间范围"
-                        app:itemTitleAppearance="@style/TextAppearance.Material3.TitleMedium"
-                        app:itemTitleColor="@color/text_default_color" />
+                        app:itemTitle="时间范围" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

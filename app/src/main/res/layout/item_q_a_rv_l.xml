@@ -24,7 +24,7 @@
         android:layout_marginTop="@dimen/margin_half"
         android:text="本软件不对目标应用做侵入式攻击，不修改定位数据，可以放心使用。只需要设置好任务时间，本软件会在设置的时间点附近调起目标应用实现自动打卡（初次使用会有个弹框提示，“DailyTask”想要打开的目标应用，勾选“始终允许”），但是需要长亮屏幕，因为锁屏后再解锁，并不会直接进入桌面，会无法调起软件。"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-        android:textColor="#666666"
+        android:textColor="@color/text_secondary_color"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/questionView" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -46,7 +46,7 @@
                         android:layout_height="wrap_content"
                         android:text="消息标题"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
-                        android:textColor="@color/text_default_color" />
+                        android:textColor="@color/text_secondary_color" />
 
                     <com.pengxh.kt.lite.widget.DeletableEditText
                         android:id="@+id/messageTitleView"
@@ -163,7 +163,7 @@
                                     android:layout_marginVertical="@dimen/margin_half"
                                     android:text="未配置"
                                     android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
-                                    android:textColor="@color/text_default_color" />
+                                    android:textColor="@color/text_secondary_color" />
                             </com.google.android.material.card.MaterialCardView>
 
                             <TextView
@@ -233,7 +233,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="发件箱"
                                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
-                                android:textColor="@color/text_default_color" />
+                                android:textColor="@color/text_secondary_color" />
 
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -285,7 +285,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="授权码"
                                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
-                                android:textColor="@color/text_default_color" />
+                                android:textColor="@color/text_secondary_color" />
 
                             <com.pengxh.kt.lite.widget.DeletableEditText
                                 android:id="@+id/emailSendCodeView"
@@ -324,7 +324,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="收件箱"
                                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
-                                android:textColor="@color/text_default_color" />
+                                android:textColor="@color/text_secondary_color" />
 
                             <com.pengxh.kt.lite.widget.DeletableEditText
                                 android:id="@+id/emailInboxView"
@@ -362,7 +362,7 @@
                                     android:layout_marginVertical="@dimen/margin_half"
                                     android:text="未配置"
                                     android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
-                                    android:textColor="@color/text_default_color" />
+                                    android:textColor="@color/text_secondary_color" />
                             </com.google.android.material.card.MaterialCardView>
 
                             <TextView
