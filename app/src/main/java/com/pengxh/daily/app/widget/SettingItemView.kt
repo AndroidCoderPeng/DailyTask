@@ -71,7 +71,7 @@ class SettingItemView @JvmOverloads constructor(
     init {
         orientation = HORIZONTAL
         gravity = Gravity.CENTER_VERTICAL
-        val paddingHorizontal = resources.getDimensionPixelSize(R.dimen.dp_16)
+        val paddingHorizontal = resources.getDimensionPixelSize(R.dimen.padding_2x)
         val paddingVertical = resources.getDimensionPixelSize(R.dimen.dp_12)
         setPadding(paddingHorizontal, paddingVertical, paddingHorizontal, paddingVertical)
 

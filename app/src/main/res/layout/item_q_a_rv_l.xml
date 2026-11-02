@@ -5,7 +5,7 @@
     android:layout_height="wrap_content"
     android:background="?attr/selectableItemBackground"
     android:orientation="vertical"
-    android:paddingHorizontal="@dimen/dp_16"
+    android:paddingHorizontal="@dimen/padding_2x"
     android:paddingVertical="@dimen/padding">
 
     <com.google.android.material.textview.MaterialTextView

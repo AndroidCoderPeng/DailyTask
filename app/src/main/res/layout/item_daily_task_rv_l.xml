@@ -4,14 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     app:cardBackgroundColor="@color/white"
-    app:cardCornerRadius="@dimen/dp_16"
+    app:cardCornerRadius="@dimen/radius_2x"
     app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="@dimen/dp_16">
+        android:padding="@dimen/padding_2x">
 
         <!-- 计划时间部分 -->
         <LinearLayout
@@ -49,7 +49,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 app:cardBackgroundColor="#F5F5F5"
-                app:cardCornerRadius="@dimen/dp_16"
+                app:cardCornerRadius="@dimen/radius_2x"
                 app:strokeColor="@color/lib_hint_color"
                 app:strokeWidth="2dp">
 
@@ -58,7 +58,7 @@
                     android:layout_width="@dimen/dp_32"
                     android:layout_height="@dimen/dp_32"
                     android:layout_gravity="center"
-                    android:padding="@dimen/dp_8"
+                    android:padding="@dimen/padding"
                     android:src="@drawable/ic_arrow_right" />
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
@@ -67,7 +67,7 @@
         <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:layout_marginVertical="@dimen/dp_8"
+            android:layout_marginVertical="@dimen/margin"
             android:background="@drawable/divider_gradient" />
 
         <!-- 实际时间部分 -->

@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="@dimen/dp_16">
+            android:paddingHorizontal="@dimen/padding_2x">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -39,7 +39,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/dp_4"
+                android:layout_marginTop="@dimen/margin_half"
                 app:cardBackgroundColor="@color/white"
                 app:strokeColor="@color/border_color">
 
@@ -47,7 +47,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:divider="@drawable/divider_line"
-                    android:dividerPadding="@dimen/dp_16"
+                    android:dividerPadding="@dimen/padding_2x"
                     android:orientation="vertical"
                     android:showDividers="middle">
 
@@ -80,7 +80,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
-                        android:paddingHorizontal="@dimen/dp_16"
+                        android:paddingHorizontal="@dimen/padding_2x"
                         android:paddingVertical="@dimen/dp_12">
 
                         <LinearLayout
@@ -108,7 +108,7 @@
                             android:id="@+id/workdayValueView"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/dp_16"
+                            android:layout_marginStart="@dimen/margin_2x"
                             android:layout_weight="1"
                             android:gravity="end"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
@@ -120,7 +120,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/dp_12"
-                android:layout_marginBottom="@dimen/dp_4"
+                android:layout_marginBottom="@dimen/margin_half"
                 android:text="执行策略"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                 android:textColor="#ABABAB" />
@@ -135,7 +135,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:divider="@drawable/divider_line"
-                    android:dividerPadding="@dimen/dp_16"
+                    android:dividerPadding="@dimen/padding_2x"
                     android:orientation="vertical"
                     android:showDividers="middle">
 
@@ -180,7 +180,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/dp_12"
-                android:layout_marginBottom="@dimen/dp_4"
+                android:layout_marginBottom="@dimen/margin_half"
                 android:text="配置迁移"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                 android:textColor="#ABABAB" />

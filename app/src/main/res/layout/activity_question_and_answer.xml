@@ -41,7 +41,7 @@
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:marqueeRepeatLimit="-1"
-        android:padding="@dimen/dp_16"
+        android:padding="@dimen/padding_2x"
         android:singleLine="true"
         android:text="Tips：由于本人不再使用，测试不尽仔细，如有问题请加QQ群：560354109（1群）、643595483（2群）、377923252（3群）。"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"

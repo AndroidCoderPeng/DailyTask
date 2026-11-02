@@ -25,7 +25,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingHorizontal="@dimen/dp_16">
+            android:paddingHorizontal="@dimen/padding_2x">
 
             <!-- 消息标题 -->
             <com.google.android.material.card.MaterialCardView
@@ -96,7 +96,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/dp_4"
+                    android:layout_marginBottom="@dimen/margin_half"
                     android:text="企业微信"
                     android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                     android:textColor="#ABABAB" />
@@ -117,7 +117,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginBottom="@dimen/dp_4"
+                            android:layout_marginBottom="@dimen/margin_half"
                             android:text="Webhook Key"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                             android:textColor="#ABABAB" />
@@ -136,7 +136,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginVertical="@dimen/dp_4"
+                            android:layout_marginVertical="@dimen/margin_half"
                             android:text="群聊设置 → 消息推送 → 复制地址末尾的 key"
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                             android:textColor="#ABABAB" />
@@ -170,7 +170,7 @@
                                 android:id="@+id/updateTimeView"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginVertical="@dimen/dp_4"
+                                android:layout_marginVertical="@dimen/margin_half"
                                 android:layout_marginStart="@dimen/margin_2x"
                                 android:text="测试发送成功后才保存"
                                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"
@@ -204,7 +204,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="@dimen/dp_4"
+                    android:layout_marginBottom="@dimen/margin_half"
                     android:text="QQ 邮箱"
                     android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                     android:textColor="#ABABAB" />
@@ -369,7 +369,7 @@
                                 android:id="@+id/qqUpdateTimeView"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginVertical="@dimen/dp_4"
+                                android:layout_marginVertical="@dimen/margin_half"
                                 android:layout_marginStart="@dimen/margin_2x"
                                 android:text="测试发送成功后才保存"
                                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"

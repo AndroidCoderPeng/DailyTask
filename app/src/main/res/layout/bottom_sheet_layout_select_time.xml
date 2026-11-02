@@ -11,7 +11,7 @@
         android:layout_width="@dimen/dp_32"
         android:layout_height="4dp"
         android:layout_marginTop="12dp"
-        android:layout_marginBottom="@dimen/dp_16"
+        android:layout_marginBottom="@dimen/margin_2x"
         app:cardBackgroundColor="?attr/colorOutline"
         app:cardCornerRadius="2dp"
         app:layout_constraintEnd_toEndOf="parent"
@@ -25,7 +25,7 @@
         android:layout_height="wrap_content"
         android:fontFamily="sans-serif-medium"
         android:gravity="center"
-        android:paddingVertical="@dimen/dp_16"
+        android:paddingVertical="@dimen/padding_2x"
         android:textColor="?attr/colorOnSurface"
         android:textSize="@dimen/sp_18"
         android:textStyle="bold"
@@ -53,7 +53,7 @@
             android:id="@+id/saveButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_margin="@dimen/dp_16"
+            android:layout_margin="@dimen/margin_2x"
             android:text="确定" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

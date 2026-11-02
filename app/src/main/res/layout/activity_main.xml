@@ -39,8 +39,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@color/theme_color"
-                    android:drawablePadding="@dimen/dp_4"
-                    android:paddingHorizontal="@dimen/dp_16"
+                    android:drawablePadding="@dimen/padding_half"
+                    android:paddingHorizontal="@dimen/padding_2x"
                     android:paddingTop="0dp"
                     android:paddingBottom="@dimen/dp_12"
                     android:singleLine="true"
@@ -53,7 +53,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:padding="@dimen/dp_16">
+                    android:padding="@dimen/padding_2x">
 
                     <com.google.android.material.textview.MaterialTextView
                         android:id="@+id/tipsView"
@@ -70,7 +70,7 @@
                         android:id="@+id/executeTaskButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/dp_16"
+                        android:layout_marginStart="@dimen/margin_2x"
                         android:text="启动"
                         app:icon="@mipmap/ic_start"
                         app:iconTint="@color/success_color" />
@@ -80,7 +80,7 @@
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_marginVertical="@dimen/dp_8"
+                android:layout_marginVertical="@dimen/margin"
                 android:layout_weight="1">
 
                 <androidx.recyclerview.widget.RecyclerView
