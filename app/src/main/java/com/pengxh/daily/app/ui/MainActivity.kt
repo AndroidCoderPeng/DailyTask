@@ -3,8 +3,6 @@ package com.pengxh.daily.app.ui
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -67,7 +65,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val gestureController by lazy {
         GestureController(this, maskViewController, ::saveMaskMode)
     }
-    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
 
     private val dailyTaskAdapter by lazy {
         DailyTaskAdapter().apply {
@@ -107,27 +104,20 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
         WindowInsetsControllerCompat(window, binding.rootView).isAppearanceLightStatusBars = true
 
-        // 显示时间
-        mainHandler.post(timeUpdateRunnable)
+        updateToolbarTitle()
     }
 
-    /**
-     * 每秒刷新 toolbar 时间和日期标签
-     * */
-    private val timeUpdateRunnable = object : Runnable {
-        override fun run() {
-            val today = LocalDate.now()
-            binding.toolbar.title = String.format(
-                Locale.CHINA,
-                "%04d年%02d月%02d日 %s（%s）",
-                today.year,
-                today.monthValue,
-                today.dayOfMonth,
-                CustomWorkdayManager.getDayLabel(today.dayOfWeek),
-                TaskScheduler.getDayFlag()
-            )
-            mainHandler.postDelayed(this, 1000)
-        }
+    private fun updateToolbarTitle() {
+        val today = LocalDate.now()
+        binding.toolbar.title = String.format(
+            Locale.CHINA,
+            "%04d年%02d月%02d日 %s（%s）",
+            today.year,
+            today.monthValue,
+            today.dayOfMonth,
+            CustomWorkdayManager.getDayLabel(today.dayOfWeek),
+            TaskScheduler.getDayFlag()
+        )
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
@@ -175,6 +165,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
         }
         showMaskOnForeground()
+        updateToolbarTitle()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -197,7 +188,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onDestroy() {
         super.onDestroy()
-        mainHandler.removeCallbacksAndMessages(null)
         maskViewController.destroy()
     }
 
@@ -319,6 +309,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         lifecycleScope.launch {
             ForegroundRunningService.resetTickTime.collect { text ->
                 binding.repeatTimeView.text = text
+                updateToolbarTitle()
             }
         }
     }
