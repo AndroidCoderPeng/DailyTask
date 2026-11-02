@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.ui
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +14,7 @@ import androidx.activity.viewModels
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.R
@@ -26,6 +28,7 @@ import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.LogFileManager
@@ -41,14 +44,13 @@ import com.pengxh.daily.app.vm.MainViewModel
 import com.pengxh.daily.app.widget.TaskTimeDialog
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.divider.RecyclerViewItemBorder
-import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.dp2px
 import com.pengxh.kt.lite.extensions.navigatePageTo
 import com.pengxh.kt.lite.extensions.show
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import java.time.LocalDate
 import java.util.Locale
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
@@ -85,32 +87,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         startFloatingWindowService()
     }
 
-    /**
-     * 每秒刷新 toolbar 时间和日期标签
-     * */
-    private val timeUpdateRunnable = object : Runnable {
-        override fun run() {
-            val now = Calendar.getInstance()
-            val month = now.get(Calendar.MONTH) + 1
-            val day = now.get(Calendar.DAY_OF_MONTH)
-            binding.toolbar.apply {
-                title = String.format(
-                    Locale.CHINA, "%02d月%02d日（%s）", month, day, TaskScheduler.getDayFlag()
-                )
-                subtitle = String.format(
-                    Locale.CHINA, "%04d-%02d-%02d %02d:%02d:%02d",
-                    now.get(Calendar.YEAR),
-                    month,
-                    day,
-                    now.get(Calendar.HOUR_OF_DAY),
-                    now.get(Calendar.MINUTE),
-                    now.get(Calendar.SECOND)
-                )
-            }
-            mainHandler.postDelayed(this, 1000)
-        }
-    }
-
     override fun observeRequestState() {
 
     }
@@ -120,14 +96,38 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     override fun setupTopBarLayout() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            view.setPadding(0, statusBarHeight, 0, 0)
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, systemBars.top, view.paddingRight, systemBars.bottom)
             insets
         }
 
+        WindowInsetsControllerCompat(window, binding.rootView).isAppearanceLightStatusBars = true
+
         // 显示时间
         mainHandler.post(timeUpdateRunnable)
+    }
+
+    /**
+     * 每秒刷新 toolbar 时间和日期标签
+     * */
+    private val timeUpdateRunnable = object : Runnable {
+        override fun run() {
+            val today = LocalDate.now()
+            binding.toolbar.title = String.format(
+                Locale.CHINA,
+                "%04d年%02d月%02d日 %s（%s）",
+                today.year,
+                today.monthValue,
+                today.dayOfMonth,
+                CustomWorkdayManager.getDayLabel(today.dayOfWeek),
+                TaskScheduler.getDayFlag()
+            )
+            mainHandler.postDelayed(this, 1000)
+        }
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
@@ -170,6 +170,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     override fun onResume() {
         super.onResume()
+        LogFileManager.writeLog("onResume: $packageName 回到前台")
         if (!Settings.canDrawOverlays(this)) {
             "悬浮窗权限未开启，部分功能可能无法正常使用".show(this)
         }
@@ -337,16 +338,21 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private fun observeSchedulerState() {
         lifecycleScope.launch {
             TaskScheduler.isRunning.collectLatest { running ->
+                binding.executeTaskButton.setIconTintResource(R.color.white)
                 if (running) {
-                    binding.executeTaskButton.setIconResource(R.mipmap.ic_stop)
-                    binding.executeTaskButton.setIconTintResource(R.color.red)
-                    binding.executeTaskButton.text = "停止"
+                    binding.executeTaskButton.apply {
+                        setIconResource(R.mipmap.ic_stop)
+                        backgroundTintList = getColorStateList(R.color.red)
+                        text = "停止今日任务"
+                    }
                 } else {
                     dailyTaskAdapter.updateCurrentTaskState(-1)
                     binding.tipsView.text = ""
-                    binding.executeTaskButton.setIconResource(R.mipmap.ic_start)
-                    binding.executeTaskButton.setIconTintResource(R.color.success_color)
-                    binding.executeTaskButton.text = "启动"
+                    binding.executeTaskButton.apply {
+                        setIconResource(R.mipmap.ic_start)
+                        backgroundTintList = getColorStateList(R.color.theme_color)
+                        text = "启动今日任务"
+                    }
                 }
             }
         }
@@ -392,7 +398,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             is TipsEvent.Skip -> {
                 val reason = "今日为${event.dayFlag.label}"
                 binding.tipsView.text = "$reason，跳过任务"
-                binding.tipsView.setTextColor(R.color.success_color.convertColor(this@MainActivity))
                 MessageDispatcher.sendMessage(
                     "任务跳过通知",
                     "$reason，任务已自动跳过，请注意下次打卡时间"
@@ -401,7 +406,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
             is TipsEvent.Executing -> {
                 binding.tipsView.text = "准备执行第 ${event.index} 个任务"
-                binding.tipsView.setTextColor(R.color.theme_color.convertColor(this@MainActivity))
                 dailyTaskAdapter.updateCurrentTaskState(event.index - 1, event.actualTime)
 
                 val content = buildString {
@@ -416,8 +420,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 dailyTaskAdapter.updateCurrentTaskState(-1)
                 val message = event.message ?: "今日任务已全部执行完毕"
                 binding.tipsView.text = "$message，等待下次任务"
-                val statusColor = if (event.hasFailure) R.color.red else R.color.success_color
-                binding.tipsView.setTextColor(statusColor.convertColor(this@MainActivity))
                 LogFileManager.writeLog(message)
                 MessageDispatcher.sendMessage("任务状态通知", message)
             }
