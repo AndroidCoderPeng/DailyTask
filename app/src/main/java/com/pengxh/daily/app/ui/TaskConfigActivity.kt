@@ -3,10 +3,12 @@ package com.pengxh.daily.app.ui
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
@@ -40,9 +42,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private val kTag = "TaskConfigActivity"
     private val context = this
-    private val hourArray = arrayListOf("0", "1", "2", "3", "4", "5", "6", "自定义（单位：时）")
-    private val timeArray = arrayListOf("15", "30", "45", "自定义（单位：秒）")
-    private val optionArray = arrayListOf("QQ", "微信", "TIM", "支付宝", "剪切板")
+    private val hourArray = listOf("0", "1", "2", "3", "4", "5", "6", "自定义（单位：时）")
+    private val timeArray = listOf("15", "30", "45", "自定义（单位：秒）")
+    private val optionArray = listOf("QQ", "微信", "TIM", "支付宝", "剪切板")
     private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
@@ -54,10 +56,13 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun setupTopBarLayout() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.rootView) { view, insets ->
-            val topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            view.setPadding(view.paddingLeft, topInset, view.paddingRight, view.paddingBottom)
-            WindowInsetsCompat.CONSUMED
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, systemBars.top, view.paddingRight, systemBars.bottom)
+            insets
         }
 
         WindowInsetsControllerCompat(window, binding.rootView).isAppearanceLightStatusBars = true
@@ -66,29 +71,32 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
         val hour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-        binding.resetTimeView.text = "每天${hour}点"
+        binding.resetTimeItem.rightTextView.text = "每天${hour}点"
 
         val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
-        binding.timeoutTextView.text = "${time}s"
+        binding.timeoutItem.rightTextView.text = "${time}s"
 
-        binding.keyTextView.text = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
+        binding.keyItem.rightTextView.text = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
 
         updateCustomWorkdaySummary(CustomWorkdayManager.loadWorkdays())
 
-        binding.autoTaskSwitch.isChecked =
+        // 循环任务状态仅能通过远程指令修改，开关只作展示
+        binding.autoTaskItem.switchView.isClickable = false
+        binding.autoTaskItem.switchView.isFocusable = false
+        binding.autoTaskItem.switchView.isChecked =
             AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
 
-        binding.skipHolidaySwitch.isChecked =
+        binding.skipHolidayItem.switchView.isChecked =
             AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
 
         val needRandom = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
-        binding.randomTimeSwitch.isChecked = needRandom
+        binding.randomTimeItem.switchView.isChecked = needRandom
         if (needRandom) {
-            binding.minuteRangeLayout.visibility = View.VISIBLE
+            binding.minuteRangeItem.visibility = View.VISIBLE
             val value = AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
-            binding.minuteRangeView.text = "${value}分钟"
+            binding.minuteRangeItem.rightTextView.text = "${value}分钟"
         } else {
-            binding.minuteRangeLayout.visibility = View.GONE
+            binding.minuteRangeItem.visibility = View.GONE
         }
 
         // 运行中排程已按当日 flag 计算，中途改工作日会引入额外判断，故直接锁定入口
@@ -103,7 +111,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initEvent() {
-        binding.resetTimeLayout.setOnClickListener {
+        binding.resetTimeItem.setOnClickListener {
             BottomActionSheet.Builder()
                 .setContext(this)
                 .setActionItemTitle(hourArray)
@@ -115,7 +123,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 }).build().show()
         }
 
-        binding.timeoutLayout.setOnClickListener {
+        binding.timeoutItem.setOnClickListener {
             BottomActionSheet.Builder()
                 .setContext(this)
                 .setActionItemTitle(timeArray)
@@ -127,7 +135,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 }).build().show()
         }
 
-        binding.keyLayout.setOnClickListener {
+        binding.keyItem.setOnClickListener {
             AlertInputDialog.Builder()
                 .setContext(this)
                 .setTitle("设置打卡口令")
@@ -138,7 +146,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     AlertInputDialog.OnDialogButtonClickListener {
                     override fun onConfirmClick(value: String) {
                         AppConfig.saveString(Constant.REMOTE_COMMAND_KEY, value)
-                        binding.keyTextView.text = value
+                        binding.keyItem.rightTextView.text = value
                     }
 
                     override fun onCancelClick() {}
@@ -153,23 +161,23 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             showWorkdaySelector()
         }
 
-        binding.randomTimeSwitch.setOnCheckedChangeListener { _, isChecked ->
+        binding.randomTimeItem.switchView.setOnCheckedChangeListener { _, isChecked ->
             AppConfig.saveBoolean(Constant.RANDOM_TIME_KEY, isChecked)
             if (isChecked) {
-                binding.minuteRangeLayout.visibility = View.VISIBLE
+                binding.minuteRangeItem.visibility = View.VISIBLE
                 val value =
                     AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
-                binding.minuteRangeView.text = "${value}分钟"
+                binding.minuteRangeItem.rightTextView.text = "${value}分钟"
             } else {
-                binding.minuteRangeLayout.visibility = View.GONE
+                binding.minuteRangeItem.visibility = View.GONE
             }
         }
 
-        binding.skipHolidaySwitch.setOnCheckedChangeListener { _, isChecked ->
+        binding.skipHolidayItem.switchView.setOnCheckedChangeListener { _, isChecked ->
             AppConfig.saveBoolean(Constant.SKIP_HOLIDAY_KEY, isChecked)
         }
 
-        binding.minuteRangeLayout.setOnClickListener {
+        binding.minuteRangeItem.setOnClickListener {
             AlertInputDialog.Builder()
                 .setContext(this)
                 .setTitle("设置随机时间范围")
@@ -190,7 +198,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 }).build().show()
         }
 
-        binding.exportLayout.setOnClickListener {
+        binding.exportItem.setOnClickListener {
             val exportData = ExportDataModel()
 
             // Int
@@ -345,7 +353,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             "重置时间必须在0到23点之间".show(this)
             return
         }
-        binding.resetTimeView.text = "每天${hour}点"
+        binding.resetTimeItem.rightTextView.text = "每天${hour}点"
         setTaskResetTime(hour)
     }
 
@@ -385,7 +393,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             "超时时间必须大于0秒".show(this)
             return
         }
-        binding.timeoutTextView.text = "${time}s"
+        binding.timeoutItem.rightTextView.text = "${time}s"
         AppConfig.saveInt(Constant.STAY_OVERTIME_KEY, time)
         FloatingWindowController.setOvertime(time)
     }
@@ -413,7 +421,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             "随机时间范围不能小于0分钟".show(this)
             return
         }
-        binding.minuteRangeView.text = "${value}分钟"
+        binding.minuteRangeItem.rightTextView.text = "${value}分钟"
         AppConfig.saveInt(Constant.TIME_RANGE_KEY, value)
     }
 }

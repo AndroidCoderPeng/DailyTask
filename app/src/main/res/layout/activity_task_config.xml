@@ -51,122 +51,32 @@
                     android:orientation="vertical"
                     android:showDividers="middle">
 
-                    <RelativeLayout
-                        android:id="@+id/resetTimeLayout"
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/resetTimeItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="@dimen/dp_12">
+                        app:itemDesc="每天几点重新开始计算当日任务"
+                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        app:itemRightType="text"
+                        app:itemTitle="重置时间" />
 
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:text="重置时间"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:singleLine="true"
-                                android:text="每天几点重新开始计算当日任务"
-                                android:textSize="@dimen/sp_10" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/resetTimeView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:gravity="center_vertical"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-                    </RelativeLayout>
-
-                    <RelativeLayout
-                        android:id="@+id/timeoutLayout"
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/timeoutItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="@dimen/dp_12">
+                        app:itemDesc="停留在目标应用的时间"
+                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        app:itemRightType="text"
+                        app:itemTitle="超时时间" />
 
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:text="超时时间"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:singleLine="true"
-                                android:text="停留在目标应用的时间"
-                                android:textSize="@dimen/sp_10" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/timeoutTextView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:gravity="center_vertical"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-                    </RelativeLayout>
-
-                    <RelativeLayout
-                        android:id="@+id/keyLayout"
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/keyItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="@dimen/dp_12">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:text="任务口令"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:singleLine="true"
-                                android:text="远程触发打卡时使用的指令内容"
-                                android:textSize="@dimen/sp_10" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/keyTextView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:gravity="center_vertical"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-                    </RelativeLayout>
+                        app:itemDesc="远程触发打卡时使用的指令内容"
+                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        app:itemRightType="text"
+                        app:itemTitle="任务口令" />
 
                     <LinearLayout
                         android:id="@+id/workdayLayout"
@@ -232,138 +142,40 @@
                     android:orientation="vertical"
                     android:showDividers="middle">
 
-                    <RelativeLayout
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/skipHolidayItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="@dimen/dp_12">
+                        app:itemDesc="法定节假日不执行打卡"
+                        app:itemRightType="toggle"
+                        app:itemTitle="跳过节假日" />
 
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:text="跳过节假日"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:singleLine="true"
-                                android:text="法定节假日不执行打卡"
-                                android:textSize="@dimen/sp_10" />
-                        </LinearLayout>
-
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/skipHolidaySwitch"
-                            style="@style/CustomSwitchStyle"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true" />
-                    </RelativeLayout>
-
-                    <RelativeLayout
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/autoTaskItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="@dimen/dp_12">
+                        app:itemDesc="仅能通过远程指令「DT#开启/关闭循环」修改"
+                        app:itemDescColor="@color/failure_color"
+                        app:itemRightType="toggle"
+                        app:itemTitle="循环任务" />
 
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:text="循环任务"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:singleLine="true"
-                                android:text="仅能通过远程指令「DT#开启/关闭循环」修改"
-                                android:textColor="@color/failure_color"
-                                android:textSize="@dimen/sp_10" />
-                        </LinearLayout>
-
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/autoTaskSwitch"
-                            style="@style/CustomSwitchStyle"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:clickable="false"
-                            android:focusable="false" />
-                    </RelativeLayout>
-
-                    <RelativeLayout
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/randomTimeItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="@dimen/dp_12">
+                        app:itemDesc="在时间范围内随机取点执行"
+                        app:itemRightType="toggle"
+                        app:itemTitle="随机时间" />
 
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:text="随机时间"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:singleLine="true"
-                                android:text="在时间范围内随机取点执行"
-                                android:textSize="@dimen/sp_10" />
-                        </LinearLayout>
-
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/randomTimeSwitch"
-                            style="@style/CustomSwitchStyle"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true" />
-                    </RelativeLayout>
-
-                    <RelativeLayout
-                        android:id="@+id/minuteRangeLayout"
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/minuteRangeItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/dp_16"
-                        android:paddingVertical="@dimen/dp_12">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerVertical="true"
-                            android:text="时间范围"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                            android:textColor="@color/text_default_color" />
-
-                        <TextView
-                            android:id="@+id/minuteRangeView"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_alignParentEnd="true"
-                            android:layout_centerVertical="true"
-                            android:gravity="center_vertical"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-                    </RelativeLayout>
+                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        app:itemRightType="text"
+                        app:itemTitle="时间范围"
+                        app:itemTitleAppearance="@style/TextAppearance.Material3.TitleMedium"
+                        app:itemTitleColor="@color/text_default_color" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -382,42 +194,13 @@
                 app:cardBackgroundColor="@color/white"
                 app:strokeColor="@color/border_color">
 
-                <RelativeLayout
-                    android:id="@+id/exportLayout"
+                <com.pengxh.daily.app.widget.SettingItemView
+                    android:id="@+id/exportItem"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:paddingHorizontal="@dimen/dp_16"
-                    android:paddingVertical="@dimen/dp_12">
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_centerVertical="true"
-                        android:orientation="vertical">
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:text="导出配置"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                        <com.google.android.material.textview.MaterialTextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_gravity="end"
-                            android:singleLine="true"
-                            android:text="分享到 QQ / 微信 / TIM / 支付宝，或复制到剪贴板"
-                            android:textSize="@dimen/sp_10" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:background="@drawable/ic_arrow_right" />
-                </RelativeLayout>
+                    app:itemDesc="分享到 QQ / 微信 / TIM / 支付宝，或复制到剪贴板"
+                    app:itemRightType="arrow"
+                    app:itemTitle="导出配置" />
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
