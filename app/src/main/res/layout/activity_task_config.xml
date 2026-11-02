@@ -260,10 +260,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/skipHolidaySwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>
@@ -297,10 +296,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/autoTaskSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true"
                             android:clickable="false"
@@ -335,10 +333,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/randomTimeSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>

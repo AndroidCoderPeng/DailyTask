@@ -183,10 +183,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/remoteClockInCaptureSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>
@@ -242,10 +241,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/floatingSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>
@@ -276,10 +274,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/noticeSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>
@@ -311,10 +308,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/captureSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>
@@ -371,10 +367,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/gestureDetectSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>
@@ -406,10 +401,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/powerSaveSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>
@@ -441,10 +435,9 @@
                                 android:textSize="@dimen/sp_10" />
                         </LinearLayout>
 
-                        <com.google.android.material.switchmaterial.SwitchMaterial
+                        <androidx.appcompat.widget.SwitchCompat
                             android:id="@+id/backToHomeSwitch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
+                            style="@style/CustomSwitchStyle"
                             android:layout_alignParentEnd="true"
                             android:layout_centerVertical="true" />
                     </RelativeLayout>

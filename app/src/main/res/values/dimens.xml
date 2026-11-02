@@ -33,4 +33,37 @@
 
     <!--普通列表Item Layout高度-->
     <dimen name="itemLayoutHeight">60dp</dimen>
+
+    <!-- ================================================================================ -->
+
+    <!--  内边距  -->
+    <dimen name="padding_half">4dp</dimen>
+    <dimen name="padding">8dp</dimen>
+    <dimen name="padding_2x">16dp</dimen>
+    <dimen name="padding_3x">24dp</dimen>
+    <dimen name="padding_4x">32dp</dimen>
+    <dimen name="padding_5x">40dp</dimen>
+
+    <!--  外边距  -->
+    <dimen name="margin_half">4dp</dimen>
+    <dimen name="margin">8dp</dimen>
+    <dimen name="margin_2x">16dp</dimen>
+    <dimen name="margin_3x">24dp</dimen>
+    <dimen name="margin_4x">32dp</dimen>
+    <dimen name="margin_5x">40dp</dimen>
+
+    <!--  文字大小  -->
+    <dimen name="smallest_text_size">12sp</dimen>
+    <dimen name="auxiliary_text_size">14sp</dimen>
+    <dimen name="default_text_size">16sp</dimen>
+    <dimen name="title_text_size">18sp</dimen>
+    <dimen name="large_text_size">20sp</dimen>
+
+    <!--  圆角  -->
+    <dimen name="radius_half">4dp</dimen>
+    <dimen name="radius">8dp</dimen>
+    <dimen name="radius_2x">16dp</dimen>
+    <dimen name="radius_3x">24dp</dimen>
+    <dimen name="radius_4x">32dp</dimen>
+    <dimen name="radius_5x">40dp</dimen>
 </resources>
