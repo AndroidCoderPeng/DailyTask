@@ -4,10 +4,7 @@
     <dimen name="sp_10">10sp</dimen>
     <dimen name="sp_12">12sp</dimen>
     <dimen name="sp_14">14sp</dimen>
-    <dimen name="sp_16">16sp</dimen>
     <dimen name="sp_18">18sp</dimen>
-    <dimen name="sp_20">20sp</dimen>
-    <dimen name="sp_22">22sp</dimen>
 
     <!--控件边距-->
     <dimen name="dp_4">4dp</dimen>
@@ -16,23 +13,9 @@
     <dimen name="dp_16">16dp</dimen>
     <dimen name="dp_24">24dp</dimen>
     <dimen name="dp_32">32dp</dimen>
-    <dimen name="dp_40">40dp</dimen>
-    <dimen name="dp_48">48dp</dimen>
-    <dimen name="dp_56">56dp</dimen>
-    <dimen name="dp_64">64dp</dimen>
-    <dimen name="dp_72">72dp</dimen>
 
     <!--分割线-->
     <dimen name="dividerLine">1dp</dimen>
-
-    <!--边框-->
-    <dimen name="borderThickness">1px</dimen>
-
-    <!--title栏高度-->
-    <dimen name="titleViewHeight">48dp</dimen>
-
-    <!--普通列表Item Layout高度-->
-    <dimen name="itemLayoutHeight">60dp</dimen>
 
     <!-- ================================================================================ -->
 

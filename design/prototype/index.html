@@ -479,16 +479,17 @@
               <div class="group-body">
                 <div class="field">
                   <label class="field-label" for="wxKey">Webhook Key</label>
-                  <div class="field-inline">
-                    <input class="input" id="wxKey" value="a8f3c2e1-6b4d-4f70-9c2a-1de5f80b7a31">
-                    <button class="btn btn-soft btn-sm" data-act="testWx">测试推送</button>
-                  </div>
+                  <input class="input" id="wxKey" value="a8f3c2e1-6b4d-4f70-9c2a-1de5f80b7a31">
                   <p class="field-hint">群聊设置 → 消息推送 → 复制地址末尾的 key</p>
                 </div>
                 <div class="status-line" id="wxStatus">
                   <span class="pill pill-ok"><i class="dot"></i>已验证</span>
                   <span class="status-text">配置保存于 2026-10-28 14:02</span>
                 </div>
+                <button class="btn btn-outline btn-inset" data-act="testWx">
+                  <svg class="btn-ico" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-11 11"/><path d="M22 2 15 21l-4-8-8-4z"/></svg>
+                  <span>发送测试推送</span>
+                </button>
               </div>
             </section>
 

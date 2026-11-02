@@ -30,6 +30,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/dp_4"
                 android:text="任务目标"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                 android:textColor="#ABABAB" />
@@ -37,7 +38,6 @@
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/dp_4"
                 app:cardBackgroundColor="@color/white"
                 app:strokeColor="@color/border_color">
 
@@ -74,13 +74,13 @@
                         android:paddingHorizontal="@dimen/dp_16"
                         android:paddingVertical="@dimen/dp_12">
 
-                        <com.google.android.material.textview.MaterialTextView
+                        <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="结果来源"
                             android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
 
-                        <com.google.android.material.textview.MaterialTextView
+                        <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="用哪种方式判定「打卡成功」"
