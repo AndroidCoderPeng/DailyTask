@@ -84,7 +84,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="用哪种方式判定「打卡成功」"
-                            android:textSize="@dimen/sp_10" />
+                            android:textSize="@dimen/smallest_text_size" />
 
                         <com.google.android.material.card.MaterialCardView
                             android:layout_width="match_parent"

@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--字体大小-->
-    <dimen name="sp_10">10sp</dimen>
-    <dimen name="sp_12">12sp</dimen>
     <dimen name="sp_14">14sp</dimen>
     <dimen name="sp_18">18sp</dimen>
 
@@ -13,9 +11,6 @@
     <dimen name="dp_16">16dp</dimen>
     <dimen name="dp_24">24dp</dimen>
     <dimen name="dp_32">32dp</dimen>
-
-    <!--分割线-->
-    <dimen name="dividerLine">1dp</dimen>
 
     <!-- ================================================================================ -->
 
@@ -36,11 +31,7 @@
     <dimen name="margin_5x">40dp</dimen>
 
     <!--  文字大小  -->
-    <dimen name="smallest_text_size">12sp</dimen>
-    <dimen name="auxiliary_text_size">14sp</dimen>
-    <dimen name="default_text_size">16sp</dimen>
-    <dimen name="title_text_size">18sp</dimen>
-    <dimen name="large_text_size">20sp</dimen>
+    <dimen name="smallest_text_size">10sp</dimen>
 
     <!--  圆角  -->
     <dimen name="radius_half">4dp</dimen>

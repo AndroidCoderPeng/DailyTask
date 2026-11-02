@@ -101,7 +101,7 @@
                                 android:layout_gravity="end"
                                 android:singleLine="true"
                                 android:text="非工作日自动跳过任务"
-                                android:textSize="@dimen/sp_10" />
+                                android:textSize="@dimen/smallest_text_size" />
                         </LinearLayout>
 
                         <TextView

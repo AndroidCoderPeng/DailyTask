@@ -40,7 +40,7 @@
                 android:paddingVertical="@dimen/dp_4"
                 android:text="无反馈"
                 android:textColor="@color/white"
-                android:textSize="@dimen/sp_10" />
+                android:textSize="@dimen/smallest_text_size" />
         </com.google.android.material.card.MaterialCardView>
 
         <TextView

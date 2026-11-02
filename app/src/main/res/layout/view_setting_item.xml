@@ -37,7 +37,7 @@
             android:id="@+id/itemDescView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="@dimen/sp_10"
+            android:textSize="@dimen/smallest_text_size"
             android:visibility="gone"
             tools:text="条目描述"
             tools:visibility="visible" />
