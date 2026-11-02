@@ -63,8 +63,10 @@ object TaskScheduler {
      * */
     @Volatile
     private var clockInDeferred: CompletableDeferred<Unit>? = null
+
     @Volatile
     private var clockInWaitStartedAtMillis: Long? = null
+
     @Volatile
     private var clockInWaitDeadlineMillis: Long? = null
 
@@ -129,13 +131,26 @@ object TaskScheduler {
         // 最后一道防线：任何逃离主循环 try/catch 的异常都在此收口，
         // 保证"调度器挂了"这件事一定被用户感知，而不是静默消失
         val crashHandler = CoroutineExceptionHandler { _, throwable ->
-            notifySchedulerError("任务调度器发生未捕获异常并已停止，今日打卡可能无法完成：$throwable", true)
+            notifySchedulerError(
+                "任务调度器发生未捕获异常并已停止，今日打卡可能无法完成：$throwable", true
+            )
         }
 
         val tempJob = currentScope.launch(crashHandler) {
             var recoveryCount = 0
             while (isActive) {
                 try {
+                    // 每日自动循环开关：远程"关闭循环"后，调度器不再跨天自动续跑。
+                    if (!AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)) {
+                        LogFileManager.writeLog("每日自动循环已关闭，任务调度退出")
+                        MessageDispatcher.sendMessage(
+                            "循环任务状态通知",
+                            "每日自动循环已关闭，任务调度已停止，不再自动执行每日任务，如需恢复请发送 DT#开启循环"
+                        )
+                        ForegroundRunningService.emitNotificationText("每日自动循环已关闭，任务调度已停止")
+                        return@launch
+                    }
+
                     val today = LocalDate.now()
 
                     // 今天已经处理过了，不再重复
@@ -182,8 +197,7 @@ object TaskScheduler {
                     LogFileManager.writeLog("任务调度异常：$throwable")
                     if (recoveryCount >= MAX_AUTO_RECOVERY_COUNT) {
                         notifySchedulerError(
-                            "任务调度连续异常，自动恢复 $MAX_AUTO_RECOVERY_COUNT 次仍未成功，" +
-                                    "今日任务已停止，需人工检查。最后一次错误：$throwable",
+                            "任务调度连续异常，自动恢复 $MAX_AUTO_RECOVERY_COUNT 次仍未成功，" + "今日任务已停止，需人工检查。最后一次错误：$throwable",
                             true
                         )
                         return@launch
@@ -191,8 +205,7 @@ object TaskScheduler {
 
                     recoveryCount++
                     notifySchedulerError(
-                        "任务调度发生异常，将在 ${AUTO_RECOVERY_DELAY_MILLIS / 1000}s 后自动重试" +
-                                "（第 $recoveryCount/$MAX_AUTO_RECOVERY_COUNT 次）。错误：$throwable",
+                        "任务调度发生异常，将在 ${AUTO_RECOVERY_DELAY_MILLIS / 1000}s 后自动重试" + "（第 $recoveryCount/$MAX_AUTO_RECOVERY_COUNT 次）。错误：$throwable",
                         false
                     )
                     delay(AUTO_RECOVERY_DELAY_MILLIS)
@@ -224,8 +237,7 @@ object TaskScheduler {
      * 把"是否失败"作为结构化字段传出去，UI 层不再依赖文案关键字判断状态
      * */
     private data class TaskCompletion(
-        val message: String,
-        val hasFailure: Boolean = false
+        val message: String, val hasFailure: Boolean = false
     )
 
     /**
@@ -248,15 +260,16 @@ object TaskScheduler {
             if (task.actualTimeMillis <= now) {
                 skippedCount++
                 LogFileManager.writeLog(
-                    "第 ${task.displayIndex} 个任务已过期（计划=${task.plannedTime}，" +
-                            "实际=${task.actualTime}），跳过"
+                    "第 ${task.displayIndex} 个任务已过期（计划=${task.plannedTime}，" + "实际=${task.actualTime}），跳过"
                 )
                 continue
             }
 
             // 非钉钉目标仅支持截屏来源，投影失效则剩余任务均无法获取打卡结果，跳过并说明根因
-            if (Constant.getTargetApp() != Constant.DING_DING &&
-                AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) != 1
+            if (Constant.getTargetApp() != Constant.DING_DING && AppConfig.loadInt(
+                    Constant.RESULT_SOURCE_KEY,
+                    Constant.DEFAULT_INDEX
+                ) != 1
             ) {
                 val remainingCount = schedule.size - task.displayIndex + 1
                 skippedCount += remainingCount
@@ -275,26 +288,18 @@ object TaskScheduler {
             val delayMs = task.actualTimeMillis - now
             _tipsEvent.tryEmit(
                 TipsEvent.Executing(
-                    task.displayIndex,
-                    schedule.size,
-                    task.actualTime,
-                    task.plannedTime
+                    task.displayIndex, schedule.size, task.actualTime, task.plannedTime
                 )
             )
 
             LogFileManager.writeLog(
-                "调度第 ${task.displayIndex} 个任务，" +
-                        "计划时间=${task.plannedTime}，" +
-                        "实际时间=${task.actualTime}，" +
-                        "延迟=${delayMs / 1000}s"
+                "调度第 ${task.displayIndex} 个任务，" + "计划时间=${task.plannedTime}，" + "实际时间=${task.actualTime}，" + "延迟=${delayMs / 1000}s"
             )
 
             updateCountdownWithNotification(
-                delayMs,
-                tickIntervalMillis = { remaining ->
+                delayMs, tickIntervalMillis = { remaining ->
                     if (remaining < 60_000L) 1_000L else 10_000L
-                }
-            ) { remaining ->
+                }) { remaining ->
                 val seconds = (remaining / 1000).toInt()
                 ForegroundRunningService.emitNotificationText(
                     "${seconds.formatTime()}后执行第${task.displayIndex}个任务"
@@ -416,12 +421,12 @@ object TaskScheduler {
         // ====== 全部完成 ======
         val message = when {
             successCount + failureCount == 0 && skippedCount == 0 -> "无任务可供执行"
-            successCount + failureCount == 0 && screenshotAuthInvalid ->
-                "截屏授权已失效，剩余 $skippedCount 个任务已跳过，需人工重新授权后恢复截屏打卡"
-            successCount + failureCount == 0 ->
-                "今日所有任务均已过期，跳过（$skippedCount 个），无需执行"
-            skippedCount > 0 ->
-                "今日任务处理完毕（成功 $successCount 个，失败 $failureCount 个，跳过 $skippedCount 个）"
+            successCount + failureCount == 0 && screenshotAuthInvalid -> "截屏授权已失效，剩余 $skippedCount 个任务已跳过，需人工重新授权后恢复截屏打卡"
+
+            successCount + failureCount == 0 -> "今日所有任务均已过期，跳过（$skippedCount 个），无需执行"
+
+            skippedCount > 0 -> "今日任务处理完毕（成功 $successCount 个，失败 $failureCount 个，跳过 $skippedCount 个）"
+
             else -> "今日任务处理完毕（成功 $successCount 个，失败 $failureCount 个）"
         }
         LogFileManager.writeLog(message)
@@ -442,8 +447,7 @@ object TaskScheduler {
      * 等待到下一个每日重置时间
      */
     private suspend fun waitUntilNextReset(
-        completion: TaskCompletion? = null,
-        emitCompletionEvent: Boolean = true
+        completion: TaskCompletion? = null, emitCompletionEvent: Boolean = true
     ) {
         debugWaitSeconds?.let {
             delay(it * 1000)
@@ -462,8 +466,7 @@ object TaskScheduler {
         if (emitCompletionEvent) {
             _tipsEvent.tryEmit(
                 TipsEvent.Completed(
-                    message = completion?.message,
-                    hasFailure = completion?.hasFailure == true
+                    message = completion?.message, hasFailure = completion?.hasFailure == true
                 )
             )
         }
@@ -512,9 +515,7 @@ object TaskScheduler {
         val signal = clockInDeferred ?: return false
         val windowStartMillis = clockInWaitStartedAtMillis ?: return false
         val windowDeadlineMillis = clockInWaitDeadlineMillis
-        if (postedAtMillis < windowStartMillis ||
-            (windowDeadlineMillis != null && postedAtMillis > windowDeadlineMillis)
-        ) {
+        if (postedAtMillis < windowStartMillis || (windowDeadlineMillis != null && postedAtMillis > windowDeadlineMillis)) {
             LogFileManager.writeLog("忽略等待窗口外的打卡成功通知：$postedAtMillis")
             return false
         }
@@ -655,18 +656,14 @@ object TaskScheduler {
         }
         if (allTasks.isEmpty()) return emptyList()
 
-        val baseMillis = LocalDate.now()
-            .atStartOfDay(ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli()
+        val baseMillis =
+            LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         return allTasks.map { task ->
             val actualTime = task.resolveExecutionTime()
             val timeParts = actualTime.split(":").map { it.toInt() }
-            val actualMillis = baseMillis +
-                    timeParts[0] * 3_600_000L +
-                    timeParts[1] * 60_000L +
-                    timeParts[2] * 1_000L
+            val actualMillis =
+                baseMillis + timeParts[0] * 3_600_000L + timeParts[1] * 60_000L + timeParts[2] * 1_000L
             Triple(task, actualTime, actualMillis)
         }.sortedBy { it.third }.mapIndexed { index, (task, actualTime, actualMillis) ->
             ScheduledTask(task, index + 1, task.time, actualTime, actualMillis)
