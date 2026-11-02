@@ -59,11 +59,12 @@
                         android:paddingHorizontal="12dp"
                         android:paddingVertical="10dp"
                         android:singleLine="true"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyLarge" />
+                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <RadioGroup
+                android:id="@+id/channelRadioGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginVertical="@dimen/margin_2x"
@@ -347,12 +348,14 @@
                             android:orientation="horizontal">
 
                             <com.google.android.material.card.MaterialCardView
+                                android:id="@+id/qqStateCardView"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 app:cardBackgroundColor="@color/back_ground_color"
                                 app:strokeWidth="0dp">
 
                                 <TextView
+                                    android:id="@+id/qqStateTextView"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginHorizontal="@dimen/margin_2x"
@@ -363,6 +366,7 @@
                             </com.google.android.material.card.MaterialCardView>
 
                             <TextView
+                                android:id="@+id/qqUpdateTimeView"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginVertical="@dimen/dp_4"

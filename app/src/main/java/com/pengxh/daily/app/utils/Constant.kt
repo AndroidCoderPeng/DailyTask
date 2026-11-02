@@ -21,6 +21,9 @@ object Constant {
     const val WX_WEB_HOOK_KEY = "WX_WEB_HOOK_KEY" // 企业微信消息Key(String)
     const val CUSTOM_WORKDAYS_KEY = "CUSTOM_WORKDAYS_KEY" // 自定义工作日(String)
 
+    const val WX_CONFIG_SAVE_TIME_KEY = "WX_CONFIG_SAVE_TIME_KEY" // 企业微信配置保存时间(String)
+    const val EMAIL_CONFIG_SAVE_TIME_KEY = "EMAIL_CONFIG_SAVE_TIME_KEY" // 邮箱配置保存时间(String)
+
     const val GESTURE_DETECTOR_KEY = "GESTURE_DETECTOR_KEY" // 检测手势(Boolean)
     const val BACK_TO_HOME_KEY = "BACK_TO_HOME_KEY" // 返回桌面(Boolean)
     const val TASK_AUTO_RECYCLE_KEY = "TASK_AUTO_RECYCLE_KEY" // 任务每日自动循环(Boolean)

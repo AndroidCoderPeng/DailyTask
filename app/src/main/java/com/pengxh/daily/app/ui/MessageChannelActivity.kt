@@ -2,21 +2,27 @@ package com.pengxh.daily.app.ui
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.View
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonObject
+import com.pengxh.daily.app.R
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
 import com.pengxh.daily.app.utils.AppConfig
-import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.Constant
+import com.pengxh.daily.app.utils.EmailManager
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.isEmail
 import com.pengxh.kt.lite.extensions.show
 import com.pengxh.kt.lite.utils.LoadingDialog
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>() {
 
@@ -58,6 +64,44 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             binding.emailSendCodeView.setText(authCode)
             binding.emailInboxView.setText(inbox)
         }
+
+        // 恢复上次选择的渠道：0-邮件，1-企业微信，未设置过则默认企业微信
+        if (AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX) == 0) {
+            binding.channelRadioGroup.check(R.id.qqRadioButton)
+        }
+
+        refreshChannelState()
+    }
+
+    private fun refreshChannelState() {
+        val wxSaved = AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "").isNotBlank()
+        binding.stateTextView.text = if (wxSaved) "已配置" else "未配置"
+        binding.stateTextView.setTextColor(getColor(if (wxSaved) R.color.success_color else R.color.text_default_color))
+        binding.stateCardView.setCardBackgroundColor(pillBackgroundColor(wxSaved))
+        binding.updateTimeView.text = if (wxSaved) {
+            "配置保存于 ${AppConfig.loadString(Constant.WX_CONFIG_SAVE_TIME_KEY, "")}"
+        } else {
+            "测试发送成功后才保存"
+        }
+
+        val mailSaved = !AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY).isEmpty
+        binding.qqStateTextView.text = if (mailSaved) "已配置" else "未配置"
+        binding.qqStateTextView.setTextColor(getColor(if (mailSaved) R.color.success_color else R.color.text_default_color))
+        binding.qqStateCardView.setCardBackgroundColor(pillBackgroundColor(mailSaved))
+        binding.qqUpdateTimeView.text = if (mailSaved) {
+            "配置保存于 ${AppConfig.loadString(Constant.EMAIL_CONFIG_SAVE_TIME_KEY, "")}"
+        } else {
+            "测试发送成功后才保存"
+        }
+    }
+
+    private fun pillBackgroundColor(configured: Boolean): Int {
+        return if (configured) {
+            // 成功色 12% 透明度软背景
+            ColorUtils.setAlphaComponent(getColor(R.color.success_color), 0x1F)
+        } else {
+            getColor(R.color.back_ground_color)
+        }
     }
 
     override fun observeRequestState() {
@@ -65,9 +109,20 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     override fun initEvent() {
+        binding.channelRadioGroup.setOnCheckedChangeListener { _, checkedId ->
+            if (checkedId == R.id.wxRadioButton) {
+                binding.wxLayout.visibility = View.VISIBLE
+                binding.qqLayout.visibility = View.GONE
+            } else {
+                binding.wxLayout.visibility = View.GONE
+                binding.qqLayout.visibility = View.VISIBLE
+            }
+        }
+
         binding.sendWxButton.setOnClickListener {
             val key = binding.wxKeyView.text.toString().trim()
             if (key.isBlank()) {
+                binding.wxKeyView.shakeIfEmpty()
                 "企业微信消息 Webhook key 为空".show(this)
                 return@setOnClickListener
             }
@@ -148,6 +203,11 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 AppConfig.saveString(
                     Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
                 )
+                AppConfig.saveString(
+                    Constant.WX_CONFIG_SAVE_TIME_KEY,
+                    SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA).format(Date())
+                )
+                refreshChannelState()
                 "企业微信配置验证并保存成功".show(context)
             },
             onFailure = {
@@ -186,6 +246,12 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                         )
 
                         AppConfig.saveInt(Constant.MSG_CHANNEL_KEY, 0)
+
+                        AppConfig.saveString(
+                            Constant.EMAIL_CONFIG_SAVE_TIME_KEY,
+                            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA).format(Date())
+                        )
+                        refreshChannelState()
                     },
                     onFailure = {
                         LoadingDialog.dismiss()
