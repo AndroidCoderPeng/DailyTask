@@ -39,7 +39,7 @@
                 android:paddingHorizontal="@dimen/padding"
                 android:paddingVertical="@dimen/padding_half"
                 android:text="无反馈"
-                android:textColor="@color/white"
+                android:textColor="@color/text_secondary_color"
                 android:textSize="@dimen/smallest_text_size" />
         </com.google.android.material.card.MaterialCardView>
 

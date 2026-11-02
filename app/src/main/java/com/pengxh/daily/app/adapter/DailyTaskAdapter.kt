@@ -5,7 +5,6 @@ import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.LinearLayout
-import androidx.appcompat.widget.AppCompatImageView
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
@@ -63,7 +62,6 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val taskBean = dataBeans[position]
         holder.setText(R.id.taskTimeView, taskBean.time)
-        val arrowView = holder.getView<AppCompatImageView>(R.id.arrowView)
         val actualTimeCardView = holder.getView<LinearLayout>(R.id.actualTimeCardView)
         if (position == mPosition) {
             holder.itemView.isSelected = true
@@ -71,7 +69,6 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             holder.setText(R.id.actualTimeView, actualTime)
                 .setTextColor(R.id.actualTimeView, R.color.theme_color.convertColor(context))
                 .setTextColor(R.id.taskTimeView, R.color.text_hint_color.convertColor(context))
-            arrowView.animate().rotation(90f).setDuration(350).start()
             if (!actualTimeCardView.isVisible) {
                 actualTimeCardView.expand()
             }
@@ -79,7 +76,6 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             holder.itemView.isSelected = false
             holder.setText(R.id.actualTimeView, "--:--:--")
                 .setTextColor(R.id.taskTimeView, Color.BLACK)
-            arrowView.animate().rotation(0f).setDuration(350).start()
             if (actualTimeCardView.isVisible) {
                 actualTimeCardView.collapse()
             }

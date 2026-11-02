@@ -74,7 +74,7 @@ class CommandDisplayActivity : KotlinBaseActivity<ActivityCommandDisplayBinding>
                     cardView.setCardBackgroundColor(R.color.back_ground_color.convertColor(context))
                     viewHolder.setTextColor(
                         R.id.flagView,
-                        R.color.text_hint_color.convertColor(context)
+                        R.color.text_secondary_color.convertColor(context)
                     )
                 }
             }
