@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  用 merge 作为根节点：本布局只是 SettingItemView（其基类已是水平 LinearLayout）的"内容"，
+  inflate 时子控件会直接挂到 SettingItemView 上，省掉 XML 根节点那层纯转发的 LinearLayout。
+  约束：
+  1. 必须以"明确的 parent + attachToRoot=true"方式 inflate（见 SettingItemView.init），否则抛异常；
+  2. 子控件用的 layout_weight 等属性依赖 parent 是 LinearLayout，改基类需同步调整；
+  3. merge 上不能设 padding/orientation 等属性，这些由 SettingItemView 在代码里设置。
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <ImageView
+        android:id="@+id/itemIconView"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginEnd="@dimen/dp_12"
+        android:visibility="gone"
+        tools:src="@mipmap/ic_launcher"
+        tools:visibility="visible" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/itemTitleView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            tools:text="条目标题" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/itemDescView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/sp_10"
+            android:visibility="gone"
+            tools:text="条目描述"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/dp_12">
+
+        <androidx.constraintlayout.utils.widget.ImageFilterView
+            android:id="@+id/itemRightIconView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ic_arrow_right"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/itemSwitchView"
+            style="?attr/switchStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+        <com.google.android.material.textview.MaterialTextView
+            android:id="@+id/itemRightTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:visibility="gone"
+            tools:text="内容"
+            tools:visibility="visible" />
+    </FrameLayout>
+</merge>

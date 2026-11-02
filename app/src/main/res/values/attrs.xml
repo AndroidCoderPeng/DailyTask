@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="SettingItemView">
+        <!-- 左侧图标 -->
+        <attr name="itemIcon" format="reference" />
+
+        <!-- 中间标题 -->
+        <attr name="itemTitle" format="string" />
+        <attr name="itemTitleColor" format="color|reference" />
+        <attr name="itemTitleAppearance" format="reference" />
+
+        <!-- 中间副标题，为空则隐藏 -->
+        <attr name="itemDesc" format="string" />
+        <attr name="itemDescColor" format="color|reference" />
+        <attr name="itemDescAppearance" format="reference" />
+
+        <!-- 右侧控件类型 -->
+        <attr name="itemRightType" format="enum">
+            <enum name="none" value="0" />
+            <enum name="icon" value="1" />
+            <enum name="arrow" value="2" />
+            <!-- 不能叫 switch，是保留字，会导致资源符号校验失败 -->
+            <enum name="toggle" value="3" />
+            <enum name="text" value="4" />
+        </attr>
+
+        <!-- 右侧图标，icon 类型必填；arrow 类型不填时默认 ic_arrow_right -->
+        <attr name="itemRightIcon" format="reference" />
+
+        <!-- 右侧图标裁剪成圆形（如应用图标） -->
+        <attr name="itemRightIconRound" format="boolean" />
+
+        <!-- 右侧文字，text 类型生效 -->
+        <attr name="itemRightText" format="string" />
+        <attr name="itemRightTextColor" format="color|reference" />
+        <attr name="itemRightTextAppearance" format="reference" />
+    </declare-styleable>
+</resources>

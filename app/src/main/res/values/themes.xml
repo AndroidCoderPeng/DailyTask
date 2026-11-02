@@ -5,7 +5,9 @@
         <!-- 修改控件系统默认颜色 -->
         <item name="colorPrimary">@color/theme_color</item>
         <item name="colorSecondary">@color/theme_color</item>
-        <!-- Customize your theme here. -->
+
+        <!-- 设置页 SettingItemView 内部开关的默认样式，单个条目可用 ThemeOverlay 覆盖 -->
+        <item name="switchStyle">@style/CustomSwitchStyle</item>
     </style>
 
     <style name="Theme.DailyTask" parent="Base.Theme.DailyTask" />
