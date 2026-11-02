@@ -56,7 +56,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="每天几点重新开始计算当日任务"
-                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
                         app:itemRightType="text"
                         app:itemTitle="重置时间" />
 
@@ -65,7 +64,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="停留在目标应用的时间"
-                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
                         app:itemRightType="text"
                         app:itemTitle="超时时间" />
 
@@ -74,7 +72,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="远程触发打卡时使用的指令内容"
-                        app:itemRightTextAppearance="@style/TextAppearance.Material3.TitleMedium"
                         app:itemRightType="text"
                         app:itemTitle="任务口令" />
 

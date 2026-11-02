@@ -1,8 +1,11 @@
 package com.pengxh.daily.app.ui
 
+import android.graphics.Color
 import android.os.Bundle
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonObject
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
@@ -24,11 +27,16 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     override fun setupTopBarLayout() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            view.setPadding(0, statusBarHeight, 0, 0)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.rootView) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, systemBars.top, view.paddingRight, systemBars.bottom)
             insets
         }
+
+        WindowInsetsControllerCompat(window, binding.rootView).isAppearanceLightStatusBars = true
         binding.toolbar.setNavigationOnClickListener { finish() }
     }
 

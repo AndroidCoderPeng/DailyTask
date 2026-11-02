@@ -11,10 +11,10 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/theme_color"
         app:navigationIcon="@drawable/ic_title_left"
         app:title="消息渠道"
-        app:titleTextColor="@color/white" />
+        app:titleTextAppearance="@style/TextAppearance.Material3.TitleMedium.Emphasized"
+        app:titleTextColor="@color/text_default_color" />
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
