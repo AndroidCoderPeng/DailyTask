@@ -2,10 +2,7 @@ package com.pengxh.daily.app.utils
 
 import android.content.Context
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.pengxh.daily.app.R
-import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
-import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 
 /**
  * 主页面弹窗集合
@@ -14,21 +11,6 @@ import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
  * 拿到结果后回调给调用方，具体的业务动作由调用方决定。
  */
 object MainDialogManager {
-
-    fun showAddOrImportSheet(context: Context, onAdd: () -> Unit, onImport: () -> Unit) {
-        BottomActionSheet.Builder()
-            .setContext(context)
-            .setActionItemTitle(arrayListOf("添加任务", "导入任务"))
-            .setItemTextColor(R.color.theme_color.convertColor(context))
-            .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-                override fun onActionItemClick(position: Int) {
-                    when (position) {
-                        0 -> onAdd()
-                        1 -> onImport()
-                    }
-                }
-            }).build().show()
-    }
 
     fun showImportInput(context: Context, onConfirm: (String) -> Unit) {
         AlertInputDialog.Builder()

@@ -153,8 +153,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/margin_2x"
                 android:layout_marginVertical="@dimen/dp_12"
-                android:insetTop="2dp"
-                android:insetBottom="2dp"
                 android:text="启动今日任务"
                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium.Emphasized"
                 app:cornerRadius="@dimen/radius"
@@ -162,6 +160,57 @@
                 app:iconGravity="textStart"
                 app:iconPadding="@dimen/padding"
                 app:iconTint="@color/white" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/margin_2x"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="今日任务"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/margin"
+                    app:cardBackgroundColor="#D4E7FF"
+                    app:strokeWidth="0dp">
+
+                    <TextView
+                        android:id="@+id/taskCountView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingHorizontal="@dimen/padding_half"
+                        android:text="0"
+                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
+                        android:textColor="@color/theme_color" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <Space
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:id="@+id/importTaskView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/margin_2x"
+                    android:text="导入"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
+                    android:textColor="@color/theme_color" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="导出"
+                    android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
+                    android:textColor="@color/theme_color" />
+            </LinearLayout>
 
             <!-- 任务列表 -->
             <FrameLayout
@@ -173,6 +222,7 @@
                     android:id="@+id/recyclerView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:layout_marginHorizontal="@dimen/margin"
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:listitem="@layout/item_daily_task_rv_l" />
 
