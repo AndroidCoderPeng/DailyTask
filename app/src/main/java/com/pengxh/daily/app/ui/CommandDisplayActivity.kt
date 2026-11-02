@@ -2,21 +2,24 @@ package com.pengxh.daily.app.ui
 
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.graphics.Color
 import android.os.Bundle
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.card.MaterialCardView
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.databinding.ActivityCommandBinding
+import com.pengxh.daily.app.databinding.ActivityCommandDisplayBinding
 import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.base.KotlinBaseActivity
 import com.pengxh.kt.lite.extensions.convertColor
 import com.pengxh.kt.lite.extensions.show
 
-class CommandActivity : KotlinBaseActivity<ActivityCommandBinding>() {
+class CommandDisplayActivity : KotlinBaseActivity<ActivityCommandDisplayBinding>() {
 
-    private val context = this
+    private val context = this@CommandDisplayActivity
     private val list = mutableListOf(
         Triple("DT#执行任务", "启动循环任务（默认每天自动执行）", false),
         Triple("DT#终止任务", "停止循环任务（仅停止当天）", true),
@@ -31,16 +34,21 @@ class CommandActivity : KotlinBaseActivity<ActivityCommandBinding>() {
     )
     private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 
-    override fun initViewBinding(): ActivityCommandBinding {
-        return ActivityCommandBinding.inflate(layoutInflater)
+    override fun initViewBinding(): ActivityCommandDisplayBinding {
+        return ActivityCommandDisplayBinding.inflate(layoutInflater)
     }
 
     override fun setupTopBarLayout() {
-        ViewCompat.setOnApplyWindowInsetsListener(binding.toolbar) { view, insets ->
-            val statusBarHeight = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            view.setPadding(0, statusBarHeight, 0, 0)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.rootView) { view, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, systemBars.top, view.paddingRight, systemBars.bottom)
             insets
         }
+
+        WindowInsetsControllerCompat(window, binding.rootView).isAppearanceLightStatusBars = true
         binding.toolbar.setNavigationOnClickListener { finish() }
     }
 
@@ -53,13 +61,21 @@ class CommandActivity : KotlinBaseActivity<ActivityCommandBinding>() {
             ) {
                 viewHolder.setText(R.id.commandView, item.first)
                     .setText(R.id.descView, item.second)
-                    .setText(R.id.flagView, if (item.third) "有反馈" else "无反馈")
+                    .setText(R.id.flagView, if (item.third) "有回执" else "无回执")
 
                 val cardView = viewHolder.getView<MaterialCardView>(R.id.cardView)
                 if (item.third) {
                     cardView.setCardBackgroundColor(R.color.success_color.convertColor(context))
+                    viewHolder.setTextColor(
+                        R.id.flagView,
+                        R.color.white.convertColor(context)
+                    )
                 } else {
-                    cardView.setCardBackgroundColor(R.color.orange.convertColor(context))
+                    cardView.setCardBackgroundColor(R.color.back_ground_color.convertColor(context))
+                    viewHolder.setTextColor(
+                        R.id.flagView,
+                        R.color.text_hint_color.convertColor(context)
+                    )
                 }
             }
         }

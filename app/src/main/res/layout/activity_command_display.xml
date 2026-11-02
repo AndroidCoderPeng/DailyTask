@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/back_ground_color"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:navigationIcon="@drawable/ic_title_left"
+        app:title="全部指令"
+        app:titleTextAppearance="@style/TextAppearance.Material3.TitleMedium.Emphasized"
+        app:titleTextColor="@color/text_default_color" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/margin_2x"
+        app:cardBackgroundColor="#EAF3FF"
+        app:strokeWidth="0dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="@dimen/padding_2x"
+            android:text="所有指令必须以 DT# 开头，否则会被当作普通聊天忽略，建议用小号发送。"
+            android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
+            android:textColor="@color/theme_color" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="@dimen/margin"
+        android:layout_marginTop="@dimen/margin_2x"
+        android:layout_weight="1"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/item_command_rv_l" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="@dimen/padding_2x"
+        android:text="点击任意指令即可复制到剪贴板。"
+        android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
+        android:textColor="@color/text_hint_color" />
+</LinearLayout>

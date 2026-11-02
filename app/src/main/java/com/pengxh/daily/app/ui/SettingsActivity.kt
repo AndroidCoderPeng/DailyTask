@@ -294,7 +294,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
 
         binding.commandItem.setOnClickListener {
-            navigatePageTo<CommandActivity>()
+            navigatePageTo<CommandDisplayActivity>()
         }
 
         binding.openTestItem.setOnClickListener {
