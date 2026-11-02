@@ -2,7 +2,7 @@
     <item android:state_checked="true">
         <shape android:shape="rectangle">
             <corners android:radius="@dimen/radius_3x" />
-            <solid android:color="@color/theme_color" />
+            <solid android:color="@color/success_color" />
         </shape>
     </item>
     <item>

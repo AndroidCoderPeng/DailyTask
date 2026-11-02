@@ -133,27 +133,34 @@
                             android:text="用哪种方式判定「打卡成功」"
                             android:textSize="@dimen/sp_10" />
 
-                        <RadioGroup
+                        <com.google.android.material.card.MaterialCardView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal">
+                            android:layout_marginTop="@dimen/margin"
+                            app:cardBackgroundColor="@color/back_ground_color"
+                            app:strokeWidth="0dp">
 
-                            <com.google.android.material.radiobutton.MaterialRadioButton
-                                android:id="@+id/noticeRadioButton"
-                                android:layout_width="0dp"
+                            <RadioGroup
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="通知监听"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
+                                android:layout_margin="@dimen/margin_half"
+                                android:orientation="horizontal">
 
-                            <com.google.android.material.radiobutton.MaterialRadioButton
-                                android:id="@+id/captureRadioButton"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="截屏服务"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-                        </RadioGroup>
+                                <com.google.android.material.radiobutton.MaterialRadioButton
+                                    android:id="@+id/noticeRadioButton"
+                                    style="@style/CustomRadioButtonStyle"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="1"
+                                    android:text="通知监听" />
+
+                                <com.google.android.material.radiobutton.MaterialRadioButton
+                                    android:id="@+id/captureRadioButton"
+                                    style="@style/CustomRadioButtonStyle"
+                                    android:layout_width="0dp"
+                                    android:layout_weight="1"
+                                    android:text="截屏服务" />
+                            </RadioGroup>
+                        </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
 
                     <RelativeLayout
