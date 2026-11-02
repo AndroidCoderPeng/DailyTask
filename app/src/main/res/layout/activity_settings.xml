@@ -53,6 +53,7 @@
                         android:id="@+id/targetAppItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        app:itemIcon="@drawable/ic_setting_target"
                         app:itemRightTextColor="@color/theme_color"
                         app:itemRightType="text"
                         app:itemTitle="目标应用" />
@@ -62,6 +63,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="打卡结果回推渠道"
+                        app:itemIcon="@drawable/ic_setting_message"
                         app:itemRightType="text"
                         app:itemTitle="消息渠道" />
 
@@ -251,6 +253,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="重置时间、超时、口令、工作日"
+                        app:itemIcon="@drawable/ic_setting_task"
                         app:itemRightType="arrow"
                         app:itemTitle="任务配置" />
 
@@ -259,6 +262,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="同步当年与次年的法定节假日"
+                        app:itemIcon="@drawable/ic_setting_holiday"
                         app:itemRightType="arrow"
                         app:itemTitle="更新节假日数据" />
                 </LinearLayout>
@@ -291,6 +295,7 @@
                         android:id="@+id/commandItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        app:itemIcon="@drawable/ic_setting_command"
                         app:itemRightType="arrow"
                         app:itemTitle="全部指令" />
 
@@ -299,6 +304,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="验证 QQ / 微信 / 支付宝拉起目标应用"
+                        app:itemIcon="@drawable/ic_setting_evoke"
                         app:itemRightType="arrow"
                         app:itemTitle="唤起测试" />
 
@@ -307,6 +313,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="截屏并通过消息渠道发送测试图片"
+                        app:itemIcon="@drawable/ic_setting_capture"
                         app:itemRightType="arrow"
                         app:itemTitle="截屏测试" />
 
@@ -315,6 +322,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="打包后通过 QQ 发送，便于排查问题"
+                        app:itemIcon="@drawable/ic_setting_log"
                         app:itemRightType="arrow"
                         app:itemTitle="发送日志" />
 
@@ -322,6 +330,7 @@
                         android:id="@+id/introduceItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        app:itemIcon="@drawable/ic_setting_faq"
                         app:itemRightType="arrow"
                         app:itemTitle="常见问题" />
                 </LinearLayout>

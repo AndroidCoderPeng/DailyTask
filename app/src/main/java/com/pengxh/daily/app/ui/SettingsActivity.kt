@@ -13,6 +13,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
@@ -49,7 +50,7 @@ import java.io.File
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     private val kTag = "SettingsActivity"
-    private val context = this
+    private val context = this@SettingsActivity
     private val apps = listOf("钉钉", "企业微信", "飞书", "移动办公M3")
     private val channels = listOf("QQ邮箱", "企业微信")
     private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
@@ -63,10 +64,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun setupTopBarLayout() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        window.statusBarColor = Color.TRANSPARENT
+
         ViewCompat.setOnApplyWindowInsetsListener(binding.rootView) { view, insets ->
-            val topInset = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            view.setPadding(view.paddingLeft, topInset, view.paddingRight, view.paddingBottom)
-            WindowInsetsCompat.CONSUMED
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(view.paddingLeft, systemBars.top, view.paddingRight, systemBars.bottom)
+            insets
         }
 
         WindowInsetsControllerCompat(window, binding.rootView).isAppearanceLightStatusBars = true
