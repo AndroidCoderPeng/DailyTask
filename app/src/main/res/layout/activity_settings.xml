@@ -303,7 +303,7 @@
                         android:id="@+id/openTestItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:itemDesc="验证 QQ / 微信 / 支付宝拉起目标应用"
+                        app:itemDesc="验证拉起目标应用"
                         app:itemIcon="@drawable/ic_setting_evoke"
                         app:itemRightType="arrow"
                         app:itemTitle="唤起测试" />
