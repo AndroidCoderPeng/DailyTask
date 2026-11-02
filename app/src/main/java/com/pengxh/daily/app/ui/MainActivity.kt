@@ -2,6 +2,7 @@ package com.pengxh.daily.app.ui
 
 import android.content.Intent
 import android.graphics.Color
+import androidx.core.graphics.ColorUtils
 import android.os.Bundle
 import android.provider.Settings
 import android.view.KeyEvent
@@ -84,10 +85,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         startFloatingWindowService()
     }
 
-    override fun observeRequestState() {
-
-    }
-
     override fun initViewBinding(): ActivityMainBinding {
         return ActivityMainBinding.inflate(layoutInflater)
     }
@@ -125,16 +122,21 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         setupTaskList()
         startCoreServices()
 
+        updateResetTimeText()
+
+        // 兜底检查是否有错过的每日重置
+        checkMissedReset()
+    }
+
+    override fun observeRequestState() {
         observeTaskListState()
         observeMainEvents()
         observeResetCountdown()
+        observeResetTaskTime()
         observeMonitorEvents()
         observeSchedulerState()
         observeReturnToApp()
         observeTipsEvents()
-
-        // 兜底检查是否有错过的每日重置
-        checkMissedReset()
     }
 
     override fun initEvent() {
@@ -220,10 +222,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         return super.dispatchTouchEvent(ev)
     }
 
-    // ================================================================
-    // 初始化子步骤
-    // ================================================================
-
     /**
      * 水印背景
      * */
@@ -283,9 +281,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
-    /**
-     * 订阅 ViewModel 一次性事件 → 提示 / 联动
-     * */
     private fun observeMainEvents() {
         lifecycleScope.launch {
             mainViewModel.events.collect { event ->
@@ -302,9 +297,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
-    /**
-     * 订阅每日重置时间倒计时
-     * */
     private fun observeResetCountdown() {
         lifecycleScope.launch {
             ForegroundRunningService.resetTickTime.collect { text ->
@@ -314,21 +306,43 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
-    /**
-     * 订阅通知监听事件
-     * */
+    private fun observeResetTaskTime() {
+        lifecycleScope.launch {
+            ForegroundRunningService.resetTaskTime.collect {
+                updateResetTimeText()
+            }
+        }
+    }
+
+    private fun updateResetTimeText() {
+        val resetHour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
+        binding.resetTimeView.text = String.format(Locale.CHINA, "每天 %02d:00 重置", resetHour)
+    }
+
+    private fun updateStatePill(running: Boolean) {
+        binding.stateTextView.text = if (running) "运行中" else "未运行"
+        val colorRes = if (running) R.color.success_color else R.color.text_secondary_color
+        binding.stateTextView.setTextColor(getColor(colorRes))
+        binding.stateCardView.setCardBackgroundColor(
+            if (running) {
+                // 成功色 12% 透明度软背景
+                ColorUtils.setAlphaComponent(getColor(R.color.success_color), 0x1F)
+            } else {
+                getColor(R.color.back_ground_color)
+            }
+        )
+    }
+
     private fun observeMonitorEvents() {
         lifecycleScope.launch {
             NotificationMonitorService.events.collect { event -> handleMonitorEvent(event) }
         }
     }
 
-    /**
-     * 订阅调度器运行状态 → 按钮 UI
-     * */
     private fun observeSchedulerState() {
         lifecycleScope.launch {
             TaskScheduler.isRunning.collectLatest { running ->
+                updateStatePill(running)
                 binding.executeTaskButton.setIconTintResource(R.color.white)
                 if (running) {
                     binding.executeTaskButton.apply {
