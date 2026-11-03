@@ -16,9 +16,10 @@
     running: true,
     mask: false,
     tasks: [
-      { id: 1, time: '08:30:00', window: '08:20 – 08:40', state: 'done', actual: '08:29:47', progress: 100 },
-      { id: 2, time: '12:30:00', window: '12:20 – 12:40', state: 'running', actual: '', progress: 42 },
-      { id: 3, time: '18:30:00', window: '18:20 – 18:40', state: 'pending', actual: '', progress: 0 }
+      { id: 1, time: '08:30:00', window: '08:20 – 08:40', state: 'done', actual: '08:29:47' },
+      { id: 2, time: '12:30:00', window: '12:20 – 12:40', state: 'running', actual: '' },
+      { id: 3, time: '15:30:00', window: '15:20 – 15:40', state: 'failed', actual: '15:31:26' },
+      { id: 4, time: '18:30:00', window: '18:20 – 18:40', state: 'pending', actual: '' }
     ],
     nextId: 4,
     workday: [1, 2, 3, 4, 5],
@@ -228,7 +229,19 @@
   /* ---------------------------------------------------------
      首页：任务渲染
   --------------------------------------------------------- */
-  const STATE_TEXT = { done: '已完成', running: '执行中', pending: '待执行', skipped: '已跳过' };
+  const STATE_TEXT = {
+    done: '已完成', running: '执行中', pending: '待执行',
+    skipped: '已跳过', failed: '失败'
+  };
+
+  /* 状态图标：颜色之外再给一个形状，避免只靠颜色区分（色觉障碍友好） */
+  const STATE_ICON = {
+    done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.6 4.6L19 7.4"/></svg>',
+    running: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M12 3.8a8.2 8.2 0 1 1-7.9 6.1"/></svg>',
+    pending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="7.6"/></svg>',
+    skipped: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12"/></svg>',
+    failed: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6.8 6.8l10.4 10.4M17.2 6.8L6.8 17.2"/></svg>'
+  };
 
   function renderTasks() {
     const list = $('#taskList');
@@ -249,30 +262,38 @@
 
     list.innerHTML = state.tasks.map(function (t) {
       const st = rest ? 'skipped' : t.state;
-      const foot = st === 'running'
-        ? '<span class="task-actual">进行中</span>'
-        : (rest
-          ? '<span class="task-actual">非工作日已跳过</span>'
-          : '<span class="task-actual">' + (t.actual ? '实际 ' + t.actual : '实际 --:--:--') + '</span>');
+
+      /* 实际执行：只有真的跑过才有值，未执行就明说未执行，不留空占位 */
+      let actual = '未执行';
+      if (rest) actual = '已跳过';
+      else if (st === 'running') actual = '进行中';
+      else if (t.actual) actual = t.actual;
+
+      /* 失败时说清是「拉起了但没打成」，避免和成功态混淆 */
+      const actualKey = st === 'failed' ? '拉起未打卡' : '实际执行';
+
       return '' +
         '<article class="task" data-state="' + st + '" data-id="' + t.id + '">' +
-          '<div class="task-top">' +
-            '<div class="task-time">' + t.time + '</div>' +
-            '<div class="task-meta">' +
-              '<span class="task-state">' + STATE_TEXT[st] + '</span>' +
-              '<span class="task-window">随机 ' + t.window + '</span>' +
+          '<div class="task-rail"><span class="task-node"></span></div>' +
+          '<div class="task-body">' +
+            '<div class="task-head">' +
+              '<span class="task-time">' + t.time + '</span>' +
+              '<span class="task-state">' + STATE_ICON[st] + STATE_TEXT[st] + '</span>' +
             '</div>' +
-          '</div>' +
-          '<div class="task-foot">' +
-            '<span>' + targetAppInfo().desc + '</span><span class="sep">·</span><span>超时 60s</span>' + foot +
+            '<div class="task-stats">' +
+              '<div class="task-stat">' +
+                '<span class="task-k">随机窗口</span>' +
+                '<span class="task-v">' + (t.window || '未开启') + '</span>' +
+              '</div>' +
+              '<div class="task-stat">' +
+                '<span class="task-k">' + actualKey + '</span>' +
+                '<span class="task-v task-v-strong">' + actual + '</span>' +
+              '</div>' +
+            '</div>' +
           '</div>' +
         '</article>';
     }).join('');
   }
-
-  /* 进度以 Android 系统通知栏为准，首页状态卡只做摘要。
-     原型阶段进度只是示意，不做真实推进，也不显示剩余秒数。 */
-  const DEMO_PROGRESS = 42;
 
   /* ---------------------------------------------------------
      首页：运行状态
@@ -295,7 +316,7 @@
       btn.disabled = true;
       btn.querySelector('svg').innerHTML = '<rect x="5" y="11" width="14" height="2" rx="1" fill="currentColor"/>';
       title.textContent = '今日休息';
-      desc.textContent = '今天不是工作日，' + state.tasks.length + ' 个打卡任务将自动跳过，不会拉起钉钉。';
+      desc.textContent = '今天不是工作日，' + state.tasks.length + ' 个打卡任务将自动跳过，不会拉起' + targetAppInfo().label + '。';
       return;
     }
 
@@ -308,7 +329,7 @@
       btnText.textContent = '停止今日任务';
       btn.querySelector('svg').innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/>';
       title.textContent = '今日任务执行中';
-      desc.textContent = '今日任务正在按时间点执行，到点后自动拉起钉钉完成打卡。';
+      desc.textContent = '今日任务正在按时间点执行，到点后自动拉起' + targetAppInfo().label + '完成打卡。';
     } else {
       pill.className = 'pill pill-idle';
       text.textContent = '未运行';
@@ -316,7 +337,7 @@
       btnText.textContent = '启动今日任务';
       btn.querySelector('svg').innerHTML = '<path d="M8 5v14l11-7z" fill="currentColor"/>';
       title.textContent = '今日任务待启动';
-      desc.textContent = '点击下方按钮启动今日任务，到点后自动拉起钉钉完成打卡。';
+      desc.textContent = '点击下方按钮启动今日任务，到点后自动拉起' + targetAppInfo().label + '完成打卡。';
     }
   }
 
@@ -331,11 +352,11 @@
 
     if (state.running) {
       const next = state.tasks.filter(function (t) { return t.state === 'pending'; })[0];
-      if (next) { next.state = 'running'; next.progress = DEMO_PROGRESS; }
+      if (next) { next.state = 'running'; }
       simulate();
     } else {
       state.tasks.forEach(function (t) {
-        if (t.state === 'running') { t.state = 'pending'; t.progress = 0; }
+        if (t.state === 'running') { t.state = 'pending'; }
       });
       toast('任务已停止，请及时打开下次任务');
     }
@@ -354,7 +375,7 @@
       cur.state = 'done';
       cur.actual = nowTime();
       const next = state.tasks.filter(function (t) { return t.state === 'pending'; })[0];
-      if (next) { next.state = 'running'; next.progress = DEMO_PROGRESS; }
+      if (next) { next.state = 'running'; }
       toast('第 ' + (state.tasks.indexOf(cur) + 1) + ' 个任务已完成');
       renderRunState();
       renderTasks();
@@ -501,7 +522,7 @@
       if (exist) { toast('任务时间点已存在'); return; }
       state.tasks.push({
         id: state.nextId++, time: time, window: randomWindow(time),
-        state: 'pending', actual: '', progress: 0
+        state: 'pending', actual: ''
       });
       toast('已添加任务 ' + time);
     } else {
@@ -664,7 +685,7 @@
             if (/^\d{2}:\d{2}(:\d{2})?$/.test(item)) {
               const time = item.length === 5 ? item + ':00' : item;
               if (!state.tasks.some(function (t) { return t.time === time; })) {
-                state.tasks.push({ id: state.nextId++, time: time, window: randomWindow(time), state: 'pending', actual: '', progress: 0 });
+                state.tasks.push({ id: state.nextId++, time: time, window: randomWindow(time), state: 'pending', actual: '' });
               }
             }
           });
@@ -833,7 +854,7 @@
     if (!state.running) {
       // 未启动就不该存在“执行中”的任务，避免列表与状态卡打架
       state.tasks.forEach(function (t) {
-        if (t.state === 'running') { t.state = 'pending'; t.progress = 0; }
+        if (t.state === 'running') { t.state = 'pending'; }
       });
     }
 
