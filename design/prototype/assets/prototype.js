@@ -274,21 +274,18 @@
 
       return '' +
         '<article class="task" data-state="' + st + '" data-id="' + t.id + '">' +
-          '<div class="task-rail"><span class="task-node"></span></div>' +
-          '<div class="task-body">' +
-            '<div class="task-head">' +
-              '<span class="task-time">' + t.time + '</span>' +
-              '<span class="task-state">' + STATE_ICON[st] + STATE_TEXT[st] + '</span>' +
+          '<div class="task-head">' +
+            '<span class="task-time">' + t.time + '</span>' +
+            '<span class="task-state">' + STATE_ICON[st] + STATE_TEXT[st] + '</span>' +
+          '</div>' +
+          '<div class="task-stats">' +
+            '<div class="task-stat">' +
+              '<span class="task-k">随机窗口</span>' +
+              '<span class="task-v">' + (t.window || '未开启') + '</span>' +
             '</div>' +
-            '<div class="task-stats">' +
-              '<div class="task-stat">' +
-                '<span class="task-k">随机窗口</span>' +
-                '<span class="task-v">' + (t.window || '未开启') + '</span>' +
-              '</div>' +
-              '<div class="task-stat">' +
-                '<span class="task-k">' + actualKey + '</span>' +
-                '<span class="task-v task-v-strong">' + actual + '</span>' +
-              '</div>' +
+            '<div class="task-stat">' +
+              '<span class="task-k">' + actualKey + '</span>' +
+              '<span class="task-v task-v-strong">' + actual + '</span>' +
             '</div>' +
           '</div>' +
         '</article>';

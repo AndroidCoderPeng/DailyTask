@@ -510,69 +510,19 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
 .link-btn:hover { text-decoration: underline; }
 
 /* ============================ 任务卡片 ============================ */
-/* 左侧一条贯穿整列的时间轴，把一天里的多个任务串成序列；
-   右侧卡片只承载「这一次执行」的信息，状态用节点 + 药丸双编码。
-   目标应用、超时这类全局配置不再在每张卡上重复，统一放到首页状态卡。 */
-.task-list { position: relative; display: grid; gap: 10px; }
-.task-list::before {
-  content: ""; position: absolute; left: 12px; top: 25px; bottom: 25px;
-  width: 2px; border-radius: 2px;
-  background: color-mix(in srgb, var(--text-3) 32%, transparent);
-  z-index: 0;
-}
+/* 一张卡只承载「这一次执行」：计划时间、状态、随机窗口、实际执行。
+   状态用右上角药丸（图形 + 颜色双编码）和右下角结果色块两处表达。 */
+.task-list { display: grid; gap: 10px; }
 
 .task {
-  position: relative; z-index: 1;
-  display: flex; align-items: stretch;
-  background: transparent; cursor: pointer;
-}
-
-/* ---- 时间轴节点 ---- */
-.task-rail { flex: 0 0 26px; display: flex; justify-content: center; padding-top: 19px; }
-.task-node {
   position: relative;
-  width: 12px; height: 12px; border-radius: 50%;
-  background: var(--bg);
-  box-shadow: inset 0 0 0 2.5px var(--text-3);
-}
-.task[data-state="pending"] .task-node { box-shadow: inset 0 0 0 2.5px var(--text-3); }
-.task[data-state="running"] .task-node {
-  background: var(--primary);
-  box-shadow: inset 0 0 0 2.5px var(--primary);
-}
-.task[data-state="done"] .task-node {
-  background: var(--success);
-  box-shadow: inset 0 0 0 2.5px var(--success);
-}
-.task[data-state="failed"] .task-node {
-  background: var(--danger);
-  box-shadow: inset 0 0 0 2.5px var(--danger);
-}
-.task[data-state="skipped"] .task-node {
-  background: var(--bg);
-  box-shadow: inset 0 0 0 2.5px var(--text-3);
-}
-
-/* 执行中的节点呼吸，提示「还活着」 */
-.task[data-state="running"] .task-node::before {
-  content: ""; position: absolute; inset: -3px; border-radius: 50%;
-  background: var(--primary); opacity: 0; pointer-events: none;
-  animation: nodeHalo 2s var(--ease) infinite;
-}
-@keyframes nodeHalo {
-  0% { opacity: .30; transform: scale(.9); }
-  70%, 100% { opacity: 0; transform: scale(2.3); }
-}
-
-/* ---- 右侧卡片 ---- */
-.task-body {
-  flex: 1 1 auto; min-width: 0;
   background: var(--card); border-radius: var(--r-lg);
   box-shadow: var(--shadow-1);
-  padding: 13px 14px 13px 13px;
+  padding: 13px 14px;
+  cursor: pointer;
   transition: .18s var(--ease);
 }
-.task:hover .task-body { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.task:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
 
 .task-head { display: flex; align-items: center; gap: 10px; }
 .task-time {
@@ -600,7 +550,7 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   background: var(--surface-2); color: var(--text-3);
   box-shadow: inset 0 0 0 1px var(--line);
 }
-.task[data-state="skipped"] .task-body { opacity: .72; }
+.task[data-state="skipped"] { opacity: .72; }
 
 /* 执行中的药丸图标转起来，像加载指示 */
 .task[data-state="running"] .task-state svg { animation: spin 1.1s linear infinite; }
