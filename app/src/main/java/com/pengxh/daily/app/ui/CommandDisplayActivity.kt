@@ -10,12 +10,12 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.card.MaterialCardView
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.adapter.NormalRecyclerAdapter
+import com.pengxh.daily.app.adapter.ViewHolder
+import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityCommandDisplayBinding
-import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
-import com.pengxh.kt.lite.adapter.ViewHolder
-import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.extensions.convertColor
-import com.pengxh.kt.lite.extensions.show
+import com.pengxh.daily.app.extensions.convertColor
+import com.pengxh.daily.app.extensions.show
 
 class CommandDisplayActivity : KotlinBaseActivity<ActivityCommandDisplayBinding>() {
 

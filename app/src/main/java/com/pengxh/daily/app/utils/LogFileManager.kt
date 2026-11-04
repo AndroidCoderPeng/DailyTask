@@ -3,7 +3,7 @@ package com.pengxh.daily.app.utils
 import android.content.Context
 import android.os.Environment
 import android.util.Log
-import com.pengxh.kt.lite.extensions.timestampToCompleteDate
+import com.pengxh.daily.app.extensions.timestampToCompleteDate
 import java.io.BufferedOutputStream
 import java.io.File
 import java.io.FileOutputStream

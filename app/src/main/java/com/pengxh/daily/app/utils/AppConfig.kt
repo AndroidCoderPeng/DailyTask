@@ -1,7 +1,6 @@
 package com.pengxh.daily.app.utils
 
 import com.google.gson.JsonObject
-import com.pengxh.kt.lite.utils.SaveKeyValues
 
 /**
  * 统一配置门面：屏蔽 SP 与 ConfigStore 的差异，调用方只认 AppConfig。

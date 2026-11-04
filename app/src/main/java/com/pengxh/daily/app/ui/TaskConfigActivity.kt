@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.ui
 
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Color
@@ -13,9 +12,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.pengxh.daily.app.R
+import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.isApplicationExist
+import com.pengxh.daily.app.extensions.show
+import com.pengxh.daily.app.extensions.toJson
 import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
@@ -25,13 +26,6 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.TaskScheduler
-import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.extensions.convertColor
-import com.pengxh.kt.lite.extensions.isNumber
-import com.pengxh.kt.lite.extensions.show
-import com.pengxh.kt.lite.extensions.toJson
-import com.pengxh.kt.lite.widget.dialog.AlertInputDialog
-import com.pengxh.kt.lite.widget.dialog.BottomActionSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -76,7 +70,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         binding.timeoutItem.rightTextView.text = "${time}s"
 
-        binding.keyItem.rightTextView.text = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
+        binding.keyItem.rightTextView.text =
+            AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
 
         updateCustomWorkdaySummary(CustomWorkdayManager.loadWorkdays())
 
@@ -112,45 +107,48 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     override fun initEvent() {
         binding.resetTimeItem.setOnClickListener {
-            BottomActionSheet.Builder()
-                .setContext(this)
-                .setActionItemTitle(hourArray)
-                .setItemTextColor(R.color.theme_color.convertColor(this))
-                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-                    override fun onActionItemClick(position: Int) {
-                        setHourByPosition(position)
-                    }
-                }).build().show()
+            // TODO: 2024/6/10 需要重写
+//            BottomActionSheet.Builder()
+//                .setContext(this)
+//                .setActionItemTitle(hourArray)
+//                .setItemTextColor(R.color.theme_color.convertColor(this))
+//                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+//                    override fun onActionItemClick(position: Int) {
+//                        setHourByPosition(position)
+//                    }
+//                }).build().show()
         }
 
         binding.timeoutItem.setOnClickListener {
-            BottomActionSheet.Builder()
-                .setContext(this)
-                .setActionItemTitle(timeArray)
-                .setItemTextColor(R.color.theme_color.convertColor(this))
-                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-                    override fun onActionItemClick(position: Int) {
-                        setTimeByPosition(position)
-                    }
-                }).build().show()
+            // TODO: 2024/6/10 需要重写
+//            BottomActionSheet.Builder()
+//                .setContext(this)
+//                .setActionItemTitle(timeArray)
+//                .setItemTextColor(R.color.theme_color.convertColor(this))
+//                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+//                    override fun onActionItemClick(position: Int) {
+//                        setTimeByPosition(position)
+//                    }
+//                }).build().show()
         }
 
         binding.keyItem.setOnClickListener {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置打卡口令")
-                .setHintMessage("请输入打卡口令，如：打卡")
-                .setNegativeButton("取消")
-                .setPositiveButton("确定")
-                .setOnDialogButtonClickListener(object :
-                    AlertInputDialog.OnDialogButtonClickListener {
-                    override fun onConfirmClick(value: String) {
-                        AppConfig.saveString(Constant.REMOTE_COMMAND_KEY, value)
-                        binding.keyItem.rightTextView.text = value
-                    }
-
-                    override fun onCancelClick() {}
-                }).build().show()
+            // TODO: 2024/6/10 需要重写
+//            AlertInputDialog.Builder()
+//                .setContext(this)
+//                .setTitle("设置打卡口令")
+//                .setHintMessage("请输入打卡口令，如：打卡")
+//                .setNegativeButton("取消")
+//                .setPositiveButton("确定")
+//                .setOnDialogButtonClickListener(object :
+//                    AlertInputDialog.OnDialogButtonClickListener {
+//                    override fun onConfirmClick(value: String) {
+//                        AppConfig.saveString(Constant.REMOTE_COMMAND_KEY, value)
+//                        binding.keyItem.rightTextView.text = value
+//                    }
+//
+//                    override fun onCancelClick() {}
+//                }).build().show()
         }
 
         binding.workdayLayout.setOnClickListener {
@@ -178,24 +176,25 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.minuteRangeItem.setOnClickListener {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置随机时间范围")
-                .setHintMessage("请输入整数，如：30")
-                .setNegativeButton("取消")
-                .setPositiveButton("确定")
-                .setOnDialogButtonClickListener(object :
-                    AlertInputDialog.OnDialogButtonClickListener {
-                    override fun onConfirmClick(value: String) {
-                        if (value.isNumber()) {
-                            updateRandomMinuteRange(value.toInt())
-                        } else {
-                            "直接输入整数时间即可".show(context)
-                        }
-                    }
-
-                    override fun onCancelClick() {}
-                }).build().show()
+            // TODO: 2024/6/10 需要重写
+//            AlertInputDialog.Builder()
+//                .setContext(this)
+//                .setTitle("设置随机时间范围")
+//                .setHintMessage("请输入整数，如：30")
+//                .setNegativeButton("取消")
+//                .setPositiveButton("确定")
+//                .setOnDialogButtonClickListener(object :
+//                    AlertInputDialog.OnDialogButtonClickListener {
+//                    override fun onConfirmClick(value: String) {
+//                        if (value.isNumber()) {
+//                            updateRandomMinuteRange(value.toInt())
+//                        } else {
+//                            "直接输入整数时间即可".show(context)
+//                        }
+//                    }
+//
+//                    override fun onCancelClick() {}
+//                }).build().show()
         }
 
         binding.exportItem.setOnClickListener {
@@ -259,26 +258,26 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 val json = exportData.toJson()
                 Log.d(kTag, json)
 
-                // 分享
-                BottomActionSheet.Builder()
-                    .setContext(this@TaskConfigActivity)
-                    .setActionItemTitle(optionArray)
-                    .setItemTextColor(R.color.theme_color.convertColor(this@TaskConfigActivity))
-                    .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-                        override fun onActionItemClick(position: Int) {
-                            when (position) {
-                                0 -> shareTextTo(Constant.QQ, "QQ", json)
-                                1 -> shareTextTo(Constant.WECHAT, "微信", json)
-                                2 -> shareTextTo(Constant.TIM, "TIM", json)
-                                3 -> shareTextTo(Constant.ZFB, "支付宝", json)
-                                4 -> {
-                                    val cipData = ClipData.newPlainText("TaskConfig", json)
-                                    clipboard.setPrimaryClip(cipData)
-                                    "已复制到剪切板".show(context)
-                                }
-                            }
-                        }
-                    }).build().show()
+                // TODO: 2024/6/10 需要重写
+//                BottomActionSheet.Builder()
+//                    .setContext(this@TaskConfigActivity)
+//                    .setActionItemTitle(optionArray)
+//                    .setItemTextColor(R.color.theme_color.convertColor(this@TaskConfigActivity))
+//                    .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+//                        override fun onActionItemClick(position: Int) {
+//                            when (position) {
+//                                0 -> shareTextTo(Constant.QQ, "QQ", json)
+//                                1 -> shareTextTo(Constant.WECHAT, "微信", json)
+//                                2 -> shareTextTo(Constant.TIM, "TIM", json)
+//                                3 -> shareTextTo(Constant.ZFB, "支付宝", json)
+//                                4 -> {
+//                                    val cipData = ClipData.newPlainText("TaskConfig", json)
+//                                    clipboard.setPrimaryClip(cipData)
+//                                    "已复制到剪切板".show(context)
+//                                }
+//                            }
+//                        }
+//                    }).build().show()
             }
         }
     }
@@ -325,24 +324,25 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun setHourByPosition(position: Int) {
         if (position == hourArray.size - 1) {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置重置时间")
-                .setHintMessage("直接输入整数时间即可，如：6")
-                .setNegativeButton("取消")
-                .setPositiveButton("确定")
-                .setOnDialogButtonClickListener(object :
-                    AlertInputDialog.OnDialogButtonClickListener {
-                    override fun onConfirmClick(value: String) {
-                        if (value.isNumber()) {
-                            updateResetHour(value.toInt())
-                        } else {
-                            "直接输入整数时间即可".show(context)
-                        }
-                    }
-
-                    override fun onCancelClick() {}
-                }).build().show()
+            // TODO: 2024/6/10 需要重写
+//            AlertInputDialog.Builder()
+//                .setContext(this)
+//                .setTitle("设置重置时间")
+//                .setHintMessage("直接输入整数时间即可，如：6")
+//                .setNegativeButton("取消")
+//                .setPositiveButton("确定")
+//                .setOnDialogButtonClickListener(object :
+//                    AlertInputDialog.OnDialogButtonClickListener {
+//                    override fun onConfirmClick(value: String) {
+//                        if (value.isNumber()) {
+//                            updateResetHour(value.toInt())
+//                        } else {
+//                            "直接输入整数时间即可".show(context)
+//                        }
+//                    }
+//
+//                    override fun onCancelClick() {}
+//                }).build().show()
         } else {
             updateResetHour(hourArray[position].toInt())
         }
@@ -365,24 +365,25 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun setTimeByPosition(position: Int) {
         if (position == timeArray.size - 1) {
-            AlertInputDialog.Builder()
-                .setContext(this)
-                .setTitle("设置超时时间")
-                .setHintMessage("直接输入整数时间即可，如：60")
-                .setNegativeButton("取消")
-                .setPositiveButton("确定")
-                .setOnDialogButtonClickListener(object :
-                    AlertInputDialog.OnDialogButtonClickListener {
-                    override fun onConfirmClick(value: String) {
-                        if (value.isNumber()) {
-                            updateTimeout(value.toInt())
-                        } else {
-                            "直接输入整数时间即可".show(context)
-                        }
-                    }
-
-                    override fun onCancelClick() {}
-                }).build().show()
+            // TODO: 2024/6/10 需要重写
+//            AlertInputDialog.Builder()
+//                .setContext(this)
+//                .setTitle("设置超时时间")
+//                .setHintMessage("直接输入整数时间即可，如：60")
+//                .setNegativeButton("取消")
+//                .setPositiveButton("确定")
+//                .setOnDialogButtonClickListener(object :
+//                    AlertInputDialog.OnDialogButtonClickListener {
+//                    override fun onConfirmClick(value: String) {
+//                        if (value.isNumber()) {
+//                            updateTimeout(value.toInt())
+//                        } else {
+//                            "直接输入整数时间即可".show(context)
+//                        }
+//                    }
+//
+//                    override fun onCancelClick() {}
+//                }).build().show()
         } else {
             updateTimeout(timeArray[position].toInt())
         }

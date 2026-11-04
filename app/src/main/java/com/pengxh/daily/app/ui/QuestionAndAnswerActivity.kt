@@ -1,7 +1,6 @@
 package com.pengxh.daily.app.ui
 
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.widget.TextView
 import androidx.core.view.ViewCompat
@@ -11,14 +10,13 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.adapter.NormalRecyclerAdapter
+import com.pengxh.daily.app.adapter.ViewHolder
+import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityQuestionAndAnswerBinding
+import com.pengxh.daily.app.extensions.readAssetsFile
 import com.pengxh.daily.app.model.QuestionAnAnswerModel
-import com.pengxh.kt.lite.adapter.NormalRecyclerAdapter
-import com.pengxh.kt.lite.adapter.ViewHolder
-import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.extensions.getStatusBarHeight
-import com.pengxh.kt.lite.extensions.readAssetsFile
-import com.pengxh.kt.lite.utils.HtmlRenderEngine
+import com.pengxh.daily.app.utils.HtmlRenderEngine
 
 class QuestionAndAnswerActivity : KotlinBaseActivity<ActivityQuestionAndAnswerBinding>() {
     private val context = this@QuestionAndAnswerActivity

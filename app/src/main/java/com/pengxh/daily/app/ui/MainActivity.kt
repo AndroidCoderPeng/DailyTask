@@ -18,10 +18,13 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
+import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.events.MainEvent
 import com.pengxh.daily.app.events.MonitorEvent
 import com.pengxh.daily.app.events.TipsEvent
+import com.pengxh.daily.app.extensions.navigatePageTo
+import com.pengxh.daily.app.extensions.show
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -30,6 +33,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
+import com.pengxh.daily.app.utils.Key
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MainDialogManager
 import com.pengxh.daily.app.utils.MaskViewController
@@ -38,12 +42,8 @@ import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.TaskListState
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.WatermarkDrawable
-import com.pengxh.daily.app.utils.todayDateKey
 import com.pengxh.daily.app.vm.MainViewModel
 import com.pengxh.daily.app.widget.TaskTimeDialog
-import com.pengxh.kt.lite.base.KotlinBaseActivity
-import com.pengxh.kt.lite.extensions.navigatePageTo
-import com.pengxh.kt.lite.extensions.show
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -535,7 +535,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * */
     private fun checkMissedReset() {
         val lastResetDate = AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "")
-        val today = todayDateKey()
+        val today = Key.todayDateKey()
 
         // 今天已重置，跳过（防止重复执行）
         if (lastResetDate == today) {

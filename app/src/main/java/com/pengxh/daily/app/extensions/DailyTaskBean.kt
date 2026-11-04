@@ -4,7 +4,6 @@ import com.github.gzuliyujiang.wheelpicker.entity.TimeEntity
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.kt.lite.extensions.appendZero
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -33,7 +32,7 @@ fun DailyTaskBean.resolveExecutionTime(): String {
     val hour = totalSeconds / 3600
     val minute = (totalSeconds % 3600) / 60
     val second = totalSeconds % 60
-    return "${hour.appendZero()}:${minute.appendZero()}:${second.appendZero()}"
+    return "%02d:%02d:%02d".format(hour, minute, second)
 }
 
 private fun DailyTaskBean.resolveExecutionSeconds(): Int {

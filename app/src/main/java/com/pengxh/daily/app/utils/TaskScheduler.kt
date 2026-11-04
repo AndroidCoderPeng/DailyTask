@@ -183,7 +183,7 @@ object TaskScheduler {
                     }
 
                     lastProcessedDate = today
-                    AppConfig.saveString(Constant.LAST_RESET_DATE_KEY, todayDateKey())
+                    AppConfig.saveString(Constant.LAST_RESET_DATE_KEY, Key.todayDateKey())
 
                     // 今天结束，睡到明天
                     if (isActive) waitUntilNextReset(completion, emitCompletionEvent)
@@ -197,7 +197,7 @@ object TaskScheduler {
                     LogFileManager.writeLog("任务调度异常：$throwable")
                     if (recoveryCount >= MAX_AUTO_RECOVERY_COUNT) {
                         notifySchedulerError(
-                            "任务调度连续异常，自动恢复 $MAX_AUTO_RECOVERY_COUNT 次仍未成功，" + "今日任务已停止，需人工检查。最后一次错误：$throwable",
+                            "任务调度连续异常，自动恢复 $MAX_AUTO_RECOVERY_COUNT 次仍未成功，今日任务已停止，需人工检查。最后一次错误：$throwable",
                             true
                         )
                         return@launch
@@ -205,7 +205,7 @@ object TaskScheduler {
 
                     recoveryCount++
                     notifySchedulerError(
-                        "任务调度发生异常，将在 ${AUTO_RECOVERY_DELAY_MILLIS / 1000}s 后自动重试" + "（第 $recoveryCount/$MAX_AUTO_RECOVERY_COUNT 次）。错误：$throwable",
+                        "任务调度发生异常，将在 ${AUTO_RECOVERY_DELAY_MILLIS / 1000}s 后自动重试（第 $recoveryCount/$MAX_AUTO_RECOVERY_COUNT 次）。错误：$throwable",
                         false
                     )
                     delay(AUTO_RECOVERY_DELAY_MILLIS)

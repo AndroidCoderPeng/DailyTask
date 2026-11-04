@@ -8,7 +8,7 @@ import android.graphics.PixelFormat
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withRotation
-import com.pengxh.kt.lite.extensions.sp2px
+import com.pengxh.daily.app.extensions.sp2px
 import kotlin.math.sqrt
 
 class WatermarkDrawable(private val context: Context, private val watermark: String) : Drawable() {

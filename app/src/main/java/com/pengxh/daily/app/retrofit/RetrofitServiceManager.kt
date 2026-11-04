@@ -2,7 +2,6 @@ package com.pengxh.daily.app.retrofit
 
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.kt.lite.utils.RetrofitFactory
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject

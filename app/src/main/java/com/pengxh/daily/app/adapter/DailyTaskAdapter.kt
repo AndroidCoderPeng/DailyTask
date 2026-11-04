@@ -5,9 +5,8 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.extensions.convertColor
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
-import com.pengxh.kt.lite.adapter.ViewHolder
-import com.pengxh.kt.lite.extensions.convertColor
 
 @SuppressLint("NotifyDataSetChanged")
 class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {

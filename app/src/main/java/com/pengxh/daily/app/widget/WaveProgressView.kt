@@ -11,8 +11,8 @@ import android.view.View
 import android.view.animation.LinearInterpolator
 import androidx.core.graphics.withClip
 import com.pengxh.daily.app.R
-import com.pengxh.kt.lite.extensions.convertColor
-import com.pengxh.kt.lite.extensions.sp2px
+import com.pengxh.daily.app.extensions.convertColor
+import com.pengxh.daily.app.extensions.sp2px
 
 /**
  * 根据Android自定义View的标准实践，即使没有自定义属性（attr），也应该实现4个构造函数

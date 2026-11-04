@@ -12,7 +12,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import com.pengxh.daily.app.databinding.ActivityMainBinding
-import com.pengxh.kt.lite.extensions.setScreenBrightness
+import com.pengxh.daily.app.extensions.setScreenBrightness
 import java.util.Random
 
 class MaskViewController(

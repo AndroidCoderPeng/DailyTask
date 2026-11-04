@@ -48,7 +48,7 @@
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
                         android:textColor="@color/text_secondary_color" />
 
-                    <com.pengxh.kt.lite.widget.DeletableEditText
+                    <com.pengxh.daily.app.widget.DeletableEditText
                         android:id="@+id/messageTitleView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -122,7 +122,7 @@
                             android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                             android:textColor="#ABABAB" />
 
-                        <com.pengxh.kt.lite.widget.DeletableEditText
+                        <com.pengxh.daily.app.widget.DeletableEditText
                             android:id="@+id/wxKeyView"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -239,7 +239,7 @@
                                 android:layout_marginTop="@dimen/margin"
                                 android:orientation="horizontal">
 
-                                <com.pengxh.kt.lite.widget.DeletableEditText
+                                <com.pengxh.daily.app.widget.DeletableEditText
                                     android:id="@+id/emailSendAddressView"
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
@@ -285,7 +285,7 @@
                                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
                                 android:textColor="@color/text_secondary_color" />
 
-                            <com.pengxh.kt.lite.widget.DeletableEditText
+                            <com.pengxh.daily.app.widget.DeletableEditText
                                 android:id="@+id/emailSendCodeView"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
@@ -324,7 +324,7 @@
                                 android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
                                 android:textColor="@color/text_secondary_color" />
 
-                            <com.pengxh.kt.lite.widget.DeletableEditText
+                            <com.pengxh.daily.app.widget.DeletableEditText
                                 android:id="@+id/emailInboxView"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"

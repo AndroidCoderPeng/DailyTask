@@ -226,7 +226,7 @@
                     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                     tools:listitem="@layout/item_daily_task_rv_l" />
 
-                <com.pengxh.kt.lite.widget.EmptyView
+                <com.pengxh.daily.app.widget.EmptyView
                     android:id="@+id/emptyView"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"

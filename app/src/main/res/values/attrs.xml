@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <declare-styleable name="EmptyView">
+        <attr name="show_reload_button" format="boolean" />
+    </declare-styleable>
 
     <declare-styleable name="SettingItemView">
         <!-- 左侧图标 -->

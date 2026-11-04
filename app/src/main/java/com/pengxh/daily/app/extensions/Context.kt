@@ -6,10 +6,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Environment
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.pengxh.daily.app.utils.Constant
-import com.pengxh.kt.lite.extensions.show
+import java.io.File
+import java.io.IOException
+
+inline fun <reified T> Context.navigatePageTo() {
+    startActivity(Intent(this, T::class.java))
+}
 
 /**
  * 检测通知监听服务是否被授权
@@ -17,6 +23,31 @@ import com.pengxh.kt.lite.extensions.show
 fun Context.notificationEnable(): Boolean {
     val packages = NotificationManagerCompat.getEnabledListenerPackages(this)
     return packages.contains(packageName)
+}
+
+/**
+ * 获取本地Asserts文件内容
+ */
+fun Context.readAssetsFile(fileName: String?): String {
+    if (fileName.isNullOrBlank()) return ""
+    return try {
+        assets.open(fileName).use { inputStream ->
+            inputStream.bufferedReader().use { bufferedReader ->
+                bufferedReader.useLines { lines -> lines.joinToString(separator = "") }
+            }
+        }
+    } catch (e: IOException) {
+        e.printStackTrace()
+        ""
+    }
+}
+
+fun Context.createImageFileDir(): File {
+    val imageDir = File(getExternalFilesDir(Environment.DIRECTORY_PICTURES), "")
+    if (!imageDir.exists()) {
+        imageDir.mkdir()
+    }
+    return imageDir
 }
 
 /**
