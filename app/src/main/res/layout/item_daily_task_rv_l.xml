@@ -118,7 +118,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="@dimen/margin_half"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
-                        android:textColor="@color/theme_color"
+                        android:textColor="@color/text_secondary_color"
                         android:textStyle="bold"
                         tools:text="08:33:50" />
                 </LinearLayout>

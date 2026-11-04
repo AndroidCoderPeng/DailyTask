@@ -1,15 +1,10 @@
 package com.pengxh.daily.app.adapter
 
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
-import com.pengxh.daily.app.extensions.collapse
-import com.pengxh.daily.app.extensions.expand
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.kt.lite.adapter.ViewHolder
 import com.pengxh.kt.lite.extensions.convertColor
@@ -62,23 +57,12 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val taskBean = dataBeans[position]
         holder.setText(R.id.taskTimeView, taskBean.time)
-        val actualTimeCardView = holder.getView<LinearLayout>(R.id.actualTimeCardView)
+            .setText(R.id.actualTimeView, actualTime)
         if (position == mPosition) {
-            holder.itemView.isSelected = true
-            val context = holder.itemView.context
-            holder.setText(R.id.actualTimeView, actualTime)
-                .setTextColor(R.id.actualTimeView, R.color.theme_color.convertColor(context))
-                .setTextColor(R.id.taskTimeView, R.color.text_hint_color.convertColor(context))
-            if (!actualTimeCardView.isVisible) {
-                actualTimeCardView.expand()
-            }
-        } else {
-            holder.itemView.isSelected = false
-            holder.setText(R.id.actualTimeView, "--:--:--")
-                .setTextColor(R.id.taskTimeView, Color.BLACK)
-            if (actualTimeCardView.isVisible) {
-                actualTimeCardView.collapse()
-            }
+            holder.setTextColor(
+                R.id.actualTimeView,
+                R.color.success_color.convertColor(holder.itemView.context)
+            )
         }
 
         holder.itemView.setOnClickListener {
