@@ -231,6 +231,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:visibility="gone"
+                    app:emptyDesc="还没有任务，先添加一个吧"
                     app:show_reload_button="false" />
             </FrameLayout>
         </LinearLayout>

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <declare-styleable name="EmptyView">
+        <!-- 空态图标 -->
+        <attr name="emptyIcon" format="reference" />
+        <!-- 空态主文案 -->
+        <attr name="emptyText" format="string" />
+        <!-- 空态副文案 -->
+        <attr name="emptyDesc" format="string" />
+        <!-- 「重新加载」按钮文案 -->
+        <attr name="reloadText" format="string" />
+        <!-- 是否显示「重新加载」按钮 -->
         <attr name="show_reload_button" format="boolean" />
     </declare-styleable>
 

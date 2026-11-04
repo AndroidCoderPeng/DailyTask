@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+  用 merge 作为根节点：EmptyView 基类已是垂直 LinearLayout（gravity=center），
+  inflate 时子控件直接挂到 EmptyView 上，省掉 XML 根节点那层纯转发的 LinearLayout，
+  也避免了根节点 id 与宿主的 @id/emptyView 重复。
+  约束：必须以"明确的 parent + attachToRoot=true"方式 inflate；
+  merge 上不能设 background/padding，这些由 EmptyView 或宿主决定。
+-->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/emptyIconView"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_empty" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/emptyTitleView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_2x"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+        android:textColor="@color/text_default_color"
+        android:visibility="gone"
+        tools:text="暂无数据"
+        tools:visibility="visible" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/emptyDescView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin"
+        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+        android:textColor="@color/text_secondary_color"
+        android:visibility="gone"
+        tools:text="添加一个描述吧"
+        tools:visibility="visible" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/reloadButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/margin_2x"
+        android:text="重新加载"
+        android:visibility="gone"
+        tools:visibility="visible" />
+</merge>
