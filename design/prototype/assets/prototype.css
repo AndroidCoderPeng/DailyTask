@@ -179,7 +179,9 @@ code {
   background: transparent; color: var(--text-2); cursor: pointer;
   font-size: 13px; text-align: left; transition: .18s var(--ease);
 }
-.nav-item:hover { background: rgba(51, 153, 255, .08); color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  .nav-item:hover { background: rgba(51, 153, 255, .08); color: var(--text); }
+}
 .nav-item.is-active { background: var(--primary); color: var(--on-primary); box-shadow: 0 6px 14px rgba(51, 153, 255, .28); }
 .nav-ico { font-style: normal; opacity: .8; width: 16px; text-align: center; }
 
@@ -265,7 +267,9 @@ code {
   color: var(--text-2); font-size: 13px; font-weight: 600;
   white-space: nowrap; cursor: pointer; transition: .18s var(--ease);
 }
-.proto-switch button:hover { color: var(--text); background: rgba(91, 169, 255, .14); }
+@media (hover: hover) and (pointer: fine) {
+  .proto-switch button:hover { color: var(--text); background: rgba(91, 169, 255, .14); }
+}
 .proto-switch button.is-active {
   background: var(--primary); color: var(--on-primary);
   box-shadow: 0 4px 10px rgba(51, 153, 255, .30);
@@ -282,7 +286,9 @@ code {
   flex: 0 0 auto; width: 34px; padding: 0;
   display: grid; place-items: center; color: var(--text-2);
 }
-.proto-switch .proto-theme-btn:hover { color: var(--text); }
+@media (hover: hover) and (pointer: fine) {
+  .proto-switch .proto-theme-btn:hover { color: var(--text); }
+}
 body:not(.dark) .proto-theme-btn .ico-moon { display: none; }
 body.dark .proto-theme-btn .ico-sun { display: none; }
 
@@ -364,13 +370,17 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   box-shadow: var(--shadow-1); cursor: pointer;
   transition: .18s var(--ease);
 }
-.icon-btn:hover { color: var(--primary); transform: translateY(-1px); }
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn:hover { color: var(--primary); transform: translateY(-1px); }
+}
 .icon-btn:active { transform: translateY(0) scale(.96); }
 .icon-btn-primary {
   background: var(--primary); color: var(--on-primary);
   box-shadow: 0 6px 16px rgba(51, 153, 255, .32);
 }
-.icon-btn-primary:hover { background: var(--primary-press); color: var(--on-primary); }
+@media (hover: hover) and (pointer: fine) {
+  .icon-btn-primary:hover { background: var(--primary-press); color: var(--on-primary); }
+}
 
 /* ---- 侧栏辅助按钮 ---- */
 .aux-btn {
@@ -379,7 +389,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   background: var(--surface); color: var(--text-2);
   font-size: 13px; cursor: pointer; transition: .18s var(--ease);
 }
-.aux-btn:hover { color: var(--text); border-color: var(--primary); }
+@media (hover: hover) and (pointer: fine) {
+  .aux-btn:hover { color: var(--text); border-color: var(--primary); }
+}
 .aux-btn.is-on { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
 
 .scroll {
@@ -466,14 +478,18 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
 .btn:active { transform: scale(.98); }
 .btn:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; transform: none; }
 .btn.btn-primary { background: var(--primary); color: var(--on-primary); box-shadow: 0 8px 18px rgba(51, 153, 255, .30); }
-.btn.btn-primary:hover { background: var(--primary-press); }
+@media (hover: hover) and (pointer: fine) {
+  .btn.btn-primary:hover { background: var(--primary-press); }
+}
 .btn.btn-danger { background: var(--danger); color: var(--on-danger); box-shadow: 0 8px 18px rgba(239, 68, 68, .28); }
 .btn.btn-soft { background: var(--primary-soft); color: var(--primary-press); }
 .btn.btn-quiet {
   background: var(--surface-2); color: var(--text-2);
   border: 1px solid var(--line); box-shadow: none;
 }
-.btn.btn-quiet:hover { color: var(--text); border-color: var(--text-3); }
+@media (hover: hover) and (pointer: fine) {
+  .btn.btn-quiet:hover { color: var(--text); border-color: var(--text-3); }
+}
 .btn.btn-ghost { background: transparent; color: var(--text-2); }
 /* 描边变体：表单卡片内的验证类操作，层级低于主按钮 */
 .btn.btn-outline {
@@ -481,7 +497,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
   box-shadow: none;
 }
-.btn.btn-outline:hover { background: var(--primary-soft); }
+@media (hover: hover) and (pointer: fine) {
+  .btn.btn-outline:hover { background: var(--primary-soft); }
+}
 /* 禁用态覆盖所有变体（特异性最高，保证休息日的按钮不会被染色） */
 .btn.btn:disabled, .btn.btn:disabled:hover {
   background: var(--surface-2); color: var(--text-2);
@@ -522,7 +540,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   cursor: pointer;
   transition: .18s var(--ease);
 }
-.task:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+@media (hover: hover) and (pointer: fine) {
+  .task:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+}
 
 .task-head { display: flex; align-items: center; gap: 10px; }
 .task-time {
@@ -628,7 +648,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   content: ""; position: absolute; left: 16px; right: 0; top: 0; height: 1px; background: var(--line);
 }
 .row-tap { cursor: pointer; transition: background .15s var(--ease); }
-.row-tap:hover { background: #FAFBFD; }
+@media (hover: hover) and (pointer: fine) {
+  .row-tap:hover { background: #FAFBFD; }
+}
 .row-block { flex-direction: column; align-items: stretch; gap: 10px; }
 .row-head { display: flex; align-items: center; }
 .row-main { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
@@ -723,7 +745,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   background: var(--card); border-radius: var(--r-md); box-shadow: var(--shadow-1);
   cursor: pointer; transition: .18s var(--ease);
 }
-.cmd-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+@media (hover: hover) and (pointer: fine) {
+  .cmd-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+}
 .cmd-code {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 13.5px; font-weight: 700; color: var(--text);
@@ -747,7 +771,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   font-size: 14.5px; font-weight: 600; color: var(--text); line-height: 1.45;
   cursor: pointer; transition: background .15s var(--ease);
 }
-.acc-head:hover { background: var(--bg); }
+@media (hover: hover) and (pointer: fine) {
+  .acc-head:hover { background: var(--bg); }
+}
 .acc-head > span { flex: 1 1 auto; min-width: 0; }
 .acc-ico {
   width: 16px; height: 16px; flex: 0 0 auto; color: var(--text-3);
@@ -821,7 +847,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   display: flex; align-items: center; justify-content: space-between;
 }
 .opt:last-child { border-bottom: 0; }
-.opt:hover { color: var(--primary); }
+@media (hover: hover) and (pointer: fine) {
+  .opt:hover { color: var(--primary); }
+}
 .opt .ok { color: var(--primary); font-weight: 700; }
 
 /* ---- 工作日网格 ---- */
@@ -880,3 +908,29 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   .phone-island { display: none; }
   .proto-switch { max-width: none; }
 }
+
+/* ============================ 触屏按压态 ============================ */
+/* Android / iOS 没有 hover：所有可点元素按下即给反馈（颜色 / 缩放），
+   这些 :active 规则全平台生效，桌面端点击时同样有按压反馈。 */
+.nav-item:active { background: rgba(51, 153, 255, .12); color: var(--text); }
+.aux-btn:active { color: var(--text); border-color: var(--primary); background: var(--primary-soft); }
+.proto-switch button:active { background: rgba(91, 169, 255, .14); color: var(--text); }
+.proto-switch .proto-theme-btn:active { background: transparent; }
+
+.icon-btn:active { transform: translateY(0) scale(.94); }
+.icon-btn-primary:active { background: var(--primary-press); }
+
+.btn.btn-primary:active { background: var(--primary-press); }
+.btn.btn-quiet:active { background: var(--bg); color: var(--text); }
+.btn.btn-outline:active { background: var(--primary-soft); }
+.btn.btn-soft:active { background: color-mix(in srgb, var(--primary) 22%, var(--primary-soft)); }
+
+.link-btn:active { opacity: .55; }
+
+.task:active { transform: scale(.985); box-shadow: var(--shadow-1); }
+.row-tap:active { background: var(--bg); }
+.cmd-item:active { transform: scale(.98); box-shadow: var(--shadow-1); }
+.acc-head:active { background: var(--bg); }
+.opt:active { background: var(--bg); color: var(--primary); }
+.day-chip:active { transform: scale(.96); }
+.segmented .seg:active { color: var(--text); }
