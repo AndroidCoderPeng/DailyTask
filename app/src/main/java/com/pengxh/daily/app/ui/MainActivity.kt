@@ -33,6 +33,7 @@ import com.pengxh.daily.app.extensions.navigatePageTo
 import com.pengxh.daily.app.extensions.show
 import com.pengxh.daily.app.extensions.showActionSheet
 import com.pengxh.daily.app.extensions.showCustomDialog
+import com.pengxh.daily.app.extensions.toTimeEntity
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -52,7 +53,6 @@ import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MainViewModel
 import com.pengxh.daily.app.widget.DeletableEditText
 import com.pengxh.daily.app.widget.SettingItemView
-import com.pengxh.daily.app.widget.TaskTimeDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -531,8 +531,19 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             return
         }
         val item = dailyTaskAdapter.itemAt(position) ?: return
-        TaskTimeDialog.show(this, "修改任务时间", item.time) { time ->
-            mainViewModel.updateTaskTime(item, time)
+        showActionSheet(R.layout.sheet_edit_task) { view, dialog ->
+            val timePicker = view.findViewById<TimeWheelLayout>(R.id.timePicker)
+            timePicker.setDefaultValue(item.time.toTimeEntity())
+            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                val time = String.Companion.format(
+                    Locale.CHINA, "%02d:%02d:%02d",
+                    timePicker.selectedHour,
+                    timePicker.selectedMinute,
+                    timePicker.selectedSecond
+                )
+                mainViewModel.updateTaskTime(item, time)
+                dialog.dismiss()
+            }
         }
     }
 
