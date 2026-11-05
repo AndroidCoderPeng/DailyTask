@@ -7,6 +7,7 @@ import android.provider.Settings
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.graphics.ColorUtils
@@ -25,6 +26,7 @@ import com.pengxh.daily.app.events.MonitorEvent
 import com.pengxh.daily.app.events.TipsEvent
 import com.pengxh.daily.app.extensions.navigatePageTo
 import com.pengxh.daily.app.extensions.show
+import com.pengxh.daily.app.extensions.showCustomDialog
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -150,8 +152,16 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     }
                 }
 
-                R.id.menu_settings -> MainDialogManager.showUsageNotice(this) {
-                    navigatePageTo<SettingsActivity>()
+                R.id.menu_settings -> {
+                    showCustomDialog(
+                        resId = R.layout.dialog_usage_notice,
+                        cancelable = false
+                    ) { view, dialog ->
+                        view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                            dialog.dismiss()
+                            navigatePageTo<SettingsActivity>()
+                        }
+                    }
                 }
             }
             true

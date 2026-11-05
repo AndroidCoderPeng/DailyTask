@@ -36,13 +36,4 @@ object MainDialogManager {
             .setPositiveButton("知道了", null)
             .show()
     }
-
-    fun showUsageNotice(context: Context, onConfirm: () -> Unit) {
-        MaterialAlertDialogBuilder(context)
-            .setTitle("使用须知")
-            .setMessage("本软件完全免费！仅供内部使用！严禁商用或者用作其他非法用途！\r\n近期发现有人在咸鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！")
-            .setCancelable(false)
-            .setPositiveButton("知道了") { _, _ -> onConfirm() }
-            .show()
-    }
 }

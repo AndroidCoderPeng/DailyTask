@@ -1,0 +1,106 @@
+/* ===========================================================
+   DailyTask · 弹窗组件原型（dialogs.html 专用补充样式）
+   基础令牌 / 手机外壳 / dialog、sheet 骨架均来自 prototype.css
+   =========================================================== */
+
+/* ---- 组件编号标签（评审辅助） ---- */
+.demo-no {
+  display: inline-grid; place-items: center;
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
+  background: var(--primary-soft); color: var(--primary-press);
+  font-size: 11px; font-weight: 700; font-family: var(--font-num);
+}
+
+/* 触发按钮列表：一行一个入口，与设置页 row 风格一致 */
+.demo-list { display: grid; gap: 10px; }
+.demo-trigger {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 14px 16px; border: 0;
+  background: var(--card); border-radius: var(--r-lg); box-shadow: var(--shadow-1);
+  text-align: left; cursor: pointer; transition: .18s var(--ease);
+}
+.demo-trigger:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.demo-trigger-main { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.demo-trigger-title { font-size: 14px; font-weight: 600; }
+.demo-trigger-desc { font-size: 11.5px; color: var(--text-2); line-height: 1.45; }
+.demo-trigger-arrow { color: var(--text-3); flex: 0 0 auto; }
+
+/* ==================== 1. 单按钮对话框 ==================== */
+/* 中性提示 / 强告知：只有一条出路「知道了」 */
+.dialog .dialog-icon {
+  width: 44px; height: 44px; margin: 0 auto 12px; border-radius: 14px;
+  display: grid; place-items: center;
+  background: var(--primary-soft); color: var(--primary);
+}
+.dialog .dialog-icon.is-warn { background: var(--warn-soft); color: var(--warn); }
+.dialog .dialog-icon.is-danger { background: var(--danger-soft); color: var(--danger); }
+.dialog .dialog-msg b { color: var(--text); font-weight: 600; }
+.dialog-actions.btn-column { flex-direction: column; gap: 0; }
+.dialog-actions.btn-column .btn { width: 100%; }
+.dialog-tip {
+  margin-top: 12px; text-align: center;
+  font-size: 11px; color: var(--text-3);
+}
+
+/* ==================== 2. 双按钮对话框 ==================== */
+/* 危险确认：确认键用 danger 实底，取消键用 quiet，主次分明 */
+.btn.btn-danger-ghost {
+  background: var(--danger-soft); color: var(--danger);
+}
+.btn.btn-danger-ghost:hover { background: color-mix(in srgb, var(--danger) 18%, transparent); }
+
+/* ==================== 3. 带输入框对话框 ==================== */
+.dialog-field { margin-top: 14px; text-align: left; }
+.dialog-field .field-label { margin-bottom: 7px; }
+.dialog-field .input { background: var(--surface-2); }
+.dialog-field .field-hint { margin-top: 7px; }
+.dialog-field .input.is-error {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-soft);
+}
+.dialog-error {
+  display: none; align-items: center; gap: 5px;
+  margin-top: 7px; font-size: 11.5px; color: var(--danger);
+}
+.dialog-error.is-show { display: flex; }
+
+/* ==================== 4. 底部 ActionSheet ==================== */
+.actionsheet .as-title { font-size: 16px; font-weight: 700; text-align: center; }
+.actionsheet .as-desc { font-size: 12px; color: var(--text-2); text-align: center; margin-top: 5px; }
+
+.as-list { margin-top: 16px; display: grid; gap: 8px; }
+.as-item {
+  display: flex; align-items: center; gap: 12px; width: 100%;
+  padding: 12px 14px; border: 0; border-radius: var(--r-md);
+  background: var(--surface-2); text-align: left; cursor: pointer;
+  transition: .16s var(--ease);
+}
+.as-item:hover { background: var(--bg); }
+.as-item:active { transform: scale(.985); }
+.as-item-ico {
+  width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ico) 14%, var(--surface));
+  color: var(--ico);
+}
+.as-item-main { flex: 1 1 auto; min-width: 0; display: grid; gap: 1px; }
+.as-item-label { font-size: 14px; font-weight: 600; }
+.as-item-desc { font-size: 11.5px; color: var(--text-2); }
+.as-item .ok { color: var(--primary); font-weight: 700; font-size: 13px; }
+
+/* 破坏性操作独立分区：与普通操作拉开距离 */
+.as-sep { margin: 12px 0; border: 0; border-top: 1px solid var(--line); }
+.as-item.as-danger { background: var(--danger-soft); }
+.as-item.as-danger .as-item-ico {
+  background: transparent; color: var(--danger);
+}
+.as-item.as-danger .as-item-label { color: var(--danger); }
+
+.as-cancel {
+  margin-top: 12px; width: 100%; height: 44px; border: 0; border-radius: var(--r-md);
+  background: var(--surface-2); color: var(--text-2); font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: .16s var(--ease);
+}
+.as-cancel:hover { color: var(--text); }
+
+/* 演示场景下弹层要盖住整个 viewport，已有 dialog-mask / sheet-mask 复用 */

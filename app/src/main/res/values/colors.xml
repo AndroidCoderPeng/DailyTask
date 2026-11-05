@@ -3,8 +3,11 @@
     <color name="theme_color">#3399FF</color>
 
     <color name="success_color">#22C55E</color>
+    <color name="success_soft_color">#1A22C55E</color>
     <color name="warning_color">#F59E0B</color>
+    <color name="warning_soft_color">#1AF59E0B</color>
     <color name="failure_color">#EF4444</color>
+    <color name="failure_soft_color">#1AEF4444</color>
 
     <color name="back_ground_color">#F2F4F8</color>
     <color name="border_color">#EDEFF4</color>

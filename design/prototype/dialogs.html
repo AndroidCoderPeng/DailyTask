@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DailyTask · 弹窗组件原型</title>
+<link rel="stylesheet" href="assets/prototype.css">
+<link rel="stylesheet" href="assets/dialogs.css">
+</head>
+<body>
+<div class="stage">
+
+  <!-- ============ 侧栏（评审用，非 App 内容） ============ -->
+  <aside class="sidenav">
+    <div class="brand">
+      <div class="brand-logo">DT</div>
+      <div class="brand-text">
+        <h1>DailyTask</h1>
+        <p>弹窗组件 · 界面原型</p>
+      </div>
+    </div>
+
+    <div class="sidenav-block">
+      <h2>组件</h2>
+      <ul class="nav-list">
+        <li><button class="nav-item" data-demo="single"><i class="nav-ico">1</i>单按钮对话框</button></li>
+        <li><button class="nav-item" data-demo="double"><i class="nav-ico">2</i>双按钮对话框</button></li>
+        <li><button class="nav-item" data-demo="input"><i class="nav-ico">3</i>带输入框对话框</button></li>
+        <li><button class="nav-item" data-demo="actionsheet"><i class="nav-ico">4</i>底部 ActionSheet</button></li>
+      </ul>
+    </div>
+
+    <div class="sidenav-block">
+      <h2>设计要点</h2>
+      <ul class="note-list">
+        <li>对话框统一 <b>78% 宽、18px 圆角</b>，标题居中 16px / 正文 13px，延续 v2 规范。</li>
+        <li>单按钮对话框用于<b>强告知</b>，只有一条出路；图标区强化语义（提示 / 警告）。</li>
+        <li>双按钮对话框取消用 <b>quiet 弱按钮</b>，危险确认键用 <b>danger 实底</b>，主次与风险一目了然。</li>
+        <li>输入框对话框沿用表单规范：<b>focus 高亮 + 内联错误提示</b>，错误时边框变红不再弹 toast。</li>
+        <li>ActionSheet 沿用底部弹窗骨架：<b>抓手感 + 图标动作列表</b>，破坏性操作红底独立分区，底部固定取消。</li>
+      </ul>
+    </div>
+
+    <div class="sidenav-block">
+      <h2>配色 / 字号</h2>
+      <div class="sw-theme sw-theme-light">
+        <div class="sw-theme-label">浅色主题 Light</div>
+        <div class="swatches">
+          <span class="sw" style="--c:#3399FF">主色 #3399FF</span>
+          <span class="sw" style="--c:#22C55E">成功 #22C55E</span>
+          <span class="sw" style="--c:#F59E0B">提醒 #F59E0B</span>
+          <span class="sw" style="--c:#EF4444">失败 #EF4444</span>
+          <span class="sw" style="--c:#F2F4F8">底色 #F2F4F8</span>
+          <span class="sw" style="--c:#FFFFFF">卡片 #FFFFFF</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ 手机 ============ -->
+  <div class="device-wrap">
+    <div class="phone">
+      <div class="phone-island"></div>
+      <div class="phone-statusbar">
+        <span id="statusClock">17:20</span>
+        <span class="statusbar-icons">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M2 17h2v3H2zM6 13h2v7H6zM10 9h2v11h-2zM14 5h2v15h-2zM18 2h2v18h-2z" fill="currentColor"/></svg>
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 20a8 8 0 100-16 8 8 0 000 16zm0-3a5 5 0 110-10 5 5 0 010 10z" fill="currentColor"/></svg>
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 3l3 4h-2v5h5V10l4 3-4 3v-2h-5v5h2l-3 4-3-4h2v-5H6v2l-4-3 4-3v2h5V7H9z" fill="currentColor"/></svg>
+        </span>
+      </div>
+
+      <div class="viewport">
+
+        <!-- ================= 组件演示页 ================= -->
+        <section class="screen is-active" data-screen="demo">
+          <header class="appbar">
+            <div class="appbar-text">
+              <p class="appbar-sub">点击任意入口查看对应弹层</p>
+              <h1 class="appbar-title">弹窗组件</h1>
+            </div>
+          </header>
+
+          <div class="scroll">
+            <div class="demo-list">
+
+              <button class="demo-trigger" data-demo="single">
+                <span class="demo-no">1</span>
+                <span class="demo-trigger-main">
+                  <span class="demo-trigger-title">单按钮对话框</span>
+                  <span class="demo-trigger-desc">强告知 · 只有一条出路「知道了」</span>
+                </span>
+                <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+              <button class="demo-trigger" data-demo="double">
+                <span class="demo-no">2</span>
+                <span class="demo-trigger-main">
+                  <span class="demo-trigger-title">双按钮对话框</span>
+                  <span class="demo-trigger-desc">确认 / 取消 · 含危险操作变体</span>
+                </span>
+                <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+              <button class="demo-trigger" data-demo="input">
+                <span class="demo-no">3</span>
+                <span class="demo-trigger-main">
+                  <span class="demo-trigger-title">带输入框对话框</span>
+                  <span class="demo-trigger-desc">输入校验 · 内联错误提示</span>
+                </span>
+                <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+              <button class="demo-trigger" data-demo="actionsheet">
+                <span class="demo-no">4</span>
+                <span class="demo-trigger-main">
+                  <span class="demo-trigger-title">底部 ActionSheet</span>
+                  <span class="demo-trigger-desc">动作列表 · 破坏性操作独立分区</span>
+                </span>
+                <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+            </div>
+
+            <p class="footer-note">Esc 或点击遮罩可关闭全部弹层</p>
+          </div>
+        </section>
+
+        <!-- ================= 1. 单按钮对话框 ================= -->
+        <div class="dialog-mask" id="dialogSingle" hidden>
+          <div class="dialog">
+            <div class="dialog-icon is-warn">
+              <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>
+            </div>
+            <h3 class="dialog-title">使用须知</h3>
+            <p class="dialog-msg">本软件完全免费！仅供内部学习研究使用！<b>严禁商用或倒卖</b>。
+数据全部保存在本机，不上传任何服务器。</p>
+            <div class="dialog-actions btn-column">
+              <button class="btn btn-primary" data-close>知道了</button>
+            </div>
+            <p class="dialog-tip">关闭后可在「设置」中随时查看</p>
+          </div>
+        </div>
+
+        <!-- ================= 2. 双按钮对话框 ================= -->
+        <div class="dialog-mask" id="dialogDouble" hidden>
+          <div class="dialog">
+            <div class="dialog-icon is-danger">
+              <svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v13a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3zm1.5 6.6l1.4 1.4L13.4 12l1.5 1-1.4 1.4L12 12.9l-1.4 1.4-1.4-1.4 1.5-1.1-1.5-1.1 1.4-1.4 1.4 1.5z" fill="currentColor"/></svg>
+            </div>
+            <h3 class="dialog-title">删除任务</h3>
+            <p class="dialog-msg">确定要删除 <b>08:30</b> 的打卡任务吗？
+删除后当天将不再自动执行该时间点。</p>
+            <div class="dialog-actions">
+              <button class="btn btn-quiet" data-close>取消</button>
+              <button class="btn btn-danger" data-close id="doubleConfirm">删除</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= 3. 带输入框对话框 ================= -->
+        <div class="dialog-mask" id="dialogInput" hidden>
+          <div class="dialog">
+            <h3 class="dialog-title">修改任务口令</h3>
+            <p class="dialog-msg">远程触发打卡时发送的指令内容</p>
+            <div class="dialog-field">
+              <label class="field-label" for="dlgInputValue">口令内容</label>
+              <input class="input" id="dlgInputValue" value="打卡" placeholder="如：打卡" maxlength="12">
+              <p class="dialog-error" id="dlgInputError">
+                <svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>
+                <span>口令不能为空，且不能包含空格</span>
+              </p>
+              <p class="field-hint">需以「DT#」开头的指令使用，此处只填口令部分</p>
+            </div>
+            <div class="dialog-actions">
+              <button class="btn btn-quiet" data-close>取消</button>
+              <button class="btn btn-primary" id="inputConfirm">保存</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================= 4. 底部 ActionSheet ================= -->
+        <div class="sheet-mask" id="sheetAction" hidden>
+          <div class="sheet actionsheet">
+            <div class="sheet-grab"></div>
+            <h3 class="as-title">导出任务配置</h3>
+            <p class="as-desc">选择分享渠道，配置将打包为文本</p>
+
+            <div class="as-list">
+              <button class="as-item" style="--ico:#12B7F5" data-close>
+                <span class="as-item-ico">
+                  <svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 2a9 9 0 00-9 9c0 4.6 3.4 8.4 7.9 8.9v-3.1H8.6V11h2.3V9.2c0-2.3 1.4-3.6 3.5-3.6 1 0 2 .2 2 .2v2.2h-1.1c-1.1 0-1.5.7-1.5 1.4V11h2.5l-.4 2.8h-2.1v3.1A9 9 0 0012 2z" fill="currentColor"/></svg>
+                </span>
+                <span class="as-item-main">
+                  <span class="as-item-label">QQ 好友</span>
+                  <span class="as-item-desc">唤起 QQ 发送给好友或设备</span>
+                </span>
+              </button>
+
+              <button class="as-item" style="--ico:#07C160" data-close>
+                <span class="as-item-ico">
+                  <svg viewBox="0 0 24 24" width="17" height="17"><path d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 1.9 2.2-1.1c.8.2 1.5.4 2.3.4h.5a5.3 5.3 0 01-.2-1.4c0-3 2.9-5.4 6.4-5.4h.5C15 6 12.1 4 8.7 4zM6.6 8.5a.9.9 0 110-1.8.9.9 0 010 1.8zm4.4 0a.9.9 0 110-1.8.9.9 0 010 1.8zM22 14.1c0-2.7-2.7-4.9-5.9-4.9s-5.9 2.2-5.9 4.9 2.7 4.9 5.9 4.9c.7 0 1.4-.1 2-.3l1.9.9-.5-1.6A4.6 4.6 0 0022 14.1zm-7.9-.8a.8.8 0 110-1.6.8.8 0 010 1.6zm4 0a.8.8 0 110-1.6.8.8 0 010 1.6z" fill="currentColor"/></svg>
+                </span>
+                <span class="as-item-main">
+                  <span class="as-item-label">微信</span>
+                  <span class="as-item-desc">生成分享文本并唤起微信</span>
+                </span>
+                <span class="ok">✓</span>
+              </button>
+
+              <button class="as-item" style="--ico:#0EA5E9" data-close>
+                <span class="as-item-ico">
+                  <svg viewBox="0 0 24 24" width="17" height="17"><path d="M16 1H4a2 2 0 00-2 2v14h2V3h12zm3 4H8a2 2 0 00-2 2v14a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2zm0 16H8V7h11z" fill="currentColor"/></svg>
+                </span>
+                <span class="as-item-main">
+                  <span class="as-item-label">复制到剪贴板</span>
+                  <span class="as-item-desc">复制后可粘贴到任意应用</span>
+                </span>
+              </button>
+            </div>
+
+            <hr class="as-sep">
+
+            <button class="as-item as-danger" style="--ico:#EF4444" data-close>
+              <span class="as-item-ico">
+                <svg viewBox="0 0 24 24" width="17" height="17"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v13a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3zM9.2 8.8l2.8 2.8 2.8-2.8 1.4 1.4-2.8 2.8 2.8 2.8-1.4 1.4-2.8-2.8-2.8 2.8-1.4-1.4 2.8-2.8-2.8-2.8z" fill="currentColor"/></svg>
+              </span>
+              <span class="as-item-main">
+                <span class="as-item-label">清空全部配置</span>
+                <span class="as-item-desc">删除所有任务与设置，不可恢复</span>
+              </span>
+            </button>
+
+            <button class="as-cancel" data-close>取消</button>
+          </div>
+        </div>
+
+        <div class="toast" id="toast" hidden></div>
+
+      </div><!-- /viewport -->
+    </div><!-- /phone -->
+
+    <!-- ============ 评审切换条 ============ -->
+    <div class="proto-switch">
+      <button class="is-active" data-demo="single">单按钮</button>
+      <button data-demo="double">双按钮</button>
+      <button data-demo="input">输入框</button>
+      <button data-demo="actionsheet">ActionSheet</button>
+      <button class="proto-theme-btn" id="themeBtn" title="切换深色 / 浅色" aria-label="切换深色 / 浅色">
+        <svg class="ico-sun" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="4.1" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.4 5.4l1.4 1.4M17.2 17.2l1.4 1.4M18.6 5.4l-1.4 1.4M6.8 17.2l-1.4 1.4"/></g></svg>
+        <svg class="ico-moon" viewBox="0 0 24 24" width="16" height="16"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
+      </button>
+    </div>
+
+  </div><!-- /device-wrap -->
+</div><!-- /stage -->
+
+<script>
+(function () {
+  'use strict';
+
+  const $ = (sel, root) => (root || document).querySelector(sel);
+  const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
+
+  /* 弹层注册表：data-demo 值 → 对应遮罩节点 */
+  const OVERLAYS = {
+    single: $('#dialogSingle'),
+    double: $('#dialogDouble'),
+    input: $('#dialogInput'),
+    actionsheet: $('#sheetAction')
+  };
+
+  function closeAll() {
+    Object.keys(OVERLAYS).forEach(function (k) { OVERLAYS[k].hidden = true; });
+  }
+
+  function openDemo(key) {
+    const mask = OVERLAYS[key];
+    if (!mask) return;
+    closeAll();
+    mask.hidden = false;
+    if (key === 'input') {
+      const input = $('#dlgInputValue');
+      input.classList.remove('is-error');
+      $('#dlgInputError').classList.remove('is-show');
+      setTimeout(function () { input.focus(); input.select(); }, 160);
+    }
+  }
+
+  /* ---- Toast ---- */
+  let toastTimer = null;
+  function toast(text) {
+    const el = $('#toast');
+    el.textContent = text;
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.hidden = true; }, 1800);
+  }
+
+  /* ---- 主题（与 index.html 共用 dt-theme 记忆） ---- */
+  function applyTheme(dark) {
+    document.body.classList.toggle('dark', dark);
+    try { localStorage.setItem('dt-theme', dark ? 'dark' : 'light'); } catch (e) { /* file:// */ }
+  }
+
+  /* ---- 时钟 ---- */
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function tickClock() {
+    const d = new Date();
+    $('#statusClock').textContent = pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  /* ---- 事件 ---- */
+  document.addEventListener('click', function (e) {
+    const demoBtn = e.target.closest('[data-demo]');
+    if (demoBtn) {
+      openDemo(demoBtn.dataset.demo);
+      $$('.proto-switch button').forEach(function (b) {
+        b.classList.toggle('is-active', b.dataset.demo === demoBtn.dataset.demo && !b.classList.contains('proto-theme-btn'));
+      });
+      return;
+    }
+    if (e.target.closest('[data-close]')) { closeAll(); return; }
+
+    const themeBtn = e.target.closest('#themeBtn');
+    if (themeBtn) { applyTheme(!document.body.classList.contains('dark')); return; }
+
+    /* 各确认键的演示反馈 */
+    if (e.target.closest('#doubleConfirm')) { toast('任务已删除'); return; }
+
+    if (e.target.closest('#inputConfirm')) {
+      const input = $('#dlgInputValue');
+      const v = input.value.trim();
+      if (!v || /\s/.test(v)) {
+        input.classList.add('is-error');
+        $('#dlgInputError').classList.add('is-show');
+        return;
+      }
+      closeAll();
+      toast('口令已更新为「' + v + '」');
+      return;
+    }
+  });
+
+  /* 遮罩空白处点击关闭 */
+  $$('.dialog-mask, .sheet-mask').forEach(function (m) {
+    m.addEventListener('click', function (e) { if (e.target === m) closeAll(); });
+  });
+
+  /* 输入时清除错误态 */
+  $('#dlgInputValue').addEventListener('input', function () {
+    this.classList.remove('is-error');
+    $('#dlgInputError').classList.remove('is-show');
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeAll();
+    if (e.key === '1') openDemo('single');
+    if (e.key === '2') openDemo('double');
+    if (e.key === '3') openDemo('input');
+    if (e.key === '4') openDemo('actionsheet');
+  });
+
+  /* ---- 初始化 ---- */
+  try {
+    if (localStorage.getItem('dt-theme') === 'dark') applyTheme(true);
+  } catch (e) { /* file:// */ }
+  if (/[?&]theme=dark/.test(location.search)) applyTheme(true);
+
+  const hash = location.hash.slice(1);
+  if (OVERLAYS[hash]) openDemo(hash);
+
+  tickClock();
+  setInterval(tickClock, 1000);
+})();
+</script>
+</body>
+</html>
