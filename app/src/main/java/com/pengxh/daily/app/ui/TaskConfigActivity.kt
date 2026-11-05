@@ -1,25 +1,27 @@
 package com.pengxh.daily.app.ui
 
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.widget.LinearLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.pengxh.daily.app.R
 import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
-import com.pengxh.daily.app.extensions.isApplicationExist
 import com.pengxh.daily.app.extensions.show
+import com.pengxh.daily.app.extensions.showActionSheet
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.TaskScheduler
+import com.pengxh.daily.app.widget.SettingItemView
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
@@ -27,8 +29,7 @@ import java.time.DayOfWeek
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private val kTag = "TaskConfigActivity"
-    private val context = this
-    private val hourArray = listOf("0", "1", "2", "3", "4", "5", "6", "自定义（单位：时）")
+    private val context = this@TaskConfigActivity
     private val timeArray = listOf("15", "30", "45", "自定义（单位：秒）")
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
@@ -97,16 +98,51 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     override fun initEvent() {
         binding.resetTimeItem.setOnClickListener {
-            // TODO: 2024/6/10 需要重写
-//            BottomActionSheet.Builder()
-//                .setContext(this)
-//                .setActionItemTitle(hourArray)
-//                .setItemTextColor(R.color.theme_color.convertColor(this))
-//                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-//                    override fun onActionItemClick(position: Int) {
-//                        setHourByPosition(position)
-//                    }
-//                }).build().show()
+            showActionSheet(R.layout.sheet_set_reset_time) { view, dialog ->
+                val optionsLayout = view.findViewById<LinearLayout>(R.id.optionsLayout)
+                (0..6).forEach { hour ->
+                    val item = SettingItemView(this).apply {
+                        title = "每天 $hour 点"
+                        setOnClickListener {
+                            if (hour !in 0..23) {
+                                "重置时间必须在0到23点之间".show(context)
+                                return@setOnClickListener
+                            }
+                            binding.resetTimeItem.rightTextView.text = "每天 $hour 点"
+                            setTaskResetTime(hour)
+                            dialog.dismiss()
+                        }
+                    }
+                    optionsLayout.addView(item)
+                }
+                // 自定义入口：点开输入框
+                val customItem = SettingItemView(context).apply {
+                    title = "自定义（单位：时）"
+                    setOnClickListener {
+                        dialog.dismiss()
+                        // TODO: 2024/6/10 需要重写
+//                        AlertInputDialog.Builder()
+//                            .setContext(this)
+//                            .setTitle("设置重置时间")
+//                            .setHintMessage("直接输入整数时间即可，如：6")
+//                            .setNegativeButton("取消")
+//                            .setPositiveButton("确定")
+//                            .setOnDialogButtonClickListener(object :
+//                                AlertInputDialog.OnDialogButtonClickListener {
+//                                override fun onConfirmClick(value: String) {
+//                                    if (value.isNumber()) {
+//                                        updateResetHour(value.toInt())
+//                                    } else {
+//                                        "直接输入整数时间即可".show(context)
+//                                    }
+//                                }
+//
+//                                override fun onCancelClick() {}
+//                            }).build().show()
+                    }
+                }
+                optionsLayout.addView(customItem)
+            }
         }
 
         binding.timeoutItem.setOnClickListener {
@@ -120,6 +156,9 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 //                        setTimeByPosition(position)
 //                    }
 //                }).build().show()
+//            showActionSheet(R.layout.sheet_set_over_time) { view, dialog ->
+//
+//            }
         }
 
         binding.keyItem.setOnClickListener {
@@ -226,41 +265,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun updateCustomWorkdaySummary(workdays: Set<DayOfWeek>) {
         binding.workdayValueView.text = CustomWorkdayManager.formatWorkdays(workdays)
-    }
-
-    private fun setHourByPosition(position: Int) {
-        if (position == hourArray.size - 1) {
-            // TODO: 2024/6/10 需要重写
-//            AlertInputDialog.Builder()
-//                .setContext(this)
-//                .setTitle("设置重置时间")
-//                .setHintMessage("直接输入整数时间即可，如：6")
-//                .setNegativeButton("取消")
-//                .setPositiveButton("确定")
-//                .setOnDialogButtonClickListener(object :
-//                    AlertInputDialog.OnDialogButtonClickListener {
-//                    override fun onConfirmClick(value: String) {
-//                        if (value.isNumber()) {
-//                            updateResetHour(value.toInt())
-//                        } else {
-//                            "直接输入整数时间即可".show(context)
-//                        }
-//                    }
-//
-//                    override fun onCancelClick() {}
-//                }).build().show()
-        } else {
-            updateResetHour(hourArray[position].toInt())
-        }
-    }
-
-    private fun updateResetHour(hour: Int) {
-        if (hour !in 0..23) {
-            "重置时间必须在0到23点之间".show(this)
-            return
-        }
-        binding.resetTimeItem.rightTextView.text = "每天${hour}点"
-        setTaskResetTime(hour)
     }
 
     private fun setTaskResetTime(hour: Int) {
