@@ -52,8 +52,9 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="取消"
+            android:textColor="@color/text_secondary_color"
             app:cornerRadius="@dimen/radius"
-            app:strokeColor="@color/theme_color" />
+            app:strokeColor="@color/border_color" />
 
         <Space
             android:layout_width="@dimen/margin_2x"

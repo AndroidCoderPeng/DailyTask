@@ -20,7 +20,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.base.KotlinBaseActivity
@@ -556,12 +555,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             return
         }
         val item = dailyTaskAdapter.itemAt(position) ?: return
-        MaterialAlertDialogBuilder(this)
-            .setTitle("删除任务")
-            .setMessage("确定要删除这个任务吗？")
-            .setCancelable(false) // 禁止点击外部关闭
-            .setPositiveButton("确定") { _, _ -> mainViewModel.deleteTask(item) }
-            .setNegativeButton("取消", null).show()
+        showCustomDialog(R.layout.dialog_delete_task) { view, dialog ->
+            view.findViewById<TextView>(R.id.textView).text =
+                "确定要删除 ${item.time} 的打卡任务吗？"
+            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                mainViewModel.deleteTask(item)
+                dialog.dismiss()
+            }
+            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                dialog.dismiss()
+            }
+        }
     }
 
     private fun handleImportSuccess(event: MainEvent.ImportSuccess) {
