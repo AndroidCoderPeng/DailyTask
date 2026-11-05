@@ -210,7 +210,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 binding.minuteRangeItem.visibility = View.VISIBLE
                 val value =
                     AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
-                binding.minuteRangeItem.rightTextView.text = "${value}分钟"
+                binding.minuteRangeItem.rightTextView.text = "$value 分钟"
             } else {
                 binding.minuteRangeItem.visibility = View.GONE
             }
@@ -221,25 +221,20 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.minuteRangeItem.setOnClickListener {
-            // TODO: 2024/6/10 需要重写
-//            AlertInputDialog.Builder()
-//                .setContext(this)
-//                .setTitle("设置随机时间范围")
-//                .setHintMessage("请输入整数，如：30")
-//                .setNegativeButton("取消")
-//                .setPositiveButton("确定")
-//                .setOnDialogButtonClickListener(object :
-//                    AlertInputDialog.OnDialogButtonClickListener {
-//                    override fun onConfirmClick(value: String) {
-//                        if (value.isNumber()) {
-//                            updateRandomMinuteRange(value.toInt())
-//                        } else {
-//                            "直接输入整数时间即可".show(context)
-//                        }
-//                    }
-//
-//                    override fun onCancelClick() {}
-//                }).build().show()
+            showCustomDialog(R.layout.dialog_set_time_range) { view, dialog ->
+                val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
+                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                    if (inputView.text.isNullOrBlank()) {
+                        "请输入随机时间".show(context)
+                        return@setOnClickListener
+                    }
+                    updateRandomMinuteRange(inputView.text.toString().toInt())
+                    dialog.dismiss()
+                }
+                view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
         }
     }
 
@@ -310,7 +305,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun updateRandomMinuteRange(value: Int) {
         if (value < 0) {
-            "随机时间范围不能小于0分钟".show(this)
+            "随机时间不能小于0分钟".show(this)
             return
         }
         binding.minuteRangeItem.rightTextView.text = "$value 分钟"
