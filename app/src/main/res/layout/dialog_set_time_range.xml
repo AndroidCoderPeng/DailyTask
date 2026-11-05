@@ -24,6 +24,7 @@
         android:hint="直接输入整数时间即可，如：5"
         android:inputType="number"
         android:padding="10dp"
+        android:singleLine="true"
         android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
     <LinearLayout

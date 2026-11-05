@@ -122,6 +122,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                             val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
                             view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
                                 if (inputView.text.isNullOrBlank()) {
+                                    inputView.shakeIfEmpty()
                                     "请输入重置时间".show(context)
                                     return@setOnClickListener
                                 }
@@ -161,6 +162,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                             val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
                             view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
                                 if (inputView.text.isNullOrBlank()) {
+                                    inputView.shakeIfEmpty()
                                     "请输入超时时间".show(context)
                                     return@setOnClickListener
                                 }
@@ -178,22 +180,23 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.keyItem.setOnClickListener {
-            // TODO: 2024/6/10 需要重写
-//            AlertInputDialog.Builder()
-//                .setContext(this)
-//                .setTitle("设置打卡口令")
-//                .setHintMessage("请输入打卡口令，如：打卡")
-//                .setNegativeButton("取消")
-//                .setPositiveButton("确定")
-//                .setOnDialogButtonClickListener(object :
-//                    AlertInputDialog.OnDialogButtonClickListener {
-//                    override fun onConfirmClick(value: String) {
-//                        AppConfig.saveString(Constant.REMOTE_COMMAND_KEY, value)
-//                        binding.keyItem.rightTextView.text = value
-//                    }
-//
-//                    override fun onCancelClick() {}
-//                }).build().show()
+            showCustomDialog(R.layout.dialog_set_remote_command) { view, dialog ->
+                val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
+                inputView.setText(AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡"))
+                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                    if (inputView.text.isNullOrBlank()) {
+                        inputView.shakeIfEmpty()
+                        "请输入打卡口令".show(context)
+                        return@setOnClickListener
+                    }
+                    AppConfig.saveString(Constant.REMOTE_COMMAND_KEY, inputView.text.toString())
+                    binding.keyItem.rightTextView.text = inputView.text.toString()
+                    dialog.dismiss()
+                }
+                view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
         }
 
         binding.workdayLayout.setOnClickListener {
@@ -225,6 +228,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
                 view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
                     if (inputView.text.isNullOrBlank()) {
+                        inputView.shakeIfEmpty()
                         "请输入随机时间".show(context)
                         return@setOnClickListener
                     }
