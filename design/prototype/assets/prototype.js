@@ -25,8 +25,55 @@
     workday: [1, 2, 3, 4, 5],
     editingId: null,
     sheetTimeMode: 'add',
-    targetApp: 'dingtalk'
+    targetApp: 'dingtalk',
+    // 消息渠道：当前生效渠道（wx | mail）与各渠道的配置完成状态
+    msgChannel: 'wx',
+    channelReady: { wx: true, mail: false }
   };
+
+  /* 消息渠道候选：与真机 CHANNEL_EMAIL / CHANNEL_WECHAT 对应 */
+  const CHANNELS = {
+    wx: { label: '企业微信' },
+    mail: { label: 'QQ 邮箱' }
+  };
+
+  function channelReady(ch) {
+    return !!(state.channelReady && state.channelReady[ch]);
+  }
+
+  /* 当前生效渠道的选中态、配置状态、警告条与设置页取值一起刷新 */
+  function renderChannel() {
+    $$('#channelPicker .ch-card').forEach(function (card) {
+      const ch = card.dataset.channel;
+      const active = state.msgChannel === ch;
+      const ready = channelReady(ch);
+      card.classList.toggle('is-active', active);
+      card.setAttribute('aria-pressed', active ? 'true' : 'false');
+      const pill = card.querySelector('.ch-state');
+      pill.className = 'ch-state pill ' + (ready ? 'pill-ok' : 'pill-idle');
+      pill.innerHTML = '<i class="dot"></i>' + (ready ? '已配置' : '未配置');
+    });
+
+    // 当前渠道还没配好时明确提示，避免"以为已经能用"
+    const warn = $('#channelWarn');
+    const cur = state.msgChannel;
+    const anyReady = channelReady('wx') || channelReady('mail');
+    if (cur && channelReady(cur)) {
+      warn.hidden = true;
+    } else {
+      warn.hidden = false;
+      warn.textContent = anyReady
+        ? '当前渠道「' + CHANNELS[cur].label + '」尚未配置，消息将无法送达'
+        : '尚未配置任何渠道，消息将无法送达';
+    }
+
+    // 设置页同步显示当前生效渠道
+    const val = $('#msgChannelValue');
+    if (val) {
+      val.textContent = CHANNELS[cur] ? CHANNELS[cur].label : '未配置';
+      val.classList.toggle('ok', !!CHANNELS[cur]);
+    }
+  }
 
   /* 可作为打卡目标的应用（与唤起测试支持的渠道一致） */
   const TARGET_APPS = [
@@ -617,13 +664,17 @@
       toast('结果来源已切换为「' + seg.textContent.trim() + '」');
     });
 
-    // 消息渠道页：分段
-    $('#channelSegment').addEventListener('click', function (e) {
-      const seg = e.target.closest('.seg');
-      if (!seg) return;
-      $$('#channelSegment .seg').forEach(function (s) { s.classList.remove('is-active'); });
-      seg.classList.add('is-active');
-      $$('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== seg.dataset.value; });
+    // 消息渠道页：选择当前生效渠道（真机侧写入 MSG_CHANNEL_KEY）
+    $('#channelPicker').addEventListener('click', function (e) {
+      const card = e.target.closest('.ch-card');
+      if (!card) return;
+      const ch = card.dataset.channel;
+      if (ch === state.msgChannel) return;
+      state.msgChannel = ch;
+      renderChannel();
+      toast(channelReady(ch)
+        ? '消息回推渠道已切换为「' + CHANNELS[ch].label + '」'
+        : '已切换为「' + CHANNELS[ch].label + '」，但该渠道尚未配置');
     });
 
     // 指令复制
@@ -713,12 +764,23 @@
       else if (act === 'captureTest') { toast('截屏成功，正在通过消息渠道发送'); }
       else if (act === 'sendLog') { toast('日志已打包，正在唤起 QQ'); }
       else if (act === 'testWx') {
-        toast('测试消息已发送，验证通过');
+        toast('测试消息已发送，配置已保存');
         $('#wxStatus .pill').className = 'pill pill-ok';
-        $('#wxStatus .pill').innerHTML = '<i class="dot"></i>已验证';
+        $('#wxStatus .pill').innerHTML = '<i class="dot"></i>已配置';
         $('#wxStatus .status-text').textContent = '配置保存于刚刚';
+        state.channelReady.wx = true;
+        renderChannel();
+        // 待定②：配置完成后是否自动把主渠道切到刚配置的渠道（当前设计稿不自动切换）
       }
-      else if (act === 'testMail') { toast('测试邮件发送成功，配置已保存'); }
+      else if (act === 'testMail') {
+        toast('测试邮件发送成功，配置已保存');
+        $('#mailStatus .pill').className = 'pill pill-ok';
+        $('#mailStatus .pill').innerHTML = '<i class="dot"></i>已配置';
+        $('#mailStatus .status-text').textContent = '配置保存于刚刚';
+        state.channelReady.mail = true;
+        renderChannel();
+        // 待定②：配置完成后是否自动把主渠道切到刚配置的渠道（当前设计稿不自动切换）
+      }
       else if (act === 'resetTime') {
         const opts = [];
         for (let i = 0; i < 8; i++) opts.push({ label: '每天 ' + i + ' 点', value: String(i) });
@@ -859,6 +921,7 @@
     renderRunState();
     renderWorkday();
     renderTargetApp();
+    renderChannel();
     tickClock();
     tickCountdown();
     setInterval(tickClock, 1000);

@@ -197,7 +197,7 @@
                     <span class="row-title">消息渠道</span>
                     <span class="row-desc">打卡结果回推渠道</span>
                   </span>
-                  <span class="row-value ok">企业微信</span>
+                  <span class="row-value ok" id="msgChannelValue">企业微信</span>
                   <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
 
@@ -461,7 +461,30 @@
           </header>
 
           <div class="scroll">
+            <!-- 渠道选择器：决定消息实际从哪个渠道发出（真机侧对应 MSG_CHANNEL_KEY） -->
             <section class="group">
+              <h2 class="group-title">消息回推渠道</h2>
+              <div class="group-body">
+                <div class="row row-block">
+                  <div class="ch-picker" id="channelPicker">
+                    <button class="ch-card is-active" data-channel="wx" aria-pressed="true">
+                      <span class="ch-name">企业微信</span>
+                      <span class="ch-state pill pill-ok"><i class="dot"></i>已配置</span>
+                    </button>
+                    <button class="ch-card" data-channel="mail" aria-pressed="false">
+                      <span class="ch-name">QQ 邮箱</span>
+                      <span class="ch-state pill pill-idle"><i class="dot"></i>未配置</span>
+                    </button>
+                  </div>
+                  <!-- 待定①：主渠道失败自动回退到另一个渠道（现状行为），还是改成严格二选一 -->
+                  <p class="ch-tip">主渠道发送失败时会自动改用另一个渠道</p>
+                  <p class="ch-warn" id="channelWarn" hidden></p>
+                </div>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">消息内容</h2>
               <div class="group-body">
                 <div class="field">
                   <label class="field-label" for="msgTitle">消息标题</label>
@@ -470,12 +493,8 @@
               </div>
             </section>
 
-            <div class="segmented segmented-lg" id="channelSegment">
-              <button class="seg is-active" data-value="wx">企业微信</button>
-              <button class="seg" data-value="mail">QQ 邮箱</button>
-            </div>
-
-            <section class="group" data-panel="wx">
+            <!-- 两个渠道的配置同时展开，互不影响；配置完成不自动改主渠道 -->
+            <section class="group">
               <h2 class="group-title">企业微信</h2>
               <div class="group-body">
                 <div class="field">
@@ -484,7 +503,7 @@
                   <p class="field-hint">群聊设置 → 消息推送 → 复制地址末尾的 key</p>
                 </div>
                 <div class="status-line" id="wxStatus">
-                  <span class="pill pill-ok"><i class="dot"></i>已验证</span>
+                  <span class="pill pill-ok"><i class="dot"></i>已配置</span>
                   <span class="status-text">配置保存于 2026-10-28 14:02</span>
                 </div>
                 <button class="btn btn-outline btn-inset" data-act="testWx">
@@ -494,7 +513,7 @@
               </div>
             </section>
 
-            <section class="group" data-panel="mail" hidden>
+            <section class="group">
               <h2 class="group-title">QQ 邮箱</h2>
               <div class="group-body">
                 <div class="field">
@@ -513,8 +532,8 @@
                   <label class="field-label" for="mailIn">收件箱</label>
                   <input class="input" id="mailIn" value="123456789@qq.com">
                 </div>
-                <div class="status-line">
-                  <span class="pill pill-idle"><i class="dot"></i>未验证</span>
+                <div class="status-line" id="mailStatus">
+                  <span class="pill pill-idle"><i class="dot"></i>未配置</span>
                   <span class="status-text">测试邮件发送成功后才保存</span>
                 </div>
                 <button class="btn btn-outline btn-inset" data-act="testMail">

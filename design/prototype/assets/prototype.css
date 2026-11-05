@@ -399,10 +399,9 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 16px 28px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
-.scroll::-webkit-scrollbar { width: 4px; }
-.scroll::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 4px; }
+.scroll::-webkit-scrollbar { width: 0; height: 0; }
 
 /* ============================ 卡片 ============================ */
 .card {
@@ -729,6 +728,49 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
 
 .status-line { display: flex; align-items: center; gap: 10px; padding: 0 16px 14px; }
 .status-text { font-size: 11.5px; color: var(--text-3); }
+
+/* ---- 消息渠道选择器（决定消息实际从哪个渠道发出） ---- */
+.ch-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ch-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-content: start;
+  gap: 7px;
+  padding: 11px 12px 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .18s var(--ease), background .18s var(--ease);
+}
+.ch-card:active { transform: scale(.985); }
+@media (hover: hover) and (pointer: fine) {
+  .ch-card:hover { border-color: var(--text-3); }
+}
+/* 选中态：左侧竖条 + 主色描边 + 浅蓝底 + 标题主色 */
+.ch-card.is-active {
+  border-color: var(--primary);
+  border-left-color: var(--primary);
+  background: var(--primary-soft);
+}
+.ch-card.is-active .ch-name { color: var(--primary-press); }
+.ch-name {
+  font-size: 13.5px; font-weight: 600; color: var(--text);
+  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ch-state {
+  justify-self: start; gap: 4px;
+  height: 19px; padding: 0 6px; font-size: 10.5px; white-space: nowrap;
+}
+.ch-tip { margin: 0; font-size: 11.5px; color: var(--text-3); line-height: 1.5; }
+.ch-warn {
+  margin: 0; padding: 9px 11px; border-radius: var(--r-sm);
+  background: var(--danger-soft); color: var(--danger);
+  font-size: 12px; line-height: 1.5;
+}
 
 /* ============================ 指令列表 ============================ */
 .notice-card {
