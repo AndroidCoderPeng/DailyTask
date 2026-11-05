@@ -134,6 +134,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 .setPositiveButton("继续") { _, _ ->
                     sendTestMessage(key)
                 }.setNegativeButton("取消", null).show()
+//            showCustomDialog(R.layout.dialog_send_message) { view, dialog ->
+//
+//            }
         }
 
         binding.sendEmailButton.setOnClickListener {
@@ -258,5 +261,8 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                         "发送失败：${it}".show(context)
                     })
             }.setNegativeButton("取消", null).show()
+//        showCustomDialog(R.layout.dialog_send_message) { view, dialog ->
+//
+//        }
     }
 }

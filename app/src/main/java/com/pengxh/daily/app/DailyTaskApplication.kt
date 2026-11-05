@@ -9,7 +9,6 @@ import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.ConfigStore
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
-import com.pengxh.daily.app.utils.SaveKeyValues
 import java.io.File
 import java.io.IOException
 
@@ -36,7 +35,8 @@ class DailyTaskApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         initApplication(this)
-        SaveKeyValues.initialize(this)
+        // SP 初始化必须先于 ConfigStore.init / AppConfig.init（迁移逻辑会读 SP）
+        AppConfig.initialize(this)
         MessageDispatcher.initialize(this)
         LogFileManager.initLogFile(this)
 
