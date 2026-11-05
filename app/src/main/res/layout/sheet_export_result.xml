@@ -94,7 +94,7 @@
             app:itemRightType="none"
             app:itemTitle="复制到剪贴板" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/cancelButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

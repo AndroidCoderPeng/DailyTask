@@ -3,7 +3,6 @@ package com.pengxh.daily.app.ui
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.LinearLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -11,6 +10,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.WorkdayAdapter
 import com.pengxh.daily.app.base.KotlinBaseActivity
@@ -121,7 +121,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                         dialog.dismiss()
                         showCustomDialog(R.layout.dialog_set_reset_time) { view, dialog ->
                             val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
-                            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                            view.findViewById<MaterialButton>(R.id.confirmButton)
+                                .setOnClickListener {
                                 if (inputView.text.isNullOrBlank()) {
                                     inputView.shakeIfEmpty()
                                     "请输入重置时间".show(context)
@@ -130,7 +131,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                                 updateResetHour(inputView.text.toString().toInt())
                                 dialog.dismiss()
                             }
-                            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                            view.findViewById<MaterialButton>(R.id.cancelButton)
+                                .setOnClickListener {
                                 dialog.dismiss()
                             }
                         }
@@ -161,7 +163,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                         dialog.dismiss()
                         showCustomDialog(R.layout.dialog_set_custom_time) { view, dialog ->
                             val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
-                            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                            view.findViewById<MaterialButton>(R.id.confirmButton)
+                                .setOnClickListener {
                                 if (inputView.text.isNullOrBlank()) {
                                     inputView.shakeIfEmpty()
                                     "请输入超时时间".show(context)
@@ -170,7 +173,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                                 updateTimeout(inputView.text.toString().toInt())
                                 dialog.dismiss()
                             }
-                            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                            view.findViewById<MaterialButton>(R.id.cancelButton)
+                                .setOnClickListener {
                                 dialog.dismiss()
                             }
                         }
@@ -184,7 +188,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             showCustomDialog(R.layout.dialog_set_remote_command) { view, dialog ->
                 val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
                 inputView.setText(AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡"))
-                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                     if (inputView.text.isNullOrBlank()) {
                         inputView.shakeIfEmpty()
                         "请输入打卡口令".show(context)
@@ -194,7 +198,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     binding.keyItem.rightTextView.text = inputView.text.toString()
                     dialog.dismiss()
                 }
-                view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                view.findViewById<MaterialButton>(R.id.cancelButton).setOnClickListener {
                     dialog.dismiss()
                 }
             }
@@ -248,7 +252,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         binding.minuteRangeItem.setOnClickListener {
             showCustomDialog(R.layout.dialog_set_time_range) { view, dialog ->
                 val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
-                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                     if (inputView.text.isNullOrBlank()) {
                         inputView.shakeIfEmpty()
                         "请输入随机时间".show(context)
@@ -257,7 +261,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     updateRandomMinuteRange(inputView.text.toString().toInt())
                     dialog.dismiss()
                 }
-                view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                view.findViewById<MaterialButton>(R.id.cancelButton).setOnClickListener {
                     dialog.dismiss()
                 }
             }

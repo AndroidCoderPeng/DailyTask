@@ -154,7 +154,6 @@
                 android:layout_marginHorizontal="@dimen/margin_2x"
                 android:layout_marginVertical="@dimen/dp_12"
                 android:text="启动今日任务"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium.Emphasized"
                 app:cornerRadius="@dimen/radius"
                 app:icon="@mipmap/ic_start"
                 app:iconGravity="textStart"

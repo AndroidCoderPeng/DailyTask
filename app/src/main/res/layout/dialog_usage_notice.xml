@@ -49,7 +49,7 @@
         android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
         android:textColor="@color/text_secondary_color" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/confirmButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -41,7 +41,7 @@
             app:wheel_secondLabel="秒"
             app:wheel_timeMode="hour_24_has_second" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/confirmButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

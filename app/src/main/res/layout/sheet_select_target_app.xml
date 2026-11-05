@@ -79,7 +79,7 @@
             app:itemRightType="toggle"
             app:itemTitle="移动办公M3" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/confirmButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

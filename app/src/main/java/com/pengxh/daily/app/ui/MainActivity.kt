@@ -9,7 +9,6 @@ import android.provider.Settings
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
-import android.widget.Button
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -20,6 +19,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
+import com.google.android.material.button.MaterialButton
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
 import com.pengxh.daily.app.base.KotlinBaseActivity
@@ -154,7 +154,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
                     showActionSheet(R.layout.sheet_add_task) { view, dialog ->
                         val timePicker = view.findViewById<TimeWheelLayout>(R.id.timePicker)
-                        view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                        view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                             val time = String.Companion.format(
                                 Locale.CHINA, "%02d:%02d:%02d",
                                 timePicker.selectedHour,
@@ -169,7 +169,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
                 R.id.menu_settings -> {
                     showCustomDialog(R.layout.dialog_usage_notice, false) { view, dialog ->
-                        view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                        view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                             dialog.dismiss()
                             navigatePageTo<SettingsActivity>()
                         }
@@ -196,12 +196,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.importTaskView.setOnClickListener {
             showCustomDialog(R.layout.dialog_import_input) { view, dialog ->
                 val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
-                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                     val json = inputView.text.toString()
                     mainViewModel.importTasks(json)
                     dialog.dismiss()
                 }
-                view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                view.findViewById<MaterialButton>(R.id.cancelButton).setOnClickListener {
                     dialog.dismiss()
                 }
             }
@@ -354,7 +354,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                                     "已复制到剪贴板".show(this@MainActivity)
                                     dialog.dismiss()
                                 }
-                            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                            view.findViewById<MaterialButton>(R.id.cancelButton)
+                                .setOnClickListener {
                                 dialog.dismiss()
                             }
                         }
@@ -533,7 +534,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         showActionSheet(R.layout.sheet_edit_task) { view, dialog ->
             val timePicker = view.findViewById<TimeWheelLayout>(R.id.timePicker)
             timePicker.setDefaultValue(item.time.toTimeEntity())
-            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+            view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                 val time = String.Companion.format(
                     Locale.CHINA, "%02d:%02d:%02d",
                     timePicker.selectedHour,
@@ -558,11 +559,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         showCustomDialog(R.layout.dialog_delete_task) { view, dialog ->
             view.findViewById<TextView>(R.id.textView).text =
                 "确定要删除 ${item.time} 的打卡任务吗？"
-            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+            view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                 mainViewModel.deleteTask(item)
                 dialog.dismiss()
             }
-            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+            view.findViewById<MaterialButton>(R.id.cancelButton).setOnClickListener {
                 dialog.dismiss()
             }
         }
@@ -578,7 +579,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         } else {
             showCustomDialog(R.layout.dialog_import_result) { view, dialog ->
                 view.findViewById<TextView>(R.id.textView).text = event.warnings.joinToString("\n")
-                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                     dialog.dismiss()
                 }
             }

@@ -37,7 +37,7 @@
         android:textColor="@color/text_secondary_color"
         tools:text="本软件完全免费！仅供内部学习研究使用！" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/confirmButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
