@@ -765,7 +765,6 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
   justify-self: start; gap: 4px;
   height: 19px; padding: 0 6px; font-size: 10.5px; white-space: nowrap;
 }
-.ch-tip { margin: 0; font-size: 11.5px; color: var(--text-3); line-height: 1.5; }
 .ch-warn {
   margin: 0; padding: 9px 11px; border-radius: var(--r-sm);
   background: var(--danger-soft); color: var(--danger);
