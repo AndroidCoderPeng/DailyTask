@@ -30,7 +30,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private val kTag = "TaskConfigActivity"
     private val context = this@TaskConfigActivity
-    private val timeArray = listOf("15", "30", "45", "自定义（单位：秒）")
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
         return ActivityTaskConfigBinding.inflate(layoutInflater)
@@ -56,10 +55,10 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
         val hour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-        binding.resetTimeItem.rightTextView.text = "每天${hour}点"
+        binding.resetTimeItem.rightTextView.text = "每天 $hour 点"
 
         val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
-        binding.timeoutItem.rightTextView.text = "${time}s"
+        binding.timeoutItem.rightTextView.text = "$time 秒"
 
         binding.keyItem.rightTextView.text =
             AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
@@ -80,7 +79,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         if (needRandom) {
             binding.minuteRangeItem.visibility = View.VISIBLE
             val value = AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
-            binding.minuteRangeItem.rightTextView.text = "${value}分钟"
+            binding.minuteRangeItem.rightTextView.text = "$value 分钟"
         } else {
             binding.minuteRangeItem.visibility = View.GONE
         }
@@ -115,6 +114,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     }
                     optionsLayout.addView(item)
                 }
+
                 // 自定义入口：点开输入框
                 val customItem = SettingItemView(context).apply {
                     title = "自定义（单位：时）"
@@ -146,19 +146,53 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         }
 
         binding.timeoutItem.setOnClickListener {
-            // TODO: 2024/6/10 需要重写
-//            BottomActionSheet.Builder()
-//                .setContext(this)
-//                .setActionItemTitle(timeArray)
-//                .setItemTextColor(R.color.theme_color.convertColor(this))
-//                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-//                    override fun onActionItemClick(position: Int) {
-//                        setTimeByPosition(position)
-//                    }
-//                }).build().show()
-//            showActionSheet(R.layout.sheet_set_over_time) { view, dialog ->
+            showActionSheet(R.layout.sheet_set_over_time) { view, dialog ->
+                val optionsLayout = view.findViewById<LinearLayout>(R.id.optionsLayout)
+                listOf(15, 30, 45, 60).forEach { seconds ->
+                    val item = SettingItemView(this).apply {
+                        title = "$seconds 秒"
+                        setOnClickListener {
+                            if (seconds <= 0) {
+                                "超时时间必须大于0秒".show(context)
+                                return@setOnClickListener
+                            }
+                            binding.timeoutItem.rightTextView.text = "$seconds 秒"
+                            AppConfig.saveInt(Constant.STAY_OVERTIME_KEY, seconds)
+                            FloatingWindowController.setOvertime(seconds)
+                            dialog.dismiss()
+                        }
+                    }
+                    optionsLayout.addView(item)
+                }
+
+                // 自定义入口：点开输入框
+                val customItem = SettingItemView(context).apply {
+                    title = "自定义（单位：秒）"
+                    setOnClickListener {
+                        dialog.dismiss()
+                        // TODO: 2024/6/10 需要重写
+//                        AlertInputDialog.Builder()
+//                            .setContext(this)
+//                            .setTitle("设置超时时间")
+//                            .setHintMessage("直接输入整数时间即可，如：60")
+//                            .setNegativeButton("取消")
+//                            .setPositiveButton("确定")
+//                            .setOnDialogButtonClickListener(object :
+//                                AlertInputDialog.OnDialogButtonClickListener {
+//                                override fun onConfirmClick(value: String) {
+//                                    if (value.isNumber()) {
+//                                        updateTimeout(value.toInt())
+//                                    } else {
+//                                        "直接输入整数时间即可".show(context)
+//                                    }
+//                                }
 //
-//            }
+//                                override fun onCancelClick() {}
+//                            }).build().show()
+                    }
+                }
+                optionsLayout.addView(customItem)
+            }
         }
 
         binding.keyItem.setOnClickListener {
@@ -271,42 +305,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         AppConfig.saveInt(Constant.RESET_TIME_KEY, hour)
         // 通知 Service 更新倒计时显示
         ForegroundRunningService.emitResetTaskTime()
-    }
-
-    private fun setTimeByPosition(position: Int) {
-        if (position == timeArray.size - 1) {
-            // TODO: 2024/6/10 需要重写
-//            AlertInputDialog.Builder()
-//                .setContext(this)
-//                .setTitle("设置超时时间")
-//                .setHintMessage("直接输入整数时间即可，如：60")
-//                .setNegativeButton("取消")
-//                .setPositiveButton("确定")
-//                .setOnDialogButtonClickListener(object :
-//                    AlertInputDialog.OnDialogButtonClickListener {
-//                    override fun onConfirmClick(value: String) {
-//                        if (value.isNumber()) {
-//                            updateTimeout(value.toInt())
-//                        } else {
-//                            "直接输入整数时间即可".show(context)
-//                        }
-//                    }
-//
-//                    override fun onCancelClick() {}
-//                }).build().show()
-        } else {
-            updateTimeout(timeArray[position].toInt())
-        }
-    }
-
-    private fun updateTimeout(time: Int) {
-        if (time <= 0) {
-            "超时时间必须大于0秒".show(this)
-            return
-        }
-        binding.timeoutItem.rightTextView.text = "${time}s"
-        AppConfig.saveInt(Constant.STAY_OVERTIME_KEY, time)
-        FloatingWindowController.setOvertime(time)
     }
 
     private fun updateRandomMinuteRange(value: Int) {
