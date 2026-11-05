@@ -305,24 +305,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         FloatingWindowController.setOvertime(time)
     }
 
-    private fun shareTextTo(packageName: String, appName: String, text: String) {
-        if (!isApplicationExist(packageName)) {
-            "请先安装${appName}".show(this)
-            return
-        }
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, text)
-            setPackage(packageName)
-        }
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            "分享失败".show(this)
-        }
-    }
-
     private fun updateRandomMinuteRange(value: Int) {
         if (value < 0) {
             "随机时间范围不能小于0分钟".show(this)

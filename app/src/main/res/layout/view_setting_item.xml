@@ -13,8 +13,8 @@
 
     <ImageView
         android:id="@+id/itemIconView"
-        android:layout_width="28dp"
-        android:layout_height="28dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:layout_marginEnd="@dimen/dp_12"
         android:visibility="gone"
         tools:src="@mipmap/ic_launcher"

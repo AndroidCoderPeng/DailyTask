@@ -27,8 +27,10 @@ import com.pengxh.daily.app.databinding.ActivityMainBinding
 import com.pengxh.daily.app.events.MainEvent
 import com.pengxh.daily.app.events.MonitorEvent
 import com.pengxh.daily.app.events.TipsEvent
+import com.pengxh.daily.app.extensions.isApplicationExist
 import com.pengxh.daily.app.extensions.navigatePageTo
 import com.pengxh.daily.app.extensions.show
+import com.pengxh.daily.app.extensions.showActionSheet
 import com.pengxh.daily.app.extensions.showCustomDialog
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
@@ -48,6 +50,7 @@ import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MainViewModel
 import com.pengxh.daily.app.widget.DeletableEditText
+import com.pengxh.daily.app.widget.SettingItemView
 import com.pengxh.daily.app.widget.TaskTimeDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -66,7 +69,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         GestureController(this, maskViewController, ::saveMaskMode)
     }
     private val mainViewModel: MainViewModel by viewModels()
-    private val optionArray = listOf("QQ", "微信", "TIM", "支付宝", "剪切板")
     private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 
     private val dailyTaskAdapter by lazy {
@@ -316,33 +318,60 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     is MainEvent.ImportError -> event.message.show(this@MainActivity)
 
                     is MainEvent.ExportSuccess -> {
-                        val cipData = ClipData.newPlainText("TaskConfig", event.json)
-                        clipboard.setPrimaryClip(cipData)
-                        "已复制到剪切板".show(this@MainActivity)
-
-                        // TODO: 2024/6/10 需要重写
-//                BottomActionSheet.Builder()
-//                    .setContext(this@TaskConfigActivity)
-//                    .setActionItemTitle(optionArray)
-//                    .setItemTextColor(R.color.theme_color.convertColor(this@TaskConfigActivity))
-//                    .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-//                        override fun onActionItemClick(position: Int) {
-//                            when (position) {
-//                                0 -> shareTextTo(Constant.QQ, "QQ", json)
-//                                1 -> shareTextTo(Constant.WECHAT, "微信", json)
-//                                2 -> shareTextTo(Constant.TIM, "TIM", json)
-//                                3 -> shareTextTo(Constant.ZFB, "支付宝", json)
-//                                4 -> {
-//                                    val cipData = ClipData.newPlainText("TaskConfig", json)
-//                                    clipboard.setPrimaryClip(cipData)
-//                                    "已复制到剪切板".show(context)
-//                                }
-//                            }
-//                        }
-//                    }).build().show()
+                        showActionSheet(R.layout.sheet_export_result) { view, dialog ->
+                            val content = event.json
+                            view.findViewById<SettingItemView>(R.id.qqItemView)
+                                .setOnClickListener {
+                                    shareTextTo(Constant.QQ, "QQ", content)
+                                    dialog.dismiss()
+                                }
+                            view.findViewById<SettingItemView>(R.id.wxItemView)
+                                .setOnClickListener {
+                                    shareTextTo(Constant.WECHAT, "微信", content)
+                                    dialog.dismiss()
+                                }
+                            view.findViewById<SettingItemView>(R.id.timItemView)
+                                .setOnClickListener {
+                                    shareTextTo(Constant.TIM, "TIM", content)
+                                    dialog.dismiss()
+                                }
+                            view.findViewById<SettingItemView>(R.id.alipayItemView)
+                                .setOnClickListener {
+                                    shareTextTo(Constant.ZFB, "支付宝", content)
+                                    dialog.dismiss()
+                                }
+                            view.findViewById<SettingItemView>(R.id.clipboardItemView)
+                                .setOnClickListener {
+                                    val cipData = ClipData.newPlainText("TaskConfig", content)
+                                    clipboard.setPrimaryClip(cipData)
+                                    "已复制到剪贴板".show(this@MainActivity)
+                                    dialog.dismiss()
+                                }
+                            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                                dialog.dismiss()
+                            }
+                        }
                     }
                 }
             }
+        }
+    }
+
+    private fun shareTextTo(packageName: String, appName: String, text: String) {
+        if (!isApplicationExist(packageName)) {
+            "请先安装${appName}".show(this)
+            return
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+            setPackage(packageName)
+        }
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            "分享失败".show(this)
         }
     }
 

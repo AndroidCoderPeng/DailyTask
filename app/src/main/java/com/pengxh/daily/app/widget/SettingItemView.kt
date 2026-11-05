@@ -1,9 +1,12 @@
 package com.pengxh.daily.app.widget
 
 import android.content.Context
+import android.graphics.Outline
 import android.util.AttributeSet
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewOutlineProvider
 import android.widget.ImageView
 import android.widget.LinearLayout
 import androidx.appcompat.widget.SwitchCompat
@@ -42,6 +45,17 @@ class SettingItemView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : LinearLayout(context, attrs, defStyleAttr) {
 
+    companion object {
+        private const val TYPE_NONE = 0
+        private const val TYPE_ICON = 1
+        private const val TYPE_ARROW = 2
+        private const val TYPE_SWITCH = 3
+        private const val TYPE_TEXT = 4
+    }
+
+    // 0 表示尚未计算最小行高
+    private var rowMinHeight = 0
+
     val iconView: ImageView
     val titleView: MaterialTextView
     val descView: MaterialTextView
@@ -66,6 +80,22 @@ class SettingItemView @JvmOverloads constructor(
         get() = rightTextView.text
         set(value) {
             rightTextView.text = value
+        }
+
+    /**
+     * 圆角半径（px）。> 0 时通过 outline 裁剪，背景、子内容一起变圆角；
+     * 默认 0 表示无圆角（不裁剪）
+     */
+    var cornerRadius = 0f
+        set(value) {
+            field = value
+            if (value > 0f) {
+                outlineProvider = RoundedOutlineProvider(value)
+                clipToOutline = true
+            } else {
+                outlineProvider = ViewOutlineProvider.BACKGROUND
+                clipToOutline = false
+            }
         }
 
     init {
@@ -114,6 +144,7 @@ class SettingItemView @JvmOverloads constructor(
             }
 
             ta.getString(R.styleable.SettingItemView_itemTitle)?.let { titleView.text = it }
+
             val titleAppearance =
                 ta.getResourceId(R.styleable.SettingItemView_itemTitleAppearance, 0)
             if (titleAppearance != 0) {
@@ -130,17 +161,24 @@ class SettingItemView @JvmOverloads constructor(
             } else {
                 descView.visibility = GONE
             }
+
             val descAppearance =
                 ta.getResourceId(R.styleable.SettingItemView_itemDescAppearance, 0)
             if (descAppearance != 0) {
                 TextViewCompat.setTextAppearance(descView, descAppearance)
             }
+
             if (ta.hasValue(R.styleable.SettingItemView_itemDescColor)) {
                 descView.setTextColor(ta.getColor(R.styleable.SettingItemView_itemDescColor, 0))
             }
 
             if (ta.getBoolean(R.styleable.SettingItemView_itemRightIconRound, false)) {
                 rightIconView.roundPercent = 1.0f
+            }
+
+            val cornerRadius = ta.getDimension(R.styleable.SettingItemView_itemCornerRadius, 0f)
+            if (cornerRadius > 0f) {
+                this.cornerRadius = cornerRadius
             }
 
             when (ta.getInt(R.styleable.SettingItemView_itemRightType, TYPE_NONE)) {
@@ -176,14 +214,9 @@ class SettingItemView @JvmOverloads constructor(
         }
     }
 
-    // 0 表示尚未计算最小行高
-    private var rowMinHeight = 0
-
-    companion object {
-        private const val TYPE_NONE = 0
-        private const val TYPE_ICON = 1
-        private const val TYPE_ARROW = 2
-        private const val TYPE_SWITCH = 3
-        private const val TYPE_TEXT = 4
+    private class RoundedOutlineProvider(private val radius: Float) : ViewOutlineProvider() {
+        override fun getOutline(view: View, outline: Outline) {
+            outline.setRoundRect(0, 0, view.width, view.height, radius)
+        }
     }
 }

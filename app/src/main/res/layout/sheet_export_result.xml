@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="@dimen/radius_3x"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/padding_2x">
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/light_gray" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingVertical="@dimen/padding"
+            android:text="导出任务配置"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/margin_2x"
+            android:text="选择分享渠道，配置将打包为JSON"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="@color/text_secondary_color" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/qqItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="通过 QQ 分享给好友或者设备"
+            app:itemIcon="@drawable/ic_export_qq"
+            app:itemRightType="none"
+            app:itemTitle="QQ" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/wxItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/margin"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="通过微信分享给好友"
+            app:itemIcon="@drawable/ic_export_wx"
+            app:itemRightType="none"
+            app:itemTitle="微信" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/timItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="通过 TIM 分享给好友或者设备"
+            app:itemIcon="@drawable/ic_export_tim"
+            app:itemRightType="none"
+            app:itemTitle="TIM" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/alipayItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/margin"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="通过支付宝分享给好友"
+            app:itemIcon="@drawable/ic_export_alipay"
+            app:itemRightType="none"
+            app:itemTitle="支付宝" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/clipboardItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="复制后可粘贴到任意应用"
+            app:itemIcon="@drawable/ic_export_clipboard"
+            app:itemRightType="none"
+            app:itemTitle="复制到剪贴板" />
+
+        <Button
+            android:id="@+id/cancelButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_2x"
+            android:backgroundTint="@color/back_ground_color"
+            android:insetTop="2dp"
+            android:insetBottom="2dp"
+            android:text="取消"
+            android:textColor="@color/text_secondary_color"
+            app:cornerRadius="@dimen/radius" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

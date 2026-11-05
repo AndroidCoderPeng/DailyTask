@@ -47,5 +47,8 @@
         <attr name="itemRightText" format="string" />
         <attr name="itemRightTextColor" format="color|reference" />
         <attr name="itemRightTextAppearance" format="reference" />
+
+        <!-- 圆角 -->
+        <attr name="itemCornerRadius" format="dimension" />
     </declare-styleable>
 </resources>
