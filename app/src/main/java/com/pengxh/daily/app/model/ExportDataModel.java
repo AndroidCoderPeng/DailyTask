@@ -28,6 +28,7 @@ public class ExportDataModel {
     private boolean randomTime; // 随机时间
     private boolean skipHoliday; // 跳过节假日
     private boolean savePower; // 省电模式
+    private boolean remoteClockInCapture; // 远程打卡指令返回截图
 
     private Triple<String, String, String> emailConfig; // 邮箱配置<发件箱、授权码、收件箱>
     private List<DailyTaskBean> tasks; // 任务列表
@@ -159,6 +160,14 @@ public class ExportDataModel {
 
     public void setSavePower(boolean savePower) {
         this.savePower = savePower;
+    }
+
+    public boolean isRemoteClockInCapture() {
+        return remoteClockInCapture;
+    }
+
+    public void setRemoteClockInCapture(boolean remoteClockInCapture) {
+        this.remoteClockInCapture = remoteClockInCapture;
     }
 
     public Triple<String, String, String> getEmailConfig() {

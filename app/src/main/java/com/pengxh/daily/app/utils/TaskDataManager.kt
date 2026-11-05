@@ -6,9 +6,12 @@ import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.extensions.notificationEnable
+import com.pengxh.daily.app.extensions.toJson
 import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.sqlite.DatabaseWrapper
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class TaskDataManager() {
 
@@ -47,6 +50,68 @@ class TaskDataManager() {
             e.printStackTrace()
             ImportResult.Error("导入失败：${e.message}")
         }
+    }
+
+    suspend fun exportTasks(): String {
+        val exportData = ExportDataModel()
+
+        // Int
+        exportData.resetTime =
+            AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
+        exportData.overtime =
+            AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
+        exportData.timeRange =
+            AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
+        exportData.msgChannel = AppConfig.loadInt(
+            Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX
+        ).takeIf { it in 0..1 }
+        exportData.targetApp = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
+        exportData.resultSource = AppConfig.loadInt(
+            Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
+        ).takeIf { it in 0..1 }
+
+        // String
+        exportData.remoteCommand = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
+        exportData.msgTitle =
+            AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
+        exportData.wxKey = AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "")
+        exportData.customWorkdays = CustomWorkdayManager.serializeWorkdays(
+            CustomWorkdayManager.loadWorkdays()
+        )
+
+        // Boolean
+        exportData.isDetectGesture =
+            AppConfig.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
+        exportData.isBackToHome = AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
+        exportData.isAutoRecycle =
+            AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
+        exportData.isRandomTime = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
+        exportData.isSkipHoliday = AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+        exportData.isSavePower =
+            AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+        exportData.isRemoteClockInCapture =
+            AppConfig.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false)
+
+        // EmailConfig
+        val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
+        if (!obj.isEmpty) {
+            val outbox = obj.get("outbox").asString
+            val authCode = obj.get("authCode").asString
+            val inbox = obj.get("inbox").asString
+            exportData.emailConfig = Triple(outbox, authCode, inbox)
+        }
+
+        // TaskBeans
+        val taskBeans = withContext(Dispatchers.IO) {
+            DatabaseWrapper.loadAllTask()
+        }
+        if (taskBeans.isNotEmpty()) {
+            exportData.tasks = taskBeans
+        } else {
+            exportData.tasks = ArrayList<DailyTaskBean>()
+        }
+
+        return exportData.toJson()
     }
 
     private fun saveConfiguration(config: ExportDataModel): List<String> {
@@ -134,6 +199,7 @@ class TaskDataManager() {
         AppConfig.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
         AppConfig.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
         AppConfig.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isSavePower)
+        AppConfig.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, config.isRemoteClockInCapture)
 
         //
         val email = config.emailConfig

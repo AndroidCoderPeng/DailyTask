@@ -21,4 +21,7 @@ sealed class MainEvent {
 
     /** 导入失败 */
     data class ImportError(val message: String) : MainEvent()
+
+    /** 导出成功 */
+    data class ExportSuccess(val json: String) : MainEvent()
 }

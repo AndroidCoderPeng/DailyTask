@@ -1,5 +1,7 @@
 package com.pengxh.daily.app.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
@@ -8,6 +10,7 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.graphics.ColorUtils
@@ -37,7 +40,6 @@ import com.pengxh.daily.app.utils.DailyTask
 import com.pengxh.daily.app.utils.GestureController
 import com.pengxh.daily.app.utils.Key
 import com.pengxh.daily.app.utils.LogFileManager
-import com.pengxh.daily.app.utils.MainDialogManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionSession
@@ -45,6 +47,7 @@ import com.pengxh.daily.app.utils.TaskListState
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MainViewModel
+import com.pengxh.daily.app.widget.DeletableEditText
 import com.pengxh.daily.app.widget.TaskTimeDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -55,9 +58,6 @@ import java.util.Locale
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private val permissionContract = ActivityResultContracts.StartActivityForResult()
-
-    private val mainViewModel: MainViewModel by viewModels()
-
     private val insetsController by lazy {
         WindowCompat.getInsetsController(window, binding.rootView)
     }
@@ -65,6 +65,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private val gestureController by lazy {
         GestureController(this, maskViewController, ::saveMaskMode)
     }
+    private val mainViewModel: MainViewModel by viewModels()
+    private val optionArray = listOf("QQ", "微信", "TIM", "支付宝", "剪切板")
+    private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 
     private val dailyTaskAdapter by lazy {
         DailyTaskAdapter().apply {
@@ -182,8 +185,22 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
 
         binding.importTaskView.setOnClickListener {
-            MainDialogManager.showImportInput(this) { json ->
-                mainViewModel.importTasks(json)
+            showCustomDialog(R.layout.dialog_import_input) { view, dialog ->
+                val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
+                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                    val json = inputView.text.toString()
+                    mainViewModel.importTasks(json)
+                    dialog.dismiss()
+                }
+                view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
+        }
+
+        binding.exportTaskView.setOnClickListener {
+            lifecycleScope.launch {
+                mainViewModel.exportTasks()
             }
         }
     }
@@ -297,6 +314,33 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                     is MainEvent.ImportSuccess -> handleImportSuccess(event)
 
                     is MainEvent.ImportError -> event.message.show(this@MainActivity)
+
+                    is MainEvent.ExportSuccess -> {
+                        val cipData = ClipData.newPlainText("TaskConfig", event.json)
+                        clipboard.setPrimaryClip(cipData)
+                        "已复制到剪切板".show(this@MainActivity)
+
+                        // TODO: 2024/6/10 需要重写
+//                BottomActionSheet.Builder()
+//                    .setContext(this@TaskConfigActivity)
+//                    .setActionItemTitle(optionArray)
+//                    .setItemTextColor(R.color.theme_color.convertColor(this@TaskConfigActivity))
+//                    .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
+//                        override fun onActionItemClick(position: Int) {
+//                            when (position) {
+//                                0 -> shareTextTo(Constant.QQ, "QQ", json)
+//                                1 -> shareTextTo(Constant.WECHAT, "微信", json)
+//                                2 -> shareTextTo(Constant.TIM, "TIM", json)
+//                                3 -> shareTextTo(Constant.ZFB, "支付宝", json)
+//                                4 -> {
+//                                    val cipData = ClipData.newPlainText("TaskConfig", json)
+//                                    clipboard.setPrimaryClip(cipData)
+//                                    "已复制到剪切板".show(context)
+//                                }
+//                            }
+//                        }
+//                    }).build().show()
+                    }
                 }
             }
         }
@@ -480,7 +524,12 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         if (event.warnings.isEmpty()) {
             "任务导入成功".show(this@MainActivity)
         } else {
-            MainDialogManager.showImportResult(this@MainActivity, event.warnings)
+            showCustomDialog(R.layout.dialog_import_result) { view, dialog ->
+                view.findViewById<TextView>(R.id.textView).text = event.warnings.joinToString("\n")
+                view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
         }
     }
 

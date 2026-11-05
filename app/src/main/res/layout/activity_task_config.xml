@@ -172,30 +172,6 @@
                         app:itemTitle="时间范围" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/dp_12"
-                android:layout_marginBottom="@dimen/margin_half"
-                android:text="配置迁移"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
-                android:textColor="#ABABAB" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/white"
-                app:strokeColor="@color/border_color">
-
-                <com.pengxh.daily.app.widget.SettingItemView
-                    android:id="@+id/exportItem"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    app:itemDesc="分享到 QQ / 微信 / TIM / 支付宝，或复制到剪贴板"
-                    app:itemRightType="arrow"
-                    app:itemTitle="导出配置" />
-            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </LinearLayout>

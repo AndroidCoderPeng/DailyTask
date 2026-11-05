@@ -1,10 +1,8 @@
 package com.pengxh.daily.app.ui
 
-import android.content.ClipboardManager
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -16,20 +14,14 @@ import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.isApplicationExist
 import com.pengxh.daily.app.extensions.show
-import com.pengxh.daily.app.extensions.toJson
-import com.pengxh.daily.app.model.ExportDataModel
 import com.pengxh.daily.app.service.ForegroundRunningService
-import com.pengxh.daily.app.sqlite.DatabaseWrapper
-import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.TaskScheduler
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
@@ -38,8 +30,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     private val context = this
     private val hourArray = listOf("0", "1", "2", "3", "4", "5", "6", "自定义（单位：时）")
     private val timeArray = listOf("15", "30", "45", "自定义（单位：秒）")
-    private val optionArray = listOf("QQ", "微信", "TIM", "支付宝", "剪切板")
-    private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
         return ActivityTaskConfigBinding.inflate(layoutInflater)
@@ -195,90 +185,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 //
 //                    override fun onCancelClick() {}
 //                }).build().show()
-        }
-
-        binding.exportItem.setOnClickListener {
-            val exportData = ExportDataModel()
-
-            // Int
-            exportData.resetTime =
-                AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-            exportData.overtime =
-                AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
-            exportData.timeRange =
-                AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
-            exportData.msgChannel = AppConfig.loadInt(
-                Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX
-            ).takeIf { it in 0..1 }
-            exportData.targetApp = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
-            exportData.resultSource = AppConfig.loadInt(
-                Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
-            ).takeIf { it in 0..1 }
-
-            // String
-            exportData.remoteCommand = AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
-            exportData.msgTitle =
-                AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
-            exportData.wxKey = AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "")
-            exportData.customWorkdays = CustomWorkdayManager.serializeWorkdays(
-                CustomWorkdayManager.loadWorkdays()
-            )
-
-            // Boolean
-            exportData.isDetectGesture =
-                AppConfig.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
-            exportData.isBackToHome = AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
-            exportData.isAutoRecycle =
-                AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
-            exportData.isRandomTime = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
-            exportData.isSkipHoliday = AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
-            exportData.isSavePower =
-                AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
-
-            // EmailConfig
-            val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
-            if (!obj.isEmpty) {
-                val outbox = obj.get("outbox").asString
-                val authCode = obj.get("authCode").asString
-                val inbox = obj.get("inbox").asString
-                exportData.emailConfig = Triple(outbox, authCode, inbox)
-            }
-
-            // TaskBeans
-            lifecycleScope.launch {
-                val taskBeans = withContext(Dispatchers.IO) {
-                    DatabaseWrapper.loadAllTask()
-                }
-                if (taskBeans.isNotEmpty()) {
-                    exportData.tasks = taskBeans
-                } else {
-                    exportData.tasks = ArrayList<DailyTaskBean>()
-                }
-
-                val json = exportData.toJson()
-                Log.d(kTag, json)
-
-                // TODO: 2024/6/10 需要重写
-//                BottomActionSheet.Builder()
-//                    .setContext(this@TaskConfigActivity)
-//                    .setActionItemTitle(optionArray)
-//                    .setItemTextColor(R.color.theme_color.convertColor(this@TaskConfigActivity))
-//                    .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-//                        override fun onActionItemClick(position: Int) {
-//                            when (position) {
-//                                0 -> shareTextTo(Constant.QQ, "QQ", json)
-//                                1 -> shareTextTo(Constant.WECHAT, "微信", json)
-//                                2 -> shareTextTo(Constant.TIM, "TIM", json)
-//                                3 -> shareTextTo(Constant.ZFB, "支付宝", json)
-//                                4 -> {
-//                                    val cipData = ClipData.newPlainText("TaskConfig", json)
-//                                    clipboard.setPrimaryClip(cipData)
-//                                    "已复制到剪切板".show(context)
-//                                }
-//                            }
-//                        }
-//                    }).build().show()
-            }
         }
     }
 

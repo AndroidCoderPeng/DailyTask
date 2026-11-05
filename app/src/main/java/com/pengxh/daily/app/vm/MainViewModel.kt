@@ -104,6 +104,11 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    fun exportTasks() = launch(onError = { logError("导出任务失败", it) }) {
+        val json = withContext(Dispatchers.IO) { taskDataManager.exportTasks() }
+        _events.send(MainEvent.ExportSuccess(json))
+    }
+
     /**
      * 是否存在任务（用于启动任务前的校验）
      * */
