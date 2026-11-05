@@ -198,10 +198,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 if (isFinishing || isDestroyed) return@sendMessage
                 LoadingDialog.dismiss()
 
-                if (!AppConfig.saveWebhookAndChannel(webhookKey, 1)) {
-                    "测试消息发送成功，但配置保存失败，请重试".show(context)
-                    return@sendMessage
-                }
+                AppConfig.saveWebhookAndChannel(webhookKey, 1)
 
                 AppConfig.saveString(
                     Constant.MESSAGE_TITLE_KEY, binding.messageTitleView.text.toString().trim()
