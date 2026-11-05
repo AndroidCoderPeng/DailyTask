@@ -28,6 +28,7 @@ import com.pengxh.daily.app.extensions.navigatePageTo
 import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.show
+import com.pengxh.daily.app.extensions.showActionSheet
 import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -40,6 +41,7 @@ import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionSession
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.widget.LoadingDialog
+import com.pengxh.daily.app.widget.SettingItemView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -169,56 +171,83 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
     override fun initEvent() {
         binding.targetAppItem.setOnClickListener {
-            // TODO: 2024/6/10 需要重写
-//            BottomActionSheet.Builder()
-//                .setContext(this)
-//                .setActionItemTitle(apps)
-//                .setItemTextColor(R.color.theme_color.convertColor(this))
-//                .setOnActionSheetListener(object : BottomActionSheet.OnActionSheetListener {
-//                    override fun onActionItemClick(position: Int) {
-//                        val oldPosition = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
-//
-//                        // 如果 position 没有变化，直接返回
-//                        if (oldPosition == position) {
-//                            binding.targetAppItem.rightTextView.text = apps[position]
-//                            return
-//                        }
-//
-//                        when (position) {
-//                            0 -> {
-//                                // 钉钉：默认通知监听，通知未开则降级截屏，两者都未开则阻断
-//                                if (binding.noticeItem.switchView.isChecked) {
-//                                    binding.noticeRadioButton.isChecked = true
-//                                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
-//                                    binding.captureRadioButton.isChecked = false
-//                                } else if (binding.captureItem.switchView.isChecked) {
-//                                    binding.captureRadioButton.isChecked = true
-//                                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
-//                                    binding.noticeRadioButton.isChecked = false
-//                                } else {
-//                                    "请先打开通知监听或截屏服务".show(context)
-//                                    return
-//                                }
-//                            }
-//
-//                            1, 2, 3 -> {
-//                                // 企业微信、飞书、移动办公M3：只能截屏
-//                                if (binding.captureItem.switchView.isChecked) {
-//                                    binding.captureRadioButton.isChecked = true
-//                                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
-//                                    binding.noticeRadioButton.isChecked = false
-//                                } else {
-//                                    "请先打开截屏服务".show(context)
-//                                    return
-//                                }
-//                            }
-//                        }
-//
-//                        // 只有通过所有校验后才写入配置
-//                        binding.targetAppItem.rightTextView.text = apps[position]
-//                        AppConfig.saveInt(Constant.TARGET_APP_KEY, position)
-//                    }
-//                }).build().show()
+            showActionSheet(R.layout.sheet_select_target_app) { view, dialog ->
+                val switches = listOf(
+                    view.findViewById<SettingItemView>(R.id.ddItemView),
+                    view.findViewById<SettingItemView>(R.id.wxItemView),
+                    view.findViewById<SettingItemView>(R.id.fsItemView),
+                    view.findViewById<SettingItemView>(R.id.ydItemView)
+                ).map { it.switchView }
+
+                // 开关只作展示，点击穿透给整行
+                switches.forEach { switch ->
+                    switch.isClickable = false
+                    switch.isFocusable = false
+                }
+
+                val oldPosition = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
+                switches.forEachIndexed { index, switch ->
+                    switch.isChecked = index == oldPosition
+                    switches[index].isEnabled = true
+                }
+
+                // 点击 item 行切换选中
+                listOf(R.id.ddItemView, R.id.wxItemView, R.id.fsItemView, R.id.ydItemView)
+                    .map {
+                        view.findViewById<SettingItemView>(it)
+                    }
+                    .forEachIndexed { index, item ->
+                        item.setOnClickListener {
+                            switches.forEachIndexed { i, s ->
+                                s.isChecked = i == index
+                            }
+                        }
+                    }
+
+                view.findViewById<View>(R.id.confirmButton).setOnClickListener {
+                    val position = switches.indexOfFirst { it.isChecked }
+                    if (position < 0) {
+                        "请选择目标应用".show(this)
+                        return@setOnClickListener
+                    }
+
+                    when (position) {
+                        0 -> {
+                            // 钉钉：默认通知监听，通知未开则降级截屏，两者都未开则阻断
+                            if (binding.noticeItem.switchView.isChecked) {
+                                binding.noticeRadioButton.isChecked = true
+                                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                                binding.captureRadioButton.isChecked = false
+                            } else if (binding.captureItem.switchView.isChecked) {
+                                binding.captureRadioButton.isChecked = true
+                                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                                binding.noticeRadioButton.isChecked = false
+                            } else {
+                                "请先打开通知监听或截屏服务".show(this)
+                                return@setOnClickListener
+                            }
+                        }
+
+                        1, 2, 3 -> {
+                            // 企业微信、飞书、移动办公M3：只能截屏
+                            if (binding.captureItem.switchView.isChecked) {
+                                binding.captureRadioButton.isChecked = true
+                                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                                binding.noticeRadioButton.isChecked = false
+                            } else {
+                                "请先打开截屏服务".show(this)
+                                return@setOnClickListener
+                            }
+                        }
+                    }
+
+                    // 只有通过所有校验后才写入配置
+                    binding.targetAppItem.rightTextView.text = apps[position]
+                    AppConfig.saveInt(Constant.TARGET_APP_KEY, position)
+                    dialog.dismiss()
+                    "已切换到${apps[position]}".show(this)
+                }
+            }
         }
 
         binding.msgChannelItem.setOnClickListener {

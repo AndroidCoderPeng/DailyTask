@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="@dimen/radius_3x"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/padding_2x">
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/light_gray" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingVertical="@dimen/padding"
+            android:text="选择目标应用"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/margin_2x"
+            android:text="请选择下方应用作为目标"
+            android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
+            android:textColor="@color/text_secondary_color" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/ddItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="支持通知栏监听和截图获取打卡结果"
+            app:itemRightType="toggle"
+            app:itemTitle="钉钉" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/wxItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/margin"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="仅支持截图获取打卡结果"
+            app:itemRightType="toggle"
+            app:itemTitle="企业微信" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/fsItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="仅支持截图获取打卡结果"
+            app:itemRightType="toggle"
+            app:itemTitle="飞书" />
+
+        <com.pengxh.daily.app.widget.SettingItemView
+            android:id="@+id/ydItemView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/margin"
+            android:background="@color/back_ground_color"
+            app:itemCornerRadius="@dimen/radius"
+            app:itemDesc="仅支持截图获取打卡结果"
+            app:itemRightType="toggle"
+            app:itemTitle="移动办公M3" />
+
+        <Button
+            android:id="@+id/confirmButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/margin_2x"
+            android:insetTop="2dp"
+            android:insetBottom="2dp"
+            android:text="保存"
+            app:cornerRadius="@dimen/radius" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
