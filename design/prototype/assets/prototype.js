@@ -41,17 +41,13 @@
     return !!(state.channelReady && state.channelReady[ch]);
   }
 
-  /* 当前生效渠道的选中态、配置状态、警告条与设置页取值一起刷新 */
+  /* 当前生效渠道的选中态、警告条与设置页取值一起刷新 */
   function renderChannel() {
     $$('#channelPicker .ch-card').forEach(function (card) {
       const ch = card.dataset.channel;
       const active = state.msgChannel === ch;
-      const ready = channelReady(ch);
       card.classList.toggle('is-active', active);
       card.setAttribute('aria-pressed', active ? 'true' : 'false');
-      const pill = card.querySelector('.ch-state');
-      pill.className = 'ch-state pill ' + (ready ? 'pill-ok' : 'pill-idle');
-      pill.innerHTML = '<i class="dot"></i>' + (ready ? '已配置' : '未配置');
     });
 
     // 当前渠道还没配好时明确提示，避免"以为已经能用"
