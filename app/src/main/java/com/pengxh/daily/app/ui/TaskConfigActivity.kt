@@ -3,6 +3,7 @@ package com.pengxh.daily.app.ui
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import android.widget.LinearLayout
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -15,12 +16,14 @@ import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.show
 import com.pengxh.daily.app.extensions.showActionSheet
+import com.pengxh.daily.app.extensions.showCustomDialog
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.TaskScheduler
+import com.pengxh.daily.app.widget.DeletableEditText
 import com.pengxh.daily.app.widget.SettingItemView
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -103,12 +106,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     val item = SettingItemView(this).apply {
                         title = "每天 $hour 点"
                         setOnClickListener {
-                            if (hour !in 0..23) {
-                                "重置时间必须在0到23点之间".show(context)
-                                return@setOnClickListener
-                            }
-                            binding.resetTimeItem.rightTextView.text = "每天 $hour 点"
-                            setTaskResetTime(hour)
+                            updateResetHour(hour)
                             dialog.dismiss()
                         }
                     }
@@ -120,25 +118,20 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     title = "自定义（单位：时）"
                     setOnClickListener {
                         dialog.dismiss()
-                        // TODO: 2024/6/10 需要重写
-//                        AlertInputDialog.Builder()
-//                            .setContext(this)
-//                            .setTitle("设置重置时间")
-//                            .setHintMessage("直接输入整数时间即可，如：6")
-//                            .setNegativeButton("取消")
-//                            .setPositiveButton("确定")
-//                            .setOnDialogButtonClickListener(object :
-//                                AlertInputDialog.OnDialogButtonClickListener {
-//                                override fun onConfirmClick(value: String) {
-//                                    if (value.isNumber()) {
-//                                        updateResetHour(value.toInt())
-//                                    } else {
-//                                        "直接输入整数时间即可".show(context)
-//                                    }
-//                                }
-//
-//                                override fun onCancelClick() {}
-//                            }).build().show()
+                        showCustomDialog(R.layout.dialog_set_reset_time) { view, dialog ->
+                            val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
+                            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                                if (inputView.text.isNullOrBlank()) {
+                                    "请输入重置时间".show(context)
+                                    return@setOnClickListener
+                                }
+                                updateResetHour(inputView.text.toString().toInt())
+                                dialog.dismiss()
+                            }
+                            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                                dialog.dismiss()
+                            }
+                        }
                     }
                 }
                 optionsLayout.addView(customItem)
@@ -152,13 +145,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     val item = SettingItemView(this).apply {
                         title = "$seconds 秒"
                         setOnClickListener {
-                            if (seconds <= 0) {
-                                "超时时间必须大于0秒".show(context)
-                                return@setOnClickListener
-                            }
-                            binding.timeoutItem.rightTextView.text = "$seconds 秒"
-                            AppConfig.saveInt(Constant.STAY_OVERTIME_KEY, seconds)
-                            FloatingWindowController.setOvertime(seconds)
+                            updateTimeout(seconds)
                             dialog.dismiss()
                         }
                     }
@@ -170,25 +157,20 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     title = "自定义（单位：秒）"
                     setOnClickListener {
                         dialog.dismiss()
-                        // TODO: 2024/6/10 需要重写
-//                        AlertInputDialog.Builder()
-//                            .setContext(this)
-//                            .setTitle("设置超时时间")
-//                            .setHintMessage("直接输入整数时间即可，如：60")
-//                            .setNegativeButton("取消")
-//                            .setPositiveButton("确定")
-//                            .setOnDialogButtonClickListener(object :
-//                                AlertInputDialog.OnDialogButtonClickListener {
-//                                override fun onConfirmClick(value: String) {
-//                                    if (value.isNumber()) {
-//                                        updateTimeout(value.toInt())
-//                                    } else {
-//                                        "直接输入整数时间即可".show(context)
-//                                    }
-//                                }
-//
-//                                override fun onCancelClick() {}
-//                            }).build().show()
+                        showCustomDialog(R.layout.dialog_set_custom_time) { view, dialog ->
+                            val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
+                            view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                                if (inputView.text.isNullOrBlank()) {
+                                    "请输入超时时间".show(context)
+                                    return@setOnClickListener
+                                }
+                                updateTimeout(inputView.text.toString().toInt())
+                                dialog.dismiss()
+                            }
+                            view.findViewById<Button>(R.id.cancelButton).setOnClickListener {
+                                dialog.dismiss()
+                            }
+                        }
                     }
                 }
                 optionsLayout.addView(customItem)
@@ -307,12 +289,31 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         ForegroundRunningService.emitResetTaskTime()
     }
 
+    private fun updateResetHour(hour: Int) {
+        if (hour !in 0..23) {
+            "重置时间必须在0到23点之间".show(this)
+            return
+        }
+        binding.resetTimeItem.rightTextView.text = "每天 $hour 点"
+        setTaskResetTime(hour)
+    }
+
+    private fun updateTimeout(time: Int) {
+        if (time <= 0) {
+            "超时时间必须大于0秒".show(this)
+            return
+        }
+        binding.timeoutItem.rightTextView.text = "$time 秒"
+        AppConfig.saveInt(Constant.STAY_OVERTIME_KEY, time)
+        FloatingWindowController.setOvertime(time)
+    }
+
     private fun updateRandomMinuteRange(value: Int) {
         if (value < 0) {
             "随机时间范围不能小于0分钟".show(this)
             return
         }
-        binding.minuteRangeItem.rightTextView.text = "${value}分钟"
+        binding.minuteRangeItem.rightTextView.text = "$value 分钟"
         AppConfig.saveInt(Constant.TIME_RANGE_KEY, value)
     }
 }
