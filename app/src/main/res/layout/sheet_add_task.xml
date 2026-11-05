@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:cardBackgroundColor="@color/white"
+    app:cardCornerRadius="@dimen/radius_3x"
+    app:strokeWidth="0dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="@dimen/padding_2x">
+
+        <View
+            android:layout_width="40dp"
+            android:layout_height="4dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/light_gray" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingVertical="@dimen/padding"
+            android:text="添加任务"
+            android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+            android:textStyle="bold" />
+
+        <com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
+            android:id="@+id/timePicker"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginVertical="@dimen/margin_2x"
+            app:wheel_hourLabel="时"
+            app:wheel_itemTextBoldSelected="true"
+            app:wheel_itemTextColorSelected="@color/theme_color"
+            app:wheel_minuteLabel="分"
+            app:wheel_secondLabel="秒"
+            app:wheel_timeMode="hour_24_has_second" />
+
+        <Button
+            android:id="@+id/confirmButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:insetTop="2dp"
+            android:insetBottom="2dp"
+            android:text="确定"
+            app:cornerRadius="@dimen/radius" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

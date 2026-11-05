@@ -19,6 +19,7 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
+import com.github.gzuliyujiang.wheelpicker.widget.TimeWheelLayout
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.adapter.DailyTaskAdapter
@@ -152,16 +153,23 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                         return@setOnMenuItemClickListener true
                     }
 
-                    TaskTimeDialog.show(this, "添加任务") { time ->
-                        mainViewModel.addTask(time)
+                    showActionSheet(R.layout.sheet_add_task) { view, dialog ->
+                        val timePicker = view.findViewById<TimeWheelLayout>(R.id.timePicker)
+                        view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
+                            val time = String.Companion.format(
+                                Locale.CHINA, "%02d:%02d:%02d",
+                                timePicker.selectedHour,
+                                timePicker.selectedMinute,
+                                timePicker.selectedSecond
+                            )
+                            mainViewModel.addTask(time)
+                            dialog.dismiss()
+                        }
                     }
                 }
 
                 R.id.menu_settings -> {
-                    showCustomDialog(
-                        resId = R.layout.dialog_usage_notice,
-                        cancelable = false
-                    ) { view, dialog ->
+                    showCustomDialog(R.layout.dialog_usage_notice, false) { view, dialog ->
                         view.findViewById<Button>(R.id.confirmButton).setOnClickListener {
                             dialog.dismiss()
                             navigatePageTo<SettingsActivity>()
