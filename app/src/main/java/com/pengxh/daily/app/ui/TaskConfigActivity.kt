@@ -10,8 +10,9 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
+import com.pengxh.daily.app.adapter.WorkdayAdapter
 import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.show
@@ -204,7 +205,28 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 "任务进行中，无法修改工作日".show(context)
                 return@setOnClickListener
             }
-            showWorkdaySelector()
+            showActionSheet(R.layout.sheet_select_workday) { view, dialog ->
+                val selected = CustomWorkdayManager.loadWorkdays().toMutableSet()
+                val adapter = WorkdayAdapter(selected)
+                view.findViewById<RecyclerView>(R.id.recyclerView).adapter = adapter
+
+                view.findViewById<View>(R.id.confirmButton).setOnClickListener {
+                    // 二次校验：对话框打开期间任务可能被启动
+                    if (TaskScheduler.isRunning()) {
+                        "任务进行中，无法修改工作日".show(this)
+                        return@setOnClickListener
+                    }
+
+                    if (selected.isEmpty()) {
+                        "至少保留一天为工作日".show(context)
+                        return@setOnClickListener
+                    }
+                    CustomWorkdayManager.saveWorkdays(selected)
+                    updateCustomWorkdaySummary(selected)
+                    dialog.dismiss()
+                }
+                view.findViewById<View>(R.id.cancelButton).setOnClickListener { dialog.dismiss() }
+            }
         }
 
         binding.randomTimeItem.switchView.setOnCheckedChangeListener { _, isChecked ->
@@ -240,42 +262,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                 }
             }
         }
-    }
-
-    private fun showWorkdaySelector() {
-        val orderedDays = CustomWorkdayManager.getOrderedDays()
-        val selectedDays = CustomWorkdayManager.loadWorkdays().toMutableSet()
-        val labels = orderedDays.map { CustomWorkdayManager.getDayLabel(it) }.toTypedArray()
-        val checkedItems = orderedDays.map { it in selectedDays }.toBooleanArray()
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle("选择工作日")
-            .setMultiChoiceItems(labels, checkedItems) { _, which, isChecked ->
-                val day = orderedDays[which]
-                if (isChecked) {
-                    selectedDays.add(day)
-                } else {
-                    selectedDays.remove(day)
-                }
-            }
-            .setNegativeButton("取消", null)
-            .setPositiveButton("确定") { _, _ ->
-                // 二次校验：对话框打开期间任务可能被启动
-                if (TaskScheduler.isRunning()) {
-                    "任务进行中，无法修改工作日".show(this)
-                    return@setPositiveButton
-                }
-
-                if (selectedDays.isEmpty()) {
-                    "至少保留一天为工作日".show(this)
-                    return@setPositiveButton
-                }
-
-                val normalized = orderedDays.filter { it in selectedDays }.toSet()
-                CustomWorkdayManager.saveWorkdays(normalized)
-                updateCustomWorkdaySummary(normalized)
-            }
-            .show()
     }
 
     private fun updateCustomWorkdaySummary(workdays: Set<DayOfWeek>) {

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/padding_half">
+
+    <TextView
+        android:id="@+id/chipView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/selector_workday_chip"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingVertical="12dp"
+        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+        android:textColor="@color/selector_workday_chip_text"
+        tools:text="周一" />
+</FrameLayout>

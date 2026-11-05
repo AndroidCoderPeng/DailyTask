@@ -29,7 +29,16 @@ object AppConfig {
     // ===================== 基础类型（SP） =====================
     fun loadInt(key: String, def: Int) = SaveKeyValues.loadInt(key, def)
     fun loadBoolean(key: String, def: Boolean) = SaveKeyValues.loadBoolean(key, def)
-    fun loadString(key: String, def: String) = SaveKeyValues.loadString(key, def)
+
+    fun loadString(key: String, def: String): String {
+        return if (key in CONFIG_STORE_STRING_KEYS) {
+            val json = ConfigStore.get().load(key)
+            json.get("value")?.takeIf { it.isJsonPrimitive }?.asString ?: def
+        } else {
+            SaveKeyValues.loadString(key, def)
+        }
+    }
+
     fun saveInt(key: String, value: Int) = SaveKeyValues.saveInt(key, value)
     fun saveBoolean(key: String, value: Boolean) = SaveKeyValues.saveBoolean(key, value)
 
