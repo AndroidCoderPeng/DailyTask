@@ -460,19 +460,25 @@
               <h2 class="group-title">消息回推渠道</h2>
               <div class="group-body">
                 <div class="row row-block">
-                  <div class="segmented ch-seg" id="channelPicker">
-                    <button class="seg is-active" data-channel="wx" aria-pressed="true">
-                      <svg class="seg-ico" viewBox="0 0 24 24" width="14" height="14"><path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H8.4L4 23.3A1 1 0 012 22.5V6a2 2 0 012-2zm4 5h8v2H8zm0 4h8v2H8z" fill="currentColor"/></svg>
-                      企业微信
+                  <div class="ch-picker" id="channelPicker" role="radiogroup" aria-label="选择消息回推渠道">
+                    <button class="ch-tile is-active" data-channel="wx" role="radio" aria-checked="true">
+                      <span class="ch-check"><svg viewBox="0 0 24 24" width="11" height="11"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                      <span class="ch-logo" style="--ico:#07C160">
+                        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M9.5 3C5.36 3 2 5.9 2 9.5c0 2 1.05 3.8 2.7 5L4 17l2.8-1.4c.85.25 1.76.4 2.7.4h.35A6.3 6.3 0 019.5 14c0-3.3 3.13-6 7-6 .3 0 .6.02.9.05C16.7 5.2 13.4 3 9.5 3zm-2.3 3.2a.9.9 0 110 1.8.9.9 0 010-1.8zm4.6 0a.9.9 0 110 1.8.9.9 0 010-1.8zM16.5 9c-3.04 0-5.5 2.15-5.5 4.8s2.46 4.8 5.5 4.8c.7 0 1.38-.11 2-.32L21 19.5l-.5-2c1.5-.95 2.5-2.4 2.5-4.05 0-2.36-2.16-4.25-4.83-4.45h-.67zm-1.9 2.6a.75.75 0 110 1.5.75.75 0 010-1.5zm3.8 0a.75.75 0 110 1.5.75.75 0 010-1.5z" fill="currentColor"/></svg>
+                      </span>
+                      <span class="ch-tile-name">企业微信</span>
+                      <span class="ch-tile-sub">群机器人 Webhook</span>
                     </button>
-                    <button class="seg" data-channel="mail" aria-pressed="false">
-                      <svg class="seg-ico" viewBox="0 0 24 24" width="14" height="14"><path d="M3 5.5h18a1 1 0 011 1v11a2 2 0 01-2 2H4a2 2 0 01-2-2v-11a1 1 0 011-1zm1.8 2L12 12.6l7.2-5.1H4.8z" fill="currentColor"/></svg>
-                      QQ 邮箱
+                    <button class="ch-tile" data-channel="mail" role="radio" aria-checked="false">
+                      <span class="ch-check"><svg viewBox="0 0 24 24" width="11" height="11"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                      <span class="ch-logo" style="--ico:#12B7F5">
+                        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 5.5h18a1 1 0 011 1v11a2 2 0 01-2 2H4a2 2 0 01-2-2v-11a1 1 0 011-1zm1.8 2L12 12.6l7.2-5.1H4.8z" fill="currentColor"/></svg>
+                      </span>
+                      <span class="ch-tile-name">QQ 邮箱</span>
+                      <span class="ch-tile-sub">SMTP 授权码发信</span>
                     </button>
                   </div>
-                  <p class="ch-hint" id="channelHint"><i class="ch-dot is-ok"></i><span>企业微信 · 已配置</span></p>
                   <!-- 待定①：主渠道失败自动回退到另一个渠道（现状行为），还是改成严格二选一 -->
-                  <p class="ch-warn" id="channelWarn" hidden></p>
                 </div>
               </div>
             </section>

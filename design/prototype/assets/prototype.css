@@ -662,22 +662,48 @@ body.dark #themeBtn .ico-sun { display: none; }
 .status-text { font-size: 11.5px; color: var(--text-3); }
 
 /* ---- 消息渠道选择器（决定消息实际从哪个渠道发出） ---- */
-/* 复用 .segmented 分段控件，仅补充图标与状态提示 */
-.ch-seg .seg { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.ch-seg .seg-ico { flex: 0 0 auto; }
-.ch-hint {
-  margin: 0; padding: 9px 13px; border-radius: var(--r-sm);
-  background: var(--surface-2);
-  display: flex; align-items: center; gap: 8px;
-  font-size: 12px; color: var(--text-2);
+/* 双磁贴：品牌色图标 + 名称 + 状态点，选中角标落在右上角 */
+.ch-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ch-tile {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 18px 10px 15px;
+  border: 1.5px solid var(--line); border-radius: var(--r-md);
+  background: var(--surface);
+  cursor: pointer; text-align: center; font: inherit;
+  transition: border-color .18s var(--ease), background .18s var(--ease), transform .18s var(--ease);
 }
-.ch-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
-.ch-dot.is-ok { background: var(--success); }
-.ch-dot.is-none { background: var(--warn); }
-.ch-warn {
-  margin: 0; padding: 9px 11px; border-radius: var(--r-sm);
-  background: var(--danger-soft); color: var(--danger);
-  font-size: 12px; line-height: 1.5;
+.ch-tile:active { transform: scale(.97); }
+@media (hover: hover) and (pointer: fine) {
+  .ch-tile:hover { border-color: var(--text-3); }
+}
+.ch-logo {
+  width: 42px; height: 42px; margin-bottom: 7px; border-radius: 13px;
+  display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ico) 13%, var(--surface));
+  color: var(--ico);
+}
+.ch-tile-name { font-size: 13.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.ch-tile-sub { margin-top: 2px; font-size: 10.5px; color: var(--text-3); line-height: 1.3; }
+/* 选中角标：贴右上角的圆角方块 */
+.ch-check {
+  position: absolute; top: -1.5px; right: -1.5px;
+  width: 20px; height: 20px;
+  border-radius: 0 calc(var(--r-md) - 1.5px) 0 13px;
+  background: var(--primary); color: var(--on-primary);
+  display: grid; place-items: center;
+  opacity: 0; transform: scale(.5);
+  transition: opacity .18s var(--ease), transform .18s var(--ease);
+}
+.ch-tile.is-active { border-color: var(--primary); background: var(--primary-soft); }
+.ch-tile.is-active .ch-tile-name { color: var(--primary-press); }
+.ch-tile.is-active .ch-check { opacity: 1; transform: scale(1); }
+/* 未配置：整块置灰，图标去色，不可选中 */
+.ch-tile.is-disabled { opacity: .55; cursor: default; }
+.ch-tile.is-disabled .ch-logo { filter: grayscale(.9); }
+.ch-tile.is-disabled:active { transform: none; }
+@media (hover: hover) and (pointer: fine) {
+  .ch-tile.is-disabled:hover { border-color: var(--line); }
 }
 
 /* ============================ 指令列表 ============================ */

@@ -40,38 +40,19 @@
     return !!(state.channelReady && state.channelReady[ch]);
   }
 
-  /* 当前生效渠道的选中态、状态提示、警告条与设置页取值一起刷新 */
+  /* 当前生效渠道的选中态、禁用态、磁贴状态点与设置页取值一起刷新 */
   function renderChannel() {
-    $$('#channelPicker .seg').forEach(function (seg) {
-      const ch = seg.dataset.channel;
+    $$('#channelPicker .ch-tile').forEach(function (tile) {
+      const ch = tile.dataset.channel;
       const active = state.msgChannel === ch;
-      seg.classList.toggle('is-active', active);
-      seg.setAttribute('aria-pressed', active ? 'true' : 'false');
+      tile.classList.toggle('is-active', active);
+      tile.setAttribute('aria-checked', active ? 'true' : 'false');
+
+      // 未配置的渠道整块禁用，不可选中（配置状态见下方各组）
+      const ready = channelReady(ch);
+      tile.classList.toggle('is-disabled', !ready);
+      tile.setAttribute('aria-disabled', ready ? 'false' : 'true');
     });
-
-    const cur = state.msgChannel;
-    const anyReady = channelReady('wx') || channelReady('mail');
-
-    // 分段控件下方的状态提示：当前渠道名 + 配置状态点
-    const hint = $('#channelHint');
-    if (hint) {
-      const dot = hint.querySelector('.ch-dot');
-      const text = hint.querySelector('span');
-      const ready = channelReady(cur);
-      if (dot) dot.className = 'ch-dot ' + (ready ? 'is-ok' : 'is-none');
-      if (text) text.textContent = (CHANNELS[cur] ? CHANNELS[cur].label : '未选择') + ' · ' + (ready ? '已配置' : '未配置');
-    }
-
-    // 当前渠道还没配好时明确提示，避免"以为已经能用"
-    const warn = $('#channelWarn');
-    if (cur && channelReady(cur)) {
-      warn.hidden = true;
-    } else {
-      warn.hidden = false;
-      warn.textContent = anyReady
-        ? '当前渠道「' + CHANNELS[cur].label + '」尚未配置，消息将无法送达'
-        : '尚未配置任何渠道，消息将无法送达';
-    }
 
     // 设置页同步显示当前生效渠道
     const val = $('#msgChannelValue');
@@ -687,15 +668,18 @@
 
     // 消息渠道页：选择当前生效渠道（真机侧写入 MSG_CHANNEL_KEY）
     $('#channelPicker').addEventListener('click', function (e) {
-      const seg = e.target.closest('.seg');
-      if (!seg) return;
-      const ch = seg.dataset.channel;
+      const tile = e.target.closest('.ch-tile');
+      if (!tile) return;
+      const ch = tile.dataset.channel;
       if (ch === state.msgChannel) return;
+      // 未配置的渠道不可选中，只提示去完成配置
+      if (!channelReady(ch)) {
+        toast('「' + CHANNELS[ch].label + '」尚未配置，请先完成下方配置');
+        return;
+      }
       state.msgChannel = ch;
       renderChannel();
-      toast(channelReady(ch)
-        ? '消息回推渠道已切换为「' + CHANNELS[ch].label + '」'
-        : '已切换为「' + CHANNELS[ch].label + '」，但该渠道尚未配置');
+      toast('消息回推渠道已切换为「' + CHANNELS[ch].label + '」');
     });
 
     // 指令复制
