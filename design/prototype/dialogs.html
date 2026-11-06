@@ -23,11 +23,24 @@
     <div class="sidenav-block">
       <h2>组件</h2>
       <ul class="nav-list">
-        <li><button class="nav-item" data-demo="single"><i class="nav-ico">1</i>单按钮对话框</button></li>
+        <li><button class="nav-item is-active" data-demo="single"><i class="nav-ico">1</i>单按钮对话框</button></li>
         <li><button class="nav-item" data-demo="double"><i class="nav-ico">2</i>双按钮对话框</button></li>
         <li><button class="nav-item" data-demo="input"><i class="nav-ico">3</i>带输入框对话框</button></li>
         <li><button class="nav-item" data-demo="actionsheet"><i class="nav-ico">4</i>底部 ActionSheet</button></li>
       </ul>
+    </div>
+
+    <div class="sidenav-block">
+      <h2>评审辅助</h2>
+      <button class="aux-btn" id="themeBtn" type="button" aria-label="切换到深色主题">
+        <i class="nav-ico ico-sun">
+          <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="4.1" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.4 5.4l1.4 1.4M17.2 17.2l1.4 1.4M18.6 5.4l-1.4 1.4M6.8 17.2l-1.4 1.4"/></g></svg>
+        </i>
+        <i class="nav-ico ico-moon">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
+        </i>
+        <span>深浅色切换</span>
+      </button>
     </div>
 
     <div class="sidenav-block">
@@ -227,18 +240,6 @@
       </div><!-- /viewport -->
     </div><!-- /phone -->
 
-    <!-- ============ 评审切换条 ============ -->
-    <div class="proto-switch">
-      <button class="is-active" data-demo="single">单按钮</button>
-      <button data-demo="double">双按钮</button>
-      <button data-demo="input">输入框</button>
-      <button data-demo="actionsheet">ActionSheet</button>
-      <button class="proto-theme-btn" id="themeBtn" title="切换深色 / 浅色" aria-label="切换深色 / 浅色">
-        <svg class="ico-sun" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="4.1" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.4 5.4l1.4 1.4M17.2 17.2l1.4 1.4M18.6 5.4l-1.4 1.4M6.8 17.2l-1.4 1.4"/></g></svg>
-        <svg class="ico-moon" viewBox="0 0 24 24" width="16" height="16"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
-      </button>
-    </div>
-
   </div><!-- /device-wrap -->
 </div><!-- /stage -->
 
@@ -302,8 +303,8 @@
     const demoBtn = e.target.closest('[data-demo]');
     if (demoBtn) {
       openDemo(demoBtn.dataset.demo);
-      $$('.proto-switch button').forEach(function (b) {
-        b.classList.toggle('is-active', b.dataset.demo === demoBtn.dataset.demo && !b.classList.contains('proto-theme-btn'));
+      $$('.nav-item').forEach(function (b) {
+        b.classList.toggle('is-active', b.dataset.demo === demoBtn.dataset.demo);
       });
       return;
     }

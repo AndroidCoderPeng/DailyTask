@@ -13,43 +13,6 @@
 
 /* 触发按钮列表：一行一个入口，与设置页 row 风格一致 */
 .demo-list { display: grid; gap: 10px; }
-
-/* ---- 评审切换条（仅 dialogs.html 使用，主原型页已移除该导航） ---- */
-.proto-switch {
-  flex: 0 0 auto;
-  display: flex; gap: 4px; padding: 5px;
-  max-width: 620px; width: 100%;
-  overflow-x: auto; scrollbar-width: none;
-  background: var(--panel-2);
-  border: 1px solid var(--hairline);
-  border-radius: 999px;
-  box-shadow: var(--shadow-1);
-  backdrop-filter: blur(8px);
-}
-.proto-switch::-webkit-scrollbar { height: 0; }
-.proto-switch button {
-  flex: 1 0 auto; height: 32px; padding: 0 14px;
-  border: 0; border-radius: 999px; background: transparent;
-  color: var(--text-2); font-size: 13px; font-weight: 600;
-  white-space: nowrap; cursor: pointer; transition: .18s var(--ease);
-}
-@media (hover: hover) and (pointer: fine) {
-  .proto-switch button:hover { color: var(--text); background: rgba(91, 169, 255, .14); }
-}
-.proto-switch button.is-active {
-  background: var(--primary); color: var(--on-primary);
-  box-shadow: 0 4px 10px rgba(51, 153, 255, .30);
-}
-.proto-switch button:active { background: rgba(91, 169, 255, .14); color: var(--text); }
-
-/* ---- 深浅色切换（dialogs.html 内嵌在切换条里） ---- */
-.proto-switch .proto-theme-btn {
-  flex: 0 0 auto; width: 34px; padding: 0;
-  display: grid; place-items: center; color: var(--text-2);
-}
-.proto-switch .proto-theme-btn:active { background: transparent; }
-body:not(.dark) .proto-switch .proto-theme-btn .ico-moon { display: none; }
-body.dark .proto-switch .proto-theme-btn .ico-sun { display: none; }
 .demo-trigger {
   display: flex; align-items: center; gap: 12px;
   width: 100%; padding: 14px 16px; border: 0;
