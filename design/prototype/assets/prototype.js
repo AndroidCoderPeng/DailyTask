@@ -41,19 +41,30 @@
     return !!(state.channelReady && state.channelReady[ch]);
   }
 
-  /* 当前生效渠道的选中态、警告条与设置页取值一起刷新 */
+  /* 当前生效渠道的选中态、状态提示、警告条与设置页取值一起刷新 */
   function renderChannel() {
-    $$('#channelPicker .ch-card').forEach(function (card) {
-      const ch = card.dataset.channel;
+    $$('#channelPicker .seg').forEach(function (seg) {
+      const ch = seg.dataset.channel;
       const active = state.msgChannel === ch;
-      card.classList.toggle('is-active', active);
-      card.setAttribute('aria-pressed', active ? 'true' : 'false');
+      seg.classList.toggle('is-active', active);
+      seg.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
+
+    const cur = state.msgChannel;
+    const anyReady = channelReady('wx') || channelReady('mail');
+
+    // 分段控件下方的状态提示：当前渠道名 + 配置状态点
+    const hint = $('#channelHint');
+    if (hint) {
+      const dot = hint.querySelector('.ch-dot');
+      const text = hint.querySelector('span');
+      const ready = channelReady(cur);
+      if (dot) dot.className = 'ch-dot ' + (ready ? 'is-ok' : 'is-none');
+      if (text) text.textContent = (CHANNELS[cur] ? CHANNELS[cur].label : '未选择') + ' · ' + (ready ? '已配置' : '未配置');
+    }
 
     // 当前渠道还没配好时明确提示，避免"以为已经能用"
     const warn = $('#channelWarn');
-    const cur = state.msgChannel;
-    const anyReady = channelReady('wx') || channelReady('mail');
     if (cur && channelReady(cur)) {
       warn.hidden = true;
     } else {
@@ -662,9 +673,9 @@
 
     // 消息渠道页：选择当前生效渠道（真机侧写入 MSG_CHANNEL_KEY）
     $('#channelPicker').addEventListener('click', function (e) {
-      const card = e.target.closest('.ch-card');
-      if (!card) return;
-      const ch = card.dataset.channel;
+      const seg = e.target.closest('.seg');
+      if (!seg) return;
+      const ch = seg.dataset.channel;
       if (ch === state.msgChannel) return;
       state.msgChannel = ch;
       renderChannel();

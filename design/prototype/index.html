@@ -466,14 +466,17 @@
               <h2 class="group-title">消息回推渠道</h2>
               <div class="group-body">
                 <div class="row row-block">
-                  <div class="ch-picker" id="channelPicker">
-                    <button class="ch-card is-active" data-channel="wx" aria-pressed="true">
-                      <span class="ch-name">企业微信</span>
+                  <div class="segmented ch-seg" id="channelPicker">
+                    <button class="seg is-active" data-channel="wx" aria-pressed="true">
+                      <svg class="seg-ico" viewBox="0 0 24 24" width="14" height="14"><path d="M4 4h16a2 2 0 012 2v12a2 2 0 01-2 2H8.4L4 23.3A1 1 0 012 22.5V6a2 2 0 012-2zm4 5h8v2H8zm0 4h8v2H8z" fill="currentColor"/></svg>
+                      企业微信
                     </button>
-                    <button class="ch-card" data-channel="mail" aria-pressed="false">
-                      <span class="ch-name">QQ 邮箱</span>
+                    <button class="seg" data-channel="mail" aria-pressed="false">
+                      <svg class="seg-ico" viewBox="0 0 24 24" width="14" height="14"><path d="M3 5.5h18a1 1 0 011 1v11a2 2 0 01-2 2H4a2 2 0 01-2-2v-11a1 1 0 011-1zm1.8 2L12 12.6l7.2-5.1H4.8z" fill="currentColor"/></svg>
+                      QQ 邮箱
                     </button>
                   </div>
+                  <p class="ch-hint" id="channelHint"><i class="ch-dot is-ok"></i><span>企业微信 · 已配置</span></p>
                   <!-- 待定①：主渠道失败自动回退到另一个渠道（现状行为），还是改成严格二选一 -->
                   <p class="ch-warn" id="channelWarn" hidden></p>
                 </div>

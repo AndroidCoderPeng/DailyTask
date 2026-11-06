@@ -730,35 +730,18 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
 .status-text { font-size: 11.5px; color: var(--text-3); }
 
 /* ---- 消息渠道选择器（决定消息实际从哪个渠道发出） ---- */
-.ch-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.ch-card {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-left: 3px solid transparent;
-  border-radius: var(--r-md);
-  background: var(--surface);
-  text-align: left;
-  cursor: pointer;
-  transition: border-color .18s var(--ease), background .18s var(--ease);
+/* 复用 .segmented 分段控件，仅补充图标与状态提示 */
+.ch-seg .seg { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.ch-seg .seg-ico { flex: 0 0 auto; }
+.ch-hint {
+  margin: 0; padding: 9px 13px; border-radius: var(--r-sm);
+  background: var(--surface-2);
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12px; color: var(--text-2);
 }
-.ch-card:active { transform: scale(.985); }
-@media (hover: hover) and (pointer: fine) {
-  .ch-card:hover { border-color: var(--text-3); }
-}
-/* 选中态：左侧竖条 + 主色描边 + 浅蓝底 + 标题主色 */
-.ch-card.is-active {
-  border-color: var(--primary);
-  border-left-color: var(--primary);
-  background: var(--primary-soft);
-}
-.ch-card.is-active .ch-name { color: var(--primary-press); }
-.ch-name {
-  font-size: 13.5px; font-weight: 600; color: var(--text);
-  min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
+.ch-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+.ch-dot.is-ok { background: var(--success); }
+.ch-dot.is-none { background: var(--warn); }
 .ch-warn {
   margin: 0; padding: 9px 11px; border-radius: var(--r-sm);
   background: var(--danger-soft); color: var(--danger);

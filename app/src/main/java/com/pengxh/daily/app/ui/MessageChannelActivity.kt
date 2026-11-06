@@ -111,11 +111,9 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     override fun initEvent() {
         binding.channelRadioGroup.setOnCheckedChangeListener { _, checkedId ->
             if (checkedId == R.id.wxRadioButton) {
-                binding.wxLayout.visibility = View.VISIBLE
-                binding.qqLayout.visibility = View.GONE
+
             } else {
-                binding.wxLayout.visibility = View.GONE
-                binding.qqLayout.visibility = View.VISIBLE
+
             }
         }
 

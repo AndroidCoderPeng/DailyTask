@@ -27,6 +27,29 @@
             android:orientation="vertical"
             android:paddingHorizontal="@dimen/padding_2x">
 
+            <RadioGroup
+                android:id="@+id/channelRadioGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginVertical="@dimen/margin_2x"
+                android:orientation="horizontal">
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/wxRadioButton"
+                    style="@style/CustomRadioButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:checked="true"
+                    android:text="企业微信" />
+
+                <com.google.android.material.radiobutton.MaterialRadioButton
+                    android:id="@+id/qqRadioButton"
+                    style="@style/CustomRadioButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:text="QQ 邮箱" />
+            </RadioGroup>
+
             <!-- 消息标题 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
@@ -63,34 +86,11 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <RadioGroup
-                android:id="@+id/channelRadioGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginVertical="@dimen/margin_2x"
-                android:orientation="horizontal">
-
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/wxRadioButton"
-                    style="@style/CustomRadioButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:checked="true"
-                    android:text="企业微信" />
-
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/qqRadioButton"
-                    style="@style/CustomRadioButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:text="QQ 邮箱" />
-            </RadioGroup>
-
             <!-- 企业微信 -->
             <LinearLayout
-                android:id="@+id/wxLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_2x"
                 android:orientation="vertical">
 
                 <TextView
@@ -191,11 +191,9 @@
 
             <!-- QQ 邮箱 -->
             <LinearLayout
-                android:id="@+id/qqLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
+                android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
