@@ -36,6 +36,18 @@
       <button class="aux-btn" id="maskToggle" type="button">
         <i class="nav-ico">◐</i>伪灭屏预览
       </button>
+      <button class="aux-btn" id="overviewBtn" type="button">
+        <i class="nav-ico">▦</i><span id="overviewLabel">总览模式</span>
+      </button>
+      <button class="aux-btn" id="themeBtn" type="button" aria-label="切换到深色主题">
+        <i class="nav-ico ico-sun">
+          <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="4.1" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.4 5.4l1.4 1.4M17.2 17.2l1.4 1.4M18.6 5.4l-1.4 1.4M6.8 17.2l-1.4 1.4"/></g></svg>
+        </i>
+        <i class="nav-ico ico-moon">
+          <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
+        </i>
+        <span>深浅色切换</span>
+      </button>
     </div>
 
     <div class="sidenav-block">
@@ -742,21 +754,6 @@
       <div class="toast" id="toast" hidden></div>
 
     </div><!-- /phone -->
-
-    <!-- ============ 页面切换条（仅原型评审用，不属于 App 内容） ============ -->
-    <div class="proto-switch" id="protoSwitch">
-      <button class="is-active" data-goto="main">首页</button>
-      <button data-goto="settings">设置</button>
-      <button data-goto="taskconfig">任务配置</button>
-      <button data-goto="channel">消息渠道</button>
-      <button data-goto="command">全部指令</button>
-      <button data-goto="qa">常见问题</button>
-      <button class="proto-overview-btn" id="overviewBtn" title="一屏看全">总览</button>
-      <button class="proto-theme-btn" id="themeBtn" title="切换深色 / 浅色" aria-label="切换深色 / 浅色">
-        <svg class="ico-sun" viewBox="0 0 24 24" width="16" height="16"><circle cx="12" cy="12" r="4.1" fill="currentColor"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2.8v2M12 19.2v2M2.8 12h2M19.2 12h2M5.4 5.4l1.4 1.4M17.2 17.2l1.4 1.4M18.6 5.4l-1.4 1.4M6.8 17.2l-1.4 1.4"/></g></svg>
-        <svg class="ico-moon" viewBox="0 0 24 24" width="16" height="16"><path d="M12.3 2a9 9 0 109.7 13.4A7.5 7.5 0 0112.3 2z" fill="currentColor"/></svg>
-      </button>
-    </div>
 
   </div><!-- /device-wrap -->
 </div><!-- /stage -->

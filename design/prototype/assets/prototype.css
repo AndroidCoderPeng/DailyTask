@@ -248,49 +248,11 @@ code {
   flex-direction: column;
 }
 
-/* ---- 原型页面切换条（评审辅助，不属于 App 内容） ---- */
-.proto-switch {
-  flex: 0 0 auto;
-  display: flex; gap: 4px; padding: 5px;
-  max-width: 620px; width: 100%;
-  overflow-x: auto; scrollbar-width: none;
-  background: var(--panel-2);
-  border: 1px solid var(--hairline);
-  border-radius: 999px;
-  box-shadow: var(--shadow-1);
-  backdrop-filter: blur(8px);
-}
-.proto-switch::-webkit-scrollbar { height: 0; }
-.proto-switch button {
-  flex: 1 0 auto; height: 32px; padding: 0 14px;
-  border: 0; border-radius: 999px; background: transparent;
-  color: var(--text-2); font-size: 13px; font-weight: 600;
-  white-space: nowrap; cursor: pointer; transition: .18s var(--ease);
-}
-@media (hover: hover) and (pointer: fine) {
-  .proto-switch button:hover { color: var(--text); background: rgba(91, 169, 255, .14); }
-}
-.proto-switch button.is-active {
-  background: var(--primary); color: var(--on-primary);
-  box-shadow: 0 4px 10px rgba(51, 153, 255, .30);
-}
-.proto-switch .proto-overview-btn {
-  margin-left: 4px; color: var(--primary-press); background: var(--primary-soft);
-}
-.proto-switch .proto-overview-btn.is-on {
-  background: var(--primary); color: var(--on-primary);
-}
-
-/* ---- 深浅色切换 ---- */
-.proto-switch .proto-theme-btn {
-  flex: 0 0 auto; width: 34px; padding: 0;
-  display: grid; place-items: center; color: var(--text-2);
-}
-@media (hover: hover) and (pointer: fine) {
-  .proto-switch .proto-theme-btn:hover { color: var(--text); }
-}
-body:not(.dark) .proto-theme-btn .ico-moon { display: none; }
-body.dark .proto-theme-btn .ico-sun { display: none; }
+/* ---- 深 / 浅色切换（入口在侧栏「评审辅助」） ---- */
+body:not(.dark) #themeBtn .ico-moon { display: none; }
+body.dark #themeBtn .ico-sun { display: none; }
+/* 总览模式下侧栏按钮保持高亮 */
+#overviewBtn.is-on { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
 
 /* ============================ 总览模式：一屏看全 6 个页面 ============================ */
 .stage.is-overview .device-wrap {
@@ -924,7 +886,6 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
     border: 0; border-radius: 0; box-shadow: none;
   }
   .phone-island { display: none; }
-  .proto-switch { max-width: none; }
 }
 
 /* ============================ 触屏按压态 ============================ */
@@ -932,8 +893,6 @@ body.dark .proto-theme-btn .ico-sun { display: none; }
    这些 :active 规则全平台生效，桌面端点击时同样有按压反馈。 */
 .nav-item:active { background: rgba(51, 153, 255, .12); color: var(--text); }
 .aux-btn:active { color: var(--text); border-color: var(--primary); background: var(--primary-soft); }
-.proto-switch button:active { background: rgba(91, 169, 255, .14); color: var(--text); }
-.proto-switch .proto-theme-btn:active { background: transparent; }
 
 .icon-btn:active { transform: translateY(0) scale(.94); }
 .icon-btn-primary:active { background: var(--primary-press); }

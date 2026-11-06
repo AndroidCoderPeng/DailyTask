@@ -197,9 +197,6 @@
     $$('.nav-item').forEach(function (b) {
       b.classList.toggle('is-active', b.dataset.goto === screen);
     });
-    $$('.proto-switch button').forEach(function (b) {
-      b.classList.toggle('is-active', b.dataset.goto === screen);
-    });
 
     const active = $('.screen.is-active .scroll');
     if (active) active.scrollTop = 0;
@@ -218,7 +215,8 @@
     stage.classList.remove('is-overview');
     const btn = $('#overviewBtn');
     btn.classList.remove('is-on');
-    btn.textContent = '总览';
+    const label = $('#overviewLabel');
+    if (label) label.textContent = '总览模式';
   }
 
   /* ---------------------------------------------------------
@@ -858,7 +856,8 @@
     $('#overviewBtn').addEventListener('click', function () {
       const on = $('.stage').classList.toggle('is-overview');
       this.classList.toggle('is-on', on);
-      this.textContent = on ? '返回单页' : '总览';
+      const label = $('#overviewLabel');
+      if (label) label.textContent = on ? '返回单页' : '总览模式';
     });
 
     // 深 / 浅色切换
