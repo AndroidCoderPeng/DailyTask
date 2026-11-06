@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true">
+        <layer-list>
+            <!-- 边框 -->
+            <item>
+                <shape>
+                    <solid android:color="@color/theme_soft_color" />
+                    <corners android:radius="@dimen/radius" />
+                    <stroke android:width="1dp" android:color="@color/theme_color" />
+                </shape>
+            </item>
+
+            <!-- 右上角小圆角 -->
+            <item android:width="18dp" android:height="18dp" android:gravity="top|right">
+                <shape android:shape="rectangle">
+                    <solid android:color="@color/theme_color" />
+                    <corners android:bottomLeftRadius="@dimen/radius" android:topRightRadius="@dimen/radius" />
+                </shape>
+            </item>
+
+            <!-- 勾 -->
+            <item android:width="12dp" android:height="12dp" android:drawable="@drawable/ic_check" android:gravity="top|right" android:right="3dp" android:top="3dp" />
+        </layer-list>
+    </item>
+    <item>
+        <shape>
+            <solid android:color="@color/white" />
+            <corners android:radius="@dimen/radius" />
+            <stroke android:width="1dp" android:color="@color/border_color" />
+        </shape>
+    </item>
+</selector>

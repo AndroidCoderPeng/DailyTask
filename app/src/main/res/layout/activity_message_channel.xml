@@ -27,30 +27,6 @@
             android:orientation="vertical"
             android:paddingHorizontal="@dimen/padding_2x">
 
-            <RadioGroup
-                android:id="@+id/channelRadioGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginVertical="@dimen/margin_2x"
-                android:orientation="horizontal">
-
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/wxRadioButton"
-                    style="@style/CustomRadioButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:checked="true"
-                    android:text="企业微信" />
-
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/qqRadioButton"
-                    style="@style/CustomRadioButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:text="QQ 邮箱" />
-            </RadioGroup>
-
-            <!-- 消息标题 -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -60,30 +36,97 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
                     android:orientation="vertical"
                     android:padding="@dimen/padding_2x">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="消息标题"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
-                        android:textColor="@color/text_secondary_color" />
-
-                    <com.pengxh.daily.app.widget.DeletableEditText
-                        android:id="@+id/messageTitleView"
+                    <RadioGroup
+                        android:id="@+id/channelRadioGroup"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/margin"
-                        android:background="@drawable/bg_edit_text_stroke_8"
-                        android:gravity="center_vertical"
-                        android:hint="如：打卡结果通知（非必填）"
-                        android:paddingHorizontal="12dp"
-                        android:paddingVertical="10dp"
-                        android:singleLine="true"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/wxRadioButton"
+                            style="@style/ChannelRadioButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:drawableTop="@drawable/ic_channel_work"
+                            android:text="企业微信" />
+
+                        <Space
+                            android:layout_width="@dimen/margin"
+                            android:layout_height="wrap_content" />
+
+                        <com.google.android.material.radiobutton.MaterialRadioButton
+                            android:id="@+id/qqRadioButton"
+                            style="@style/ChannelRadioButtonStyle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:drawableTop="@drawable/ic_channel_email"
+                            android:text="QQ 邮箱" />
+                    </RadioGroup>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/margin_half"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:text="群机器人 Webhook"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="#ABABAB" />
+
+                        <Space
+                            android:layout_width="@dimen/margin"
+                            android:layout_height="wrap_content" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:text="SMTP 授权码发信"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="#ABABAB" />
+                    </LinearLayout>
                 </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- 消息标题 -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_2x"
+                android:layout_marginBottom="@dimen/margin_half"
+                android:text="消息标题"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
+
+                <com.pengxh.daily.app.widget.DeletableEditText
+                    android:id="@+id/messageTitleView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/margin_2x"
+                    android:background="@drawable/bg_edit_text_stroke_8"
+                    android:gravity="center_vertical"
+                    android:hint="如：打卡结果通知（非必填）"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="10dp"
+                    android:singleLine="true"
+                    android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
             </com.google.android.material.card.MaterialCardView>
 
             <!-- 企业微信 -->
@@ -143,8 +186,7 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="@dimen/margin"
-                            android:layout_marginBottom="@dimen/margin_2x"
+                            android:layout_marginVertical="@dimen/margin"
                             android:orientation="horizontal">
 
                             <com.google.android.material.card.MaterialCardView
@@ -193,6 +235,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_2x"
                 android:orientation="vertical">
 
                 <TextView
@@ -206,6 +249,7 @@
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/margin_2x"
                     app:cardBackgroundColor="@color/white"
                     app:strokeColor="@color/border_color">
 
@@ -338,7 +382,7 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginVertical="@dimen/margin_2x"
+                            android:layout_marginVertical="@dimen/margin"
                             android:orientation="horizontal">
 
                             <com.google.android.material.card.MaterialCardView

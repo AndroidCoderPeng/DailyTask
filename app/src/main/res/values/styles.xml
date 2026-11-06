@@ -20,4 +20,15 @@
         </item>
         <item name="android:textColor">@color/text_selector_color</item>
     </style>
+
+    <style name="ChannelRadioButtonStyle">
+        <item name="android:paddingVertical">12dp</item>
+        <item name="android:drawablePadding">@dimen/padding_half</item>
+        <item name="android:button">@null</item>
+        <item name="android:background">@drawable/selector_channel_radio</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textAppearance">@style/TextAppearance.Material3.TitleSmall.Emphasized
+        </item>
+        <item name="android:textColor">@color/text_selector_channel</item>
+    </style>
 </resources>
