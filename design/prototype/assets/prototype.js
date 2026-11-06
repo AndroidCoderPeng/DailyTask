@@ -14,7 +14,6 @@
     screen: 'main',
     history: [],
     running: true,
-    mask: false,
     tasks: [
       { id: 1, time: '08:30:00', window: '08:20 – 08:40', state: 'done', actual: '08:29:47' },
       { id: 2, time: '12:30:00', window: '12:20 – 12:40', state: 'running', actual: '' },
@@ -188,9 +187,6 @@
     if (!noHistory) state.history.push(state.screen);
     state.screen = screen;
 
-    // 总览模式下选择某个页面 → 自动回到单页浏览
-    exitOverview();
-
     $$('.screen').forEach(function (s) {
       s.classList.toggle('is-active', s.dataset.screen === screen);
     });
@@ -207,16 +203,6 @@
   function back() {
     const prev = state.history.pop() || 'main';
     goto(prev, true);
-  }
-
-  function exitOverview() {
-    const stage = $('.stage');
-    if (!stage.classList.contains('is-overview')) return;
-    stage.classList.remove('is-overview');
-    const btn = $('#overviewBtn');
-    btn.classList.remove('is-on');
-    const label = $('#overviewLabel');
-    if (label) label.textContent = '总览模式';
   }
 
   /* ---------------------------------------------------------
@@ -829,18 +815,6 @@
       }
     });
 
-    // 伪灭屏（评审辅助入口在左侧栏）
-    $('#maskToggle').addEventListener('click', function () {
-      state.mask = !state.mask;
-      $('#maskOverlay').hidden = !state.mask;
-      this.classList.toggle('is-on', state.mask);
-    });
-    $('#maskOverlay').addEventListener('click', function () {
-      state.mask = false;
-      $('#maskOverlay').hidden = true;
-      $('#maskToggle').classList.remove('is-on');
-    });
-
     // 进入设置前先看使用须知（对齐原 App 行为）
     $('#settingsBtn').addEventListener('click', function () {
       openDialog({
@@ -850,14 +824,6 @@
         hideCancel: true,
         onOk: function () { goto('settings'); }
       });
-    });
-
-    // 总览模式：6 个页面并排，一屏看全
-    $('#overviewBtn').addEventListener('click', function () {
-      const on = $('.stage').classList.toggle('is-overview');
-      this.classList.toggle('is-on', on);
-      const label = $('#overviewLabel');
-      if (label) label.textContent = on ? '返回单页' : '总览模式';
     });
 
     // 深 / 浅色切换
@@ -883,12 +849,11 @@
       if (h && $('.screen[data-screen="' + h + '"]') && h !== state.screen) goto(h, true);
     });
 
-    // 快捷键：1~6 直接跳页，← 返回，G 总览
+    // 快捷键：1~6 直接跳页，← 返回
     window.addEventListener('keydown', function (e) {
       const keys = { '1': 'main', '2': 'settings', '3': 'taskconfig', '4': 'channel', '5': 'command', '6': 'qa' };
       if (keys[e.key]) goto(keys[e.key]);
       else if (e.key === 'ArrowLeft' && state.screen !== 'main') back();
-      else if (e.key === 'g' || e.key === 'G') $('#overviewBtn').click();
     });
 
     // 出错时给出可见提示，避免"点了没反应"无从排查

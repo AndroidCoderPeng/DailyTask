@@ -237,8 +237,10 @@ code {
 .phone {
   position: relative;
   flex: 0 1 auto;
-  width: 390px;
+  /* 高度随视口收缩时，宽度按机身比例同步缩放，避免屏幕矮时被压胖 */
   height: min(812px, calc(100vh - 128px));
+  aspect-ratio: 412 / 834; /* 含 11px 边框的外框比例，满高时恰为 390×812 内容区 */
+  width: auto;
   background: var(--bg);
   border-radius: 46px;
   border: 11px solid #10151c;
@@ -251,38 +253,6 @@ code {
 /* ---- 深 / 浅色切换（入口在侧栏「评审辅助」） ---- */
 body:not(.dark) #themeBtn .ico-moon { display: none; }
 body.dark #themeBtn .ico-sun { display: none; }
-/* 总览模式下侧栏按钮保持高亮 */
-#overviewBtn.is-on { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); }
-
-/* ============================ 总览模式：一屏看全 6 个页面 ============================ */
-.stage.is-overview .device-wrap {
-  justify-content: flex-start;
-  align-items: flex-start;
-  overflow: auto;
-  padding: 18px;
-}
-.stage.is-overview .phone {
-  width: auto; height: auto; flex: 0 0 auto;
-  border: 0; border-radius: 0; box-shadow: none; background: transparent;
-  display: block; overflow: visible;
-}
-.stage.is-overview .phone-island,
-.stage.is-overview .phone-statusbar { display: none; }
-.stage.is-overview .viewport {
-  position: static; display: flex; align-items: flex-start; gap: 16px;
-  overflow: visible; width: max-content;
-}
-.stage.is-overview .screen {
-  position: static; display: flex !important;
-  width: 390px; height: 812px; flex: 0 0 auto;
-  zoom: .52;
-  border-radius: 34px; overflow: hidden;
-  background: var(--bg);
-  box-shadow: var(--shadow-2), 0 0 0 9px #10151c;
-}
-.stage.is-overview .sheet-mask,
-.stage.is-overview .dialog-mask,
-.stage.is-overview .toast { display: none !important; }
 
 .phone-island {
   position: absolute; top: 9px; left: 50%; transform: translateX(-50%);
