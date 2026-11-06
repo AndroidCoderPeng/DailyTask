@@ -724,12 +724,14 @@
 <!-- ================= 对话框 ================= -->
 <div class="dialog-mask" id="dialogMask" hidden>
   <div class="dialog" id="dialogBox">
+    <div class="dialog-icon" id="dialogIcon" hidden></div>
     <h3 class="dialog-title" id="dialogTitle">提示</h3>
     <p class="dialog-msg" id="dialogMsg">提示内容</p>
-    <div class="dialog-actions">
-      <button class="btn btn-ghost" id="dialogCancel">取消</button>
+    <div class="dialog-actions" id="dialogActions">
+      <button class="btn btn-quiet" id="dialogCancel">取消</button>
       <button class="btn btn-primary" id="dialogOk">确定</button>
     </div>
+    <p class="dialog-tip" id="dialogTip" hidden></p>
   </div>
 </div>
 

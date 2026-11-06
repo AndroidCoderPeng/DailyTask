@@ -438,13 +438,41 @@
     openSheet('#sheetList');
   }
 
+  /* 对话框顶部语义图标（与弹窗组件原型 dialogs.html 同风格） */
+  const DIALOG_ICONS = {
+    info: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>',
+    warn: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>',
+    danger: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v13a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3zm1.5 6.6l1.4 1.4L13.4 12l1.5 1-1.4 1.4L12 12.9l-1.4 1.4-1.4-1.4 1.5-1.1-1.5-1.1 1.4-1.4 1.4 1.5z" fill="currentColor"/></svg>'
+  };
+
   function openDialog(opt) {
+    // 顶部语义图标：info / warn / danger，缺省不显示
+    const icon = $('#dialogIcon');
+    if (opt.icon && DIALOG_ICONS[opt.icon]) {
+      icon.hidden = false;
+      icon.className = 'dialog-icon' + (opt.icon === 'info' ? '' : ' is-' + opt.icon);
+      icon.innerHTML = DIALOG_ICONS[opt.icon];
+    } else {
+      icon.hidden = true;
+      icon.innerHTML = '';
+    }
+
     $('#dialogTitle').textContent = opt.title || '提示';
-    $('#dialogMsg').textContent = opt.msg || '';
-    $('#dialogMsg').style.textAlign = 'center';
+    // 内容为代码内写死的文案，用 innerHTML 以支持 <b> 强调（与弹窗组件原型一致）
+    $('#dialogMsg').innerHTML = opt.msg || '';
+
+    // 单按钮（无取消）竖排通栏；危险确认用红色实底
+    $('#dialogActions').classList.toggle('btn-column', !!opt.hideCancel);
+    $('#dialogOk').className = 'btn ' + (opt.danger ? 'btn-danger' : 'btn-primary');
+
     $('#dialogOk').textContent = opt.okText || '确定';
     $('#dialogCancel').textContent = opt.cancelText || '取消';
     $('#dialogCancel').style.display = opt.hideCancel ? 'none' : '';
+
+    const tip = $('#dialogTip');
+    if (opt.tip) { tip.hidden = false; tip.textContent = opt.tip; }
+    else { tip.hidden = true; }
+
     $('#dialogMask').hidden = false;
     $('#dialogOk').onclick = function () {
       $('#dialogMask').hidden = true;
@@ -459,26 +487,25 @@
   function openInputDialog(title, hint, value, onOk) {
     openDialog({
       title: title,
+      msg: '',
       onOk: function () {
         const input = $('#dialogInput');
         onOk(input ? input.value.trim() : '');
-      },
-      onCancel: function () {
-        const msg = $('#dialogMsg');
-        msg.textContent = '';
-        msg.style.textAlign = 'center';
       }
     });
 
+    // 输入框以 dialog-field 结构嵌入，样式与弹窗组件原型一致
     const msg = $('#dialogMsg');
     msg.textContent = '';
-    msg.style.textAlign = 'left';
+    const field = document.createElement('div');
+    field.className = 'dialog-field';
     const input = document.createElement('input');
     input.className = 'input';
     input.id = 'dialogInput';
     input.value = value || '';
     input.placeholder = hint || '';
-    msg.appendChild(input);
+    field.appendChild(input);
+    msg.appendChild(field);
     setTimeout(function () { input.focus(); }, 120);
   }
 
@@ -633,7 +660,10 @@
         const id = parseInt(card.dataset.id, 10);
         openDialog({
           title: '删除任务',
-          msg: '确定要删除这个任务吗？',
+          msg: '确定要删除这个任务吗？删除后当天将不再自动执行该时间点。',
+          icon: 'danger',
+          danger: true,
+          okText: '删除',
           onOk: function () {
             state.tasks = state.tasks.filter(function (t) { return t.id !== id; });
             renderTasks();
@@ -819,9 +849,11 @@
     $('#settingsBtn').addEventListener('click', function () {
       openDialog({
         title: '使用须知',
-        msg: '本软件完全免费！仅供内部使用！严禁商用或者用作其他非法用途！\n近期发现有人在闲鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！',
+        msg: '本软件完全免费！仅供内部使用！<b>严禁商用或者用作其他非法用途！</b>\n近期发现有人在闲鱼私自倒卖本软件，请勿购买！如有购买，请联系卖家退款！',
+        icon: 'warn',
         okText: '知道了',
         hideCancel: true,
+        tip: '关闭后可在「设置」中随时查看',
         onOk: function () { goto('settings'); }
       });
     });
@@ -911,7 +943,14 @@
     if (hash && $('.screen[data-screen="' + hash + '"]')) goto(hash, true);
     if (hash === 'sheet-time') openTimeSheet('add', null);
     if (hash === 'sheet-workday') { renderWorkday(); openSheet('#sheetWorkday'); }
-    if (hash === 'dialog') openDialog({ title: '使用须知', msg: '本软件完全免费！仅供内部使用！\n严禁商用或者用作其他非法用途！', okText: '知道了', hideCancel: true });
+    if (hash === 'dialog') openDialog({
+      title: '使用须知',
+      msg: '本软件完全免费！仅供内部使用！\n严禁商用或者用作其他非法用途！',
+      icon: 'warn',
+      okText: '知道了',
+      hideCancel: true,
+      tip: '关闭后可在「设置」中随时查看'
+    });
   }
 
   document.addEventListener('DOMContentLoaded', init);

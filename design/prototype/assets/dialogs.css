@@ -29,45 +29,18 @@
 .demo-trigger-arrow { color: var(--text-3); flex: 0 0 auto; }
 
 /* ==================== 1. 单按钮对话框 ==================== */
-/* 中性提示 / 强告知：只有一条出路「知道了」 */
-.dialog .dialog-icon {
-  width: 44px; height: 44px; margin: 0 auto 12px; border-radius: 14px;
-  display: grid; place-items: center;
-  background: var(--primary-soft); color: var(--primary);
-}
-.dialog .dialog-icon.is-warn { background: var(--warn-soft); color: var(--warn); }
-.dialog .dialog-icon.is-danger { background: var(--danger-soft); color: var(--danger); }
-.dialog .dialog-msg b { color: var(--text); font-weight: 600; }
-.dialog-actions.btn-column { flex-direction: column; gap: 0; }
-.dialog-actions.btn-column .btn { width: 100%; }
-.dialog-tip {
-  margin-top: 12px; text-align: center;
-  font-size: 11px; color: var(--text-3);
-}
+/* 图标 / 竖排按钮 / 底部提示等基础样式已上移至 prototype.css */
 
 /* ==================== 2. 双按钮对话框 ==================== */
-/* 危险确认：确认键用 danger 实底，取消键用 quiet，主次分明 */
-.btn.btn-danger-ghost {
-  background: var(--danger-soft); color: var(--danger);
-}
-@media (hover: hover) and (pointer: fine) {
-  .btn.btn-danger-ghost:hover { background: color-mix(in srgb, var(--danger) 18%, transparent); }
-}
+/* 危险确认：确认键用 danger 实底（.btn-danger 已在 prototype.css） */
 
 /* ==================== 3. 带输入框对话框 ==================== */
-.dialog-field { margin-top: 14px; text-align: left; }
+/* 输入错误态：边框变红不再弹 toast */
 .dialog-field .field-label { margin-bottom: 7px; }
-.dialog-field .input { background: var(--surface-2); }
-.dialog-field .field-hint { margin-top: 7px; }
 .dialog-field .input.is-error {
   border-color: var(--danger);
   box-shadow: 0 0 0 3px var(--danger-soft);
 }
-.dialog-error {
-  display: none; align-items: center; gap: 5px;
-  margin-top: 7px; font-size: 11.5px; color: var(--danger);
-}
-.dialog-error.is-show { display: flex; }
 
 /* ==================== 4. 底部 ActionSheet ==================== */
 .actionsheet .as-title { font-size: 16px; font-weight: 700; text-align: center; }

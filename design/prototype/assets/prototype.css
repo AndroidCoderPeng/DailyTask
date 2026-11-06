@@ -822,6 +822,37 @@ body.dark #themeBtn .ico-sun { display: none; }
 .dialog-actions { display: flex; gap: 10px; margin-top: 18px; }
 .dialog-actions .btn { flex: 1 1 0; }
 
+/* 顶部语义图标：info 默认主色 / warn 提醒 / danger 危险 */
+.dialog .dialog-icon {
+  width: 44px; height: 44px; margin: 0 auto 12px; border-radius: 14px;
+  display: grid; place-items: center;
+  background: var(--primary-soft); color: var(--primary);
+}
+.dialog .dialog-icon.is-warn { background: var(--warn-soft); color: var(--warn); }
+.dialog .dialog-icon.is-danger { background: var(--danger-soft); color: var(--danger); }
+.dialog .dialog-icon[hidden] { display: none; }
+.dialog-msg b { color: var(--text); font-weight: 600; }
+
+/* 单按钮对话框：动作区竖排通栏 */
+.dialog-actions.btn-column { flex-direction: column; gap: 0; }
+.dialog-actions.btn-column .btn { width: 100%; }
+
+/* 底部小字提示 */
+.dialog-tip {
+  margin-top: 12px; text-align: center;
+  font-size: 11px; color: var(--text-3);
+}
+
+/* 内嵌输入框的对话框 */
+.dialog-field { margin-top: 14px; text-align: left; }
+.dialog-field .input { background: var(--surface-2); }
+.dialog-field .field-hint { margin-top: 7px; }
+.dialog-error {
+  display: none; align-items: center; gap: 5px;
+  margin-top: 7px; font-size: 11.5px; color: var(--danger);
+}
+.dialog-error.is-show { display: flex; }
+
 /* ============================ Toast ============================ */
 .toast {
   position: absolute; left: 50%; bottom: 92px; transform: translateX(-50%);
