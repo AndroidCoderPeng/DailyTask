@@ -13,7 +13,7 @@ object Constant {
     const val TASK_SCHEDULER_RUNNING_KEY = "TASK_SCHEDULER_RUNNING_KEY" // 任务调度器是否正在运行(Boolean)
     const val STAY_OVERTIME_KEY = "STAY_OVERTIME_KEY" // 打卡停留在目标APP的时间(Int)
     const val TIME_RANGE_KEY = "TIME_RANGE_KEY" // 随机时间范围[0,range](Int)
-    const val MSG_CHANNEL_KEY = "MSG_CHANNEL_KEY" // 消息渠道：0-邮件，1-企业微信(Int)
+    const val MSG_CHANNEL_KEY = "MSG_CHANNEL_KEY" // 消息渠道：0-企业微信，1-邮件(Int)
     const val TARGET_APP_KEY = "TARGET_APP_KEY" // 目标应用(Int)
 
     const val REMOTE_COMMAND_KEY = "REMOTE_COMMAND_KEY" // 打卡远程消息指令(String)

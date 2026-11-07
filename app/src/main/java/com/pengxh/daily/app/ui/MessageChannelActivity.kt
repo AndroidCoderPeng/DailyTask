@@ -63,9 +63,15 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
         }
 
         // 恢复上次选择的渠道：0-企业微信，1-邮件
-//        if (AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX) == 0) {
-//            binding.channelRadioGroup.check(R.id.wxRadioButton)
-//        }
+        when (AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)) {
+            0 -> if (AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "").isNotBlank()) {
+                binding.channelRadioGroup.check(R.id.wxRadioButton)
+            }
+
+            1 -> if (!AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY).isEmpty) {
+                binding.channelRadioGroup.check(R.id.qqRadioButton)
+            }
+        }
 
         refreshChannelState()
     }
@@ -107,11 +113,28 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
     }
 
     override fun initEvent() {
-        binding.channelRadioGroup.setOnCheckedChangeListener { _, checkedId ->
-            if (checkedId == R.id.wxRadioButton) {
+        var previousCheckedId = binding.channelRadioGroup.checkedRadioButtonId
+        binding.channelRadioGroup.setOnCheckedChangeListener { group, checkedId ->
+            val configured = when (checkedId) {
+                R.id.wxRadioButton -> {
+                    AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "").isNotBlank()
+                }
 
+                R.id.qqRadioButton -> {
+                    !AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY).isEmpty
+                }
+
+                else -> return@setOnCheckedChangeListener
+            }
+
+            if (!configured) {
+                group.check(previousCheckedId)
+                "请先测试并保存该渠道配置".show(this)
             } else {
-
+                previousCheckedId = checkedId
+                AppConfig.saveInt(
+                    Constant.MSG_CHANNEL_KEY, if (checkedId == R.id.wxRadioButton) 0 else 1
+                )
             }
         }
 

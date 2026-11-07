@@ -53,7 +53,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val kTag = "SettingsActivity"
     private val context = this@SettingsActivity
     private val apps = listOf("钉钉", "企业微信", "飞书", "移动办公M3")
-    private val channels = listOf("QQ邮箱", "企业微信")
+    private val channels = listOf("企业微信", "QQ邮箱")
     private val permissionContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val notificationContract by lazy { ActivityResultContracts.StartActivityForResult() }
     private val projectionContract by lazy { ActivityResultContracts.StartActivityForResult() }
