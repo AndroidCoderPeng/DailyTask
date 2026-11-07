@@ -87,10 +87,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         val watermark = DailyTask.getWatermarkText()
         binding.contentView.background = WatermarkDrawable(this, watermark)
 
-
-        val index = (AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)).coerceIn(0, apps.lastIndex)
-        binding.targetAppItem.rightTextView.text = apps[index]
-
         binding.versionItem.rightTextView.text = BuildConfig.VERSION_NAME
 
         if (notificationEnable()) {
@@ -116,7 +112,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         binding.captureRadioButton.isChecked = false
                     }
                 } else {
-                    binding.noticeListenerItem.descView.text = "服务未开启，无法监听打卡结果和接收远程指令"
+                    binding.noticeListenerItem.descView.text =
+                        "服务未开启，无法监听打卡结果和接收远程指令"
                     binding.noticeListenerItem.descView.setTextColor(Color.RED)
                     binding.noticeListenerItem.switchView.isChecked = false
                     binding.noticeRadioButton.isChecked = false
@@ -260,8 +257,42 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             projectionLauncher.launch(mpr.createScreenCaptureIntent())
         }
 
+        binding.noticeRadioButton.setOnClickListener {
+            val index = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
+            if (index != 0) {
+                "通知监听仅支持钉钉打卡".show(this)
+                binding.noticeRadioButton.isChecked = false
+                return@setOnClickListener
+            }
+
+            if (binding.noticeListenerItem.switchView.isChecked) {
+                binding.noticeRadioButton.isChecked = true
+                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                binding.captureRadioButton.isChecked = false
+            } else {
+                "请先打开通知监听".show(this)
+                binding.noticeRadioButton.isChecked = false
+            }
+        }
+
+        binding.captureRadioButton.setOnClickListener {
+            if (binding.captureItem.switchView.isChecked) {
+                binding.captureRadioButton.isChecked = true
+                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
+                binding.noticeRadioButton.isChecked = false
+            } else {
+                "请先打开截屏服务".show(this)
+                binding.captureRadioButton.isChecked = false
+            }
+        }
+
         // ================== 任务目标 ==================
         binding.targetAppItem.setOnClickListener {
+            if (!binding.noticeListenerItem.switchView.isChecked || !binding.captureItem.switchView.isChecked) {
+                "请先打开通知监听或截屏服务".show(this)
+                return@setOnClickListener
+            }
+
             showActionSheet(R.layout.sheet_select_target_app) { view, dialog ->
                 val switches = listOf(
                     view.findViewById<SettingItemView>(R.id.ddItemView),
@@ -338,35 +369,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     dialog.dismiss()
                     "已切换到${apps[position]}".show(this)
                 }
-            }
-        }
-
-        binding.noticeRadioButton.setOnClickListener {
-            val index = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
-            if (index != 0) {
-                "通知监听仅支持钉钉打卡".show(this)
-                binding.noticeRadioButton.isChecked = false
-                return@setOnClickListener
-            }
-
-            if (binding.noticeListenerItem.switchView.isChecked) {
-                binding.noticeRadioButton.isChecked = true
-                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
-                binding.captureRadioButton.isChecked = false
-            } else {
-                "请先打开通知监听".show(this)
-                binding.noticeRadioButton.isChecked = false
-            }
-        }
-
-        binding.captureRadioButton.setOnClickListener {
-            if (binding.captureItem.switchView.isChecked) {
-                binding.captureRadioButton.isChecked = true
-                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 1)
-                binding.noticeRadioButton.isChecked = false
-            } else {
-                "请先打开截屏服务".show(this)
-                binding.captureRadioButton.isChecked = false
             }
         }
 

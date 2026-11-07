@@ -73,40 +73,6 @@
                         app:itemDescColor="@color/failure_color"
                         app:itemRightType="toggle"
                         app:itemTitle="截屏服务" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/dp_12"
-                android:layout_marginBottom="@dimen/margin_half"
-                android:text="任务目标"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
-                android:textColor="#ABABAB" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/white"
-                app:strokeColor="@color/border_color">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:divider="@drawable/divider_line"
-                    android:dividerPadding="@dimen/padding_2x"
-                    android:orientation="vertical"
-                    android:showDividers="middle">
-
-                    <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/targetAppItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemIcon="@drawable/ic_setting_target"
-                        app:itemRightTextColor="@color/theme_color"
-                        app:itemRightType="text"
-                        app:itemTitle="目标应用" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -156,6 +122,41 @@
                             </RadioGroup>
                         </com.google.android.material.card.MaterialCardView>
                     </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginBottom="@dimen/margin_half"
+                android:text="任务目标"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/padding_2x"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
+
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/targetAppItem"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:itemIcon="@drawable/ic_setting_target"
+                        app:itemRightText="未设置"
+                        app:itemRightTextColor="@color/theme_color"
+                        app:itemRightType="text"
+                        app:itemTitle="目标应用" />
 
                     <com.pengxh.daily.app.widget.SettingItemView
                         android:id="@+id/msgChannelItem"
