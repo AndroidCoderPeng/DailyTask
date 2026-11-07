@@ -32,7 +32,6 @@ import java.time.DayOfWeek
 
 class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
-    private val kTag = "TaskConfigActivity"
     private val context = this@TaskConfigActivity
 
     override fun initViewBinding(): ActivityTaskConfigBinding {
@@ -91,7 +90,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         // 运行中排程已按当日 flag 计算，中途改工作日会引入额外判断，故直接锁定入口
         lifecycleScope.launch {
             TaskScheduler.isRunning.collectLatest { running ->
-                binding.workdayLayout.apply {
+                binding.workdayItem.apply {
                     isEnabled = !running
                     alpha = if (running) 0.5f else 1f
                 }
@@ -204,7 +203,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
             }
         }
 
-        binding.workdayLayout.setOnClickListener {
+        binding.workdayItem.setOnClickListener {
             if (TaskScheduler.isRunning()) {
                 "任务进行中，无法修改工作日".show(context)
                 return@setOnClickListener
@@ -269,7 +268,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     private fun updateCustomWorkdaySummary(workdays: Set<DayOfWeek>) {
-        binding.workdayValueView.text = CustomWorkdayManager.formatWorkdays(workdays)
+        binding.workdayItem.rightTextView.text = CustomWorkdayManager.formatWorkdays(workdays)
     }
 
     private fun setTaskResetTime(hour: Int) {

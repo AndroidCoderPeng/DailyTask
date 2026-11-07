@@ -75,44 +75,13 @@
                         app:itemRightType="text"
                         app:itemTitle="任务口令" />
 
-                    <LinearLayout
-                        android:id="@+id/workdayLayout"
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/workdayItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:paddingHorizontal="@dimen/padding_2x"
-                        android:paddingVertical="@dimen/dp_12">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:text="工作日设置"
-                                android:textAppearance="@style/TextAppearance.Material3.TitleSmall" />
-
-                            <com.google.android.material.textview.MaterialTextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="end"
-                                android:singleLine="true"
-                                android:text="非工作日自动跳过任务"
-                                android:textSize="@dimen/smallest_text_size" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/workdayValueView"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/margin_2x"
-                            android:layout_weight="1"
-                            android:gravity="end"
-                            android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
-                    </LinearLayout>
+                        app:itemDesc="非工作日自动跳过任务"
+                        app:itemRightType="text"
+                        app:itemTitle="工作日设置" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

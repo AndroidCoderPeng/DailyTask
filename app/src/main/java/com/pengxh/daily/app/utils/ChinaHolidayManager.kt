@@ -274,16 +274,16 @@ object ChinaHolidayManager {
         val currentCached = cachedData[currentYear]
         val nextUpdated = updatedData[nextYear]
         val nextCached = cachedData[nextYear]
-        val nextYearStatus = when {
+        val nextYearState = when {
             nextUpdated != null -> "，\r\n并且已预载${nextYear}年节假日数据！"
             nextCached != null -> "，并保留${nextYear}年缓存数据！"
             else -> "。\r\n${nextYear}年数据暂不可用（可能尚未发布）"
         }
 
         when {
-            currentUpdated != null -> notifySuccess("${currentYear}年节假日数据更新完成$nextYearStatus")
-            currentCached != null -> notifySuccess("刷新节假日数据失败，已回退到${currentYear}年缓存$nextYearStatus")
-            else -> notifyError("当前年度节假日数据刷新失败，且没有可用缓存$nextYearStatus")
+            currentUpdated != null -> notifySuccess("${currentYear}年节假日数据更新完成$nextYearState")
+            currentCached != null -> notifySuccess("刷新节假日数据失败，已回退到${currentYear}年缓存$nextYearState")
+            else -> notifyError("当前年度节假日数据刷新失败，且没有可用缓存$nextYearState")
         }
     }
 

@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.utils
 
-import com.pengxh.daily.app.utils.AppConfig
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -63,15 +62,26 @@ object CustomWorkdayManager {
     }
 
     fun formatWorkdays(workdays: Set<DayOfWeek>): String {
-        val workdayNames = orderedDays.filter {
-            it in workdays
-        }.joinToString("、") {
-            dayNameMap[it].orEmpty()
-        }
+        val days = orderedDays.filter { it in workdays }
+        if (days.size == orderedDays.size) return "每天"
+        if (days.isEmpty()) return ""
 
-        return when (workdays.size) {
-            7 -> "每天"
-            else -> workdayNames
+        val ranges = mutableListOf<List<DayOfWeek>>()
+        var range = mutableListOf<DayOfWeek>()
+
+        for (day in days) {
+            if (range.isNotEmpty() && day.value != range.last().value + 1) {
+                ranges += range
+                range = mutableListOf()
+            }
+            range += day
+        }
+        ranges += range
+
+        return ranges.joinToString("、") { daysInRange ->
+            val start = dayNameMap.getValue(daysInRange.first())
+            if (daysInRange.size == 1) start
+            else "${start}至${dayNameMap.getValue(daysInRange.last())}"
         }
     }
 
