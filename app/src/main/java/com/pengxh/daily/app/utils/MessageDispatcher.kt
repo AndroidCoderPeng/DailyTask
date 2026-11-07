@@ -63,6 +63,36 @@ object MessageDispatcher {
         append("版本号：${BuildConfig.VERSION_NAME}")
     }
 
+    fun sendTestMessage(
+        title: String,
+        content: String,
+        webhookKey: String,
+        onSuccess: (() -> Unit)? = null,
+        onFailure: ((String) -> Unit)? = null
+    ) {
+        // 统一拼接元数据，所有渠道都用同一个完整内容
+        val fullContent = buildString {
+            appendLine(title)
+            appendLine(content)
+            appendMetaInfo()
+        }
+
+        scope.launch {
+            val response = RetrofitServiceManager.sendMessage(fullContent, webhookKey)
+            val failure = parseWechatResponse(response)
+            withContext(Dispatchers.Main) {
+                if (failure == null) onSuccess?.invoke() else onFailure?.invoke(failure)
+            }
+        }
+    }
+
+    private fun parseWechatResponse(response: String): String? {
+        val (code, message) = response.getResponseHeader()
+        return if (code == 0) null else "企业微信返回错误：$message（errcode=$code）"
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+
     private fun shouldFallback(channelOverride: Int?, onSuccess: (() -> Unit)?): Boolean {
         return channelOverride == null && onSuccess == null
     }
@@ -248,26 +278,22 @@ object MessageDispatcher {
         content: String,
         webhookKeyOverride: String?
     ): String? {
-        return try {
-            parseWechatResponse(RetrofitServiceManager.sendMessage(content, webhookKeyOverride))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            e.message ?: "企业微信发送失败"
-        }
+//        return try {
+//            parseWechatResponse(RetrofitServiceManager.sendMessage(content, webhookKeyOverride))
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            e.message ?: "企业微信发送失败"
+//        }
+        return null
     }
 
     private suspend fun sendWechatImageSuspend(imagePath: String): String? {
-        return try {
-            parseWechatResponse(RetrofitServiceManager.sendImageMessage(imagePath))
-        } catch (e: Exception) {
-            e.printStackTrace()
-            e.message ?: "企业微信发送失败"
-        }
-    }
-
-    /** @return null 表示成功；非 null 为企业微信返回的错误说明 */
-    private fun parseWechatResponse(response: String): String? {
-        val (code, message) = response.getResponseHeader()
-        return if (code == 0) null else "企业微信返回错误：$message（errcode=$code）"
+//        return try {
+//            parseWechatResponse(RetrofitServiceManager.sendImageMessage(imagePath))
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//            e.message ?: "企业微信发送失败"
+//        }
+        return null
     }
 }
