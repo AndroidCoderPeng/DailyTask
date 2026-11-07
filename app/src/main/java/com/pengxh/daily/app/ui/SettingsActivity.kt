@@ -84,46 +84,29 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
+        val watermark = DailyTask.getWatermarkText()
+        binding.contentView.background = WatermarkDrawable(this, watermark)
+
+
         val index = (AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)).coerceIn(0, apps.lastIndex)
         binding.targetAppItem.rightTextView.text = apps[index]
 
         binding.versionItem.rightTextView.text = BuildConfig.VERSION_NAME
+
         if (notificationEnable()) {
             turnOnNotificationMonitorService()
         }
 
-        val watermark = DailyTask.getWatermarkText()
-        binding.contentView.background = WatermarkDrawable(this, watermark)
-
         binding.commandItem.rightTextView.text = "${CommandDisplayActivity.commands.size} 条"
+    }
 
-        lifecycleScope.launch {
-            ChinaHolidayManager.syncResult.collect { result ->
-                when (result) {
-                    is ChinaHolidayManager.SyncResult.Success -> {
-                        LoadingDialog.dismiss()
-                        showCustomDialog(R.layout.dialog_update_result) { view, dialog ->
-                            view.findViewById<TextView>(R.id.textView).text = result.content
-                            view.findViewById<View>(R.id.confirmButton).setOnClickListener {
-                                dialog.dismiss()
-                            }
-                        }
-                    }
-
-                    is ChinaHolidayManager.SyncResult.Error -> {
-                        LoadingDialog.dismiss()
-                        result.message.show(context)
-                    }
-                }
-            }
-        }
-
+    override fun observeRequestState() {
         // 监听通知服务状态
         lifecycleScope.launch {
             NotificationMonitorService.listenerState.collect { connected ->
                 if (connected) {
-                    binding.noticeItem.switchView.isChecked = true
-                    binding.noticeItem.descView.visibility = View.GONE
+                    binding.noticeListenerItem.switchView.isChecked = true
+                    binding.noticeListenerItem.descView.visibility = View.GONE
                     val sourceType =
                         AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
                     val targetApp =
@@ -133,11 +116,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         binding.captureRadioButton.isChecked = false
                     }
                 } else {
-                    binding.noticeItem.descView.text = "服务未开启，无法监听打卡结果和接收远程指令"
-                    binding.noticeItem.descView.setTextColor(Color.RED)
-                    binding.noticeItem.switchView.isChecked = false
+                    binding.noticeListenerItem.descView.text = "服务未开启，无法监听打卡结果和接收远程指令"
+                    binding.noticeListenerItem.descView.setTextColor(Color.RED)
+                    binding.noticeListenerItem.switchView.isChecked = false
                     binding.noticeRadioButton.isChecked = false
-                    binding.noticeItem.descView.visibility = View.VISIBLE
+                    binding.noticeListenerItem.descView.visibility = View.VISIBLE
                 }
             }
         }
@@ -175,13 +158,109 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 }
             }
         }
+
+        lifecycleScope.launch {
+            ChinaHolidayManager.syncResult.collect { result ->
+                when (result) {
+                    is ChinaHolidayManager.SyncResult.Success -> {
+                        LoadingDialog.dismiss()
+                        showCustomDialog(R.layout.dialog_update_result) { view, dialog ->
+                            view.findViewById<TextView>(R.id.textView).text = result.content
+                            view.findViewById<View>(R.id.confirmButton).setOnClickListener {
+                                dialog.dismiss()
+                            }
+                        }
+                    }
+
+                    is ChinaHolidayManager.SyncResult.Error -> {
+                        LoadingDialog.dismiss()
+                        result.message.show(context)
+                    }
+                }
+            }
+        }
+
+        lifecycleScope.launch {
+            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA)
+
+            ChinaHolidayManager.currentYearUpdatedAt.collect { timestamp ->
+                binding.updateHolidayItem.rightText = timestamp?.let {
+                    formatter.format(Date(it))
+                } ?: "暂无时间"
+            }
+        }
     }
 
-    override fun observeRequestState() {
+    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
+        if (Settings.canDrawOverlays(this)) {
+            Intent(this, FloatingWindowService::class.java).apply {
+                startService(this)
+            }
+        }
+    }
 
+    private val notificationSettingLauncher = registerForActivityResult(notificationContract) {
+        if (notificationEnable()) {
+            turnOnNotificationMonitorService()
+        }
+    }
+
+    private val projectionLauncher = registerForActivityResult(projectionContract) {
+        if (it.resultCode != RESULT_OK) {
+            "用户拒绝授权".show(this)
+            return@registerForActivityResult
+        }
+
+        val data = it.data ?: run {
+            "授权失败".show(this)
+            return@registerForActivityResult
+        }
+
+        if (ProjectionSession.isStateActive()) {
+            Log.d(kTag, "MediaProjection already active, skipping creation")
+            return@registerForActivityResult
+        }
+
+        Intent(this, CaptureImageService::class.java).apply {
+            putExtra("resultCode", it.resultCode)
+            putExtra("data", data)
+            startForegroundService(this)
+        }
     }
 
     override fun initEvent() {
+        // ================== 服务与权限 ==================
+        binding.floatingItem.switchView.setOnClickListener {
+            if (Settings.canDrawOverlays(this)) {
+                "核心服务，无法关闭".show(this)
+                binding.floatingItem.switchView.isChecked = true
+                return@setOnClickListener
+            }
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+            overlayPermissionLauncher.launch(intent)
+        }
+
+        binding.noticeListenerItem.switchView.setOnClickListener {
+            if (notificationEnable()) {
+                "核心服务，无法关闭".show(this)
+                binding.noticeListenerItem.switchView.isChecked = true
+                return@setOnClickListener
+            }
+            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            notificationSettingLauncher.launch(intent)
+        }
+
+        binding.captureItem.switchView.setOnClickListener {
+            if (ProjectionSession.isStateActive()) {
+                "核心服务，无法关闭".show(this)
+                binding.captureItem.switchView.isChecked = true
+                return@setOnClickListener
+            }
+            binding.captureItem.switchView.isChecked = false
+            projectionLauncher.launch(mpr.createScreenCaptureIntent())
+        }
+
+        // ================== 任务目标 ==================
         binding.targetAppItem.setOnClickListener {
             showActionSheet(R.layout.sheet_select_target_app) { view, dialog ->
                 val switches = listOf(
@@ -226,7 +305,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                     when (position) {
                         0 -> {
                             // 钉钉：默认通知监听，通知未开则降级截屏，两者都未开则阻断
-                            if (binding.noticeItem.switchView.isChecked) {
+                            if (binding.noticeListenerItem.switchView.isChecked) {
                                 binding.noticeRadioButton.isChecked = true
                                 AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                                 binding.captureRadioButton.isChecked = false
@@ -262,10 +341,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
         }
 
-        binding.msgChannelItem.setOnClickListener {
-            navigatePageTo<MessageChannelActivity>()
-        }
-
         binding.noticeRadioButton.setOnClickListener {
             val index = AppConfig.loadInt(Constant.TARGET_APP_KEY, 0)
             if (index != 0) {
@@ -274,7 +349,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 return@setOnClickListener
             }
 
-            if (binding.noticeItem.switchView.isChecked) {
+            if (binding.noticeListenerItem.switchView.isChecked) {
                 binding.noticeRadioButton.isChecked = true
                 AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                 binding.captureRadioButton.isChecked = false
@@ -295,6 +370,48 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             }
         }
 
+        binding.msgChannelItem.setOnClickListener {
+            navigatePageTo<MessageChannelActivity>()
+        }
+
+        binding.remoteClockInCaptureItem.switchView.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            if (isChecked && !ProjectionSession.isStateActive()) {
+                syncingSwitchState = true
+                binding.remoteClockInCaptureItem.switchView.isChecked = false
+                syncingSwitchState = false
+                "请先打开截屏服务".show(this)
+                return@setOnCheckedChangeListener
+            }
+            AppConfig.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, isChecked)
+        }
+
+        // ================== 行为偏好 ==================
+        binding.gestureItem.switchView.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            AppConfig.saveBoolean(Constant.GESTURE_DETECTOR_KEY, isChecked)
+        }
+
+        binding.powerSaveItem.switchView.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            AppConfig.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
+            FloatingWindowService.notifyPowerSaveModeChanged()
+        }
+
+        binding.backHomeItem.switchView.setOnCheckedChangeListener { _, isChecked ->
+            if (syncingSwitchState) {
+                return@setOnCheckedChangeListener
+            }
+            AppConfig.saveBoolean(Constant.BACK_TO_HOME_KEY, isChecked)
+        }
+
+        // ================== 任务 ==================
         binding.taskConfigItem.setOnClickListener {
             navigatePageTo<TaskConfigActivity>()
         }
@@ -304,46 +421,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             ChinaHolidayManager.updateChinaHolidayData(forceRefresh = true)
         }
 
-        lifecycleScope.launch {
-            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA)
-
-            ChinaHolidayManager.currentYearUpdatedAt.collect { timestamp ->
-                binding.updateHolidayItem.rightText = timestamp?.let {
-                    formatter.format(Date(it))
-                } ?: "暂无时间"
-            }
-        }
-
-        binding.floatingItem.switchView.setOnClickListener {
-            if (Settings.canDrawOverlays(this)) {
-                "核心服务，无法关闭".show(this)
-                binding.floatingItem.switchView.isChecked = true
-                return@setOnClickListener
-            }
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
-            overlayPermissionLauncher.launch(intent)
-        }
-
-        binding.noticeItem.switchView.setOnClickListener {
-            if (notificationEnable()) {
-                "核心服务，无法关闭".show(this)
-                binding.noticeItem.switchView.isChecked = true
-                return@setOnClickListener
-            }
-            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-            notificationSettingLauncher.launch(intent)
-        }
-
-        binding.captureItem.switchView.setOnClickListener {
-            if (ProjectionSession.isStateActive()) {
-                "核心服务，无法关闭".show(this)
-                binding.captureItem.switchView.isChecked = true
-                return@setOnClickListener
-            }
-            binding.captureItem.switchView.isChecked = false
-            projectionLauncher.launch(mpr.createScreenCaptureIntent())
-        }
-
+        // ================== 工具 ==================
         binding.commandItem.setOnClickListener {
             navigatePageTo<CommandDisplayActivity>()
         }
@@ -389,42 +467,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                         "发送失败：$it".show(context)
                     })
             }
-        }
-
-        binding.gestureItem.switchView.setOnCheckedChangeListener { _, isChecked ->
-            if (syncingSwitchState) {
-                return@setOnCheckedChangeListener
-            }
-            AppConfig.saveBoolean(Constant.GESTURE_DETECTOR_KEY, isChecked)
-        }
-
-        binding.backHomeItem.switchView.setOnCheckedChangeListener { _, isChecked ->
-            if (syncingSwitchState) {
-                return@setOnCheckedChangeListener
-            }
-            AppConfig.saveBoolean(Constant.BACK_TO_HOME_KEY, isChecked)
-        }
-
-        binding.powerSaveItem.switchView.setOnCheckedChangeListener { _, isChecked ->
-            if (syncingSwitchState) {
-                return@setOnCheckedChangeListener
-            }
-            AppConfig.saveBoolean(Constant.POWER_SAVE_MODE_KEY, isChecked)
-            FloatingWindowService.notifyPowerSaveModeChanged()
-        }
-
-        binding.remoteClockInCaptureItem.switchView.setOnCheckedChangeListener { _, isChecked ->
-            if (syncingSwitchState) {
-                return@setOnCheckedChangeListener
-            }
-            if (isChecked && !ProjectionSession.isStateActive()) {
-                syncingSwitchState = true
-                binding.remoteClockInCaptureItem.switchView.isChecked = false
-                syncingSwitchState = false
-                "请先打开截屏服务".show(this)
-                return@setOnCheckedChangeListener
-            }
-            AppConfig.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, isChecked)
         }
 
         binding.sendLogItem.setOnClickListener {
@@ -473,43 +515,6 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         }
     }
 
-    private val overlayPermissionLauncher = registerForActivityResult(permissionContract) {
-        if (Settings.canDrawOverlays(this)) {
-            Intent(this, FloatingWindowService::class.java).apply {
-                startService(this)
-            }
-        }
-    }
-
-    private val notificationSettingLauncher = registerForActivityResult(notificationContract) {
-        if (notificationEnable()) {
-            turnOnNotificationMonitorService()
-        }
-    }
-
-    private val projectionLauncher = registerForActivityResult(projectionContract) {
-        if (it.resultCode != RESULT_OK) {
-            "用户拒绝授权".show(this)
-            return@registerForActivityResult
-        }
-
-        val data = it.data ?: run {
-            "授权失败".show(this)
-            return@registerForActivityResult
-        }
-
-        if (ProjectionSession.isStateActive()) {
-            Log.d(kTag, "MediaProjection already active, skipping creation")
-            return@registerForActivityResult
-        }
-
-        Intent(this, CaptureImageService::class.java).apply {
-            putExtra("resultCode", it.resultCode)
-            putExtra("data", data)
-            startForegroundService(this)
-        }
-    }
-
     override fun onResume() {
         super.onResume()
         if (Settings.canDrawOverlays(this)) {
@@ -518,34 +523,25 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         } else {
             binding.floatingItem.switchView.isChecked = false
             binding.floatingItem.descView.visibility = View.VISIBLE
-            binding.floatingItem.descView.text = "服务未开启，打完卡无法自动跳回本软件"
-        }
-
-        val type = AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
-        if (type in 0..channels.lastIndex) {
-            binding.msgChannelItem.rightTextView.text = channels[type]
-            binding.msgChannelItem.rightTextView.setTextColor(R.color.theme_color.convertColor(this))
-        } else {
-            binding.msgChannelItem.rightTextView.text = "未配置"
-            binding.msgChannelItem.rightTextView.setTextColor(R.color.red.convertColor(this))
+            binding.floatingItem.descView.text = "服务未开启，打完卡无法自动回本软件"
         }
 
         // 先同步通知服务的 UI 状态（switch + tipsView）
         if (notificationEnable()) {
-            binding.noticeItem.descView.text = "服务状态查询中，请稍后..."
-            binding.noticeItem.descView.setTextColor(R.color.theme_color.convertColor(this))
+            binding.noticeListenerItem.descView.text = "服务状态查询中，请稍后..."
+            binding.noticeListenerItem.descView.setTextColor(R.color.theme_color.convertColor(this))
             lifecycleScope.launch(Dispatchers.Main) {
                 delay(500)
                 if (notificationEnable()) {
-                    binding.noticeItem.switchView.isChecked = true
-                    binding.noticeItem.descView.visibility = View.GONE
+                    binding.noticeListenerItem.switchView.isChecked = true
+                    binding.noticeListenerItem.descView.visibility = View.GONE
                 }
             }
         } else {
-            binding.noticeItem.descView.text = "服务未开启，无法监听打卡结果和接收远程指令"
-            binding.noticeItem.descView.setTextColor(Color.RED)
-            binding.noticeItem.switchView.isChecked = false
-            binding.noticeItem.descView.visibility = View.VISIBLE
+            binding.noticeListenerItem.descView.text = "服务未开启，无法监听打卡结果和接收远程指令"
+            binding.noticeListenerItem.descView.setTextColor(Color.RED)
+            binding.noticeListenerItem.switchView.isChecked = false
+            binding.noticeListenerItem.descView.visibility = View.VISIBLE
         }
 
         // 先同步截屏服务的 UI 状态（switch + tipsView）
@@ -582,6 +578,15 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         } else {
             binding.captureRadioButton.isChecked = false
             binding.noticeRadioButton.isChecked = false
+        }
+
+        val type = AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+        if (type in 0..channels.lastIndex) {
+            binding.msgChannelItem.rightTextView.text = channels[type]
+            binding.msgChannelItem.rightTextView.setTextColor(R.color.theme_color.convertColor(this))
+        } else {
+            binding.msgChannelItem.rightTextView.text = "未配置"
+            binding.msgChannelItem.rightTextView.setTextColor(R.color.red.convertColor(this))
         }
 
         syncingSwitchState = true

@@ -31,6 +31,56 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="@dimen/margin_half"
+                android:text="服务与权限"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
+                android:textColor="#ABABAB" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/white"
+                app:strokeColor="@color/border_color">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:divider="@drawable/divider_line"
+                    android:dividerPadding="@dimen/padding_2x"
+                    android:orientation="vertical"
+                    android:showDividers="middle">
+
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/floatingItem"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:itemDesc="核心服务，用于打卡后自动跳回本软件"
+                        app:itemRightType="toggle"
+                        app:itemTitle="悬浮权限" />
+
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/noticeListenerItem"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:itemDesc="监听打卡结果与远程指令"
+                        app:itemRightType="toggle"
+                        app:itemTitle="通知监听" />
+
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/captureItem"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:itemDesc="截屏服务未开启，无法获取打卡结果"
+                        app:itemDescColor="@color/failure_color"
+                        app:itemRightType="toggle"
+                        app:itemTitle="截屏服务" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_12"
+                android:layout_marginBottom="@dimen/margin_half"
                 android:text="任务目标"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                 android:textColor="#ABABAB" />
@@ -57,15 +107,6 @@
                         app:itemRightTextColor="@color/theme_color"
                         app:itemRightType="text"
                         app:itemTitle="目标应用" />
-
-                    <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/msgChannelItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemDesc="打卡结果回推渠道"
-                        app:itemIcon="@drawable/ic_setting_message"
-                        app:itemRightType="text"
-                        app:itemTitle="消息渠道" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -117,62 +158,21 @@
                     </LinearLayout>
 
                     <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/msgChannelItem"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:itemDesc="打卡结果回推渠道"
+                        app:itemIcon="@drawable/ic_setting_message"
+                        app:itemRightType="text"
+                        app:itemTitle="消息渠道" />
+
+                    <com.pengxh.daily.app.widget.SettingItemView
                         android:id="@+id/remoteClockInCaptureItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="开启后，【DT#打卡】倒计时结束会截屏并发送结果"
                         app:itemRightType="toggle"
                         app:itemTitle="返回截图" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/dp_12"
-                android:layout_marginBottom="@dimen/margin_half"
-                android:text="服务与权限"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
-                android:textColor="#ABABAB" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/white"
-                app:strokeColor="@color/border_color">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:divider="@drawable/divider_line"
-                    android:dividerPadding="@dimen/padding_2x"
-                    android:orientation="vertical"
-                    android:showDividers="middle">
-
-                    <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/floatingItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemDesc="核心服务，用于打卡后自动跳回本软件"
-                        app:itemRightType="toggle"
-                        app:itemTitle="悬浮权限" />
-
-                    <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/noticeItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemDesc="监听打卡结果与远程指令"
-                        app:itemRightType="toggle"
-                        app:itemTitle="通知监听" />
-
-                    <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/captureItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemDesc="截屏服务未开启，无法获取打卡结果"
-                        app:itemDescColor="@color/failure_color"
-                        app:itemRightType="toggle"
-                        app:itemTitle="截屏服务" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
