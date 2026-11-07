@@ -20,7 +20,6 @@ import android.os.RemoteException
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.get
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.events.ProjectionEvent
 import com.pengxh.daily.app.extensions.createImageFileDir
@@ -36,7 +35,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
@@ -276,67 +274,44 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
     }
 
     private suspend fun captureImage(reader: ImageReader): String {
-        var retryCount = 0
-        while (true) {
-            val startTime = System.currentTimeMillis()
-            Log.d(kTag, "================== 开始截屏 ==================")
-            val image = withTimeoutOrNull(800L) {
-                Log.d(kTag, "进入等待......")
-                waitForImageAvailable(reader)
-            } ?: run {
-                Log.e(kTag, "获取图像失败，等待超时")
-                return ""
-            }
-            Log.d(kTag, "图像获取成功, 耗时: ${System.currentTimeMillis() - startTime}ms")
-
-            val width = image.width
-            val height = image.height
-            val planes = image.planes
-            val buffer = planes[0].buffer
-            val pixelStride = planes[0].pixelStride
-            val rowStride = planes[0].rowStride
-            val rowPadding = rowStride - pixelStride * width
-            val bitmap = createBitmap(width + rowPadding / pixelStride, height)
-            try {
-                bitmap.copyPixelsFromBuffer(buffer)
-            } finally {
-                image.close()
-            }
-
-            val cropped = if (rowPadding != 0) {
-                Bitmap.createBitmap(bitmap, 0, 0, width, height)
-            } else bitmap
-
-            // 只取中间那部分截图
-            val y = (cropped.height * 0.2f).toInt()
-            val halfHeight = y + cropped.height / 2
-
-            // 边界检查
-            val validY = y.coerceAtLeast(0).coerceAtMost(cropped.height - 1)
-            val validHeight = halfHeight.coerceAtLeast(1).coerceAtMost(cropped.height - validY)
-            val topHalf = if (validY >= 0 && validHeight > 0
-                && validY + validHeight <= cropped.height
-            ) {
-                Bitmap.createBitmap(cropped, 0, validY, cropped.width, validHeight)
-            } else {
-                cropped
-            }
-
-            if (isBitmapMostlyBlack(topHalf) && retryCount < 2) {
-                retryCount++
-                Log.w(kTag, "检测到黑色画面，第${retryCount}次重试")
-                delay(1000)
-                continue
-            }
-            if (retryCount >= 2) {
-                Log.w(kTag, "黑色画面重试已耗尽，使用当前图像")
-            }
-
-            val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
-            topHalf.saveImage(imagePath)
-            LogFileManager.writeLog("截屏成功: $imagePath")
-            return imagePath
+        val startTime = System.currentTimeMillis()
+        Log.d(kTag, "================== 开始截屏 ==================")
+        val image = withTimeoutOrNull(800L) {
+            Log.d(kTag, "进入等待......")
+            waitForImageAvailable(reader)
+        } ?: run {
+            Log.e(kTag, "获取图像失败，等待超时")
+            return ""
         }
+        Log.d(kTag, "图像获取成功, 耗时: ${System.currentTimeMillis() - startTime}ms")
+
+        val width = image.width
+        val height = image.height
+        val planes = image.planes
+        val buffer = planes[0].buffer
+        val pixelStride = planes[0].pixelStride
+        val rowStride = planes[0].rowStride
+        val rowPadding = rowStride - pixelStride * width
+        val bitmap = createBitmap(width + rowPadding / pixelStride, height)
+        try {
+            bitmap.copyPixelsFromBuffer(buffer)
+        } finally {
+            image.close()
+        }
+
+        // 截取图片上半部分，去除行尾填充
+        val topHalf = Bitmap.createBitmap(
+            bitmap,
+            0,
+            0,
+            width,
+            (height / 2).coerceAtLeast(1)
+        )
+
+        val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
+        topHalf.saveImage(imagePath)
+        LogFileManager.writeLog("截屏成功: $imagePath")
+        return imagePath
     }
 
     private fun failProjectionCapture(request: CompletableDeferred<String?>) {
@@ -402,26 +377,6 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
         isCapturingInitialized = false
         stopForeground(STOP_FOREGROUND_REMOVE)
-    }
-
-    private fun isBitmapMostlyBlack(bitmap: Bitmap): Boolean {
-        val sampleStep = 10
-        val darkThreshold = 20
-        var darkPixels = 0
-        var totalPixels = 0
-        for (y in 0 until bitmap.height step sampleStep) {
-            for (x in 0 until bitmap.width step sampleStep) {
-                val pixel = bitmap[x, y]
-                val r = (pixel shr 16) and 0xFF
-                val g = (pixel shr 8) and 0xFF
-                val b = pixel and 0xFF
-                if (r < darkThreshold && g < darkThreshold && b < darkThreshold) {
-                    darkPixels++
-                }
-                totalPixels++
-            }
-        }
-        return totalPixels > 0 && darkPixels.toFloat() / totalPixels >= 0.90f
     }
 
     private fun releaseCaptureResources() {

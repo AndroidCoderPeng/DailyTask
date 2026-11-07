@@ -29,18 +29,7 @@ object RetrofitServiceManager {
         return api.sendMessage(requestBody, keyMap).string()
     }
 
-    suspend fun sendImageMessage(imagePath: String, key: String): String {
-        val file = File(imagePath)
-
-        // 微信群机器人图片消息限制 2MB
-//        val maxBytes = 2 * 1024 * 1024L
-//        if (!file.exists()) {
-//            return sendMessage("截图发送失败：图片文件不存在")
-//        }
-//        if (file.length() > maxBytes) {
-//            return sendMessage("截图发送失败：图片超过2MB限制（当前 ${file.length() / 1024}KB），请截图后手动查看")
-//        }
-
+    suspend fun sendImageMessage(file: File, key: String): String {
         val imageBytes = file.readBytes()
 
         // 计算 Base64
