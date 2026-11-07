@@ -57,8 +57,8 @@
     // 设置页同步显示当前生效渠道
     const val = $('#msgChannelValue');
     if (val) {
-      val.textContent = CHANNELS[cur] ? CHANNELS[cur].label : '未配置';
-      val.classList.toggle('ok', !!CHANNELS[cur]);
+      val.textContent = CHANNELS[state.msgChannel] ? CHANNELS[state.msgChannel].label : '未配置';
+      val.classList.toggle('ok', !!CHANNELS[state.msgChannel]);
     }
   }
 
@@ -423,46 +423,91 @@
   const DIALOG_ICONS = {
     info: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>',
     warn: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>',
-    danger: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v13a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3zm1.5 6.6l1.4 1.4L13.4 12l1.5 1-1.4 1.4L12 12.9l-1.4 1.4-1.4-1.4 1.5-1.1-1.5-1.1 1.4-1.4 1.4 1.5z" fill="currentColor"/></svg>'
+    danger: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v13a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3zm1.5 6.6l1.4 1.4L13.4 12l1.5 1-1.4 1.4L12 12.9l-1.4 1.4-1.4-1.4 1.5-1.1-1.5-1.1 1.4-1.4 1.4 1.5z" fill="currentColor"/></svg>',
+    success: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm-1.2 14.6l-4-4 1.4-1.4 2.6 2.6 5.2-5.2 1.4 1.4z" fill="currentColor"/></svg>'
   };
 
+  /* 对话框序号：回调里若又打开了新对话框，旧对话框不再把自己关掉 */
+  let dialogSeq = 0;
+
   function openDialog(opt) {
-    // 顶部语义图标：info / warn / danger，缺省不显示
+    // 顶部语义图标：info / warn / danger，缺省不显示；渠道图标走 iconHTML + 品牌色
     const icon = $('#dialogIcon');
-    if (opt.icon && DIALOG_ICONS[opt.icon]) {
+    if (opt.iconHTML) {
+      icon.hidden = false;
+      icon.className = 'dialog-icon' + (opt.iconTone ? ' is-' + opt.iconTone : '');
+      icon.innerHTML = opt.iconHTML;
+      if (opt.iconColor) icon.style.setProperty('--ico', opt.iconColor);
+      else icon.style.removeProperty('--ico');
+    } else if (opt.icon && DIALOG_ICONS[opt.icon]) {
       icon.hidden = false;
       icon.className = 'dialog-icon' + (opt.icon === 'info' ? '' : ' is-' + opt.icon);
       icon.innerHTML = DIALOG_ICONS[opt.icon];
+      icon.style.removeProperty('--ico');
     } else {
       icon.hidden = true;
       icon.innerHTML = '';
+      icon.style.removeProperty('--ico');
     }
 
     $('#dialogTitle').textContent = opt.title || '提示';
     // 内容为代码内写死的文案，用 innerHTML 以支持 <b> 强调（与弹窗组件原型一致）
     $('#dialogMsg').innerHTML = opt.msg || '';
 
-    // 单按钮（无取消）竖排通栏；危险确认用红色实底
-    $('#dialogActions').classList.toggle('btn-column', !!opt.hideCancel);
-    $('#dialogOk').className = 'btn ' + (opt.danger ? 'btn-danger' : 'btn-primary');
+    // 附加内容：信息块（这次发给谁 / 发什么）+ 内联提示
+    const body = $('#dialogBody');
+    body.innerHTML = opt.body || '';
+    if (opt.note) {
+      body.insertAdjacentHTML('beforeend',
+        '<p class="dialog-note is-show' + (opt.noteTone === 'warn' ? ' is-warn' : '') + '">' +
+        '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm1 15h-2v-6h2zm0-8h-2V7h2z" fill="currentColor"/></svg>' +
+        '<span>' + opt.note + '</span></p>');
+    }
+    body.hidden = !body.innerHTML;
 
+    // 单按钮（无取消）竖排通栏；危险确认用红色实底
+    const actions = $('#dialogActions');
+    actions.classList.toggle('btn-column', !!opt.hideCancel);
+    actions.classList.remove('is-busy');
+    $('#dialogOk').className = 'btn ' + (opt.danger ? 'btn-danger' : 'btn-primary');
     $('#dialogOk').textContent = opt.okText || '确定';
+    $('#dialogOk').disabled = !!opt.okDisabled;
+    delete $('#dialogOk').dataset.label;
     $('#dialogCancel').textContent = opt.cancelText || '取消';
     $('#dialogCancel').style.display = opt.hideCancel ? 'none' : '';
+    $('#dialogCancel').disabled = false;
 
     const tip = $('#dialogTip');
     if (opt.tip) { tip.hidden = false; tip.textContent = opt.tip; }
     else { tip.hidden = true; }
 
+    // 序号守卫：回调里若又打开了新对话框，旧对话框不再把自己关掉
+    const seq = ++dialogSeq;
     $('#dialogMask').hidden = false;
     $('#dialogOk').onclick = function () {
-      $('#dialogMask').hidden = true;
-      if (opt.onOk) opt.onOk();
+      // 回调返回 false 表示保留当前对话框（如校验失败、发送中）
+      if (opt.onOk && opt.onOk() === false) return;
+      if (seq === dialogSeq) $('#dialogMask').hidden = true;
     };
     $('#dialogCancel').onclick = function () {
-      $('#dialogMask').hidden = true;
+      if (seq === dialogSeq) $('#dialogMask').hidden = true;
       if (opt.onCancel) opt.onCancel();
     };
+  }
+
+  /* 发送中：主按钮转圈 + 动作区禁用 */
+  function setDialogBusy(on, text) {
+    const ok = $('#dialogOk');
+    $('#dialogActions').classList.toggle('is-busy', on);
+    ok.disabled = on;
+    $('#dialogCancel').disabled = on;
+    if (on) {
+      ok.dataset.label = ok.textContent;
+      ok.innerHTML = '<span class="btn-spinner"></span><span>' + (text || '发送中…') + '</span>';
+    } else if (ok.dataset.label) {
+      ok.textContent = ok.dataset.label;
+      delete ok.dataset.label;
+    }
   }
 
   function openInputDialog(title, hint, value, onOk) {
@@ -488,6 +533,164 @@
     field.appendChild(input);
     msg.appendChild(field);
     setTimeout(function () { input.focus(); }, 120);
+  }
+
+  /* ---------------------------------------------------------
+     测试推送 / 测试邮件：双按钮确认 → 发送中 → 成功 / 失败
+     规则：只有发送成功才保存该渠道配置；失败不落库，可重试
+  --------------------------------------------------------- */
+  const TEST_SEND = {
+    wx: {
+      label: '测试推送',
+      color: '#07C160',
+      icon: '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-11 11"/><path d="M22 2 15 21l-4-8-8-4z"/></svg>',
+      title: '发送测试推送',
+      msg: '将按下方配置向企业微信群机器人发送一条测试消息，用于校验 Webhook Key 是否可用。',
+      tip: '发送成功后才会保存该渠道配置',
+      okText: '发送',
+      rows: function () {
+        const title = ($('#msgTitle').value || '').trim();
+        return [
+          ['消息标题', title || '未填写', title ? '' : 'is-muted'],
+          ['接收方', '企业微信群机器人', ''],
+          ['Webhook', maskSecret($('#wxKey').value), 'is-mono']
+        ];
+      },
+      // 必填校验：打开对话框时拦截，发送键禁用
+      check: function () {
+        return ($('#wxKey').value || '').trim() ? '' : '请先填写 Webhook Key';
+      },
+      // 有效性校验：发送过程中判定，失败进入失败态对话框
+      verify: function () {
+        const key = ($('#wxKey').value || '').trim();
+        if (!/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(key))
+          return 'Webhook Key 格式不正确，应为 36 位 UUID';
+        return '';
+      },
+      done: '测试推送已发送，配置已保存'
+    },
+    mail: {
+      label: '测试邮件',
+      color: '#12B7F5',
+      icon: '<svg viewBox="0 0 24 24" width="22" height="22"><path d="M3 5.5h18a1 1 0 011 1v11a2 2 0 01-2 2H4a2 2 0 01-2-2v-11a1 1 0 011-1zm1.8 2L12 12.6l7.2-5.1H4.8z" fill="currentColor"/></svg>',
+      title: '发送测试邮件',
+      msg: '将使用当前 QQ 邮箱账号向收件箱发送一封测试邮件，用于校验发件箱与 SMTP 授权码。',
+      tip: '授权码错误会导致发送失败，配置不会被保存',
+      okText: '发送',
+      rows: function () {
+        const out = ($('#mailOut').value || '').trim();
+        const subject = '[DailyTask] 测试邮件';
+        return [
+          ['发件箱', out ? out + '@qq.com' : '未填写', out ? '' : 'is-muted'],
+          ['收件箱', ($('#mailIn').value || '').trim() || '未填写', ($('#mailIn').value || '').trim() ? '' : 'is-muted'],
+          ['邮件主题', subject, '']
+        ];
+      },
+      check: function () {
+        if (!($('#mailOut').value || '').trim()) return '请先填写发件箱账号';
+        if (!($('#mailCode').value || '').trim()) return '请先填写 SMTP 授权码';
+        if (!($('#mailIn').value || '').trim()) return '请先填写收件箱';
+        return '';
+      },
+      verify: function () {
+        const code = ($('#mailCode').value || '').trim();
+        if (code.length !== 16) return 'SMTP 授权码应为 16 位，当前 ' + code.length + ' 位';
+        const to = ($('#mailIn').value || '').trim();
+        if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) return '收件箱邮箱格式不正确';
+        return '';
+      },
+      done: '测试邮件发送成功，配置已保存'
+    }
+  };
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  /* 密钥类字段脱敏：只露头尾，中间打码 */
+  function maskSecret(v) {
+    const s = (v || '').trim();
+    if (!s) return '未填写';
+    if (s.length <= 12) return '••••••••';
+    return s.slice(0, 8) + ' •••• ' + s.slice(-4);
+  }
+
+  /* 信息块：键值两列摘要 */
+  function kvHTML(rows) {
+    const items = rows.map(function (r) {
+      const cls = r[2] ? ' ' + r[2] : '';
+      return '<div class="dialog-kv-row"><span class="dialog-kv-k">' + esc(r[0]) +
+        '</span><span class="dialog-kv-v' + cls + '">' + esc(r[1]) + '</span></div>';
+    }).join('');
+    return '<div class="dialog-kv">' + items + '</div>';
+  }
+
+  /* 测试发送确认对话框（双按钮：取消 / 发送） */
+  function openTestSendDialog(ch) {
+    const spec = TEST_SEND[ch];
+    const missing = spec.check();
+    openDialog({
+      iconHTML: spec.icon,
+      iconTone: 'brand',
+      iconColor: spec.color,
+      title: spec.title,
+      msg: spec.msg,
+      body: kvHTML(spec.rows()),
+      note: missing,
+      tip: spec.tip,
+      okText: spec.okText,
+      cancelText: '取消',
+      okDisabled: !!missing,
+      onOk: function () {
+        const reason = spec.verify();
+        if (reason) {
+          openTestSendFail(ch, reason);
+          return false;
+        }
+        // 发送中：按钮转圈、动作区禁用
+        setDialogBusy(true, '发送中…');
+        setTimeout(function () {
+          setDialogBusy(false);
+          $('#dialogMask').hidden = true;
+          onTestSendSuccess(ch, spec);
+        }, 1100);
+        return false;
+      }
+    });
+  }
+
+  /* 发送失败：双按钮 取消 / 重试，失败不保存配置 */
+  function openTestSendFail(ch, reason) {
+    const spec = TEST_SEND[ch];
+    openDialog({
+      icon: 'danger',
+      title: spec.label + '发送失败',
+      msg: reason,
+      tip: '本次配置未保存，修正后可重试',
+      okText: '重试',
+      cancelText: '取消',
+      onOk: function () {
+        openTestSendDialog(ch);
+        return false;
+      }
+    });
+  }
+
+  /* 发送成功：更新状态行并把渠道置为可用 */
+  function onTestSendSuccess(ch, spec) {
+    const status = $(ch === 'wx' ? '#wxStatus' : '#mailStatus');
+    if (status) {
+      const pill = status.querySelector('.pill');
+      pill.className = 'pill pill-ok';
+      pill.innerHTML = '<i class="dot"></i>已配置';
+      status.querySelector('.status-text').textContent = '配置保存于刚刚';
+    }
+    state.channelReady[ch] = true;
+    renderChannel();
+    // 待定②：配置完成后是否自动把主渠道切到刚配置的渠道（当前设计稿不自动切换）
+    toast(spec.done);
   }
 
   /* ---------------------------------------------------------
@@ -769,22 +972,10 @@
       else if (act === 'captureTest') { toast('截屏成功，正在通过消息渠道发送'); }
       else if (act === 'sendLog') { toast('日志已打包，正在唤起 QQ'); }
       else if (act === 'testWx') {
-        toast('测试消息已发送，配置已保存');
-        $('#wxStatus .pill').className = 'pill pill-ok';
-        $('#wxStatus .pill').innerHTML = '<i class="dot"></i>已配置';
-        $('#wxStatus .status-text').textContent = '配置保存于刚刚';
-        state.channelReady.wx = true;
-        renderChannel();
-        // 待定②：配置完成后是否自动把主渠道切到刚配置的渠道（当前设计稿不自动切换）
+        openTestSendDialog('wx');
       }
       else if (act === 'testMail') {
-        toast('测试邮件发送成功，配置已保存');
-        $('#mailStatus .pill').className = 'pill pill-ok';
-        $('#mailStatus .pill').innerHTML = '<i class="dot"></i>已配置';
-        $('#mailStatus .status-text').textContent = '配置保存于刚刚';
-        state.channelReady.mail = true;
-        renderChannel();
-        // 待定②：配置完成后是否自动把主渠道切到刚配置的渠道（当前设计稿不自动切换）
+        openTestSendDialog('mail');
       }
       else if (act === 'resetTime') {
         const opts = [];
@@ -852,11 +1043,16 @@
       m.addEventListener('click', function (e) { if (e.target === m) closeSheets(); });
     });
     $('#dialogMask').addEventListener('click', function (e) {
+      // 发送中不响应遮罩点击
+      if ($('#dialogActions').classList.contains('is-busy')) return;
       if (e.target === $('#dialogMask')) $('#dialogMask').hidden = true;
     });
 
     document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape') { closeSheets(); $('#dialogMask').hidden = true; }
+      if (e.key === 'Escape') {
+        closeSheets();
+        if (!$('#dialogActions').classList.contains('is-busy')) $('#dialogMask').hidden = true;
+      }
     });
 
     // 浏览器前进 / 后退

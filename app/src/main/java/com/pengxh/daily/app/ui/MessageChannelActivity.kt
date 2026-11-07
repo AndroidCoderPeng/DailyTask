@@ -15,6 +15,7 @@ import com.pengxh.daily.app.base.KotlinBaseActivity
 import com.pengxh.daily.app.databinding.ActivityMessageChannelBinding
 import com.pengxh.daily.app.extensions.isEmail
 import com.pengxh.daily.app.extensions.show
+import com.pengxh.daily.app.extensions.showCustomDialog
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.EmailManager
@@ -130,11 +131,11 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 .setMessage("先发送测试消息验证 Webhook，验证成功后才会保存配置。\n\n是否继续？")
                 .setCancelable(false)
                 .setPositiveButton("继续") { _, _ ->
-                    sendTestMessage(key)
+//                    sendTestMessage(key)
                 }.setNegativeButton("取消", null).show()
-//            showCustomDialog(R.layout.dialog_send_message) { view, dialog ->
-//
-//            }
+            showCustomDialog(R.layout.dialog_send_message, false) { view, dialog ->
+
+            }
         }
 
         binding.sendEmailButton.setOnClickListener {

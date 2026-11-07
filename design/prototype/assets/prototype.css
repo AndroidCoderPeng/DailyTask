@@ -401,7 +401,8 @@ body.dark #themeBtn .ico-sun { display: none; }
 /* ---- 按钮 ---- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  height: 44px; padding: 0 18px; border: 0; border-radius: var(--r-md);
+  /* 统一 1px 透明边框：描边变体只改颜色，保证并排按钮的 flex 基准宽完全一致 */
+  height: 44px; padding: 0 18px; border: 1px solid transparent; border-radius: var(--r-md);
   background: var(--surface); color: var(--text); font-size: 15px; font-weight: 600;
   cursor: pointer; transition: transform .18s var(--ease), box-shadow .18s var(--ease);
   white-space: nowrap; flex: 0 0 auto;
@@ -846,7 +847,8 @@ body.dark #themeBtn .ico-sun { display: none; }
 .dialog-title { font-size: 16px; font-weight: 700; text-align: center; }
 .dialog-msg { font-size: 13px; color: var(--text-2); line-height: 1.6; text-align: center; margin-top: 10px; white-space: pre-line; }
 .dialog-actions { display: flex; gap: 10px; margin-top: 18px; }
-.dialog-actions .btn { flex: 1 1 0; }
+/* 双按钮等宽：配合 .btn 的统一 1px 透明边框，两个按钮 flex 基准宽完全一致 */
+.dialog-actions .btn { flex: 1 1 0; min-width: 0; }
 
 /* 顶部语义图标：info 默认主色 / warn 提醒 / danger 危险 */
 .dialog .dialog-icon {
@@ -856,12 +858,19 @@ body.dark #themeBtn .ico-sun { display: none; }
 }
 .dialog .dialog-icon.is-warn { background: var(--warn-soft); color: var(--warn); }
 .dialog .dialog-icon.is-danger { background: var(--danger-soft); color: var(--danger); }
+.dialog .dialog-icon.is-success { background: var(--success-soft); color: var(--success); }
+/* 渠道品牌色图标（企业微信绿 / QQ 邮箱蓝），色值由 --ico 传入 */
+.dialog .dialog-icon.is-brand {
+  background: color-mix(in srgb, var(--ico) 14%, var(--surface));
+  color: var(--ico);
+}
 .dialog .dialog-icon[hidden] { display: none; }
 .dialog-msg b { color: var(--text); font-weight: 600; }
 
 /* 单按钮对话框：动作区竖排通栏 */
 .dialog-actions.btn-column { flex-direction: column; gap: 0; }
-.dialog-actions.btn-column .btn { width: 100%; }
+/* 竖排时按内容高度铺满，避免 flex-basis:0 把按钮压扁 */
+.dialog-actions.btn-column .btn { width: 100%; flex: 0 0 auto; }
 
 /* 底部小字提示 */
 .dialog-tip {
@@ -878,6 +887,63 @@ body.dark #themeBtn .ico-sun { display: none; }
   margin-top: 7px; font-size: 11.5px; color: var(--danger);
 }
 .dialog-error.is-show { display: flex; }
+
+/* ---- 对话框信息块：展示「这次要发给谁 / 发什么」的摘要 ---- */
+.dialog-body[hidden] { display: none; }
+.dialog-kv {
+  margin-top: 14px; text-align: left;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-md); padding: 2px 12px;
+}
+.dialog-kv-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 9px 0; font-size: 12.5px; line-height: 1.55;
+}
+.dialog-kv-row + .dialog-kv-row { border-top: 1px solid var(--line); }
+.dialog-kv-k { flex: 0 0 58px; color: var(--text-3); }
+.dialog-kv-v { flex: 1 1 auto; min-width: 0; color: var(--text); font-weight: 500; word-break: break-all; }
+.dialog-kv-v.is-mono { font-family: var(--font-num); letter-spacing: .2px; }
+.dialog-kv-v.is-muted { color: var(--text-3); font-weight: 400; }
+
+/* ---- 对话框内联提示（校验失败 / 发送失败原因） ---- */
+.dialog-note {
+  display: none; align-items: flex-start; gap: 6px;
+  margin-top: 12px; text-align: left;
+  font-size: 12px; line-height: 1.55; color: var(--danger);
+}
+.dialog-note.is-show { display: flex; }
+.dialog-note.is-warn { color: var(--warn-ink); }
+.dialog-note svg { flex: 0 0 auto; margin-top: 1px; }
+.dialog-note b { font-weight: 600; }
+
+/* ---- 发送中：主按钮转圈并禁用动作区 ---- */
+.btn-spinner {
+  width: 15px; height: 15px; flex: 0 0 auto; border-radius: 50%;
+  border: 2px solid currentColor; border-top-color: transparent;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+/* 发送中：主按钮保持品牌底色 + 转圈，取消键整体变淡 */
+.dialog-actions.is-busy .btn { cursor: not-allowed; transform: none; }
+.dialog-actions.is-busy .btn-quiet { opacity: .45; }
+.dialog-actions.is-busy .btn-primary {
+  opacity: 1;
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: transparent;
+  box-shadow: 0 8px 18px rgba(51, 153, 255, .30);
+  cursor: progress;
+}
+
+/* 禁用态：对话框主按钮保留品牌色倾向，与「取消」弱按钮区分开
+   （发送中 is-busy 时按钮仍是激活态，不套用这条灰化） */
+.dialog-actions:not(.is-busy) .btn.btn-primary:disabled {
+  opacity: 1;
+  background: color-mix(in srgb, var(--primary) 16%, var(--surface));
+  color: var(--text-3);
+  border-color: transparent;
+  box-shadow: none;
+}
 
 /* ============================ Toast ============================ */
 .toast {

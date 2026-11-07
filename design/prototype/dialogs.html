@@ -27,6 +27,8 @@
         <li><button class="nav-item" data-demo="double"><i class="nav-ico">2</i>双按钮对话框</button></li>
         <li><button class="nav-item" data-demo="input"><i class="nav-ico">3</i>带输入框对话框</button></li>
         <li><button class="nav-item" data-demo="actionsheet"><i class="nav-ico">4</i>底部 ActionSheet</button></li>
+        <li><button class="nav-item" data-demo="testsend"><i class="nav-ico">5</i>测试发送对话框</button></li>
+        <li><button class="nav-item" data-demo="testfail"><i class="nav-ico">6</i>发送失败对话框</button></li>
       </ul>
     </div>
 
@@ -51,6 +53,8 @@
         <li>双按钮对话框取消用 <b>quiet 弱按钮</b>，危险确认键用 <b>danger 实底</b>，主次与风险一目了然。</li>
         <li>输入框对话框沿用表单规范：<b>focus 高亮 + 内联错误提示</b>，错误时边框变红不再弹 toast。</li>
         <li>ActionSheet 沿用底部弹窗骨架：<b>抓手感 + 图标动作列表</b>，破坏性操作红底独立分区，底部固定取消。</li>
+        <li>测试发送用<b>双按钮对话框</b>：左「取消」弱按钮、右「发送」主按钮；正文下方信息块列出<b>发给谁 / 发什么</b>，密钥脱敏。</li>
+        <li>发送过程按钮<b>转圈并禁用动作区</b>，遮罩与 Esc 不可打断；失败改用 danger 图标 +「重试」，<b>失败不保存配置</b>。</li>
       </ul>
     </div>
 
@@ -129,6 +133,24 @@
                 <span class="demo-trigger-main">
                   <span class="demo-trigger-title">底部 ActionSheet</span>
                   <span class="demo-trigger-desc">动作列表 · 破坏性操作独立分区</span>
+                </span>
+                <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+              <button class="demo-trigger" data-demo="testsend">
+                <span class="demo-no">5</span>
+                <span class="demo-trigger-main">
+                  <span class="demo-trigger-title">测试发送对话框</span>
+                  <span class="demo-trigger-desc">双按钮 · 目标摘要 + 发送中</span>
+                </span>
+                <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+              <button class="demo-trigger" data-demo="testfail">
+                <span class="demo-no">6</span>
+                <span class="demo-trigger-main">
+                  <span class="demo-trigger-title">发送失败对话框</span>
+                  <span class="demo-trigger-desc">双按钮 · 取消 / 重试，失败不落库</span>
                 </span>
                 <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               </button>
@@ -235,6 +257,45 @@
           </div>
         </div>
 
+        <!-- ================= 5. 测试发送对话框 ================= -->
+        <div class="dialog-mask" id="dialogTestSend" hidden>
+          <div class="dialog">
+            <div class="dialog-icon is-brand" style="--ico:#07C160">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-11 11"/><path d="M22 2 15 21l-4-8-8-4z"/></svg>
+            </div>
+            <h3 class="dialog-title">发送测试推送</h3>
+            <p class="dialog-msg">将按下方配置向企业微信群机器人发送一条测试消息，用于校验 Webhook Key 是否可用。</p>
+            <div class="dialog-body">
+              <div class="dialog-kv">
+                <div class="dialog-kv-row"><span class="dialog-kv-k">消息标题</span><span class="dialog-kv-v">打卡结果通知</span></div>
+                <div class="dialog-kv-row"><span class="dialog-kv-k">接收方</span><span class="dialog-kv-v">企业微信群机器人</span></div>
+                <div class="dialog-kv-row"><span class="dialog-kv-k">Webhook</span><span class="dialog-kv-v is-mono">a8f3c2e1 •••• 7a31</span></div>
+              </div>
+            </div>
+            <div class="dialog-actions" id="testSendActions">
+              <button class="btn btn-quiet" data-close>取消</button>
+              <button class="btn btn-primary" id="testSendOk">发送</button>
+            </div>
+            <p class="dialog-tip">发送成功后才会保存该渠道配置</p>
+          </div>
+        </div>
+
+        <!-- ================= 6. 发送失败对话框 ================= -->
+        <div class="dialog-mask" id="dialogTestFail" hidden>
+          <div class="dialog">
+            <div class="dialog-icon is-danger">
+              <svg viewBox="0 0 24 24" width="22" height="22"><path d="M9 3l-1.8 2H4a2 2 0 00-2 2v13a2 2 0 002 2h16a2 2 0 002-2V7a2 2 0 00-2-2h-3.2L15 3zm1.5 6.6l1.4 1.4L13.4 12l1.5 1-1.4 1.4L12 12.9l-1.4 1.4-1.4-1.4 1.5-1.1-1.5-1.1 1.4-1.4 1.4 1.5z" fill="currentColor"/></svg>
+            </div>
+            <h3 class="dialog-title">测试推送发送失败</h3>
+            <p class="dialog-msg">Webhook Key 格式不正确，应为 36 位 UUID。</p>
+            <div class="dialog-actions">
+              <button class="btn btn-quiet" data-close>取消</button>
+              <button class="btn btn-primary" id="testFailRetry">重试</button>
+            </div>
+            <p class="dialog-tip">本次配置未保存，修正后可重试</p>
+          </div>
+        </div>
+
         <div class="toast" id="toast" hidden></div>
 
       </div><!-- /viewport -->
@@ -255,7 +316,9 @@
     single: $('#dialogSingle'),
     double: $('#dialogDouble'),
     input: $('#dialogInput'),
-    actionsheet: $('#sheetAction')
+    actionsheet: $('#sheetAction'),
+    testsend: $('#dialogTestSend'),
+    testfail: $('#dialogTestFail')
   };
 
   function closeAll() {
@@ -316,6 +379,33 @@
     /* 各确认键的演示反馈 */
     if (e.target.closest('#doubleConfirm')) { toast('任务已删除'); return; }
 
+    /* 测试发送：发送中（按钮转圈、动作区禁用）→ 成功 */
+    if (e.target.closest('#testSendOk')) {
+      const actions = $('#testSendActions');
+      const ok = $('#testSendOk');
+      const cancel = $('#dialogTestSend .btn-quiet');
+      actions.classList.add('is-busy');
+      ok.disabled = true;
+      cancel.disabled = true;
+      ok.innerHTML = '<span class="btn-spinner"></span><span>发送中…</span>';
+      setTimeout(function () {
+        actions.classList.remove('is-busy');
+        ok.disabled = false;
+        cancel.disabled = false;
+        ok.textContent = '发送';
+        closeAll();
+        toast('测试推送已发送，配置已保存');
+      }, 1100);
+      return;
+    }
+
+    /* 发送失败：重试回到确认态 */
+    if (e.target.closest('#testFailRetry')) {
+      closeAll();
+      openDemo('testsend');
+      return;
+    }
+
     if (e.target.closest('#inputConfirm')) {
       const input = $('#dlgInputValue');
       const v = input.value.trim();
@@ -347,6 +437,8 @@
     if (e.key === '2') openDemo('double');
     if (e.key === '3') openDemo('input');
     if (e.key === '4') openDemo('actionsheet');
+    if (e.key === '5') openDemo('testsend');
+    if (e.key === '6') openDemo('testfail');
   });
 
   /* ---- 初始化 ---- */

@@ -31,7 +31,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="本软件完全免费！仅供内部学习研究使用！"
+        android:text="本软件完全免费！仅供内部学习使用！"
         android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
         android:textColor="@color/text_secondary_color" />
 
@@ -39,13 +39,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginVertical="@dimen/margin_half"
-        android:text="严禁商用或倒卖。"
+        android:text="严禁商用或者用作其他非法用途！"
         android:textAppearance="@style/TextAppearance.Material3.TitleSmall.Emphasized" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="数据全部保存在本机，不上传任何服务器。"
+        android:text="数据保存在本机，不上传任何服务器"
         android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
         android:textColor="@color/text_secondary_color" />
 
