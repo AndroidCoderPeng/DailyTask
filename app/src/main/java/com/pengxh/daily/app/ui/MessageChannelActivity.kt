@@ -148,6 +148,7 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 "发件箱地址为空".show(context)
                 return@setOnClickListener
             }
+
             val outbox = if (address.contains("@qq.com")) {
                 address
             } else {
@@ -171,18 +172,66 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 "收件箱地址为空".show(context)
                 return@setOnClickListener
             }
+
             if (!inbox.isEmail()) {
                 "发件箱格式错误，请检查".show(context)
                 return@setOnClickListener
             }
 
-            val cacheObj = JsonObject().apply {
-                addProperty("outbox", outbox)
-                addProperty("authCode", binding.emailSendCodeView.text.toString())
-                addProperty("inbox", binding.emailInboxView.text.toString())
-            }
+//            val cacheObj = JsonObject().apply {
+//                addProperty("outbox", outbox)
+//                addProperty("authCode", binding.emailSendCodeView.text.toString())
+//                addProperty("inbox", binding.emailInboxView.text.toString())
+//            }
 
-            sendTestEmail(cacheObj)
+//            MaterialAlertDialogBuilder(this)
+//                .setTitle("测试邮件")
+//                .setMessage("QQ邮箱配置完成，可以发送QQ邮件。\n\n是否继续？")
+//                .setCancelable(false)
+//                .setPositiveButton("继续") { _, _ ->
+//                    LoadingDialog.show(context, "邮件发送中，请稍后....")
+//                    MessageDispatcher.sendMessage(
+//                        "邮箱测试", "这是一封测试邮件，不必关注",
+//                        channelOverride = 0,
+//                        emailConfigOverride = emailConfig,
+//                        onSuccess = {
+//                            LoadingDialog.dismiss()
+//                            "发送成功，请注意查收".show(context)
+//
+//                            // 仅在测试发送成功后才持久化邮箱配置，与企微侧语义对齐（关联 BUG-019 / DT4-002）
+//                            AppConfig.saveJson(Constant.EMAIL_CONFIG_KEY, config)
+//
+//                            AppConfig.saveString(
+//                                Constant.MESSAGE_TITLE_KEY,
+//                                binding.messageTitleView.text.toString().trim()
+//                            )
+//
+//                            AppConfig.saveInt(Constant.MSG_CHANNEL_KEY, 0)
+//
+//                            AppConfig.saveString(
+//                                Constant.EMAIL_CONFIG_SAVE_TIME_KEY,
+//                                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA).format(Date())
+//                            )
+//                            refreshChannelState()
+//                        },
+//                        onFailure = {
+//                            LoadingDialog.dismiss()
+//                            "发送失败：${it}".show(context)
+//                        })
+//                }.setNegativeButton("取消", null).show()
+            showCustomDialog(R.layout.dialog_send_email, false) { view, dialog ->
+                view.findViewById<TextView>(R.id.outboxView).text = outbox
+                view.findViewById<TextView>(R.id.inboxView).text = inbox
+
+                view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
+                    dialog.dismiss()
+//                    sendTestEmail()
+                }
+
+                view.findViewById<MaterialButton>(R.id.cancelButton).setOnClickListener {
+                    dialog.dismiss()
+                }
+            }
         }
     }
 
@@ -225,43 +274,5 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
             config.get("authCode").asString,
             config.get("inbox").asString
         )
-        MaterialAlertDialogBuilder(this)
-            .setTitle("测试邮件")
-            .setMessage("QQ邮箱配置完成，可以发送QQ邮件。\n\n是否继续？")
-            .setCancelable(false)
-            .setPositiveButton("继续") { _, _ ->
-                LoadingDialog.show(context, "邮件发送中，请稍后....")
-                MessageDispatcher.sendMessage(
-                    "邮箱测试", "这是一封测试邮件，不必关注",
-                    channelOverride = 0,
-                    emailConfigOverride = emailConfig,
-                    onSuccess = {
-                        LoadingDialog.dismiss()
-                        "发送成功，请注意查收".show(context)
-
-                        // 仅在测试发送成功后才持久化邮箱配置，与企微侧语义对齐（关联 BUG-019 / DT4-002）
-                        AppConfig.saveJson(Constant.EMAIL_CONFIG_KEY, config)
-
-                        AppConfig.saveString(
-                            Constant.MESSAGE_TITLE_KEY,
-                            binding.messageTitleView.text.toString().trim()
-                        )
-
-                        AppConfig.saveInt(Constant.MSG_CHANNEL_KEY, 0)
-
-                        AppConfig.saveString(
-                            Constant.EMAIL_CONFIG_SAVE_TIME_KEY,
-                            SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.CHINA).format(Date())
-                        )
-                        refreshChannelState()
-                    },
-                    onFailure = {
-                        LoadingDialog.dismiss()
-                        "发送失败：${it}".show(context)
-                    })
-            }.setNegativeButton("取消", null).show()
-//        showCustomDialog(R.layout.dialog_send_message) { view, dialog ->
-//
-//        }
     }
 }

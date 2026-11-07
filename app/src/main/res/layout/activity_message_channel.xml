@@ -288,7 +288,6 @@
                                     android:gravity="center_vertical"
                                     android:hint="如：123456789"
                                     android:inputType="number"
-                                    android:maxLength="15"
                                     android:paddingHorizontal="12dp"
                                     android:paddingVertical="10dp"
                                     android:singleLine="true"
