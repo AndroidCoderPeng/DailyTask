@@ -6,7 +6,6 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
-import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
 import android.hardware.display.VirtualDisplay
@@ -299,17 +298,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
             image.close()
         }
 
-        // 截取图片上半部分，去除行尾填充
-        val topHalf = Bitmap.createBitmap(
-            bitmap,
-            0,
-            0,
-            width,
-            (height / 2).coerceAtLeast(1)
-        )
-
         val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
-        topHalf.saveImage(imagePath)
+        bitmap.saveImage(imagePath)
         LogFileManager.writeLog("截屏成功: $imagePath")
         return imagePath
     }
