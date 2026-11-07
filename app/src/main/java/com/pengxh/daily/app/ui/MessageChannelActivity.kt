@@ -2,12 +2,13 @@ package com.pengxh.daily.app.ui
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.View
+import android.widget.TextView
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.gson.JsonObject
 import com.pengxh.daily.app.R
@@ -126,15 +127,17 @@ class MessageChannelActivity : KotlinBaseActivity<ActivityMessageChannelBinding>
                 return@setOnClickListener
             }
 
-            MaterialAlertDialogBuilder(this)
-                .setTitle("测试消息")
-                .setMessage("先发送测试消息验证 Webhook，验证成功后才会保存配置。\n\n是否继续？")
-                .setCancelable(false)
-                .setPositiveButton("继续") { _, _ ->
-//                    sendTestMessage(key)
-                }.setNegativeButton("取消", null).show()
             showCustomDialog(R.layout.dialog_send_message, false) { view, dialog ->
+                view.findViewById<TextView>(R.id.keyView).text = key
 
+                view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
+                    dialog.dismiss()
+//                    sendTestMessage(key)
+                }
+
+                view.findViewById<MaterialButton>(R.id.cancelButton).setOnClickListener {
+                    dialog.dismiss()
+                }
             }
         }
 
