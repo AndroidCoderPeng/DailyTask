@@ -90,6 +90,8 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         val watermark = DailyTask.getWatermarkText()
         binding.contentView.background = WatermarkDrawable(this, watermark)
 
+        binding.commandItem.rightTextView.text = "${CommandDisplayActivity.commands.size} 条"
+
         lifecycleScope.launch {
             ChinaHolidayManager.syncResult.collect { result ->
                 when (result) {

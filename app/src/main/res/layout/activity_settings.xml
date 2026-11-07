@@ -296,7 +296,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemIcon="@drawable/ic_setting_command"
-                        app:itemRightType="arrow"
+                        app:itemRightType="text"
                         app:itemTitle="全部指令" />
 
                     <com.pengxh.daily.app.widget.SettingItemView
