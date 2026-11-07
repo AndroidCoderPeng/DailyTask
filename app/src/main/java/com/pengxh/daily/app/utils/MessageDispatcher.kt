@@ -108,50 +108,64 @@ object MessageDispatcher {
         EmailManager.sendEmail(title, fullContent, outbox, authCode, inbox, onSuccess, onFailure)
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////
-
-    private fun shouldFallback(channelOverride: Int?, onSuccess: (() -> Unit)?): Boolean {
-        return channelOverride == null && onSuccess == null
-    }
-
     /**
      * 发送文本消息，根据用户配置自动选择邮件或企业微信渠道
-     *
-     * @param channelOverride 渠道覆盖：null=走用户配置，0=强制邮箱，1=强制企微
      */
     fun sendMessage(
         title: String,
         content: String,
-        channelOverride: Int? = null,
         onSuccess: (() -> Unit)? = null,
-        onFailure: ((String) -> Unit)? = null,
-        webhookKeyOverride: String? = null
+        onFailure: ((String) -> Unit)? = null
     ) {
-        val primaryChannel = channelOverride
-            ?: AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+        val channel = AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
+        if (channel == Constant.DEFAULT_INDEX) {
+            onFailure?.invoke("消息渠道未配置")
+            return
+        }
+
         val messageTitle = AppConfig.loadString(Constant.MESSAGE_TITLE_KEY, "打卡结果通知")
         val finalTitle = title.ifBlank { messageTitle }
 
         // 统一拼接元数据，所有渠道都用同一个完整内容
         val fullContent = buildString {
-            appendLine(finalTitle)
+            if (channel == 0) {
+                // 企业微信
+                appendLine(finalTitle)
+            }
             appendLine(content.ifBlank { "未监听到打卡成功的通知，请手动登录检查" })
             appendMetaInfo()
         }
 
-//        scope.launch {
-//            val failure = deliver(
-//                primaryChannel,
-//                shouldFallback(channelOverride, onSuccess)
-//            ) { channel ->
-//                sendTextOnce(
-//                    channel, finalTitle, fullContent, webhookKeyOverride, emailConfigOverride
-//                )
-//            }
-//            withContext(Dispatchers.Main) {
-//                if (failure == null) onSuccess?.invoke() else onFailure?.invoke(failure)
-//            }
-//        }
+        scope.launch {
+            if (channel == 0) {
+                val key = AppConfig.loadString(Constant.WX_WEB_HOOK_KEY, "")
+                val response = RetrofitServiceManager.sendMessage(fullContent, key)
+                val failure = parseWechatResponse(response)
+                withContext(Dispatchers.Main) {
+                    if (failure == null) onSuccess?.invoke() else onFailure?.invoke(failure)
+                }
+            } else {
+                val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
+                val outbox = obj.get("outbox").asString
+                val authCode = obj.get("authCode").asString
+                val inbox = obj.get("inbox").asString
+                EmailManager.sendEmail(
+                    title,
+                    fullContent,
+                    outbox,
+                    authCode,
+                    inbox,
+                    onSuccess,
+                    onFailure
+                )
+            }
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+
+    private fun shouldFallback(channelOverride: Int?, onSuccess: (() -> Unit)?): Boolean {
+        return channelOverride == null && onSuccess == null
     }
 
     /**
