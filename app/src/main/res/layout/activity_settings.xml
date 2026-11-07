@@ -57,23 +57,6 @@
                         app:itemRightType="toggle"
                         app:itemTitle="悬浮权限" />
 
-                    <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/noticeListenerItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemDesc="监听打卡结果与远程指令"
-                        app:itemRightType="toggle"
-                        app:itemTitle="通知监听" />
-
-                    <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/captureItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemDesc="截屏服务未开启，无法获取打卡结果"
-                        app:itemDescColor="@color/failure_color"
-                        app:itemRightType="toggle"
-                        app:itemTitle="截屏服务" />
-
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -101,6 +84,7 @@
                             app:strokeWidth="0dp">
 
                             <RadioGroup
+                                android:id="@+id/radioGroup"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_margin="@dimen/margin_half"
