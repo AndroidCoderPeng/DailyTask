@@ -115,7 +115,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="@dimen/margin_2x"
-                    android:text="[DailyTask] 测试邮件"
+                    android:text="邮箱测试"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                     android:textColor="@color/text_default_color" />
             </LinearLayout>

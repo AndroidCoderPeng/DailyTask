@@ -113,12 +113,4 @@ object AppConfig {
     fun loadJson(key: String): JsonObject = ConfigStore.get().load(key)
 
     fun saveJson(key: String, obj: JsonObject) = ConfigStore.get().save(key, obj)
-
-    // TODO 企业微信 Key 与渠道号的原子保存（同一次 SP 提交）
-    fun saveWebhookAndChannel(webhook: String, channel: Int) {
-        sp.edit {
-            putString(Constant.WX_WEB_HOOK_KEY, webhook)
-            putInt(Constant.MSG_CHANNEL_KEY, channel)
-        }
-    }
 }

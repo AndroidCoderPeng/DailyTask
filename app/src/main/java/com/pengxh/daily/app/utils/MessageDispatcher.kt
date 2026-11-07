@@ -16,7 +16,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import java.time.LocalDate
-import kotlin.coroutines.resume
 
 /**
  * 统一消息分发器
@@ -70,7 +69,7 @@ object MessageDispatcher {
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
-        // 统一拼接元数据，所有渠道都用同一个完整内容
+        // 统一拼接元数据
         val fullContent = buildString {
             appendLine(title)
             appendLine(content)
@@ -91,6 +90,24 @@ object MessageDispatcher {
         return if (code == 0) null else "企业微信返回错误：$message（errcode=$code）"
     }
 
+    fun sendTestEmail(
+        title: String,
+        content: String,
+        outbox: String,
+        authCode: String,
+        inbox: String,
+        onSuccess: (() -> Unit)? = null,
+        onFailure: ((String) -> Unit)? = null
+    ) {
+        // 统一拼接元数据
+        val fullContent = buildString {
+            appendLine(content)
+            appendMetaInfo()
+        }
+
+        EmailManager.sendEmail(title, fullContent, outbox, authCode, inbox, onSuccess, onFailure)
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////
 
     private fun shouldFallback(channelOverride: Int?, onSuccess: (() -> Unit)?): Boolean {
@@ -108,8 +125,7 @@ object MessageDispatcher {
         channelOverride: Int? = null,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null,
-        webhookKeyOverride: String? = null,
-        emailConfigOverride: EmailManager.EmailConfig? = null
+        webhookKeyOverride: String? = null
     ) {
         val primaryChannel = channelOverride
             ?: AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)
@@ -123,19 +139,19 @@ object MessageDispatcher {
             appendMetaInfo()
         }
 
-        scope.launch {
-            val failure = deliver(
-                primaryChannel,
-                shouldFallback(channelOverride, onSuccess)
-            ) { channel ->
-                sendTextOnce(
-                    channel, finalTitle, fullContent, webhookKeyOverride, emailConfigOverride
-                )
-            }
-            withContext(Dispatchers.Main) {
-                if (failure == null) onSuccess?.invoke() else onFailure?.invoke(failure)
-            }
-        }
+//        scope.launch {
+//            val failure = deliver(
+//                primaryChannel,
+//                shouldFallback(channelOverride, onSuccess)
+//            ) { channel ->
+//                sendTextOnce(
+//                    channel, finalTitle, fullContent, webhookKeyOverride, emailConfigOverride
+//                )
+//            }
+//            withContext(Dispatchers.Main) {
+//                if (failure == null) onSuccess?.invoke() else onFailure?.invoke(failure)
+//            }
+//        }
     }
 
     /**
@@ -215,18 +231,6 @@ object MessageDispatcher {
         return listOf(primary, fallback)
     }
 
-    private suspend fun sendTextOnce(
-        channel: Int,
-        title: String,
-        fullContent: String,
-        webhookKeyOverride: String?,
-        emailConfigOverride: EmailManager.EmailConfig?
-    ): String? = when (channel) {
-        CHANNEL_EMAIL -> sendEmailSuspend(title, fullContent, emailConfigOverride)
-        CHANNEL_WECHAT -> sendWechatTextSuspend(fullContent, webhookKeyOverride)
-        else -> "消息渠道未配置：$channel"
-    }
-
     private suspend fun sendAttachmentOnce(
         channel: Int,
         title: String,
@@ -238,40 +242,22 @@ object MessageDispatcher {
         else -> "消息渠道未配置：$channel"
     }
 
-    private suspend fun sendEmailSuspend(
-        title: String,
-        content: String,
-        configOverride: EmailManager.EmailConfig?
-    ): String? = suspendCancellableCoroutine { continuation ->
-        EmailManager.sendEmail(
-            title,
-            content,
-            onSuccess = {
-                if (continuation.isActive) continuation.resume(null)
-            },
-            onFailure = { error ->
-                if (continuation.isActive) continuation.resume(error)
-            },
-            configOverride = configOverride
-        )
-    }
-
     private suspend fun sendAttachmentEmailSuspend(
         title: String,
         content: String,
         filePath: String
     ): String? = suspendCancellableCoroutine { continuation ->
-        EmailManager.sendAttachmentEmail(
-            title,
-            content,
-            filePath,
-            onSuccess = {
-                if (continuation.isActive) continuation.resume(null)
-            },
-            onFailure = { error ->
-                if (continuation.isActive) continuation.resume(error)
-            }
-        )
+//        EmailManager.sendAttachmentEmail(
+//            title,
+//            content,
+//            filePath,
+//            onSuccess = {
+//                if (continuation.isActive) continuation.resume(null)
+//            },
+//            onFailure = { error ->
+//                if (continuation.isActive) continuation.resume(error)
+//            }
+//        )
     }
 
     private suspend fun sendWechatTextSuspend(

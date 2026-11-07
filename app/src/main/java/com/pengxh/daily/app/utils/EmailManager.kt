@@ -1,6 +1,5 @@
 package com.pengxh.daily.app.utils
 
-import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,24 +19,7 @@ import javax.mail.internet.MimeMessage
 import javax.mail.internet.MimeMultipart
 
 object EmailManager {
-    private val kTag = "EmailManager"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    data class EmailConfig(val outbox: String, val authCode: String, val inbox: String)
-
-    private fun loadEmailConfig(onFailure: ((String) -> Unit)?): EmailConfig? {
-        val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
-        if (obj.isEmpty) {
-            onFailure?.invoke("邮箱未配置，无法发送邮件")
-            return null
-        }
-        Log.d(kTag, "邮箱配置: $obj")
-        return EmailConfig(
-            outbox = obj.get("outbox").asString,
-            authCode = obj.get("authCode").asString,
-            inbox = obj.get("inbox").asString
-        )
-    }
 
     private fun createSmtpProperties(): Properties {
         val props = Properties().apply {
@@ -58,19 +40,19 @@ object EmailManager {
     fun sendEmail(
         title: String,
         content: String,
+        outbox: String,
+        authCode: String,
+        inbox: String,
         onSuccess: (() -> Unit)? = null,
-        onFailure: ((String) -> Unit)? = null,
-        configOverride: EmailConfig? = null
+        onFailure: ((String) -> Unit)? = null
     ) {
-        val config = configOverride ?: loadEmailConfig(onFailure) ?: return
-
-        val authenticator = EmailAuthenticator(config.outbox, config.authCode)
+        val authenticator = EmailAuthenticator(outbox, authCode)
         val props = createSmtpProperties()
         val session = Session.getInstance(props, authenticator)
 
         val message = MimeMessage(session).apply {
-            setFrom(InternetAddress(config.outbox))
-            setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
+            setFrom(InternetAddress(outbox))
+            setRecipient(Message.RecipientType.TO, InternetAddress(inbox))
             subject = title
             sentDate = Date()
             setText(content)
@@ -86,12 +68,13 @@ object EmailManager {
         title: String,
         content: String,
         filePath: String,
+        outbox: String,
+        authCode: String,
+        inbox: String,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null
     ) {
-        val config = loadEmailConfig(onFailure) ?: return
-
-        val authenticator = EmailAuthenticator(config.outbox, config.authCode)
+        val authenticator = EmailAuthenticator(outbox, authCode)
         val props = createSmtpProperties()
         val session = Session.getInstance(props, authenticator)
 
@@ -114,8 +97,8 @@ object EmailManager {
         }
 
         val message = MimeMessage(session).apply {
-            setFrom(InternetAddress(config.outbox))
-            setRecipient(Message.RecipientType.TO, InternetAddress(config.inbox))
+            setFrom(InternetAddress(outbox))
+            setRecipient(Message.RecipientType.TO, InternetAddress(inbox))
             subject = title
             sentDate = Date()
             setContent(multipart)
@@ -155,5 +138,4 @@ object EmailManager {
             }
         }
     }
-
 }
