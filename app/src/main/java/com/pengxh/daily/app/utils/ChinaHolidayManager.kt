@@ -9,18 +9,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 object ChinaHolidayManager {
@@ -30,6 +29,9 @@ object ChinaHolidayManager {
 
     private val _syncResult = MutableSharedFlow<SyncResult>(extraBufferCapacity = 1)
     val syncResult = _syncResult.asSharedFlow()
+
+    private val _currentYearUpdatedAt = MutableStateFlow<Long?>(null)
+    val currentYearUpdatedAt = _currentYearUpdatedAt.asStateFlow()
 
     /**
      * CDN 镜像源
@@ -120,6 +122,8 @@ object ChinaHolidayManager {
             loadFromCache(year)?.let { cachedData[year] = it }
         }
 
+        _currentYearUpdatedAt.value = cachedData[currentYear]?.updatedAtMillis
+
         val yearsToFetch = if (forceRefresh) {
             years
         } else {
@@ -133,6 +137,10 @@ object ChinaHolidayManager {
             if (data != null) {
                 updatedData[year] = data
                 cachedData[year] = data
+
+                if (year == currentYear) {
+                    _currentYearUpdatedAt.value = data.updatedAtMillis
+                }
             } else {
                 Log.w(kTag, "No usable holiday data returned for $year")
             }
@@ -267,34 +275,16 @@ object ChinaHolidayManager {
         val nextUpdated = updatedData[nextYear]
         val nextCached = cachedData[nextYear]
         val nextYearStatus = when {
-            nextUpdated != null -> "；已预载${nextYear}年数据"
-            nextCached != null -> "；保留${nextYear}年缓存（${formatCacheTime(nextCached)}）"
-            else -> "；${nextYear}年数据暂不可用（可能尚未发布）"
+            nextUpdated != null -> "，\r\n并且已预载${nextYear}年节假日数据！"
+            nextCached != null -> "，并保留${nextYear}年缓存数据！"
+            else -> "。\r\n${nextYear}年数据暂不可用（可能尚未发布）"
         }
 
         when {
-            currentUpdated != null -> notifySuccess(
-                "节假日数据更新完成（${currentYear}年，${formatCacheTime(currentUpdated)}）" +
-                        nextYearStatus
-            )
-
-            currentCached != null -> notifySuccess(
-                "当年网络刷新失败，已回退到${currentYear}年缓存（" +
-                        "${formatCacheTime(currentCached)}）$nextYearStatus"
-            )
-
-            else -> notifyError(
-                "当前年度节假日数据刷新失败，且没有可用缓存$nextYearStatus"
-            )
+            currentUpdated != null -> notifySuccess("${currentYear}年节假日数据更新完成$nextYearStatus")
+            currentCached != null -> notifySuccess("刷新节假日数据失败，已回退到${currentYear}年缓存$nextYearStatus")
+            else -> notifyError("当前年度节假日数据刷新失败，且没有可用缓存$nextYearStatus")
         }
-    }
-
-    private fun formatCacheTime(data: CachedHolidayData): String {
-        return data.updatedAtMillis?.let(::formatTimestamp) ?: "更新时间未知"
-    }
-
-    private fun formatTimestamp(timestamp: Long): String {
-        return SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.CHINA).format(Date(timestamp))
     }
 
     private fun cacheKey(year: Int): String = "$CACHE_KEY_PREFIX$year"

@@ -263,7 +263,7 @@
                         android:layout_height="wrap_content"
                         app:itemDesc="同步当年与次年的法定节假日"
                         app:itemIcon="@drawable/ic_setting_holiday"
-                        app:itemRightType="arrow"
+                        app:itemRightType="text"
                         app:itemTitle="更新节假日数据" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

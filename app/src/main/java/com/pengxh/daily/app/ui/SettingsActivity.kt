@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
 import android.view.View
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
@@ -29,6 +30,7 @@ import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.show
 import com.pengxh.daily.app.extensions.showActionSheet
+import com.pengxh.daily.app.extensions.showCustomDialog
 import com.pengxh.daily.app.service.CaptureImageService
 import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.NotificationMonitorService
@@ -47,6 +49,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
 
@@ -97,7 +102,12 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
                 when (result) {
                     is ChinaHolidayManager.SyncResult.Success -> {
                         LoadingDialog.dismiss()
-                        result.content.show(context)
+                        showCustomDialog(R.layout.dialog_update_result) { view, dialog ->
+                            view.findViewById<TextView>(R.id.textView).text = result.content
+                            view.findViewById<View>(R.id.confirmButton).setOnClickListener {
+                                dialog.dismiss()
+                            }
+                        }
                     }
 
                     is ChinaHolidayManager.SyncResult.Error -> {
@@ -292,6 +302,16 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         binding.updateHolidayItem.setOnClickListener {
             LoadingDialog.show(this, "更新中，请稍后...")
             ChinaHolidayManager.updateChinaHolidayData(forceRefresh = true)
+        }
+
+        lifecycleScope.launch {
+            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA)
+
+            ChinaHolidayManager.currentYearUpdatedAt.collect { timestamp ->
+                binding.updateHolidayItem.rightText = timestamp?.let {
+                    formatter.format(Date(it))
+                } ?: "暂无时间"
+            }
         }
 
         binding.floatingItem.switchView.setOnClickListener {
