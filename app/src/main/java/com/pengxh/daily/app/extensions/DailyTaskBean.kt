@@ -27,6 +27,31 @@ fun String.toTimeEntity(): TimeEntity {
     return TimeEntity.target(Date.from(date))
 }
 
+/**
+ * randomTimeView 的展示值：
+ * 开启随机时间 → "time - time+随机范围"，如 "08:20:00 - 08:50:00"
+ * 未开启随机时间 → null（由调用方兜底显示 "--:--:--"）
+ * */
+fun DailyTaskBean.resolveRandomTimeRange(): String? {
+    val needRandom = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
+    if (!needRandom) return null
+
+    val minuteRange = AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
+
+    val parts = time.split(":")
+    val startSeconds = parts.getOrNull(0)?.toIntOrNull()!! * 3600 +
+            parts.getOrNull(1)?.toIntOrNull()!! * 60 +
+            (parts.getOrNull(2)?.toIntOrNull() ?: 0)
+
+    // 终点不超过当天 23:59:59
+    val endSeconds = minOf(startSeconds + minuteRange * 60, 86399)
+
+    fun format(totalSeconds: Int): String =
+        "%02d:%02d:%02d".format(totalSeconds / 3600, (totalSeconds % 3600) / 60, totalSeconds % 60)
+
+    return "${format(startSeconds)} - ${format(endSeconds)}"
+}
+
 fun DailyTaskBean.resolveExecutionTime(): String {
     val totalSeconds = resolveExecutionSeconds()
     val hour = totalSeconds / 3600

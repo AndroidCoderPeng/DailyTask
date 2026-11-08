@@ -6,9 +6,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.extensions.convertColor
+import com.pengxh.daily.app.extensions.resolveRandomTimeRange
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 
-@SuppressLint("NotifyDataSetChanged")
 class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
 
     /**
@@ -56,6 +56,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val taskBean = dataBeans[position]
         holder.setText(R.id.taskTimeView, taskBean.time)
+            .setText(R.id.randomTimeView, taskBean.resolveRandomTimeRange() ?: "--:--:--")
             .setText(R.id.actualTimeView, actualTime)
         if (position == mPosition) {
             holder.setTextColor(
@@ -74,6 +75,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     fun refresh(newRows: List<DailyTaskBean>) {
         dataBeans.clear()
         dataBeans.addAll(newRows)

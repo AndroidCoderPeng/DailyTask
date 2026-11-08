@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.ui
 
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
@@ -217,6 +218,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     override fun onResume() {
         super.onResume()
         LogFileManager.writeLog("onResume: $packageName 回到前台")
@@ -225,6 +227,9 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
         showMaskOnForeground()
         updateToolbarTitle()
+
+        // 配置页可能修改了随机时间开关/范围，回来时重绑定列表刷新 randomTimeView
+        dailyTaskAdapter.notifyDataSetChanged()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -368,8 +373,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                                 }
                             view.findViewById<MaterialButton>(R.id.cancelButton)
                                 .setOnClickListener {
-                                dialog.dismiss()
-                            }
+                                    dialog.dismiss()
+                                }
                         }
                     }
                 }
@@ -569,8 +574,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
         val item = dailyTaskAdapter.itemAt(position) ?: return
         showCustomDialog(R.layout.dialog_delete_task) { view, dialog ->
-            view.findViewById<TextView>(R.id.textView).text =
-                "确定要删除 ${item.time} 的打卡任务吗？"
+            view.findViewById<TextView>(R.id.textView).text = "确定要删除 ${item.time} 的任务吗？"
             view.findViewById<MaterialButton>(R.id.confirmButton).setOnClickListener {
                 mainViewModel.deleteTask(item)
                 dialog.dismiss()
