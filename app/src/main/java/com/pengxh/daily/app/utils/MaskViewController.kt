@@ -100,11 +100,12 @@ class MaskViewController(
             override fun run() {
                 if (binding.maskView.width == 0 || binding.maskView.height == 0) return
 
-                binding.clockView.measure(
-                    View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED
+                binding.clockLayout.measure(
+                    View.MeasureSpec.UNSPECIFIED,
+                    View.MeasureSpec.UNSPECIFIED
                 )
-                val clockWidth = binding.clockView.measuredWidth
-                val clockHeight = binding.clockView.measuredHeight
+                val clockWidth = binding.clockLayout.measuredWidth
+                val clockHeight = binding.clockLayout.measuredHeight
 
                 val maxX = binding.maskView.width - clockWidth
                 val maxY = binding.maskView.height - clockHeight
@@ -113,7 +114,7 @@ class MaskViewController(
                     val newX = random.nextInt(maxX.coerceAtLeast(1))
                     val newY = random.nextInt(maxY.coerceAtLeast(1))
 
-                    binding.clockView.animate()
+                    binding.clockLayout.animate()
                         .x(newX.toFloat())
                         .y(newY.toFloat())
                         .setDuration(1000)

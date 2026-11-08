@@ -245,14 +245,28 @@
         android:background="@color/black"
         android:visibility="gone">
 
-        <TextClock
-            android:id="@+id/clockView"
+        <LinearLayout
+            android:id="@+id/clockLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerInParent="true"
-            android:fontFamily="@font/ds_digital"
-            android:format24Hour="HH:mm"
-            android:textColor="#B3FFFFFF"
-            android:textSize="56sp" />
+            android:orientation="vertical">
+
+            <TextClock
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:fontFamily="@font/ds_digital"
+                android:format24Hour="HH:mm"
+                android:textColor="#B3FFFFFF"
+                android:textSize="56sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="上滑屏幕或按音量下键退出"
+                android:textColor="#B3FFFFFF" />
+        </LinearLayout>
     </RelativeLayout>
 </FrameLayout>
