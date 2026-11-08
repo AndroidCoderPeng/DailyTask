@@ -123,7 +123,7 @@
                     android:background="@drawable/bg_edit_text_stroke_8"
                     android:gravity="center_vertical"
                     android:hint="如：打卡结果通知（非必填）"
-                    android:paddingHorizontal="12dp"
+                    android:paddingHorizontal="@dimen/dp_12"
                     android:paddingVertical="10dp"
                     android:singleLine="true"
                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
@@ -171,7 +171,7 @@
                             android:layout_height="wrap_content"
                             android:background="@drawable/bg_edit_text_stroke_8"
                             android:gravity="center_vertical"
-                            android:paddingHorizontal="12dp"
+                            android:paddingHorizontal="@dimen/dp_12"
                             android:paddingVertical="10dp"
                             android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
@@ -288,7 +288,7 @@
                                     android:gravity="center_vertical"
                                     android:hint="如：123456789"
                                     android:inputType="number"
-                                    android:paddingHorizontal="12dp"
+                                    android:paddingHorizontal="@dimen/dp_12"
                                     android:paddingVertical="10dp"
                                     android:singleLine="true"
                                     android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
@@ -331,7 +331,7 @@
                                 android:layout_marginVertical="@dimen/margin_half"
                                 android:background="@drawable/bg_edit_text_stroke_8"
                                 android:gravity="center_vertical"
-                                android:paddingHorizontal="12dp"
+                                android:paddingHorizontal="@dimen/dp_12"
                                 android:paddingVertical="10dp"
                                 android:singleLine="true"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
@@ -372,7 +372,7 @@
                                 android:gravity="center_vertical"
                                 android:hint="如：xxxxx@qq.com"
                                 android:inputType="textEmailAddress"
-                                android:paddingHorizontal="12dp"
+                                android:paddingHorizontal="@dimen/dp_12"
                                 android:paddingVertical="10dp"
                                 android:singleLine="true"
                                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />

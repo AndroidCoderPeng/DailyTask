@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="@dimen/dp_12">
 
         <!-- 计划时间部分 -->
         <LinearLayout
@@ -87,7 +87,7 @@
             </com.google.android.material.card.MaterialCardView>
 
             <Space
-                android:layout_width="12dp"
+                android:layout_width="@dimen/dp_12"
                 android:layout_height="wrap_content" />
 
             <com.google.android.material.card.MaterialCardView

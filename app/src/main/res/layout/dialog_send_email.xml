@@ -47,7 +47,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:divider="@drawable/divider_line"
-            android:dividerPadding="12dp"
+            android:dividerPadding="@dimen/dp_12"
             android:orientation="vertical"
             android:showDividers="middle">
 
@@ -55,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="@dimen/dp_12">
 
                 <TextView
                     android:layout_width="60dp"
@@ -78,7 +78,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="@dimen/dp_12">
 
                 <TextView
                     android:layout_width="60dp"
@@ -101,7 +101,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="@dimen/dp_12">
 
                 <TextView
                     android:layout_width="60dp"

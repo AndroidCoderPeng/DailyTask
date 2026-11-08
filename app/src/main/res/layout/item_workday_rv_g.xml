@@ -13,7 +13,7 @@
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
-        android:paddingVertical="12dp"
+        android:paddingVertical="@dimen/dp_12"
         android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
         android:textColor="@color/selector_workday_chip_text"
         tools:text="周一" />

@@ -76,9 +76,9 @@
                         android:id="@+id/tipsView"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
-                        android:layout_marginVertical="@dimen/margin"
+                        android:layout_marginBottom="@dimen/margin"
                         android:gravity="center_vertical"
-                        android:hint="点击下方按钮启动今日任务，到点后自动拉起目标应用触发极速打卡"
+                        android:hint="点击下方按钮启动任务，到点自动拉起目标应用触发极速打卡"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="@color/text_secondary_color" />
 
@@ -152,7 +152,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/margin_2x"
-                android:layout_marginVertical="@dimen/dp_12"
+                android:layout_marginVertical="@dimen/margin"
                 android:text="启动今日任务"
                 app:cornerRadius="@dimen/radius"
                 app:icon="@mipmap/ic_start"

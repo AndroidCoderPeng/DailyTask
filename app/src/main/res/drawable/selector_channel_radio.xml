@@ -20,7 +20,7 @@
             </item>
 
             <!-- 勾 -->
-            <item android:width="12dp" android:height="12dp" android:drawable="@drawable/ic_check" android:gravity="top|right" android:right="3dp" android:top="3dp" />
+            <item android:width="@dimen/dp_12" android:height="@dimen/dp_12" android:drawable="@drawable/ic_check" android:gravity="top|right" android:right="3dp" android:top="3dp" />
         </layer-list>
     </item>
     <item>
