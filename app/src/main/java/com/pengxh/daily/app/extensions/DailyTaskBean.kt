@@ -43,12 +43,10 @@ fun DailyTaskBean.resolveRandomTimeRange(): String? {
             parts.getOrNull(1)?.toIntOrNull()!! * 60 +
             (parts.getOrNull(2)?.toIntOrNull() ?: 0)
 
+    fun format(totalSeconds: Int): String = "%02d:%02d".format(totalSeconds / 3600, (totalSeconds % 3600) / 60)
+
     // 终点不超过当天 23:59:59
     val endSeconds = minOf(startSeconds + minuteRange * 60, 86399)
-
-    fun format(totalSeconds: Int): String =
-        "%02d:%02d:%02d".format(totalSeconds / 3600, (totalSeconds % 3600) / 60, totalSeconds % 60)
-
     return "${format(startSeconds)} - ${format(endSeconds)}"
 }
 
