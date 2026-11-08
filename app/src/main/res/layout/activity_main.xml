@@ -183,7 +183,7 @@
                         android:id="@+id/taskCountView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:paddingHorizontal="@dimen/padding_half"
+                        android:paddingHorizontal="6dp"
                         android:text="0"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
                         android:textColor="@color/theme_color" />

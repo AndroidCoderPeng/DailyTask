@@ -305,6 +305,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
                     is TaskListState.Loaded -> {
                         dailyTaskAdapter.refresh(state.tasks)
+                        binding.taskCountView.text = state.tasks.size.toString()
                         updateEmptyState(state.tasks.isEmpty())
                     }
                 }
