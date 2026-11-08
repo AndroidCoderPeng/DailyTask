@@ -2,21 +2,22 @@
 
 ## 1. 概述
 
-本方案实现两个 Android 设备之间**不依赖自建服务器**的点对点通信，用于传输文字与小于 200KB 的小图片。
+本方案实现两个 Android 设备之间的小段文字通信。两台设备首次处于同一网络时手动交换 SDP 建立连接；之后设备进入不同网络时，通过 MQTT 自动交换 ICE Restart 信令恢复连接。App 在通信期间保持前台并保持联网。
 
 ### 1.1 核心原则
 
-- **数据链路**：WebRTC DataChannel 点对点直连，不经过任何中继服务器
-- **信令通道**：公共 MQTT Broker 传递 SDP，两端自动交换，无需人工干预
-- **NAT 穿透**：公共 STUN 辅助发现公网地址，不转发业务数据
-- **零自建基础设施**：不购买服务器、不租用云、不部署 TURN
+- **数据链路**：WebRTC DataChannel 发送小段文字，优先尝试点对点直连
+- **信令通道**：首次手动交换 SDP；绑定后由 MQTT 传递后续 SDP 和 ICE 候选
+- **NAT 穿透**：STUN 辅助发现地址；直连失败时使用第三方托管 TURN 作为中继兜底
+- **不自建中继**：MQTT Broker、STUN 和 TURN 均使用第三方服务；TURN 中继会转发加密后的 DataChannel 流量
 
 ### 1.2 适用场景
 
-- 两台 Android 设备位于不同网络（如公司 Wi-Fi 与家庭 Wi-Fi），相距数十公里
-- 需要传输文字消息和小图片（<200KB）
-- 不希望业务数据经过任何服务器
-- 首次手动绑定后，后续连接自动建立与恢复
+- 两台 Android 设备首次位于同一网络，之后可能分别处于公司 Wi-Fi 与家庭 Wi-Fi
+- 只传输小段文字，不传图片或大文件
+- App 在通信期间始终位于前台并保持联网
+- 首次通过二维码/文本绑定并手动交换 SDP；后续依赖 MQTT 自动重协商
+- 可接受直连失败时由第三方托管 TURN 中继兜底
 
 ---
 
@@ -42,16 +43,15 @@ flowchart TB
         B_APP --> B_WM
     end
 
-    subgraph CLOUD["公共基础设施（无自有服务器）"]
+    subgraph CLOUD["第三方基础设施（不自建）"]
         MQTT["MQTT Broker
-        ssl://broker.emqx.io:8883"]
-        STUN["STUN 服务器
-        aliyun / tencent / cloudflare / google"]
-        TURN["TURN 服务器（可选兜底）
-        Open Relay"]
+        TLS + 认证"]
+        STUN["STUN 服务"]
+        TURN["托管 TURN 服务
+        直连失败时兜底"]
     end
 
-    A_MM -- "① 信令 offer/answer/ice_candidate，QoS 1 + TLS + retained" --> MQTT
+    A_MM -- "① 首次配对后：重连 SDP / ICE 候选，QoS 1 + TLS" --> MQTT
     MQTT -- "订阅推送" --> B_MM
     B_MM -- "应答信令" --> MQTT
     MQTT -- "订阅推送" --> A_MM
@@ -61,14 +61,17 @@ flowchart TB
     A_WM -. "打洞失败时中继兜底" .- TURN
     B_WM -. "中继兜底" .- TURN
 
-    A_WM == "③ P2P 数据直连：文字 + 图片，DTLS 加密，不经任何服务器" ==> B_WM
+    A_WM == "③ 优先 P2P 直连：小段文字，DTLS 加密" ==> B_WM
+    A_WM -. "④ 直连失败时经 TURN 中继（仍为 DTLS 加密）" .- TURN
+    TURN -. "中继到对端" .- B_WM
 ```
 
 | 路径 | 类型 | 内容 | 是否经过服务器 |
 |---|---|---|---|
-| ① MQTT | 信令流 | SDP + ICE 候选（几 KB） | 经过公共 MQTT Broker（TLS） |
-| ② STUN / TURN | 地址发现 / 兜底中继 | 查询公网 IP:端口；打洞失败时中继 | 经过公共 STUN / TURN |
-| ③ DataChannel | 业务数据流 | 文字、图片 | **不经过任何服务器** |
+| ① MQTT | 信令流 | SDP + ICE 候选 | 经过第三方 MQTT Broker（应启用 TLS 和认证） |
+| ② STUN | 地址发现 | 查询公网映射地址，不转发业务数据 | 经过第三方 STUN 服务 |
+| ③ DataChannel 直连 | 业务数据流 | 小段文字 | 设备间直传，不经过中继 |
+| ④ TURN 兜底 | 中继数据流 | 直连失败时转发加密数据 | 经过第三方托管 TURN 服务 |
 
 ---
 
@@ -76,36 +79,29 @@ flowchart TB
 
 ### 阶段 0：准备与配对初始化
 
-目的：建立两台手机之间的信任关系，并约定一个共享的通信主题。
+目的：建立绑定关系、固定协商角色，并准备后续自动重连所需的信令通道。
 
 1. App A 生成随机 `roomId`（16 字节随机值的 Hex 编码，32 字符）和 `preSharedKey`（32 字节随机密钥）：
    ```
    roomId = "a3f1b2c4d5e6f708091a2b3c4d5e6f70"   // 16字节随机 → hex，防扫描枚举
    preSharedKey = "k9f2a1b3..."                   // 32字节（256-bit），用于信令 AES-GCM 加密
    ```
-2. App A 显示二维码（或文本），内容为 `roomId + preSharedKey`。
-3. 用户在两台设备间通过扫码或手动输入完成绑定。
-4. 绑定后，两端本地持久化保存：对方设备标识、`preSharedKey`、`roomId`、自身角色（offerer/answerer，由 `deviceId` 字典序比较决定，见 7.4 节）。
+2. App A 显示二维码（或文本），内容包含 `roomId`、`preSharedKey`、邀请方 `deviceId` 及 Broker/信令配置。不要把 Broker 密钥等服务端凭据放入二维码。
+3. App B 扫码/输入后回传自己的稳定 `deviceId`，两端完成绑定并按两个设备 ID 确定角色。
+4. 绑定后，两端连接 MQTT 并订阅 `c2c/{roomId}/signal`，本地保存对方设备标识、`preSharedKey`、`roomId` 和固定角色。角色由两端稳定且唯一的 `deviceId` 字典序比较确定，较小者为 offerer。
+5. 确认 MQTT 信令可用后，首次连接通过可信渠道手动交换 SDP。由于手动交换没有逐条 trickle 候选通道，双方应等待 ICE gathering 完成后再导出并交换完整 SDP（含候选）；或明确提供手动交换候选的步骤。二维码用于配对信息，不建议承载完整 SDP。
 
-### 阶段 1：通过 MQTT 交换 SDP + ICE 候选，建立 WebRTC 连接
+### 阶段 1：首次手动交换 SDP，建立 WebRTC 连接
 
-> 采用 **Trickle ICE** 模式：SDP offer/answer 生成后立即发送，ICE 候选逐条通过 MQTT 推送，对端可提前开始连通性检查，缩短建连时间（非 Trickle 模式下候选收集可能耗时 5~15 秒）。
+首次连接使用手动 SDP，不依赖 MQTT 完成初始协商。由于两端同处一个网络，可能通过局域网候选建立连接；这并不代表之后跨网络也一定能直连。
 
-1. App A 和 App B 同时连接公共 MQTT Broker（TLS，端口 8883），订阅主题 `c2c/{roomId}/signal`，QoS = 1。
-2. App A 创建 `RTCPeerConnection`，配置 STUN + 可选 TURN 列表。
-3. App A 创建 DataChannel，调用 `createOffer()` → `setLocalDescription()`。
-4. App A 立即通过 MQTT 发布 offer（不等 ICE 收集完成，retained = true）：
-   ```json
-   { "type": "offer", "from": "device_A_id", "seq": 1, "sdp": "offer SDP 文本..." }
-   ```
-5. App A 的 ICE 候选逐条收集，每条通过 MQTT 发布（retained = false）：
-   ```json
-   { "type": "ice_candidate", "from": "device_A_id", "seq": 2, "candidate": "candidate:842163049 1 udp 1677729535 ..." }
-   ```
-6. App B 收到 offer，调用 `setRemoteDescription()`，再调用 `createAnswer()` → `setLocalDescription()`。
-7. App B 通过 MQTT 发布 answer（retained = true）。
-8. App B 的 ICE 候选同样逐条推送。
-9. 两端 ICE 进行 NAT 穿透连通性检查，打洞成功后 DataChannel 打开，连接建立。
+1. 两端均已绑定并连接 MQTT，以便未来切换网络后使用自动信令。
+2. 固定 offerer 创建 `RTCPeerConnection`，配置 STUN 和托管 TURN，并创建可靠、有序的 DataChannel。
+3. Offerer 创建 offer、设置本地描述，并等待 ICE gathering 完成后导出完整 SDP。
+4. 两端通过 UI 展示/输入、复制粘贴等可信方式手动交换完整 offer/answer SDP；Answerer 设置远端 offer、创建并设置 answer，等待 ICE gathering 完成后导出 answer。
+5. Offerer 设置收到的 answer。双方等待 ICE 状态和 DataChannel 状态确认连接成功。
+
+> 手动复制完整 SDP 会暴露其中的 ICE 地址与候选，只应通过可信的设备间渠道交换。若使用不含候选的 SDP，就必须另行手动交换 ICE 候选，否则初次连接可能无法建立。
 
 ### 阶段 2：日常数据收发
 
@@ -113,71 +109,60 @@ flowchart TB
 
 #### 文字传输
 
-直接通过 DataChannel 发送 UTF-8 字符串。
-
-#### 小图片传输（<200KB）
-
-采用改进的分片协议（详见 6.8 / 6.9 节）：
-
-1. 发送方先发 JSON 元信息（前缀 `0x00` magic byte，含 CRC32 校验值）：
-   ```json
-   { "type": "image", "name": "photo.jpg", "size": 180000, "chunks": 12, "chunkSize": 16384, "crc32": "a1b2c3d4" }
-   ```
-2. 将图片数据分成 **16KB** 大小的块（根据 `dataChannel.maxMessageSize()` 动态调整），每块前加 4 字节序号。
-3. 逐块发送，使用**滑动窗口**（窗口大小 4）做流量控制，避免撑爆发送缓冲区；接收方每收一块回复 ACK。
-4. 接收方按序号存入 `SparseArray<ByteArray>`，全部收齐后做 CRC32 校验，通过则保存为文件。
+以 UTF-8 通过 DataChannel 发送文字。保持 DataChannel 为默认的可靠、有序传输；若未来设置部分可靠模式，应另行设计应用层确认与重试。
 
 ### 阶段 3：网络切换 / 连接断开后的自动重连
 
-这是方案的核心场景：在公司用 Wi-Fi 绑定并连接后，回到家网络变了，原连接失效，但人不在现场无法手动交换 SDP。此时 MQTT 自动信令发挥作用。
+这是方案的核心场景：设备离开初次连接的同一网络后，原 ICE 路径可能失效。两端仍以前台运行并保持联网为前提，通过 MQTT 自动交换新的 SDP 和 ICE 候选，无需再次人工交换 SDP。
 
-> 采用 **ICE Restart** 而非销毁重建 `RTCPeerConnection`：在已有连接上重启 ICE，保持 DataChannel 不重建，开销更小、重连更平滑。
+> 先尝试在已有 `RTCPeerConnection` 上进行 **ICE Restart**。DataChannel 通常可随 ICE 恢复继续使用，但不保证所有失败状态都能恢复；超时后应允许重建 PeerConnection 并重新协商。
 
 1. **检测网络变化 / 连接断开**
    - 通过 `ConnectivityManager` 监听 Wi-Fi 或蜂窝网络切换
    - 或 WebRTC `PeerConnection.Observer` 回调 `onIceConnectionChange(DISCONNECTED / FAILED)`
-   - 或应用层心跳超时（30 秒无 pong，见 6.10 节）
+   - 可选的应用层心跳超时（见 6.8 节）
 
 2. **防抖处理**
    - 网络切换时 `ConnectivityManager` 可能短时间内触发多次回调，导致频繁创建连接
    - 设置 **3 秒防抖窗口**，窗口内多次回调只触发一次重连
 
 3. **触发 ICE Restart**（仅 offerer 端发起，见 7.4 角色约定）
-   - 在已有 `RTCPeerConnection` 上设置 `iceRestart` 约束，重新 `createOffer()`
-   - 生成包含新网络地址的 ICE 候选，逐条通过 MQTT 推送
-   - 通过 MQTT 发布 `reconnect_offer`（retained = true）：
+   - 只由固定 offerer 发起，且确保当前没有未完成的 SDP 协商
+   - 创建 ICE Restart offer；在 `setLocalDescription` 成功后通过 MQTT 发布新的 `reconnect_offer`
+   - 新的 ICE 候选逐条通过 MQTT 推送，并带上本轮协商 ID
+   - 所有动态信令均使用 `retained = false`，避免重连后收到过期协商：
    ```json
-   { "type": "reconnect_offer", "from": "device_A_id", "seq": 3, "sdp": "ICE Restart 的新 offer SDP..." }
+   { "type": "reconnect_offer", "from": "device_A_id", "negotiationId": "随机协商 ID", "sdp": "ICE Restart 的新 offer SDP..." }
    ```
 
 4. **对端收到后自动应答**
-   - App B 仍订阅同一 MQTT 主题，收到 `reconnect_offer`
-   - B 自动 `setRemoteDescription()` → `createAnswer()` → 发回 `reconnect_answer`
-   - 同样接收新的 ICE 候选
+   - App B 收到与当前绑定匹配的新 `reconnect_offer`
+   - 设置远端 SDP 成功后，处理此前缓存的同轮 ICE 候选，再创建 answer
+   - `setLocalDescription` 成功后发布 `reconnect_answer`，并继续传递本轮 ICE 候选
 
 5. **重建连接**
-   - A 设置 B 的 answer，两端重新完成 ICE 打洞
-   - DataChannel 保持或快速恢复，App 回到"已连接"状态，用户无感知
+   - A 收到并设置同一 `negotiationId` 的 answer，两端重新进行 ICE 连通性检查
+   - DataChannel 恢复后回到"已连接"状态；超时则进入失败恢复流程，不假设通道必然无感恢复
 
 ```
-公司 WiFi 连接中 ── 回到家切 WiFi/4G
+同一网络首次手动建连 ── 两台设备分别切换到公司/家庭网络
         │
         ├─ 连接断开，检测网络变化
         │
         ├─ 防抖 3 秒 → ICE Restart 生成新候选
         │
-        ├─ 通过 MQTT 自动发送新 SDP + ICE 候选
+        ├─ 通过 MQTT 自动发送新 SDP + ICE 候选（均不 retained）
         │
         └─ 对端自动应答 → 重新建立 P2P 连接
 ```
 
 ### 阶段 4：失败处理
 
-如果打洞失败（如某一端在对称型 NAT 后面），且没有 TURN 中继，重连失败。此时：
+如果直连打洞失败，ICE 应尝试第三方托管 TURN 中继。若直连和 TURN 路径均失败，重连仍可能失败。此时：
 
-- 明确提示："当前网络环境不支持直连，请切换网络后重试。"
+- 明确提示："当前网络环境无法建立连接，请检查网络后重试。"
 - 保留绑定关系，不删除 `roomId` 和共享密钥
-- 等待网络再次变化时，自动重试
+- 使用有上限的退避策略重试，或等待网络再次变化后重试
 
 ---
 
@@ -197,12 +182,16 @@ c2c/{roomId}/signal
 
 ```json
 {
-  "type": "offer | answer | reconnect_offer | reconnect_answer | ice_candidate | ping | pong | bye",
+  "type": "reconnect_offer | reconnect_answer | ice_candidate | bye",
   "from": "device_id",
-  "seq": 1,
+  "negotiationId": "每轮协商随机生成",
+  "messageId": "每条信令消息唯一 ID",
   "sdp": "...",
-  "candidate": "...",
-  "ts": 1730123456789
+  "candidate": {
+    "sdp": "candidate:...",
+    "sdpMid": "0",
+    "sdpMLineIndex": 0
+  }
 }
 ```
 
@@ -210,49 +199,42 @@ c2c/{roomId}/signal
 |---|---|---|
 | `type` | string | 消息类型 |
 | `from` | string | 发送方 deviceId，用于过滤自发消息 |
-| `seq` | int | 自增序列号，用于去重与顺序判断 |
-| `sdp` | string? | SDP 文本（仅 offer/answer 类消息） |
-| `candidate` | string? | ICE 候选文本（仅 ice_candidate 消息） |
-| `ts` | long? | 时间戳（ping/pong 用） |
+| `negotiationId` | string? | 重连协商唯一 ID；presence/bye 消息不需要 |
+| `messageId` | string | 每条消息唯一 ID，用于 QoS 1 重复消息去重 |
+| `sdp` | string? | SDP 文本（仅 reconnect_offer / reconnect_answer） |
+| `candidate` | object? | ICE 候选的 `sdp`、`sdpMid`、`sdpMLineIndex` 字段 |
 
 ### 4.3 消息类型
 
 | type | 方向 | QoS | retained | 说明 |
 |---|---|---|---|---|
-| `offer` | A → B | 1 | true | 初始连接时的 offer |
-| `answer` | B → A | 1 | true | 初始连接时的 answer |
-| `reconnect_offer` | offerer → answerer | 1 | true | 网络变化后 ICE Restart 的新 offer |
-| `reconnect_answer` | answerer → offerer | 1 | true | 对 reconnect_offer 的应答 |
+| `reconnect_offer` | 固定 offerer → answerer | 1 | false | 网络变化后 ICE Restart 的新 offer |
+| `reconnect_answer` | answerer → 固定 offerer | 1 | false | 对同一轮 reconnect_offer 的应答 |
 | `ice_candidate` | 双向 | 1 | false | Trickle ICE 逐条候选 |
-| `ping` | 双向 | 0 | false | MQTT 链路存活检测 |
-| `pong` | 双向 | 0 | false | 对 ping 的应答 |
 | `bye` | 任一端 | 1 | false | 主动断开前通知对方 |
+| `mqtt_online` | 任一端 → 对端 | 1 | false | 订阅成功后及每 15 秒发布；用于在线状态提示 |
 
-> **QoS 策略**：SDP 和 ICE 候选必须使用 **QoS 1**（至少一次送达），丢失会导致连接失败。ping/pong 用 QoS 0 即可。
+> QoS 1 是“至少一次”投递，可能重复，不代表严格一次或端到端处理成功。所有动态信令均不得 retained；接收方按 `messageId` 去重，发送方应处理发布失败和超时。
 
 ### 4.4 消息顺序与去重
 
-- 每条消息带自增 `seq`，接收方记录最后处理的 `seq`
-- 防止重复处理或旧消息覆盖新消息
-- 收到旧 `seq` 的消息直接丢弃
-- ICE 候选允许乱序到达，按 `candidate.sdpMLineIndex` 归类即可
+- 只接受当前绑定双方的 `from`，过滤本机消息，并校验 `negotiationId`。
+- 按 `messageId` 去重；不使用单一全局序号过滤双向消息。
+- ICE 候选可能先于远端 SDP 到达；先按 `negotiationId` 暂存，成功设置远端 SDP 后再逐条 `addIceCandidate`。
+- 旧协商的 answer/candidate 一律丢弃；开始新一轮协商时清理旧轮次候选和定时器。
+- 只有双方最近 45 秒内均发布过 `mqtt_online` 且本地 MQTT 已订阅时才发起重连。MQTT 恢复后重新订阅并重新发布在线状态，再启动全新的协商，不复用旧候选。
 
-### 4.5 MQTT LWT（遗嘱消息）
+### 4.5 在线状态检测
 
-配置 Last Will and Testament，当一端异常断开 MQTT（App 崩溃、网络完全中断）时，对端能更快感知：
-
-```kotlin
-val willPayload = """{"type":"bye","from":"$deviceId","reason":"offline"}""".toByteArray()
-client.setWill("c2c/$roomId/signal", willPayload, 1, false)
-```
+订阅成功后发布 `mqtt_online`，并在 MQTT 保持连接期间每 15 秒发布一次。接收方以本地单调时钟记录最近一次收到对端消息的时间；超过 45 秒未收到则视为信令端暂时不可达。该状态只用于判断能否发起协商，不代表 WebRTC DataChannel 的状态。
 
 ### 4.6 Retained 消息策略
 
 | 消息类型 | retained | 原因 |
 |---|---|---|
-| offer / answer / reconnect_* | true | 对端可能未上线，retained 确保上线后收到最后一条 |
-| ice_candidate | false | 候选时效性强，旧候选无意义，retained 只保留最后一条会丢失前面的 |
-| ping / pong / bye | false | 无需 retained |
+| 所有 SDP / ICE 候选 / presence / bye | false | 消息仅属于当前协商或会话；保留会造成过期状态或信令重放 |
+
+> MQTT retained 只保存某主题的最后一条消息，不能作为完整可靠的离线信令队列。此方案假定两端前台在线；若任一端 MQTT 暂时离线，恢复后应确认双方在线并创建全新的 ICE Restart 协商。
 
 ---
 
@@ -269,19 +251,21 @@ client.setWill("c2c/$roomId/signal", willPayload, 1, false)
 | `IDLE` | 未绑定设备 |
 | `BOUND` | 已通过二维码/文本绑定，连接未建立 |
 | `CONNECTING` | 正在交换 SDP + ICE 候选 |
-| `CONNECTED` | DataChannel 打开，可以传数据，心跳运行中 |
-| `DISCONNECTED` | 连接意外断开（ICE DISCONNECTED 或心跳超时），但非永久失败 |
+| `CONNECTED` | DataChannel 打开，可以传文字；可选运行应用层心跳 |
+| `DISCONNECTED` | 连接意外断开（ICE 状态或 DataChannel 状态报告），但非永久失败 |
 | `RECONNECTING` | 正在通过 MQTT 交换新 SDP + ICE 候选（ICE Restart） |
-| `FAILED` | 打洞失败或超时，提示用户，保留绑定关系 |
+| `FAILED` | 直连与 TURN 均失败或协商超时；提示用户并保留绑定关系 |
 
 ### 核心迁移逻辑
 
-- 网络变化 / 心跳超时 → `CONNECTED` → `DISCONNECTED` →（防抖 3 秒）→ `RECONNECTING` → `CONNECTED`
-- 应用层心跳超时（30 秒无 pong）→ `CONNECTED` → `DISCONNECTED` → `RECONNECTING`
-- MQTT 断开 → 重连 MQTT，WebRTC 连接不受影响（信令断 ≠ 数据断）
+- 网络变化或 ICE `DISCONNECTED` / `FAILED` → `CONNECTED` → `DISCONNECTED` →（网络稳定后防抖）→ `RECONNECTING` → `CONNECTED`
+- 可选应用层心跳连续超时可作为辅助信号，不应仅凭单次 pong 超时判定连接永久失效
+- MQTT 断开 → 重连并重新订阅；已有 WebRTC 可能仍工作，但断线期间不要假设信令已送达
 - 收到新的 `reconnect_offer` → 自动生成 answer → 尝试连接
-- 收到 `bye`（LWT 或主动）→ `CONNECTED` → `BOUND`（等待对端重新上线）
-- `FAILED` 不清空绑定关系 → 回到 `BOUND`，等待网络变化时自动重试
+- 收到主动 `bye` → `CONNECTED` → `BOUND`；MQTT presence 超时只标记信令端不可达，不据此判断 WebRTC 状态
+- `FAILED` 不清空绑定关系；双方 MQTT 恢复且在线后，按退避策略创建新协商
+
+> 本方案明确假定 App 在前台并保持联网；不承诺 App 被切到后台、系统挂起或进程被杀后的自动恢复。
 
 ---
 
@@ -299,48 +283,41 @@ implementation 'io.getstream:stream-webrtc-android:1.3.8'
 
 ### 6.2 STUN / TURN 配置
 
+以下地址应由实际选用的第三方服务提供商给出。STUN 用于地址发现；TURN 是直连失败时的中继兜底，使用托管服务，不自建中继服务器。生产使用时不要把长期有效的 TURN 密钥或服务商 API Secret 硬编码进 APK；优先选择提供短期 TURN 凭据的方案。若服务商要求用私密 API Secret 换取凭据，需要安全的凭据签发途径；该签发服务不承担媒体中继。选型时核对目标地区覆盖、UDP 及 TCP/TLS 传输支持、流量计费和服务保障。
+
 ```kotlin
 val iceServers = listOf(
-    PeerConnection.IceServer("stun:stun.aliyun.com:3478"),
-    PeerConnection.IceServer("stun:stun.cloud.tencent.com:3478"),
-    PeerConnection.IceServer("stun:stun.cloudflare.com:3478"),
-    PeerConnection.IceServer("stun:stun.l.google.com:19302"),
-    // 可选：公共 TURN 兜底（打洞失败时中继流量，见 7.2 节）
-    PeerConnection.IceServer("turn:openrelay.metered.ca:80?username=openrelayproject&credential=openrelayproject"),
-    PeerConnection.IceServer("turn:openrelay.metered.ca:443?transport=tcp&username=openrelayproject&credential=openrelayproject")
+    PeerConnection.IceServer("stun:<provider-host>:<port>"),
+    PeerConnection.IceServer.builder("turn:<provider-host>:<port>")
+        .setUsername(shortLivedTurnUsername)
+        .setPassword(shortLivedTurnCredential)
+        .createIceServer()
 )
 
 val config = PeerConnection.RTCConfiguration(iceServers).apply {
     continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY
-    enableIceRestart = true   // 6.7 节 ICE Restart 重连必需
+    enableIceRestart = true
+    // 保持 ICE_TRANSPORT_POLICY_ALL（默认值），允许优先直连、必要时使用 TURN relay candidate。
 }
 ```
 
-> **公共 TURN**：Open Relay 提供免费公共 TURN，不保证 SLA，仅作打洞失败时的兜底。TCP 443 变体用于防火墙只放行 TCP 的企业网络。如需高可靠，建议自建 TURN（如 coturn）。
+> TURN 会转发加密后的 WebRTC 流量，第三方服务可观察连接元数据和流量，但不能解密正常 DTLS DataChannel 的内容。公共免费 TURN 仅用于测试，不应作为稳定性保证；本方案不要求自建 TURN。
 
-### 6.3 公共 MQTT Broker
+### 6.3 第三方 MQTT Broker
 
-| Broker | 地址 | 端口 | 说明 |
-|---|---|---|---|
-| EMQX 公共 | `broker.emqx.io` | 8883 (TLS) | 免费，稳定运行多年，推荐 |
-| Mosquitto 测试 | `test.mosquitto.org` | 8883 (TLS) | 免费，偶有波动 |
-| HiveMQ 公共 | `broker.hivemq.com` | 8883 (TLS) | 可用 |
+可使用第三方托管 MQTT 服务，不需自建 Broker。生产环境应选择支持 TLS、账号认证、ACL/主题隔离且有合适可用性承诺的服务；公共匿名 Broker 仅适合验证原型，不适合作为私密信令通道。
 
-> **必须使用 TLS（8883 端口）**：明文 1883 端口存在信令被截获/篡改的风险，与 7.5 节安全设计不符。
+> 必须使用 TLS，并为每个房间限制主题访问权限。随机 `roomId` 只能降低被猜测的概率，不能代替 Broker 认证和消息端到端认证。
 
 ### 6.4 MQTT 连接与订阅
 
 ```kotlin
 val client = MqttAndroidClient(
     context,
-    "ssl://broker.emqx.io:8883",   // TLS 端口，防中间人
+    "ssl://<provider-host>:<tls-port>",
     "client_$deviceId",
     MemoryPersistence()
 )
-
-// LWT 遗嘱消息：异常断开时通知对端
-val willPayload = """{"type":"bye","from":"$deviceId","reason":"offline"}""".toByteArray()
-client.setWill("c2c/$roomId/signal", willPayload, 1, false)
 
 val options = MqttConnectOptions().apply {
     isCleanSession = true
@@ -350,254 +327,94 @@ val options = MqttConnectOptions().apply {
     maxReconnectInterval = 30
 }
 
-client.connect(options, null, object : IMqttActionListener {
-    override fun onSuccess(asyncActionToken: IMqttToken?) {
-        client.subscribe("c2c/$roomId/signal", 1)  // QoS = 1
-    }
-    override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-        // 切换备用 Broker 重试
-    }
-})
-
+// 必须先设置回调，再开始连接。
 client.setCallback(object : MqttCallbackExtended {
     override fun messageArrived(topic: String, message: MqttMessage) {
-        val json = JSONObject(String(message.payload))
+        // 生产实现先验证并解密 AES-GCM 信令封套，再解析明文 JSON。
+        val plaintext = decryptAndAuthenticate(message.payload, preSharedKey)
+        val json = JSONObject(String(plaintext))
         // 过滤自发消息
         if (json.optString("from") == deviceId) return
 
         when (json.getString("type")) {
-            "offer"            -> handleOffer(json.getString("sdp"))
-            "answer"           -> handleAnswer(json.getString("sdp"))
-            "reconnect_offer"  -> handleReconnectOffer(json.getString("sdp"))
-            "reconnect_answer" -> handleReconnectAnswer(json.getString("sdp"))
-            "ice_candidate"    -> handleIceCandidate(json.getString("candidate"))
+            "reconnect_offer"  -> handleReconnectOffer(json)
+            "reconnect_answer" -> handleReconnectAnswer(json)
+            "ice_candidate"    -> handleIceCandidate(json)
             "bye"              -> handleBye()
-            "ping"             -> sendSignaling("pong", extra = mapOf("ts" to json.optLong("ts")))
+            "mqtt_online"      -> updatePeerMqttPresence(json)
         }
     }
-    // ... connectComplete / deliveryComplete / connectionLost
+    // MQTT 自动重连后必须重新订阅；处理发布失败和连接丢失回调。
+})
+
+client.connect(options, null, object : IMqttActionListener {
+    override fun onSuccess(asyncActionToken: IMqttToken?) {
+        client.subscribe("c2c/$roomId/signal", 1)  // 订阅成功后发布 mqtt_online；连接期间每 15 秒更新
+    }
+    override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
+        // 显示连接错误并按退避策略重试。
+    }
 })
 ```
 
-### 6.5 发送信令消息
+### 6.5 发布信令消息
+
+所有 MQTT 信令使用 QoS 1、`retained = false`，并包含 `negotiationId`、唯一 `messageId` 和发送方标识。发布操作必须检查异步完成/失败回调；失败时不要假设对端已收到。SDP 只在本地描述设置成功后发布。
 
 ```kotlin
-private var seq = 0
-
-fun sendSignaling(
-    type: String,
-    sdp: String? = null,
-    candidate: String? = null,
-    retained: Boolean = false,
-    extra: Map<String, Any> = emptyMap()
-) {
-    val msg = JSONObject()
+fun sendSignaling(type: String, negotiationId: String?, payload: JSONObject) {
+    val message = JSONObject(payload.toString())
         .put("type", type)
-        .put("from", deviceId)     // 用于对端过滤自发消息
-        .put("seq", seq++)
-    sdp?.let { msg.put("sdp", it) }
-    candidate?.let { msg.put("candidate", it) }
-    extra.forEach { (k, v) -> msg.put(k, v) }
+        .put("from", deviceId)
+        .put("messageId", UUID.randomUUID().toString())
+    negotiationId?.let { message.put("negotiationId", it) }
 
-    val mqttMsg = MqttMessage(msg.toString().toByteArray()).apply {
-        this.qos = 1               // QoS 1：至少一次送达，信令丢失会导致连接失败
-        this.retained = retained   // offer/answer retained，ICE 候选不 retained
+    // encryptAndAuthenticate 必须使用唯一 96-bit nonce，并认证消息头等 AAD。
+    val encryptedEnvelope = encryptAndAuthenticate(message.toString().toByteArray(), preSharedKey)
+    val mqttMessage = MqttMessage(encryptedEnvelope).apply {
+        qos = 1
+        isRetained = false
     }
-    client.publish("c2c/$roomId/signal", mqttMsg)
+    client.publish("c2c/$roomId/signal", mqttMessage)
 }
 ```
+
+以上加解密函数是接口示意，不是现成实现；上线前必须使用经过审查的 AES-GCM 实现，并把 nonce、版本和密文编码进封套。不能将未经加密的 JSON 直接发布到 Broker。
 
 ### 6.6 Trickle ICE：逐条发送候选
 
+候选作为结构化字段发送；不要自行拼接 `candidate.sdp`、`sdpMLineIndex` 和 `sdpMid`，因为 `candidate.sdp` 本身已包含 candidate 行内容。
+
 ```kotlin
 override fun onIceCandidate(candidate: IceCandidate?) {
-    if (candidate != null) {
-        // 逐条发送，不等收集完成，对端可提前开始连通性检查
-        val candidateStr = "candidate:${candidate.sdp} ${candidate.sdpMLineIndex} ${candidate.sdpMid}"
-        sendSignaling("ice_candidate", candidate = candidateStr, retained = false)
-    } else {
-        // candidate == null 表示收集完成（可用于 UI 更新）
-        Log.d(TAG, "ICE gathering complete")
-    }
+    if (candidate == null) return
+
+    val payload = JSONObject()
+        .put("candidate", JSONObject()
+            .put("sdp", candidate.sdp)
+            .put("sdpMid", candidate.sdpMid)
+            .put("sdpMLineIndex", candidate.sdpMLineIndex))
+
+    sendSignaling("ice_candidate", currentNegotiationId, payload)
 }
 ```
+
+接收端先校验发送方及 `negotiationId`。远端 SDP 尚未成功设置时，候选按协商 ID 暂存；设置成功后再创建 `IceCandidate(sdpMid, sdpMLineIndex, sdp)` 并调用 `addIceCandidate`。处理 `addIceCandidate` 的失败回调，不能静默丢弃错误。
 
 ### 6.7 ICE Restart 重连与防抖
 
-```kotlin
-private val reconnectDebounce = Runnable { startReconnect() }
+1. `ConnectivityManager` 网络变化或 ICE 状态变为 `DISCONNECTED` / `FAILED` 时，先等待短暂稳定窗口，避免瞬时切网造成重复协商。仅固定 offerer 可以启动本轮重连。
+2. 只有 MQTT 已连接、已订阅且没有进行中的 SDP 协商时才创建重连 offer；每轮生成新的 `negotiationId`。
+3. 通过 WebRTC 的 ICE Restart offer 选项创建 SDP，调用 `setLocalDescription`；**成功回调后**才发布 `reconnect_offer`。候选回调中的 ICE 候选关联到同一轮 `negotiationId`。
+4. Answerer 收到有效 offer 后，依次执行 `setRemoteDescription`、处理已缓存候选、`createAnswer`、`setLocalDescription`；只有本地描述设置成功后才发布 `reconnect_answer`。
+5. Offerer 只接受匹配当前 `negotiationId` 的 answer，再设置远端描述并处理缓存候选。两端以 ICE `CONNECTED` / `COMPLETED` 和 DataChannel `OPEN` 作为恢复依据。
+6. 对协商设置超时和有限次数退避重试。ICE Restart 超时或 PeerConnection 进入不可恢复状态时，销毁旧 PeerConnection 并创建新实例，通过新一轮协商恢复；不要把 `DataChannel` 一定保持不变作为前提。
 
-fun onNetworkChanged() {
-    // 防抖：3 秒内多次网络回调只触发一次重连
-    handler.removeCallbacks(reconnectDebounce)
-    handler.postDelayed(reconnectDebounce, 3_000)
-}
+> 不要让 Answerer 为了“探测 offerer”而同时发起 offer。固定角色可避免 glare；若固定 offerer 长时间不可达，应提示连接失败或等待其恢复。
 
-fun startReconnect() {
-    if (state != CONNECTED && state != DISCONNECTED) return
-    if (!isOfferer) return  // 仅 offerer 端发起重连（见 7.4 角色约定）
+### 6.8 应用层心跳（可选）
 
-    state = RECONNECTING
-
-    // ICE Restart：在已有 PeerConnection 上重启 ICE，不销毁重建
-    val constraints = MediaConstraints().apply {
-        mandatory.add(MediaConstraints.KeyValuePair("iceRestart", "true"))
-    }
-    peerConnection.createOffer(offerObserver, constraints)
-    // onIceCandidate 回调会自动逐条发送新候选（见 6.6 节）
-}
-
-override fun onCreateOfferSuccess(sdp: SessionDescription) {
-    peerConnection.setLocalDescription(sdpObserver, sdp)
-    val type = if (state == RECONNECTING) "reconnect_offer" else "offer"
-    sendSignaling(type, sdp = sdp.description, retained = true)
-}
-
-// 网络变化监听
-val callback = object : ConnectivityManager.NetworkCallback() {
-    override fun onAvailable(network: Network) {
-        if (state == CONNECTED || state == DISCONNECTED || state == RECONNECTING) {
-            onNetworkChanged()  // 经防抖后触发 startReconnect()
-        }
-    }
-    override fun onLost(network: Network) {
-        if (state == CONNECTED) {
-            state = DISCONNECTED
-            onNetworkChanged()
-        }
-    }
-}
-```
-
-> **answerer 端收到 reconnect_offer 时**：如果自己也在尝试做 offer，立即放弃自己的 offer，转为 answerer 应答（详见 7.4 节）。
-
-### 6.8 图片分片发送（改进版）
-
-```kotlin
-fun sendImage(filePath: String) {
-    val fileBytes = File(filePath).readBytes()
-    // 动态确定分片大小：maxMessageSize - 4（序号 header），上限 16KB
-    // WebRTC SCTP 层 maxMessageSize 通常 16KB~256KB，硬编码 64KB 可能超限
-    val maxPayload = dataChannel.maxMessageSize().let { if (it > 0) it.toInt() else 16 * 1024 }
-    val chunkSize = minOf(16 * 1024, maxPayload - 4).coerceAtLeast(1024)
-    val totalChunks = (fileBytes.size + chunkSize - 1) / chunkSize
-    val crc = CRC32().apply { update(fileBytes) }.value
-
-    // 1. 发送元信息：0x00 magic byte + JSON（含 CRC32 与 chunkSize）
-    val meta = JSONObject()
-        .put("type", "image")
-        .put("name", File(filePath).name)
-        .put("size", fileBytes.size)
-        .put("chunks", totalChunks)
-        .put("chunkSize", chunkSize)
-        .put("crc32", crc.toString(16))
-        .toString()
-        .toByteArray()
-    dataChannel.send(ByteBuffer.wrap(byteArrayOf(0x00) + meta))
-
-    // 2. 滑动窗口发送：窗口大小 4，每发 4 块等待对端 ACK，避免撑爆发送缓冲区
-    val windowSize = 4
-    var offset = 0
-    var chunkSeq = 0
-    var unacked = 0
-
-    while (offset < fileBytes.size) {
-        if (unacked >= windowSize) {
-            ackLatch.await()  // 阻塞等待 ACK（建议在协程中调用，用 suspendCancellableCoroutine）
-        }
-
-        val end = minOf(offset + chunkSize, fileBytes.size)
-        val chunk = fileBytes.copyOfRange(offset, end)
-        val header = ByteBuffer.allocate(4).putInt(chunkSeq).array()
-        dataChannel.send(ByteBuffer.wrap(header + chunk))
-
-        offset = end
-        chunkSeq++
-        unacked++
-    }
-}
-```
-
-### 6.9 图片分片接收（改进版）
-
-```kotlin
-dataChannel.registerObserver(object : DataChannel.Observer {
-    private val chunks = SparseArray<ByteArray>()  // 按序号存储，支持乱序/去重
-    private var totalChunks = 0
-    private var receivedChunks = 0
-    private var expectedCrc: String? = null
-    private var fileName: String? = null
-
-    override fun onMessage(buf: ByteBuffer) {
-        val data = ByteArray(buf.remaining())
-        buf.get(data)
-
-        // magic byte 区分消息类型：0x00 = 元信息，0x01 = ACK，其余 = 数据块
-        // 避免旧版"首条消息一定是 JSON"的竞态误判
-        when {
-            data.isNotEmpty() && data[0] == 0x00.toByte() -> {
-                val meta = JSONObject(String(data, 1, data.size - 1))
-                totalChunks = meta.getInt("chunks")
-                expectedCrc = meta.getString("crc32")
-                fileName = meta.getString("name")
-            }
-            data.isNotEmpty() && data[0] == 0x01.toByte() -> {
-                // 对端 ACK：驱动发送端滑动窗口（unackedCount/ackLatch 为发送侧状态）
-                unackedCount.decrementAndGet()
-                ackLatch.countDown()
-            }
-            totalChunks > 0 -> {
-                // 数据块：前 4 字节为序号
-                val seq = ByteBuffer.wrap(data, 0, 4).int
-                if (chunks.indexOfKey(seq) < 0) {
-                    chunks.put(seq, data)
-                    receivedChunks++
-                }
-                // 重复块只回 ACK 不重复计数，驱动发送端窗口滑动
-                sendAck(seq)
-            }
-        }
-
-        if (receivedChunks == totalChunks && totalChunks > 0) {
-            // 按序号重组
-            val buffer = ByteArrayOutputStream()
-            for (i in 0 until totalChunks) {
-                val chunk = chunks.get(i) ?: return  // 缺块，等待重传
-                buffer.write(chunk, 4, chunk.size - 4)  // 跳过 4 字节序号头
-            }
-            val result = buffer.toByteArray()
-
-            // CRC32 完整性校验
-            val actualCrc = CRC32().apply { update(result) }.value.toString(16)
-            if (actualCrc == expectedCrc) {
-                saveImage(result, fileName!!)
-            } else {
-                Log.e(TAG, "CRC32 mismatch: expected=$expectedCrc actual=$actualCrc")
-                // 请求重传或提示用户
-            }
-            // 重置状态
-            chunks.clear()
-            totalChunks = 0
-            receivedChunks = 0
-        }
-    }
-
-    private fun sendAck(seq: Int) {
-        val ack = byteArrayOf(0x01) + ByteBuffer.allocate(4).putInt(seq).array()
-        dataChannel.send(ByteBuffer.wrap(ack))
-    }
-})
-```
-
-> **改进点**：
-> - `0x00/0x01` magic byte 显式区分元信息、ACK、数据块，消除"假设首条消息是 JSON"的竞态缺陷
-> - `SparseArray` 按序号存储并去重，替代简单计数（旧版重复块会导致计数错位）
-> - 重组后 CRC32 校验，损坏可检测
-> - ACK 回传驱动发送端滑动窗口
-
-### 6.10 应用层心跳
-
-WebRTC ICE 有底层 keepalive，但 DataChannel 层面没有应用级心跳。NAT 映射超时可能造成连接"假死"——数据发出去无人接收，而底层却未检测到。连接建立后启动双向心跳：
+应用层心跳是可选项，可用于确认对端应用仍能处理消息或更新界面状态；连接恢复仍应以 ICE 和 DataChannel 状态为准。不要仅凭一次心跳超时销毁 PeerConnection。
 
 ```kotlin
 private var lastPongTs = 0L
@@ -628,55 +445,46 @@ fun onConnected() {
     handler.post(heartbeatRunnable)
 }
 
-// 收到 pong 时更新时间戳（接收方回 pong 走 6.4 节同一消息通道）
+// 收到 DataChannel pong 时更新时间戳
 fun onPong(ts: Long) {
     lastPongTs = System.currentTimeMillis()
 }
 ```
 
-> **两路 ping/pong 的分工**：
-> - **DataChannel 心跳**（本节）：走 P2P 数据通道，验证端到端链路可用，检测 NAT 映射超时导致的"假死"
-> - **MQTT ping/pong**（4.3 节 + 6.4 节）：走信令通道，QoS 0，用于 answerer 在 7.4 节探测退避场景中确认 offerer 是否在线
+心跳消息是 DataChannel 业务协议的一部分，与 MQTT 信令消息分开处理。本方案不使用 MQTT ping/pong 来触发 offerer/answerer 角色切换。
 
 ---
 
 ## 7. 注意事项与风险
 
-### 7.1 公共 MQTT Broker 可用性
+### 7.1 第三方 MQTT Broker 可用性
 
-- 公共 Broker 是"尽力而为"的公共设施，不提供 SLA
-- 建议配置多个 Broker 冗余，自动切换
-- 信令量极小，不产生费用
+- 匿名公共 Broker 适合原型验证，不应作为私密信令或稳定性的保证。
+- 生产环境使用第三方托管 Broker，启用 TLS、账号认证和主题 ACL；确认服务商的可用性、消息大小和连接限制。
+- MQTT 中断不会立即中断已有 DataChannel，但中断期间无法完成 ICE 重协商；恢复后重新订阅并创建新协商。
 
-### 7.2 打洞成功率
+### 7.2 跨网络连通性与兜底
 
 | 网络组合 | 打洞结果 |
 |---|---|
-| 家宽 ↔ 家宽（锥型 NAT） | ✅ 成功率高 |
-| 家宽 ↔ 公司 Wi-Fi（对称 NAT / 防火墙） | ⚠️ 可能失败，企业防火墙常阻断 UDP |
-| 任一方走 4G/5G 蜂窝 | ⚠️ 国内运营商 CGNAT 普遍是对称型（约 60%~70%），常失败 |
-| 双方都在 CGNAT 后 | ❌ 几乎必然失败 |
+| 常见家庭网络 | 可能直连成功，具体取决于 NAT 和防火墙 |
+| 公司 Wi-Fi 或蜂窝网络 | 可能直连，也可能因 NAT/防火墙限制失败 |
+| 任一方直连失败 | ICE 可尝试第三方托管 TURN 中继 |
+| 直连与 TURN 均不可用 | 连接失败，需要重试或更换网络 |
 
-**打洞失败时的处理策略**：
+若所有候选均失败，提示“当前网络无法建立连接，请检查网络后重试”，保留绑定信息，并在双方 MQTT 在线后按退避策略重新协商。距离对连接成功率没有决定性影响，网络路径和策略才是关键。
 
-1. 自动尝试公共 TURN 中继兜底（6.2 节已配置）
-2. TURN 也失败或不可用 → 明确提示用户："当前网络环境不支持直连，请切换网络后重试。"
-3. **保留绑定关系**，不删除 `roomId` 和 `preSharedKey`，等待网络变化时自动重试
-4. UI 上展示当前网络类型的预期成功率，管理用户预期
+### 7.3 前台与网络假设
 
-### 7.3 Android 后台保活
+- 设计前提是两端 App 在通信期间始终前台运行并保持联网。
+- 仍需处理 Wi-Fi/蜂窝切换、路由变化、短暂断网和 MQTT 重连；“手机有网”不代表原 ICE 路径持续有效。
+- 本文不包含后台保活、前台服务、电池优化白名单或进程被杀后的恢复设计。
 
-- 传输期间启动前台服务，防止锁屏断连
-- 引导用户关闭电池优化白名单
-- 国产 ROM 需引导用户加入自启动白名单
+### 7.4 固定重连角色
 
-### 7.4 双方同时发起重连
-
-通过**固定角色约定 + 探测退避 + 冲突回退**三层机制避免竞态：
-
-- **固定角色**：`deviceId` 字典序较小的一方始终为 offerer，另一方为 answerer。初始连接与所有重连场景均由 offerer 发起，answerer 只被动应答。
-- **探测退避**：如果 answerer 在 5 秒内未收到 offerer 的 `reconnect_offer`（可能 offerer 进程已死），可通过 MQTT `ping` 探测；确认对端无响应后，answerer 可突破角色约定，自行发起一次重连。
-- **冲突回退**：如果 answerer 已误发了 offer，随后收到 offerer 的 `reconnect_offer` 时，立即放弃自己的 offer、销毁本地 offer 状态，转为 answerer 应答，避免 glare（双方同时 offer 导致的 SDP 冲突）。
+- 以绑定时保存的稳定 `deviceId` 字典序确定角色；较小一方始终为 offerer，另一方始终为 answerer。
+- 初次手动交换和后续 ICE Restart 均遵守同一角色约定；answerer 不主动创建 offer。
+- 如果 offerer 暂时不可达，answerer 保留绑定并等待；双方 MQTT 恢复后由 offerer 发起新的协商，不复用旧 SDP/候选。
 
 ### 7.5 安全措施
 
@@ -684,24 +492,24 @@ fun onPong(ts: Long) {
 |---|---|
 | 随机 roomId | 16 字节随机值 → 32 字符 Hex，熵足够，防扫描枚举 |
 | 随机 preSharedKey | 32 字节（256-bit）随机密钥 |
-| SDP 加密 | AES-GCM 加密 SDP 与 ICE 候选，密钥为 `preSharedKey` |
-| Nonce 管理 | nonce 由 `seq`（2 字节）+ 随机前缀（10 字节）组成，保证不重复 |
-| 完整性校验 | HMAC-SHA256 对 SDP 签名，防止被篡改 |
-| TLS | MQTT 使用 8883 端口 TLS 连接，防中间人 |
-| 前向保密 | preSharedKey 仅用于信令加密，DataChannel 自身有 DTLS 加密 |
+| 信令端到端保护 | 将 `preSharedKey` 用于 AES-GCM 认证加密 SDP/ICE；Broker TLS 不能替代端到端认证 |
+| Nonce 管理 | 每条消息必须使用同一密钥下唯一的 96-bit nonce；不能用会回绕的 16-bit `seq` 直接构造 nonce |
+| 重放防护 | 认证后校验绑定设备、协商 ID、消息 ID 和有效会话，拒绝旧协商消息 |
+| DataChannel | WebRTC DataChannel 使用 DTLS 加密；TURN 中继转发加密流量 |
+| 前向保密 | 不作保证；共享 PSK 被泄露后，历史信令是否可恢复取决于密钥轮换及密钥派生设计 |
 
-> **Nonce 构造**：AES-GCM 的 12 字节 nonce = `seq`（2 字节 Big-Endian）+ 10 字节随机前缀。每次建连重新生成 10 字节随机前缀，`seq` 每条消息递增，保证 nonce 全局唯一（AES-GCM 在同一密钥下复用 nonce 会彻底破坏加密安全性）。
+AES-GCM 本身提供认证和完整性，不应再用同一密钥重复叠加 HMAC。建议使用标准 HKDF 从 PSK 和每轮协商的随机 salt 派生按发送方向区分的密钥；同一密钥下使用不回绕的 64-bit 计数器，并将随机会话前缀与计数器组成 96-bit nonce。收到消息后还须校验认证标签、发送方、协商 ID 和重放状态。二维码/手动交换的绑定密钥应通过可信渠道传递并安全存储。
 
-### 7.6 DataChannel 消息大小限制
+### 7.6 SDP 与文字消息
 
-- WebRTC SCTP 层默认 `maxMessageSize` 通常为 **16KB~256KB**，取决于两端实现与 SDP 协商结果
-- 发送前必须检查：`val maxSize = dataChannel.maxMessageSize()`
-- 图片分片大小动态计算：`minOf(16 * 1024, maxSize - 4)`，不要硬编码 64KB
-- 超限消息会被底层静默丢弃或直接异常，且无重传提示
+SDP 和 ICE 候选只用于协商，不承载业务文字。业务文字通过 DataChannel 发送；不得把业务内容塞入 SDP 或 MQTT 信令。首次手动交换完整 SDP 时，其中可能包含本地/公网 ICE 地址，需通过可信渠道交换。
 
-### 7.7 SDP 体积
+### 7.7 验收测试
 
-完整 SDP 一般 1~5 KB（Trickle 模式下不含候选，更小），远小于公共 Broker 的消息上限。不要将图片 Base64 编码后放入 SDP 或 MQTT 消息。
+1. 同一 Wi-Fi 下通过手动交换完整 SDP 建立连接，验证 DataChannel 双向收发文字。
+2. 两台设备切换到不同网络后，确认无需手动操作即可通过 MQTT 完成新一轮 ICE Restart 并恢复文字收发。
+3. 在直连不可用的受控网络中确认 ICE 成功选择托管 TURN relay candidate；检查 TURN 流量用量，并确认 DataChannel 内容仍可正常收发。
+4. 测试 MQTT 短暂断线和自动重连：旧 SDP/候选不得被重放，双方重新在线后能以新的 `negotiationId` 恢复。
 
 ---
 
@@ -710,25 +518,9 @@ fun onPong(ts: Long) {
 ```xml
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-<uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
-
-<!-- 通知（Android 13+ 需运行时申请） -->
-<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-<!-- 前台服务（Android 14+ 必须声明具体类型） -->
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-<uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
-
-<!-- 电池优化白名单 -->
-<uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-
-<!-- Doze 模式下精确闹钟（定时重连兜底，配合 WorkManager / AlarmManager） -->
-<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-<uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 ```
 
-> **前台服务配置**：`FOREGROUND_SERVICE_DATA_SYNC` 声明后，启动前台服务时还需在 `foregroundServiceType` 中指定 `dataSync`，否则 Android 14+ 会抛异常。
+按实际使用的 MQTT/WebRTC SDK 检查是否还需声明其他权限；不需要为本方案申请后台保活或精确闹钟权限。
 
 ---
 
@@ -736,13 +528,10 @@ fun onPong(ts: Long) {
 
 | 维度 | 方案 |
 |---|---|
-| 数据传输 | WebRTC DataChannel，点对点直连（DTLS 加密） |
-| 信令交换 | 公共 MQTT Broker（TLS 8883 + QoS 1）自动传递 SDP + ICE 候选 |
-| ICE 模式 | Trickle ICE，候选逐条推送，缩短建连时间 |
-| NAT 穿透 | 公共 STUN 发现公网地址；可选公共 TURN 兜底中继 |
-| 首次绑定 | 二维码/文本手动交换，建立信任 |
-| 后续重连 | ICE Restart + MQTT 自动推送新 SDP，3 秒防抖，无需人工干预 |
-| 心跳保活 | DataChannel 应用层 15 秒心跳，30 秒超时判定失效 |
-| 信令安全 | preSharedKey + AES-GCM + HMAC 签名 + TLS |
-| 自有服务器 | **无** |
-| 数据经第三方 | **否，始终 P2P 直传**（TURN 兜底仅在打洞失败时介入） |
+| 数据传输 | WebRTC DataChannel 发送小段文字，DTLS 加密；直连优先 |
+| 首次建连 | 同一网络手动交换等待 ICE gathering 完成后的完整 SDP |
+| 后续重连 | App 前台在线时，固定 offerer 通过 MQTT 发起 ICE Restart |
+| 信令 | 第三方托管 MQTT，TLS、认证、QoS 1、动态消息不 retained |
+| NAT 穿透 | 第三方 STUN；直连失败时使用第三方托管 TURN 中继 |
+| 自建服务器 | **不自建 MQTT、STUN 或 TURN 中继** |
+| 数据路径 | 直连成功时不经 TURN；走 TURN 兜底时由第三方中继转发 DTLS 加密数据 |
