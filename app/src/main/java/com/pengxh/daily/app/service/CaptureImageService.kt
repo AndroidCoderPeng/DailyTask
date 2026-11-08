@@ -51,6 +51,13 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         val projectionEvents = _projectionEvents.asSharedFlow()
 
         fun emitProjectionEvent(event: ProjectionEvent) {
+            if (event == ProjectionEvent.Failed) {
+                // 运行中截屏服务掉线，推送告警（无人值守兜底）
+                MessageDispatcher.sendCaptureDownAlert()
+            } else if (event == ProjectionEvent.Ready) {
+                // 服务恢复，重置节流时间戳，保证后续再次失效能独立告警
+                AppConfig.saveLong(Constant.CAPTURE_FAIL_NOTIFY_TIME_KEY, 0L)
+            }
             _projectionEvents.tryEmit(event)
         }
 

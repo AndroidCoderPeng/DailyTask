@@ -81,11 +81,13 @@ class WaveProgressView @JvmOverloads constructor(
     // 动画相关
     private var waveAnimator: ValueAnimator? = null
     private var waveOffset = 0f  // 波浪相位偏移
+    private var progressAnimator: ValueAnimator? = null
 
     // 进度相关
     private var progress = 0f  // 0-100
     private var targetProgress = 0f
-    private var currentWaterLevel = 0f  // 当前水位（像素）
+    private var displayedProgress = -1
+    private var progressText = "0%"
 
     // 视图尺寸
     private var viewWidth = 0
@@ -106,7 +108,10 @@ class WaveProgressView @JvmOverloads constructor(
         private const val DEFAULT_TEXT_SIZE = 8f // 悬浮球里面文字大小，单位：sp
         private const val DEFAULT_WAVE_AMPLITUDE = 8f
         private const val ANIMATION_DURATION = 2000L  // 波浪动画周期（毫秒）
+        private const val PROGRESS_ANIMATION_DURATION = 1500L
         private const val SEGMENTS_PER_WAVELENGTH = 24  // 每个波长的分段数（值越大波浪更平滑）
+        private const val TWO_PI = 6.2831855f
+        private const val QUARTER_PI = 1.5707964f
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -115,16 +120,16 @@ class WaveProgressView @JvmOverloads constructor(
         viewHeight = h
         centerX = w / 2f
         centerY = h / 2f
-        radius = (w.coerceAtMost(h) / 2f) - DEFAULT_BORDER_WIDTH
+        radius = ((w.coerceAtMost(h) / 2f) - DEFAULT_BORDER_WIDTH).coerceAtLeast(0f)
         waveLength = w * 1.5f  // 波长为视图宽度的1.5倍
 
         // 初始化圆形裁剪路径
         circlePath.reset()
         circlePath.addCircle(centerX, centerY, radius, Path.Direction.CW)
 
-        updateWaterLevel()
-
-        restartWaveAnimation()
+        if (isAttachedToWindow) {
+            startWaveAnimation()
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -142,22 +147,23 @@ class WaveProgressView @JvmOverloads constructor(
     }
 
     private fun drawWave(canvas: Canvas) {
+        if (waveLength <= 0f) return
+
+        val waterLevel = centerY + radius - (progress / 100f) * (radius * 2)
+
         // 绘制第二条波浪（底层，相位不同）
-        drawWavePath(canvas, wavePaint2, waveOffset + Math.PI.toFloat() / 4)
+        drawWavePath(canvas, wavePaint2, waterLevel, waveOffset + QUARTER_PI)
 
         // 绘制第一条波浪（上层）
-        drawWavePath(canvas, wavePaint, waveOffset)
+        drawWavePath(canvas, wavePaint, waterLevel, waveOffset)
     }
 
     /**
      * 绘制单条波浪路径
      * 使用二阶贝塞尔曲线模拟正弦波浪
      */
-    private fun drawWavePath(canvas: Canvas, paint: Paint, offset: Float) {
+    private fun drawWavePath(canvas: Canvas, paint: Paint, waterLevel: Float, offset: Float) {
         wavePath.reset()
-
-        // 水位高度（从底部开始计算）
-        val waterLevel = centerY + radius - (progress / 100f) * (radius * 2)
 
         // 波浪起始点（左侧超出视图）
         val startX = -waveLength + (offset % waveLength)
@@ -195,33 +201,52 @@ class WaveProgressView @JvmOverloads constructor(
      * 计算正弦值（用于模拟波浪）
      */
     private fun getSinValue(x: Float, offset: Float): Float {
-        return kotlin.math.sin((x + offset) * 2 * Math.PI.toFloat() / waveLength)
+        return kotlin.math.sin((x + offset) * TWO_PI / waveLength)
     }
 
     private fun drawProgressText(canvas: Canvas) {
-        val progressText = "${progress.toInt()}%"
         // 文字垂直居中修正
-        val fontMetrics = textPaint.fontMetrics
-        val textY = centerY - (fontMetrics.top + fontMetrics.bottom) / 2
+        val textY = centerY - (textPaint.ascent() + textPaint.descent()) / 2
         canvas.drawText(progressText, centerX, textY, textPaint)
     }
 
-    private fun updateWaterLevel() {
-        currentWaterLevel = centerY + radius - (progress / 100f) * (radius * 2)
+    private fun updateProgressText() {
+        val value = progress.toInt()
+        if (value != displayedProgress) {
+            displayedProgress = value
+            progressText = "$value%"
+        }
     }
 
     fun setProgress(targetProgress: Int) {
-        this.targetProgress = targetProgress.coerceIn(0, 100).toFloat()
-
-        // 使用属性动画平滑过渡
-        val animator = ValueAnimator.ofFloat(progress, this.targetProgress)
-        animator.duration = 1500L
-        animator.addUpdateListener { animation ->
-            progress = animation.animatedValue as Float
-            updateWaterLevel()
-            invalidate()
+        val target = targetProgress.coerceIn(0, 100).toFloat()
+        if (target == this.targetProgress &&
+            (progress == target || progressAnimator?.isRunning == true)
+        ) {
+            return
         }
-        animator.start()
+
+        this.targetProgress = target
+        startProgressAnimation()
+    }
+
+    private fun startProgressAnimation() {
+        progressAnimator?.cancel()
+        if (progress == targetProgress) {
+            updateProgressText()
+            invalidate()
+            return
+        }
+
+        progressAnimator = ValueAnimator.ofFloat(progress, targetProgress).apply {
+            duration = PROGRESS_ANIMATION_DURATION
+            addUpdateListener { animation ->
+                progress = animation.animatedValue as Float
+                updateProgressText()
+                invalidate()
+            }
+            start()
+        }
     }
 
     fun startWaveAnimation() {
@@ -230,27 +255,20 @@ class WaveProgressView @JvmOverloads constructor(
         }
 
         if (waveAnimator == null) {
-            waveAnimator = ValueAnimator.ofFloat(0f, waveLength).apply {
+            waveAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
                 duration = ANIMATION_DURATION
                 repeatCount = ValueAnimator.INFINITE
                 repeatMode = ValueAnimator.RESTART
                 interpolator = LinearInterpolator()
                 addUpdateListener { animation ->
-                    waveOffset = animation.animatedValue as Float
+                    waveOffset = (animation.animatedValue as Float) * waveLength
                     invalidate()
                 }
             }
         }
-        waveAnimator?.start()
-    }
-
-    private fun restartWaveAnimation() {
-        // 先取消旧动画
-        waveAnimator?.cancel()
-        waveAnimator = null
-
-        // 重新创建并启动动画
-        startWaveAnimation()
+        if (waveAnimator?.isStarted != true) {
+            waveAnimator?.start()
+        }
     }
 
     fun stopWaveAnimation() {
@@ -260,10 +278,14 @@ class WaveProgressView @JvmOverloads constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         startWaveAnimation()
+        if (progress != targetProgress && progressAnimator?.isRunning != true) {
+            startProgressAnimation()
+        }
     }
 
     override fun onDetachedFromWindow() {
         stopWaveAnimation()
+        progressAnimator?.cancel()
         super.onDetachedFromWindow()
     }
 }

@@ -3,10 +3,12 @@ package com.pengxh.daily.app
 import android.app.Application
 import androidx.room.Room.databaseBuilder
 import com.pengxh.daily.app.sqlite.DailyTaskDataBase
-import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.AppConfig
+import com.pengxh.daily.app.utils.ChinaHolidayManager
+import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
+import com.pengxh.daily.app.utils.ProjectionSession
 
 
 /**
@@ -38,5 +40,11 @@ class DailyTaskApplication : Application() {
         dataBase = databaseBuilder(this, DailyTaskDataBase::class.java, "DailyTask.db").build()
 
         ChinaHolidayManager.updateChinaHolidayData()
+
+        // 上次使用截屏来源，冷启动后单次授权已失效，推送告警
+        val resultSource = AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+        if (resultSource == 1 && !ProjectionSession.isStateActive()) {
+            MessageDispatcher.sendCaptureDownAlert()
+        }
     }
 }

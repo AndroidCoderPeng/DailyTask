@@ -24,6 +24,7 @@ object MessageDispatcher {
 
     private val kTag = "MessageDispatcher"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private const val CAPTURE_ALERT_INTERVAL = 30 * 60 * 1000L // 告警节流间隔 30 分钟
 
     /**
      * 用可空类型持有，避免未初始化时抛 UninitializedPropertyAccessException，会让"发告警"这个动作本身炸穿主循环。
@@ -231,5 +232,21 @@ object MessageDispatcher {
                 )
             }
         }
+    }
+
+    /**
+     * 截屏服务失效告警（无人值守兜底）
+     * 通过已配置的消息渠道推送，30 分钟内只推送一次，避免重复轰炸
+     */
+    fun sendCaptureDownAlert() {
+        val now = System.currentTimeMillis()
+        val last = AppConfig.loadLong(Constant.CAPTURE_FAIL_NOTIFY_TIME_KEY, 0L)
+        if (now - last < CAPTURE_ALERT_INTERVAL) return
+        AppConfig.saveLong(Constant.CAPTURE_FAIL_NOTIFY_TIME_KEY, now)
+        sendMessage(
+            "截屏服务告警",
+            "截屏授权已失效，请到设备前重新打开APP完成截屏授权",
+            onFailure = { Log.e(kTag, "截屏失效告警推送失败：$it") }
+        )
     }
 }
