@@ -21,13 +21,14 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/margin_2x"
-        app:cardBackgroundColor="#EAF3FF"
+        app:cardBackgroundColor="@color/theme_soft_color"
         app:strokeWidth="0dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="@dimen/padding_2x"
+            android:paddingHorizontal="@dimen/padding_2x"
+            android:paddingVertical="@dimen/padding"
             android:text="所有指令必须以 DT# 开头，否则会被当作普通聊天忽略，建议用小号发送。"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
             android:textColor="@color/theme_color" />
@@ -38,16 +39,17 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_marginHorizontal="@dimen/margin"
-        android:layout_marginTop="@dimen/margin_2x"
+        android:layout_marginTop="@dimen/margin"
         android:layout_weight="1"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         tools:listitem="@layout/item_command_rv_l" />
 
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:padding="@dimen/padding_2x"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/padding_2x"
+        android:paddingVertical="@dimen/padding"
         android:text="点击任意指令即可复制到剪贴板。"
         android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
         android:textColor="@color/text_hint_color" />
