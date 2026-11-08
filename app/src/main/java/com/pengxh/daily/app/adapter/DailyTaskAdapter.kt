@@ -31,22 +31,24 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
      * */
     private val dataBeans = mutableListOf<DailyTaskBean>()
 
-    var mPosition = -1
-    private var actualTime = "--:--:--"
+    private var index = -1
+    private var lastRunPosition = -1   // 本轮执行推进到的位置，停止后保留
+    private val actualTimes = mutableMapOf<Int, String>()
     private var onItemClickListener: OnItemClickListener? = null
 
     fun updateCurrentTaskState(position: Int) {
-        val oldPosition = mPosition
-        mPosition = position
+        val oldPosition = index
+        index = position
         if (oldPosition >= 0 && oldPosition < dataBeans.size) notifyItemChanged(oldPosition)
         if (position >= 0 && position < dataBeans.size) notifyItemChanged(position)
     }
 
-    fun updateCurrentTaskState(position: Int, actualTime: String) {
+    fun updateCurrentTaskState(position: Int, ts: String) {
         if (position < 0 || position >= dataBeans.size) return
-        val oldPosition = mPosition
-        mPosition = position
-        this.actualTime = actualTime
+        val oldPosition = index
+        index = position
+        lastRunPosition = position
+        this.actualTimes[position] = ts
         if (oldPosition >= 0 && oldPosition < dataBeans.size && oldPosition != position) {
             notifyItemChanged(oldPosition)
         }
@@ -66,10 +68,11 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val taskBean = dataBeans[position]
+        val actual = actualTimes[position] ?: "--:--:--"
         holder.setText(R.id.taskTimeView, taskBean.time)
             .setText(R.id.randomTimeView, taskBean.resolveRandomTimeRange() ?: "--:--:--")
-            .setText(R.id.actualTimeView, actualTime)
-        if (position == mPosition) {
+            .setText(R.id.actualTimeView, actual)
+        if (position == index) {
             holder.setTextColor(
                 R.id.actualTimeView,
                 R.color.success_color.convertColor(holder.itemView.context)
@@ -91,12 +94,13 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     }
 
     /**
-     * 链上状态推导：未运行全部待执行；mPosition 之前已完成，等于执行中，之后待执行
+     * 链上状态推导：未运行全部待执行；index 之前已完成，等于执行中，之后待执行
      * */
     private fun stateOf(position: Int): Int = when {
-        mPosition < 0 || position > mPosition -> STATE_PENDING
-        position == mPosition -> STATE_RUNNING
-        else -> STATE_DONE
+        position < index -> STATE_DONE
+        position == index -> STATE_RUNNING
+        index < 0 && lastRunPosition >= 0 && position <= lastRunPosition -> STATE_DONE
+        else -> STATE_PENDING
     }
 
     /**
@@ -144,6 +148,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
      * */
     private fun bindState(holder: ViewHolder, state: Int) {
         val context = holder.itemView.context
+        val taskTimeView = holder.itemView.findViewById<TextView>(R.id.taskTimeView)
         val stateCard = holder.itemView.findViewById<MaterialCardView>(R.id.stateCardView)
         val stateText = holder.itemView.findViewById<TextView>(R.id.stateTextView)
 
@@ -151,18 +156,21 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             STATE_RUNNING -> {
                 stateText.text = "执行中"
                 stateText.setTextColor(R.color.theme_color.convertColor(context))
+                taskTimeView.setTextColor(R.color.theme_color.convertColor(context))
                 stateCard.setCardBackgroundColor(R.color.theme_soft_color.convertColor(context))
             }
 
             STATE_DONE -> {
                 stateText.text = "已完成"
                 stateText.setTextColor(R.color.success_color.convertColor(context))
+                taskTimeView.setTextColor(R.color.success_color.convertColor(context))
                 stateCard.setCardBackgroundColor(R.color.success_soft_color.convertColor(context))
             }
 
             else -> {
                 stateText.text = "-"
                 stateText.setTextColor(R.color.text_secondary_color.convertColor(context))
+                taskTimeView.setTextColor(R.color.text_secondary_color.convertColor(context))
                 stateCard.setCardBackgroundColor(R.color.back_ground_color.convertColor(context))
             }
         }
@@ -172,6 +180,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     fun refresh(newRows: List<DailyTaskBean>) {
         dataBeans.clear()
         dataBeans.addAll(newRows)
+        actualTimes.clear()
         notifyDataSetChanged()
     }
 

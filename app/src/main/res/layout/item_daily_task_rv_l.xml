@@ -45,7 +45,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium.Emphasized"
-                    android:textColor="@color/text_default_color"
+                    android:textColor="@color/text_secondary_color"
                     android:textStyle="bold"
                     tools:text="08:00:00" />
 
