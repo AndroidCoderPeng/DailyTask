@@ -115,21 +115,6 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     }
 
     /**
-     * 未运行全部灰点；mPosition 之前已完成，等于执行中，之后待执行
-     * */
-    private fun dotColor(holder: ViewHolder, position: Int): Int {
-        val context = holder.itemView.context
-        return when {
-            mPosition < 0 || position > mPosition -> {
-                R.color.text_secondary_color.convertColor(context)
-            }
-
-            position == mPosition -> R.color.theme_color.convertColor(context)
-            else -> R.color.success_color.convertColor(context)
-        }
-    }
-
-    /**
      * 执行中节点脉冲呼吸；复用 ItemView 时先取消旧动画再按需重启
      * */
     private fun bindPulse(dot: View, running: Boolean) {
@@ -176,7 +161,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             }
 
             else -> {
-                stateText.text = "待执行"
+                stateText.text = "-"
                 stateText.setTextColor(R.color.text_secondary_color.convertColor(context))
                 stateCard.setCardBackgroundColor(R.color.back_ground_color.convertColor(context))
             }

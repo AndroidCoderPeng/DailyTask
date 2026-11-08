@@ -62,9 +62,9 @@
                         android:layout_height="wrap_content"
                         android:layout_marginHorizontal="@dimen/margin"
                         android:layout_marginVertical="2dp"
-                        android:text="待执行"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
-                        android:textColor="@color/text_secondary_color" />
+                        android:textColor="@color/text_secondary_color"
+                        tools:text="待执行" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
