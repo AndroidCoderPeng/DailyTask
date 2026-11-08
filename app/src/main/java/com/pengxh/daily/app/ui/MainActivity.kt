@@ -140,7 +140,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         binding.screenOffItem.switchView.setOnCheckedChangeListener { _, checked ->
             saveMaskMode(checked)
             if (checked) "伪息屏已开启，回到首页后生效".show(this)
-            else "伪息屏已关闭".show(this)
+            else "伪息屏已关闭，请注意！".show(this)
         }
         binding.screenOffItem.setOnClickListener {
             binding.screenOffItem.switchView.toggle()

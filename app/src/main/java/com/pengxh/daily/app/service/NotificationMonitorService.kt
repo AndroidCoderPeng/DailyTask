@@ -219,7 +219,7 @@ class NotificationMonitorService : NotificationListenerService() {
             }
 
             command.contains("关闭循环") -> {
-                AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
+                AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
                 sendCommandReceipt("循环任务状态通知", "循环任务状态已更新为：关闭")
             }
 
