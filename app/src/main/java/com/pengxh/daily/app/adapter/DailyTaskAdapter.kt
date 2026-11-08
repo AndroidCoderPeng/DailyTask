@@ -7,13 +7,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.animation.AccelerateDecelerateInterpolator
+import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.extensions.convertColor
 import com.pengxh.daily.app.extensions.resolveRandomTimeRange
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean
 
 class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
+    companion object {
+        private const val STATE_PENDING = 0
+        private const val STATE_RUNNING = 1
+        private const val STATE_DONE = 2
+    }
 
     /**
      * adapter 自持的数据副本
@@ -69,6 +76,10 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             )
         }
 
+        val state = stateOf(position)
+        bindChain(holder, state)
+        bindState(holder, state)
+
         holder.itemView.setOnClickListener {
             onItemClickListener?.onItemClick(position)
         }
@@ -80,21 +91,38 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     }
 
     /**
-     * 链式轨道：节点颜色按执行进度推导
+     * 链上状态推导：未运行全部待执行；mPosition 之前已完成，等于执行中，之后待执行
      * */
-    private fun bindChain(holder: ViewHolder, position: Int) {
-        val dot = holder.itemView.findViewById<View>(R.id.chainDotView)
-        dot.backgroundTintList = ColorStateList.valueOf(dotColor(holder, position))
-        bindPulse(dot, running = position == mPosition && mPosition >= 0)
+    private fun stateOf(position: Int): Int = when {
+        mPosition < 0 || position > mPosition -> STATE_PENDING
+        position == mPosition -> STATE_RUNNING
+        else -> STATE_DONE
     }
 
-    /** 未运行全部灰点；mPosition 之前已完成，等于执行中，之后待执行 */
+    /**
+     * 链式轨道：节点颜色按执行进度推导
+     * */
+    private fun bindChain(holder: ViewHolder, state: Int) {
+        val dot = holder.itemView.findViewById<View>(R.id.chainDotView)
+        val context = holder.itemView.context
+        val colorRes = when (state) {
+            STATE_RUNNING -> R.color.theme_color
+            STATE_DONE -> R.color.success_color
+            else -> R.color.text_hint_color
+        }
+        dot.backgroundTintList = ColorStateList.valueOf(colorRes.convertColor(context))
+        bindPulse(dot, state == STATE_RUNNING)
+    }
+
+    /**
+     * 未运行全部灰点；mPosition 之前已完成，等于执行中，之后待执行
+     * */
     private fun dotColor(holder: ViewHolder, position: Int): Int {
         val context = holder.itemView.context
         return when {
-            mPosition < 0 || position > mPosition -> R.color.text_secondary_color.convertColor(
-                context
-            )
+            mPosition < 0 || position > mPosition -> {
+                R.color.text_secondary_color.convertColor(context)
+            }
 
             position == mPosition -> R.color.theme_color.convertColor(context)
             else -> R.color.success_color.convertColor(context)
@@ -124,6 +152,35 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         }
         dot.tag = animator
         animator.start()
+    }
+
+    /**
+     * 右上角状态药丸：文案 + 柔光底色与节点同色呼应
+     * */
+    private fun bindState(holder: ViewHolder, state: Int) {
+        val context = holder.itemView.context
+        val stateCard = holder.itemView.findViewById<MaterialCardView>(R.id.stateCardView)
+        val stateText = holder.itemView.findViewById<TextView>(R.id.stateTextView)
+
+        when (state) {
+            STATE_RUNNING -> {
+                stateText.text = "执行中"
+                stateText.setTextColor(R.color.theme_color.convertColor(context))
+                stateCard.setCardBackgroundColor(R.color.theme_soft_color.convertColor(context))
+            }
+
+            STATE_DONE -> {
+                stateText.text = "已完成"
+                stateText.setTextColor(R.color.success_color.convertColor(context))
+                stateCard.setCardBackgroundColor(R.color.success_soft_color.convertColor(context))
+            }
+
+            else -> {
+                stateText.text = "待执行"
+                stateText.setTextColor(R.color.text_secondary_color.convertColor(context))
+                stateCard.setCardBackgroundColor(R.color.back_ground_color.convertColor(context))
+            }
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
