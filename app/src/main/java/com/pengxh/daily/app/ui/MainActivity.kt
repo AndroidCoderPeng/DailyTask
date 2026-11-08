@@ -70,7 +70,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
     private val maskViewController by lazy { MaskViewController(this, binding, insetsController) }
     private val gestureController by lazy {
-        GestureController(this, maskViewController, ::saveMaskMode)
+        GestureController(this, maskViewController, ::setMaskVisible)
     }
     private val mainViewModel: MainViewModel by viewModels()
     private val clipboard by lazy { getSystemService(ClipboardManager::class.java) }
@@ -124,6 +124,8 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         )
     }
 
+    private fun isMaskModeOn(): Boolean = AppConfig.loadInt(Constant.REMOTE_MASK_MODE_KEY, 1) == 1
+
     override fun initOnCreate(savedInstanceState: Bundle?) {
         binding.contentView.background = WatermarkDrawable(this, DailyTask.getWatermarkText())
         binding.recyclerView.adapter = dailyTaskAdapter
@@ -132,6 +134,17 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         startCoreServices()
 
         updateResetTimeText()
+
+        // 初始态读持久化存档（未存过默认开启）
+        binding.screenOffItem.switchView.isChecked = isMaskModeOn()
+        binding.screenOffItem.switchView.setOnCheckedChangeListener { _, checked ->
+            saveMaskMode(checked)
+            if (checked) "伪息屏已开启，回到首页后生效".show(this)
+            else "伪息屏已关闭".show(this)
+        }
+        binding.screenOffItem.setOnClickListener {
+            binding.screenOffItem.switchView.toggle()
+        }
 
         // 兜底检查是否有错过的每日重置
         checkMissedReset()
@@ -604,23 +617,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
-    /**
-     * 回到前台一律显示蒙层（省电）：
-     * 1. 不依赖 REMOTE_MASK_MODE_KEY 历史存档，避免上次手动退出蒙层后，再次回前台蒙层不显示
-     * 2. 与任务是否开启无关
-     * 3. 延迟到窗口就绪后执行，保证隐藏系统栏、降低亮度等操作生效
-     * 4. 用户仍可通过上滑手势或者音量下键退出蒙层
-     * 5. 隐藏系统栏由 setMaskVisible(true) 无条件负责，此处不再重复处理
-     * */
     private fun showMaskOnForeground() {
-        window.decorView.post { setMaskVisible(true) }
+        window.decorView.post { setMaskVisible(isMaskModeOn()) }
     }
 
     /**
      * 切换蒙层显示状态，并同步隐藏系统栏
      * */
     private fun setMaskVisible(visible: Boolean) {
-        saveMaskMode(visible)
         if (visible) {
             maskViewController.hideSystemBars()
             if (!maskViewController.isMaskVisible()) {

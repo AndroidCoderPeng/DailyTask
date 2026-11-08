@@ -161,10 +161,27 @@
                 app:iconPadding="@dimen/padding"
                 app:iconTint="@color/white" />
 
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/margin_2x"
+                app:cardBackgroundColor="@color/white"
+                app:strokeWidth="0dp">
+
+                <com.pengxh.daily.app.widget.SettingItemView
+                    android:id="@+id/screenOffItem"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:itemDesc="开启后回到主界面自动显示伪息屏"
+                    app:itemRightType="toggle"
+                    app:itemTitle="自动伪息屏" />
+            </com.google.android.material.card.MaterialCardView>
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="@dimen/margin_2x"
+                android:layout_marginTop="@dimen/margin"
                 android:orientation="horizontal">
 
                 <TextView

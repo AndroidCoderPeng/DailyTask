@@ -25,6 +25,7 @@
     editingId: null,
     sheetTimeMode: 'add',
     targetApp: 'dingtalk',
+    mask: false,
     // 消息渠道：当前生效渠道（wx | mail）与各渠道的配置完成状态
     msgChannel: 'wx',
     channelReady: { wx: true, mail: false }
@@ -146,6 +147,17 @@
     const btn = $('#themeBtn');
     if (btn) btn.setAttribute('aria-label', dark ? '切换到浅色主题' : '切换到深色主题');
     try { localStorage.setItem('dt-theme', dark ? 'dark' : 'light'); } catch (e) { /* file:// 下可能不可用 */ }
+  }
+
+  /* ---------------------------------------------------------
+     伪息屏：持久化开关
+     首页「伪息屏」行 / 设置页开关 / 点击蒙层退出，三者状态同步
+  --------------------------------------------------------- */
+  function applyMask(on) {
+    state.mask = !!on;
+    $('#maskOverlay').hidden = !on;
+    $$('.mask-switch').forEach(function (sw) { sw.checked = on; });
+    try { localStorage.setItem('dt-mask', on ? '1' : '0'); } catch (e) { /* file:// 下可能不可用 */ }
   }
 
   /* ---------------------------------------------------------
@@ -1019,6 +1031,12 @@
       }
     });
 
+    // 伪息屏：首页与设置页开关、蒙层点击退出，共用 applyMask 同步
+    $$('.mask-switch').forEach(function (sw) {
+      sw.addEventListener('change', function () { applyMask(sw.checked); });
+    });
+    $('#maskOverlay').addEventListener('click', function () { applyMask(false); });
+
     // 进入设置前先看使用须知（对齐原 App 行为）
     $('#settingsBtn').addEventListener('click', function () {
       openDialog({
@@ -1116,6 +1134,9 @@
       if (saved === 'dark') applyTheme(true);
     } catch (e) { /* 忽略 */ }
     if (/[?&]theme=dark/.test(location.search)) applyTheme(true);
+
+    // 伪息屏：本地记忆
+    try { if (localStorage.getItem('dt-mask') === '1') applyMask(true); } catch (e) { /* 忽略 */ }
 
     // 支持 #settings 之类的直达链接，便于评审时分享具体页面
     const hash = location.hash.slice(1);
