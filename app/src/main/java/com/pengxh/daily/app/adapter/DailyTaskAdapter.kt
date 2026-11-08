@@ -26,8 +26,6 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
      * adapter 自持的数据副本
      *
      * 不与外部共享同一个 List 引用，避免外部替换 List 后
-     * "页面数据源" 与 "adapter 数据源" 变成两个对象，
-     * 一旦改成增量更新就会直接错位。
      * */
     private val dataBeans = mutableListOf<DailyTaskBean>()
 
@@ -48,7 +46,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         val oldPosition = index
         index = position
         lastRunPosition = position
-        this.actualTimes[position] = ts
+        actualTimes[position] = ts
         if (oldPosition >= 0 && oldPosition < dataBeans.size && oldPosition != position) {
             notifyItemChanged(oldPosition)
         }

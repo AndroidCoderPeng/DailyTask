@@ -78,7 +78,7 @@
                         android:layout_height="match_parent"
                         android:layout_marginBottom="@dimen/margin"
                         android:gravity="center_vertical"
-                        android:hint="点击下方按钮启动任务，到点自动拉起目标应用触发极速打卡"
+                        android:hint="点击下方按钮启动任务，到点自动拉起目标应用"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
                         android:textColor="@color/text_secondary_color" />
 
