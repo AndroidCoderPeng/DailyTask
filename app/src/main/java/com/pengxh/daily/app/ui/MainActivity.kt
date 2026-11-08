@@ -52,6 +52,7 @@ import com.pengxh.daily.app.utils.TaskListState
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.WatermarkDrawable
 import com.pengxh.daily.app.vm.MainViewModel
+import com.pengxh.daily.app.widget.ChainLineDecoration
 import com.pengxh.daily.app.widget.DeletableEditText
 import com.pengxh.daily.app.widget.SettingItemView
 import kotlinx.coroutines.delay
@@ -126,6 +127,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     override fun initOnCreate(savedInstanceState: Bundle?) {
         binding.contentView.background = WatermarkDrawable(this, DailyTask.getWatermarkText())
         binding.recyclerView.adapter = dailyTaskAdapter
+        binding.recyclerView.addItemDecoration(ChainLineDecoration(this))
 
         startCoreServices()
 

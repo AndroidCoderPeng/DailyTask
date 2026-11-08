@@ -9,6 +9,15 @@
     <dimen name="dp_24">24dp</dimen>
     <dimen name="dp_32">32dp</dimen>
 
+    <!-- 链式任务列表 -->
+    <dimen name="chain_track_width">24dp</dimen>
+    <dimen name="chain_line_width">2dp</dimen>
+    <dimen name="chain_dot_size">14dp</dimen>
+    <dimen name="chain_dot_top">33dp</dimen>
+
+    <!-- 节点中心 = chain_dot_top + chain_dot_size/2，Decoration 画线用 -->
+    <dimen name="chain_dot_center">40dp</dimen>
+
     <!--  内边距  -->
     <dimen name="padding_half">4dp</dimen>
     <dimen name="padding">8dp</dimen>

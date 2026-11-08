@@ -1,128 +1,149 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="@color/white"
-    app:cardUseCompatPadding="true"
-    app:strokeWidth="0dp">
+    android:orientation="horizontal">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- 只放节点，连线由 ChainLineDecoration 统一绘制 -->
+    <FrameLayout
+        android:layout_width="@dimen/dp_24"
+        android:layout_height="match_parent">
+
+        <View
+            android:id="@+id/chainDotView"
+            android:layout_width="@dimen/chain_dot_size"
+            android:layout_height="@dimen/chain_dot_size"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/chain_dot_top"
+            android:background="@drawable/shape_chain_dot" />
+    </FrameLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="@dimen/dp_12">
-
-        <!-- 计划时间部分 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <TextView
-                android:id="@+id/taskTimeView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium.Emphasized"
-                android:textColor="@color/text_default_color"
-                android:textStyle="bold"
-                tools:text="08:00:00" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/stateCardView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:cardBackgroundColor="@color/back_ground_color"
-                app:strokeWidth="0dp">
-
-                <TextView
-                    android:id="@+id/stateTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="@dimen/margin"
-                    android:layout_marginVertical="2dp"
-                    android:text="待执行"
-                    android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
-                    android:textColor="@color/text_secondary_color" />
-            </com.google.android.material.card.MaterialCardView>
-        </LinearLayout>
+        android:layout_weight="1"
+        app:cardBackgroundColor="@color/white"
+        app:cardUseCompatPadding="true"
+        app:strokeWidth="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/margin_half"
-            android:orientation="horizontal">
+            android:orientation="vertical"
+            android:padding="@dimen/dp_12">
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:cardBackgroundColor="@color/back_ground_color"
-                app:strokeWidth="0dp">
+            <!-- 计划时间部分 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <TextView
+                    android:id="@+id/taskTimeView"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="10dp"
-                    android:layout_marginVertical="@dimen/margin"
-                    android:orientation="vertical">
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium.Emphasized"
+                    android:textColor="@color/text_default_color"
+                    android:textStyle="bold"
+                    tools:text="08:00:00" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="随机窗口"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/text_secondary_color" />
-
-                    <TextView
-                        android:id="@+id/randomTimeView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/margin_half"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="@color/text_secondary_color"
-                        tools:text="08:20 - 08:40" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <Space
-                android:layout_width="@dimen/dp_12"
-                android:layout_height="wrap_content" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/actualTimeCardView"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:cardBackgroundColor="@color/back_ground_color"
-                app:strokeWidth="0dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/stateCardView"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="10dp"
-                    android:layout_marginVertical="@dimen/margin"
-                    android:orientation="vertical">
+                    app:cardBackgroundColor="@color/back_ground_color"
+                    app:strokeWidth="0dp">
 
                     <TextView
+                        android:id="@+id/stateTextView"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="实际执行"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                        android:layout_marginHorizontal="@dimen/margin"
+                        android:layout_marginVertical="2dp"
+                        android:text="待执行"
+                        android:textAppearance="@style/TextAppearance.Material3.BodySmall.Emphasized"
                         android:textColor="@color/text_secondary_color" />
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/actualTimeView"
-                        android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/margin_half"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/back_ground_color"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/margin_half"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
-                        android:textColor="@color/text_secondary_color"
-                        android:textStyle="bold"
-                        tools:text="08:33:50" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                        android:layout_marginHorizontal="10dp"
+                        android:layout_marginVertical="@dimen/margin"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="随机窗口"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/text_secondary_color" />
+
+                        <TextView
+                            android:id="@+id/randomTimeView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/margin_half"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="@color/text_secondary_color"
+                            tools:text="08:20 - 08:40" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <Space
+                    android:layout_width="@dimen/dp_12"
+                    android:layout_height="wrap_content" />
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/actualTimeCardView"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    app:cardBackgroundColor="@color/back_ground_color"
+                    app:strokeWidth="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginHorizontal="10dp"
+                        android:layout_marginVertical="@dimen/margin"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="实际执行"
+                            android:textAppearance="@style/TextAppearance.Material3.BodySmall"
+                            android:textColor="@color/text_secondary_color" />
+
+                        <TextView
+                            android:id="@+id/actualTimeView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/margin_half"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium.Emphasized"
+                            android:textColor="@color/text_secondary_color"
+                            android:textStyle="bold"
+                            tools:text="08:33:50" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+    </com.google.android.material.card.MaterialCardView>
+</LinearLayout>

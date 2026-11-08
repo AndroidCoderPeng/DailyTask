@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <!-- 颜色由代码 backgroundTintList 控制，这里只是占位 -->
+    <solid android:color="#999999" />
+    <size
+        android:width="14dp"
+        android:height="14dp" />
+</shape>

@@ -1,8 +1,12 @@
 package com.pengxh.daily.app.adapter
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.recyclerview.widget.RecyclerView
 import com.pengxh.daily.app.R
 import com.pengxh.daily.app.extensions.convertColor
@@ -73,6 +77,53 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             onItemClickListener?.onItemLongClick(position)
             return@setOnLongClickListener true
         }
+    }
+
+    /**
+     * 链式轨道：节点颜色按执行进度推导
+     * */
+    private fun bindChain(holder: ViewHolder, position: Int) {
+        val dot = holder.itemView.findViewById<View>(R.id.chainDotView)
+        dot.backgroundTintList = ColorStateList.valueOf(dotColor(holder, position))
+        bindPulse(dot, running = position == mPosition && mPosition >= 0)
+    }
+
+    /** 未运行全部灰点；mPosition 之前已完成，等于执行中，之后待执行 */
+    private fun dotColor(holder: ViewHolder, position: Int): Int {
+        val context = holder.itemView.context
+        return when {
+            mPosition < 0 || position > mPosition -> R.color.text_secondary_color.convertColor(
+                context
+            )
+
+            position == mPosition -> R.color.theme_color.convertColor(context)
+            else -> R.color.success_color.convertColor(context)
+        }
+    }
+
+    /**
+     * 执行中节点脉冲呼吸；复用 ItemView 时先取消旧动画再按需重启
+     * */
+    private fun bindPulse(dot: View, running: Boolean) {
+        (dot.tag as? ValueAnimator)?.cancel()
+        dot.tag = null
+        if (!running) {
+            dot.scaleX = 1f
+            dot.scaleY = 1f
+            return
+        }
+        val animator = ValueAnimator.ofFloat(1f, 1.35f, 1f).apply {
+            duration = 1200
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                val scale = it.animatedValue as Float
+                dot.scaleX = scale
+                dot.scaleY = scale
+            }
+        }
+        dot.tag = animator
+        animator.start()
     }
 
     @SuppressLint("NotifyDataSetChanged")
