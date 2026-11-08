@@ -29,6 +29,7 @@ object Constant {
     const val TASK_AUTO_RECYCLE_KEY = "TASK_AUTO_RECYCLE_KEY" // 任务每日自动循环(Boolean)
     const val RANDOM_TIME_KEY = "RANDOM_TIME_KEY" // 随机时间(Boolean)
     const val SKIP_HOLIDAY_KEY = "SKIP_HOLIDAY_KEY" // 跳过节假日(Boolean)
+    const val SKIP_REST_DAY_KEY = "SKIP_REST_DAY_KEY" // 跳过休息日(Boolean)
     const val POWER_SAVE_MODE_KEY = "POWER_SAVE_MODE_KEY" // 省电模式(Boolean)
     const val REMOTE_CLOCK_IN_CAPTURE_KEY = "REMOTE_CLOCK_IN_CAPTURE_KEY" // 远程打卡指令返回截图(Boolean)
 
@@ -74,6 +75,7 @@ object Constant {
     const val DEFAULT_OVER_TIME = 30
     const val CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID = 1001
     const val FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID = 1002
+    const val CHINA_ZONE_ID = "Asia/Shanghai" // 日历分类统一时区（与节假日数据源对齐）
 
     // 目标APP
     fun getTargetApp(): String {

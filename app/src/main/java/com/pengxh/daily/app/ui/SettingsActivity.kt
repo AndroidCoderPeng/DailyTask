@@ -673,11 +673,11 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             binding.gestureItem.switchView.isChecked =
                 AppConfig.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
             binding.backHomeItem.switchView.isChecked =
-                AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
+                AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, true)
             binding.powerSaveItem.switchView.isChecked =
-                AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+                AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, true)
             binding.remoteClockInCaptureItem.switchView.isChecked =
-                AppConfig.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false)
+                AppConfig.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, true)
         } finally {
             syncingSwitchState = false
         }

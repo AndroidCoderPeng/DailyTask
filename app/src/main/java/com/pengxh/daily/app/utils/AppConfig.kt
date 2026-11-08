@@ -60,7 +60,7 @@ object AppConfig {
         migrateWorkdaysFromSp()
     }
 
-    /** 历史遗留：
+    /**
      * 工作日配置曾存于 SP，迁移到 ConfigStore（仅首次）
      * */
     private fun migrateWorkdaysFromSp() {
@@ -69,6 +69,11 @@ object AppConfig {
         if (store.contains(key)) return
         val legacy = sp.getString(key, null)?.takeIf { it.isNotBlank() } ?: return
         store.save(key, JsonObject().apply { addProperty(VALUE_FIELD, legacy) })
+    }
+
+    fun contains(key: String): Boolean = when (backendOf(key)) {
+        Backend.FILE -> ConfigStore.get().load(key).size() > 0
+        Backend.SP -> sp.contains(key)
     }
 
     // ===================== 字符串（按 backendOf 路由） =====================

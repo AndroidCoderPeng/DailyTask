@@ -82,15 +82,16 @@ class TaskDataManager() {
         // Boolean
         exportData.isDetectGesture =
             AppConfig.loadBoolean(Constant.GESTURE_DETECTOR_KEY, true)
-        exportData.isBackToHome = AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)
+        exportData.isBackToHome = AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, true)
         exportData.isAutoRecycle =
             AppConfig.loadBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
         exportData.isRandomTime = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
         exportData.isSkipHoliday = AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+        exportData.isSkipRestDay = AppConfig.loadBoolean(Constant.SKIP_REST_DAY_KEY, true)
         exportData.isSavePower =
-            AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+            AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, true)
         exportData.isRemoteClockInCapture =
-            AppConfig.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false)
+            AppConfig.loadBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, true)
 
         // EmailConfig
         val obj = AppConfig.loadJson(Constant.EMAIL_CONFIG_KEY)
@@ -198,6 +199,7 @@ class TaskDataManager() {
         AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, config.isAutoRecycle)
         AppConfig.saveBoolean(Constant.RANDOM_TIME_KEY, config.isRandomTime)
         AppConfig.saveBoolean(Constant.SKIP_HOLIDAY_KEY, config.isSkipHoliday)
+        AppConfig.saveBoolean(Constant.SKIP_REST_DAY_KEY, config.isSkipRestDay)
         AppConfig.saveBoolean(Constant.POWER_SAVE_MODE_KEY, config.isSavePower)
         AppConfig.saveBoolean(Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, config.isRemoteClockInCapture)
 
@@ -218,6 +220,7 @@ class TaskDataManager() {
             }
             AppConfig.saveJson(Constant.EMAIL_CONFIG_KEY, cacheObj)
         }
+        TaskScheduler.requestTodayReevaluation("配置导入")
         return warnings
     }
 

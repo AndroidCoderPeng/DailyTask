@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.utils
 
+import android.annotation.SuppressLint
 import android.util.Log
 import com.google.gson.JsonObject
 import com.google.gson.JsonParser
@@ -7,18 +8,21 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
 
@@ -27,11 +31,27 @@ object ChinaHolidayManager {
     private const val LEGACY_CACHE_KEY = "holidayConfig"
     private const val CACHE_KEY_PREFIX = "holidayConfig_"
 
+    /**
+     * 自动补拉保险丝：防止高频请求 CDN
+     * - 触发条件：当年无数据（跨年必中）或缓存超过 30 天，条件不满足时一个请求都不发
+     * - 限频：每日最多一次自动尝试，失败后按 1h→2h→4h→…→封顶 24h 指数退避
+     * - 手动刷新（forceRefresh=true）不受此限制
+     */
+    private const val MIN_RETRY_INTERVAL_MILLIS = 60 * 60 * 1000L
+    private const val MAX_BACKOFF_MILLIS = 24 * 60 * 60 * 1000L
+    private const val STALE_THRESHOLD_DAYS = 30L
+    private const val AUTO_SYNC_TIMEOUT_MILLIS = 10_000L
+    private val _syncGeneration = MutableStateFlow(0L)
+    private val chinaZone = ZoneId.of(Constant.CHINA_ZONE_ID)
+
     private val _syncResult = MutableSharedFlow<SyncResult>(extraBufferCapacity = 1)
     val syncResult = _syncResult.asSharedFlow()
 
     private val _currentYearUpdatedAt = MutableStateFlow<Long?>(null)
     val currentYearUpdatedAt = _currentYearUpdatedAt.asStateFlow()
+
+    private val _dataState = MutableStateFlow<DataState>(DataState.Loading)
+    val dataState = _dataState.asStateFlow()
 
     /**
      * CDN 镜像源
@@ -61,6 +81,12 @@ object ChinaHolidayManager {
     @Volatile
     private var workdayDatesByYear: Map<Int, Set<LocalDate>> = emptyMap()
 
+    @Volatile
+    private var lastAutoSyncAttemptMillis = 0L
+
+    @Volatile
+    private var consecutiveFailures = 0
+
     private val syncLock = Any()
     private var isSyncing = false
     private var forceRefreshPending = false
@@ -86,13 +112,18 @@ object ChinaHolidayManager {
     }
 
     private fun launchSync(forceRefresh: Boolean) {
+        // 新一轮同步开始前先回到 Loading，否则旧年份的 Ready 会让 awaitDataReady 瞬间通过，跨年后按空数据误判
+        _dataState.value = DataState.Loading
         scope.launch {
             try {
                 synchronizeYears(forceRefresh)
+                _syncGeneration.value += 1
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                _syncGeneration.value += 1
                 Log.e(kTag, "Holiday data sync failed", e)
+                _dataState.value = DataState.Unavailable
                 if (forceRefresh) {
                     notifyError("节假日数据同步失败：${e.message ?: e.javaClass.simpleName}")
                 }
@@ -107,14 +138,14 @@ object ChinaHolidayManager {
                     }
                 }
                 if (runPendingRefresh) {
-                    launchSync(forceRefresh = true)
+                    launchSync(true)
                 }
             }
         }
     }
 
     private suspend fun synchronizeYears(forceRefresh: Boolean) {
-        val currentYear = LocalDate.now().year
+        val currentYear = LocalDate.now(chinaZone).year
         val years = listOf(currentYear, currentYear + 1)
         val cachedData = mutableMapOf<Int, CachedHolidayData>()
 
@@ -123,6 +154,11 @@ object ChinaHolidayManager {
         }
 
         _currentYearUpdatedAt.value = cachedData[currentYear]?.updatedAtMillis
+
+        // 当年缓存已可用就先发布就绪态：次年的慢请求/失败不再阻塞当日判定
+        if (isCurrentYearCovered()) {
+            _dataState.value = DataState.Ready()
+        }
 
         val yearsToFetch = if (forceRefresh) {
             years
@@ -140,10 +176,21 @@ object ChinaHolidayManager {
 
                 if (year == currentYear) {
                     _currentYearUpdatedAt.value = data.updatedAtMillis
+                    // 当年数据到手就先发布就绪，不被次年的慢请求拖住
+                    if (isCurrentYearCovered()) {
+                        _dataState.value = DataState.Ready()
+                    }
                 }
             } else {
                 Log.w(kTag, "No usable holiday data returned for $year")
             }
+        }
+
+        // 汇总当年数据可用性（缓存加载/联网拉取完成后）
+        _dataState.value = if (isCurrentYearCovered()) {
+            DataState.Ready()
+        } else {
+            DataState.Unavailable
         }
 
         if (forceRefresh) {
@@ -181,9 +228,7 @@ object ChinaHolidayManager {
 
     private suspend fun fetchHolidayJson(year: Int): String? {
         val urls = cdnUrlTemplates.map { String.format(it, year) }
-
         var resultJson: String? = null
-
         for (url in urls) {
             val outcome = downloadJson(url)
             when (outcome) {
@@ -195,14 +240,13 @@ object ChinaHolidayManager {
                 is SyncResult.Error -> Log.w(kTag, "Network error: ${outcome.message}")
             }
         }
-
         if (resultJson == null) {
             return null
         }
-
         return resultJson
     }
 
+    @SuppressLint("CheckResult")
     private suspend fun downloadJson(urlString: String): SyncResult {
         return withContext(Dispatchers.IO) {
             try {
@@ -215,7 +259,7 @@ object ChinaHolidayManager {
                     } else {
                         try {
                             // 仅做Json格式校验，返回值不必处理
-                            val element = JsonParser.parseString(body)
+                            JsonParser.parseString(body)
                         } catch (_: Exception) {
                             return@withContext SyncResult.Error("Invalid JSON")
                         }
@@ -312,8 +356,7 @@ object ChinaHolidayManager {
         holidayDatesByYear = holidayDatesByYear + (year to data.holidays)
         workdayDatesByYear = workdayDatesByYear + (year to data.workdays)
         Log.d(
-            kTag,
-            "Parsed $year: ${data.holidays.size} holidays, ${data.workdays.size} workdays"
+            kTag, "Parsed $year: ${data.holidays.size} holidays, ${data.workdays.size} workdays"
         )
     }
 
@@ -340,8 +383,76 @@ object ChinaHolidayManager {
         return date in workdayDatesByYear[date.year].orEmpty()
     }
 
-    fun cancel() {
-        scope.cancel()
+    /**
+     * 等待当年节假日数据就绪（内存表非空即视为就绪，读本地缓存也算）。
+     * 超时或确认不可用时返回 false，由调用方决定降级策略。
+     */
+    suspend fun awaitDataReady(timeoutMillis: Long = 15_000L): Boolean {
+        withTimeoutOrNull(timeoutMillis) {
+            dataState.first { it !is DataState.Loading }
+        }
+        return dataState.value is DataState.Ready
+    }
+
+    /** 当年是否有可用数据（不等待） */
+    fun isCurrentYearCovered(): Boolean {
+        val year = LocalDate.now(chinaZone).year
+        return holidayDatesByYear[year].orEmpty().isNotEmpty()
+                || workdayDatesByYear[year].orEmpty().isNotEmpty()
+    }
+
+    /**
+     * 每日保鲜检查：当年无数据或缓存陈旧时，
+     * 自动补拉一次。受「每日最多一次 + 失败指数退避」双重限频，
+     * 条件不满足时一个请求都不发。手动刷新（forceRefresh=true）不受此限制。
+     */
+    suspend fun ensureFreshFor(date: LocalDate) {
+        if (!shouldAutoSync(date)) return
+
+        lastAutoSyncAttemptMillis = System.currentTimeMillis()
+        val updatedAtBefore = currentYearUpdatedAt.value
+        val generationBefore = _syncGeneration.value
+
+        // 强制刷新
+        updateChinaHolidayData(true)
+
+        val finished = withTimeoutOrNull(AUTO_SYNC_TIMEOUT_MILLIS) {
+            _syncGeneration.first { it > generationBefore }
+        } != null
+
+        val refreshed = finished && currentYearUpdatedAt.value?.let {
+            it != updatedAtBefore
+        } == true
+        if (refreshed) {
+            consecutiveFailures = 0
+        } else {
+            consecutiveFailures++
+            Log.w(kTag, "Auto sync failed, consecutiveFailures=$consecutiveFailures")
+        }
+    }
+
+    private fun shouldAutoSync(date: LocalDate): Boolean {
+        val covered = isCurrentYearCovered()
+        // 陈旧度实时计算（而非同步时刻的快照），长跑进程也能触发补拉
+        val stale = covered && _currentYearUpdatedAt.value?.let {
+            System.currentTimeMillis() - it > TimeUnit.DAYS.toMillis(STALE_THRESHOLD_DAYS)
+        } == true
+        if (covered && !stale) return false
+
+        // 每日最多一次自动尝试
+        val lastAttemptDate = lastAutoSyncAttemptMillis.takeIf {
+            it > 0
+        }?.let {
+            Instant.ofEpochMilli(it).atZone(chinaZone).toLocalDate()
+        }
+        if (lastAttemptDate == date) return false
+
+        // 失败指数退避：1h → 2h → 4h → … → 封顶 24h
+        val backoffMillis = minOf(
+            MIN_RETRY_INTERVAL_MILLIS shl consecutiveFailures.coerceAtMost(20),
+            MAX_BACKOFF_MILLIS
+        )
+        return System.currentTimeMillis() - lastAutoSyncAttemptMillis >= backoffMillis
     }
 
     private suspend fun notifySuccess(message: String) {

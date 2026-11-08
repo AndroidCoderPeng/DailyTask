@@ -16,6 +16,7 @@ import com.pengxh.daily.app.R
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.DailyResetAlarmScheduler
+import com.pengxh.daily.app.utils.Key
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.TaskScheduler
 import kotlinx.coroutines.CoroutineScope
@@ -82,7 +83,7 @@ class ForegroundRunningService : Service() {
          *  - 仍在运行则恢复；
          *  - 或"曾运行 且 今天尚未跑完 且 允许自动循环"才恢复。
          */
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
+        val today = Key.todayDateKey()
         val shouldResumeTask = TaskScheduler.isRunning() ||
                 (AppConfig.loadBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
                         && AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "") != today
@@ -245,7 +246,7 @@ class ForegroundRunningService : Service() {
      * 作为协程 delay 的兜底，防止长时间运行后协程异常退出导致任务不重置
      */
     private fun checkAndTriggerReset() {
-        val today = SimpleDateFormat("yyyy-MM-dd", Locale.CHINA).format(Date())
+        val today = Key.todayDateKey()
         val lastResetDate = AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "")
 
         // 今天已重置，跳过

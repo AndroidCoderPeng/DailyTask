@@ -22,13 +22,14 @@ public class ExportDataModel {
     private String wxKey; // 企业微信消息Key
     private String customWorkdays; // 自定义工作日
 
-    private boolean detectGesture; // 检测手势
-    private boolean backToHome; // 返回桌面
-    private boolean autoRecycle; // 任务每日自动循环
-    private boolean randomTime; // 随机时间
-    private boolean skipHoliday; // 跳过节假日
-    private boolean savePower; // 省电模式
-    private boolean remoteClockInCapture; // 远程打卡指令返回截图
+    private boolean detectGesture = true; // 检测手势
+    private boolean backToHome = true; // 返回桌面
+    private boolean autoRecycle = true; // 任务每日自动循环
+    private boolean randomTime = true; // 随机时间
+    private boolean skipHoliday = true; // 跳过节假日
+    private boolean skipRestDay = true; // 跳过休息日
+    private boolean savePower = true; // 省电模式
+    private boolean remoteClockInCapture = true; // 远程打卡指令返回截图
 
     private Triple<String, String, String> emailConfig; // 邮箱配置<发件箱、授权码、收件箱>
     private List<DailyTaskBean> tasks; // 任务列表
@@ -152,6 +153,14 @@ public class ExportDataModel {
 
     public void setSkipHoliday(boolean skipHoliday) {
         this.skipHoliday = skipHoliday;
+    }
+
+    public boolean isSkipRestDay() {
+        return skipRestDay;
+    }
+
+    public void setSkipRestDay(boolean skipRestDay) {
+        this.skipRestDay = skipRestDay;
     }
 
     public boolean isSavePower() {

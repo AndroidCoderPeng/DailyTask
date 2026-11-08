@@ -73,6 +73,30 @@ object TaskScheduler {
     private var lastProcessedDate: LocalDate? = null
     private val resetWaitWakeupChannel = Channel<Unit>(Channel.CONFLATED)
 
+    private val chinaZone = ZoneId.of(Constant.CHINA_ZONE_ID)
+
+    /**
+     * 当日判定记录：
+     * - lastDecisionWasSkip  今天是否按"跳过"处理（重评估只针对该状态，执行中/已执行不回滚）
+     * - reevaluatingToday    本次循环是否为重评估（重评估后仍为跳过时不重复推送通知）
+     * - reevaluateRequested  数据/配置变化后的重评估请求，由 waitUntilNextReset 消费
+     * - degradedNotifiedDate 降级告警去重（每天最多推一次）
+     */
+    @Volatile
+    private var lastDecisionWasSkip = false
+
+    @Volatile
+    private var reevaluatingToday = false
+
+    @Volatile
+    private var reevaluateRequested = false
+
+    @Volatile
+    private var degradedNotifiedDate: LocalDate? = null
+
+    @Volatile
+    private var degradedStartDate: LocalDate? = null
+
     // 单次异常后最大自动重试次数，超过则彻底停止并告警，避免永久性错误疯狂重试
     private const val MAX_AUTO_RECOVERY_COUNT = 3
 
@@ -89,6 +113,28 @@ object TaskScheduler {
     fun attach(serviceScope: CoroutineScope, resumeTask: Boolean) {
         scope?.cancel()
         scope = serviceScope
+        // 节假日数据状态变化（就绪/每次成功同步）时，重新评估"今天是否应按跳过处理"
+        serviceScope.launch {
+            ChinaHolidayManager.dataState.collect { state ->
+                if (state is DataState.Ready) {
+                    // 今天若是在数据不可用时按工作日调度的，提示可人工纠正
+                    val today = LocalDate.now(chinaZone)
+                    if (degradedStartDate == today) {
+                        degradedStartDate = null
+                        try {
+                            MessageDispatcher.sendMessage(
+                                "节假日数据恢复提醒",
+                                "今日任务是在节假日，数据不可用时按工作日调度；如今日实为节假日或休息日，请停止任务后重新启动以纠正"
+                            )
+                        } catch (e: Exception) {
+                            Log.e("TaskScheduler", "发送数据恢复提醒失败", e)
+                        }
+                    }
+                    requestTodayReevaluation("节假日数据更新")
+                }
+            }
+        }
+
         if (resumeTask) {
             _isRunning.value = false
             startTask()
@@ -151,26 +197,41 @@ object TaskScheduler {
                         return@launch
                     }
 
-                    val today = LocalDate.now()
+                    // 周期日（本地时钟）：与重置时刻/系统闹钟同口径，只用于"这个周期处理过没有"的去重；
+                    // 日历日（中国时区）：节假日/调休数据按中国日期组织，只用于当日分类。
+                    val cycleToday = LocalDate.now()
+                    val calendarToday = LocalDate.now(chinaZone)
 
                     // 今天已经处理过了，不再重复
-                    if (lastProcessedDate == today) {
+                    if (lastProcessedDate == cycleToday) {
                         reportStart(true)
-                        LogFileManager.writeLog("今日已处理，等待下一次重置")
+                        LogFileManager.writeLog("本周期已处理，等待下一次重置")
                         if (isActive) waitUntilNextReset()
                         continue
                     }
 
+                    // 跨年/缓存陈旧兜底：必要时自动补拉一次（内部有每日一次+指数退避保险丝）
+                    ChinaHolidayManager.ensureFreshFor(calendarToday)
+
+                    // 局部快照并立即复位，避免"任务列表为空"等提前退出路径把标记泄漏到下一轮
+                    val wasReevaluation = reevaluatingToday
+                    reevaluatingToday = false
+
                     var completion: TaskCompletion?
                     var emitCompletionEvent = true
-                    val skipReason = getTodaySkipReason()
+                    val skipReason = getTodaySkipReason(calendarToday)
                     if (skipReason != null) {
                         reportStart(true)
-                        _tipsEvent.tryEmit(TipsEvent.Skip(skipReason))
+                        lastDecisionWasSkip = true
+                        // 重评估后仍为跳过时不再重复推送消息，只刷新通知栏文案
+                        if (!wasReevaluation) {
+                            _tipsEvent.tryEmit(TipsEvent.Skip(skipReason))
+                        }
                         completion = TaskCompletion("今日为${skipReason.label}，任务已跳过")
                         ForegroundRunningService.emitNotificationText(completion.message)
                         emitCompletionEvent = false
                     } else {
+                        lastDecisionWasSkip = false
                         val schedule = buildTodaySchedule()
                         if (schedule.isEmpty()) {
                             LogFileManager.writeLog("任务列表为空，停止调度")
@@ -182,7 +243,7 @@ object TaskScheduler {
                         completion = executeSchedule(schedule) ?: return@launch
                     }
 
-                    lastProcessedDate = today
+                    lastProcessedDate = cycleToday
                     AppConfig.saveString(Constant.LAST_RESET_DATE_KEY, Key.todayDateKey())
 
                     // 今天结束，睡到明天
@@ -228,7 +289,7 @@ object TaskScheduler {
      * 获取当日 flag
      * */
     fun getDayFlag(): String {
-        return classifyDay(LocalDate.now()).label
+        return classifyDay(LocalDate.now(chinaZone)).label
     }
 
     /**
@@ -465,9 +526,7 @@ object TaskScheduler {
         // 只发一次静态通知，不每秒刷新
         if (emitCompletionEvent) {
             _tipsEvent.tryEmit(
-                TipsEvent.Completed(
-                    message = completion?.message, hasFailure = completion?.hasFailure == true
-                )
+                TipsEvent.Completed(completion?.message, completion?.hasFailure == true)
             )
         }
         ForegroundRunningService.emitNotificationText(
@@ -488,6 +547,13 @@ object TaskScheduler {
             if (alarmScheduledForHour != resetHour) {
                 DailyResetAlarmScheduler.schedule(DailyTaskApplication.get())
                 alarmScheduledForHour = resetHour
+            }
+
+            // 判定条件变化（数据/配置更新）：立即返回主循环重新分类今日，不等下一个重置点
+            if (reevaluateRequested) {
+                reevaluateRequested = false
+                LogFileManager.writeLog("收到重评估请求，返回主循环重新判定今日任务")
+                return
             }
 
             val remainingMillis = (targetMillis - System.currentTimeMillis()).coerceAtLeast(1)
@@ -615,11 +681,20 @@ object TaskScheduler {
         }
     }
 
-    private fun getTodaySkipReason(): DayFlag? {
-        val skipEnabled = AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
-        if (!skipEnabled) return null
+    private suspend fun getTodaySkipReason(today: LocalDate): DayFlag? {
+        val skipHoliday = AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+        val skipRestDay = AppConfig.loadBoolean(Constant.SKIP_REST_DAY_KEY, true)
+        if (!skipHoliday && !skipRestDay) return null
 
-        val dayFlag = classifyDay(LocalDate.now())
+        // 数据未就绪时等待（读本地缓存通常 <1s）
+        if (!ChinaHolidayManager.awaitDataReady() || !ChinaHolidayManager.isCurrentYearCovered()) {
+            LogFileManager.writeLog("节假日数据不可用，今日按工作日降级执行")
+            degradedStartDate = today   // 记录降级起点，数据恢复时触发人工纠正提醒
+            notifyDegradedOnce(today)
+            return null
+        }
+
+        val dayFlag = classifyDay(today)
         when (dayFlag) {
             DayFlag.SubstituteWorkday -> {
                 LogFileManager.writeLog("今日为调休补班日，正常执行任务")
@@ -635,7 +710,28 @@ object TaskScheduler {
 
             DayFlag.Workday -> Unit
         }
-        return dayFlag.takeIf { it.shouldSkip }
+        val shouldSkip = when (dayFlag) {
+            DayFlag.Holiday -> skipHoliday
+            DayFlag.RestDay -> skipRestDay
+            else -> dayFlag.shouldSkip
+        }
+        return dayFlag.takeIf { shouldSkip }
+    }
+
+    /**
+     * 降级告警去重：每天最多推送一次
+     * */
+    private fun notifyDegradedOnce(today: LocalDate) {
+        if (degradedNotifiedDate == today) return
+        degradedNotifiedDate = today
+        try {
+            MessageDispatcher.sendMessage(
+                "节假日数据告警",
+                "今日节假日数据不可用，任务将按工作日降级执行；如今日实际为节假日或休息日，请手动处理"
+            )
+        } catch (e: Exception) {
+            Log.e("TaskScheduler", "发送节假日数据告警失败", e)
+        }
     }
 
     private fun classifyDay(date: LocalDate): DayFlag {
@@ -648,6 +744,25 @@ object TaskScheduler {
     }
 
     /**
+     * 当日判定条件变化（节假日数据更新 / 跳过配置变更）后请求重新评估。
+     *
+     * 仅当"今天已按跳过处理且正在等待下一个周期"时生效：
+     * - 不会打断正在执行的任务（lastDecisionWasSkip=false 时直接忽略）
+     * - 重判后若变为执行，executeSchedule 会自动跳过已过期任务，不会重复打卡
+     * - 重判后若仍为跳过，不会重复推送跳过消息
+     */
+    fun requestTodayReevaluation(reason: String) {
+        val today = LocalDate.now()
+        if (!_isRunning.value || lastProcessedDate != today || !lastDecisionWasSkip) return
+        LogFileManager.writeLog("今日判定条件变化（$reason），作废跳过判定并重新评估")
+        lastDecisionWasSkip = false
+        lastProcessedDate = null
+        reevaluatingToday = true
+        reevaluateRequested = true
+        notifyResetWaiters()
+    }
+
+    /**
      * 从数据库加载所有任务，计算出当日实际执行时间，按时间排序
      * */
     private suspend fun buildTodaySchedule(): List<ScheduledTask> {
@@ -656,6 +771,7 @@ object TaskScheduler {
         }
         if (allTasks.isEmpty()) return emptyList()
 
+        // 任务触发时刻跟随用户本地时钟（与重置时刻/系统闹钟同一口径）；
         val baseMillis =
             LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
 

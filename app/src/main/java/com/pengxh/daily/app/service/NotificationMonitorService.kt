@@ -219,7 +219,7 @@ class NotificationMonitorService : NotificationListenerService() {
             }
 
             command.contains("关闭循环") -> {
-                AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, false)
+                AppConfig.saveBoolean(Constant.TASK_AUTO_RECYCLE_KEY, true)
                 sendCommandReceipt("循环任务状态通知", "循环任务状态已更新为：关闭")
             }
 
@@ -302,7 +302,7 @@ class NotificationMonitorService : NotificationListenerService() {
             Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
         )
         val returnScreenshot = AppConfig.loadBoolean(
-            Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, false
+            Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, true
         )
         // 记录远程打卡时刻，供定时任务区分"被指令代打卡"与"真的超时"
         AutomationGate.markRemoteClockInQueued()

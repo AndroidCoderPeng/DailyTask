@@ -34,6 +34,15 @@ class DailyTaskApplication : Application() {
         super.onCreate()
         initApplication(this)
         AppConfig.initialize(this)
+
+        // 一次性行为迁移
+        if (!AppConfig.contains(Constant.SKIP_REST_DAY_KEY)) {
+            AppConfig.saveBoolean(
+                Constant.SKIP_REST_DAY_KEY,
+                AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+            )
+        }
+
         MessageDispatcher.initialize(this)
         LogFileManager.initLogFile(this)
 

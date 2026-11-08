@@ -129,7 +129,7 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             updateMemoryInfo()
 
             while (isActive) {
-                val mode = AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, false)
+                val mode = AppConfig.loadBoolean(Constant.POWER_SAVE_MODE_KEY, true)
                 val interval = if (mode) 60_000L else 1_000L
                 withTimeoutOrNull(interval) {
                     powerSaveModeUpdates.receive()

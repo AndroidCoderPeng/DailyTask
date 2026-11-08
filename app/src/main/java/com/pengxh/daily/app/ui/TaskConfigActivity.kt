@@ -76,6 +76,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.skipHolidayItem.switchView.isChecked =
             AppConfig.loadBoolean(Constant.SKIP_HOLIDAY_KEY, true)
+        binding.skipRestDayItem.switchView.isChecked =
+            AppConfig.loadBoolean(Constant.SKIP_REST_DAY_KEY, true)
 
         val needRandom = AppConfig.loadBoolean(Constant.RANDOM_TIME_KEY, true)
         binding.randomTimeItem.switchView.isChecked = needRandom
@@ -225,6 +227,7 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                         return@setOnClickListener
                     }
                     CustomWorkdayManager.saveWorkdays(selected)
+                    TaskScheduler.requestTodayReevaluation("自定义工作日变更")
                     updateCustomWorkdaySummary(selected)
                     dialog.dismiss()
                 }
@@ -246,6 +249,12 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
         binding.skipHolidayItem.switchView.setOnCheckedChangeListener { _, isChecked ->
             AppConfig.saveBoolean(Constant.SKIP_HOLIDAY_KEY, isChecked)
+            TaskScheduler.requestTodayReevaluation("跳过节假日开关变更")
+        }
+
+        binding.skipRestDayItem.switchView.setOnCheckedChangeListener { _, isChecked ->
+            AppConfig.saveBoolean(Constant.SKIP_REST_DAY_KEY, isChecked)
+            TaskScheduler.requestTodayReevaluation("跳过休息日开关变更")
         }
 
         binding.minuteRangeItem.setOnClickListener {

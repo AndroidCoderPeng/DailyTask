@@ -117,6 +117,14 @@
                         app:itemTitle="跳过节假日" />
 
                     <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/skipRestDayItem"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:itemDesc="周末/自定义休息日不打卡"
+                        app:itemRightType="toggle"
+                        app:itemTitle="跳过休息日" />
+
+                    <com.pengxh.daily.app.widget.SettingItemView
                         android:id="@+id/autoTaskItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

@@ -37,6 +37,7 @@ import com.pengxh.daily.app.service.FloatingWindowService
 import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.service.NotificationMonitorService
 import com.pengxh.daily.app.utils.AppConfig
+import com.pengxh.daily.app.utils.ChinaHolidayManager
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
 import com.pengxh.daily.app.utils.DailyTask
@@ -56,6 +57,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.ZoneId
 import java.util.Locale
 
 class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
@@ -109,7 +111,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     private fun updateToolbarTitle() {
-        val today = LocalDate.now()
+        val today = LocalDate.now(ZoneId.of(Constant.CHINA_ZONE_ID))
         binding.toolbar.title = String.format(
             Locale.CHINA,
             "%02d月%02d日 %s（%s）",
@@ -133,6 +135,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     override fun observeRequestState() {
+        observeChinaHoliday()
         observeTaskListState()
         observeMainEvents()
         observeResetCountdown()
@@ -291,6 +294,14 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
 
         Intent(this, ForegroundRunningService::class.java).apply { startForegroundService(this) }
+    }
+
+    private fun observeChinaHoliday() {
+        lifecycleScope.launch {
+            ChinaHolidayManager.dataState.collect {
+                updateToolbarTitle()
+            }
+        }
     }
 
     /**
@@ -629,7 +640,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     }
 
     private fun backToMainActivity() {
-        if (AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, false)) {
+        if (AppConfig.loadBoolean(Constant.BACK_TO_HOME_KEY, true)) {
             //模拟点击Home键
             startActivity(Intent(Intent.ACTION_MAIN).apply {
                 addCategory(Intent.CATEGORY_HOME)
