@@ -466,6 +466,7 @@ body.dark #themeBtn .ico-sun { display: none; }
 
 .task {
   position: relative;
+  margin-left: 24px; /* 左侧让位给链式轨道 */
   background: var(--card); border-radius: var(--r-lg);
   box-shadow: var(--shadow-1);
   padding: 13px 14px;
@@ -474,6 +475,33 @@ body.dark #themeBtn .ico-sun { display: none; }
 }
 @media (hover: hover) and (pointer: fine) {
   .task:hover { transform: translateY(-2px); box-shadow: var(--shadow-2); }
+}
+
+/* ---- 链式轨道：任务按时间点串行执行，左侧用「节点 + 连线」表达链上顺序 ---- */
+/* 连线：从本节点向下，一直连到下一环节节点的上沿 */
+.task:not(:last-child)::before {
+  content: ""; position: absolute;
+  left: -17px; top: 38px; bottom: -30px;
+  width: 2px; border-radius: 999px;
+  background: var(--line);
+}
+/* 节点：默认灰色实心点（待执行 / 失败暂不单独设计，均走默认灰），
+   已完成绿色，执行中主题色 + 脉冲 */
+.task::after {
+  content: ""; position: absolute;
+  left: -24px; top: 20px;
+  width: 16px; height: 16px;
+  box-sizing: border-box; border-radius: 999px;
+  background: var(--text-3); border: 3px solid var(--surface-2);
+}
+.task[data-state="done"]::after { background: var(--success); border-color: var(--success-soft); }
+.task[data-state="running"]::after {
+  background: var(--primary); border-color: var(--primary-soft);
+  animation: nodePulse 1.6s ease-out infinite;
+}
+@keyframes nodePulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 38%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 10px transparent; }
 }
 
 .task-head { display: flex; align-items: center; gap: 10px; }
@@ -497,7 +525,6 @@ body.dark #themeBtn .ico-sun { display: none; }
 .task-state svg { width: 12px; height: 12px; flex: 0 0 auto; }
 .task[data-state="running"] .task-state { background: var(--primary-soft); color: var(--primary-press); }
 .task[data-state="done"] .task-state { background: var(--success-soft); color: var(--success-ink); }
-.task[data-state="failed"] .task-state { background: var(--danger-soft); color: var(--danger); }
 .task[data-state="skipped"] .task-state {
   background: var(--surface-2); color: var(--text-3);
   box-shadow: inset 0 0 0 1px var(--line);
@@ -529,8 +556,6 @@ body.dark #themeBtn .ico-sun { display: none; }
 .task[data-state="running"] .task-stat:last-child .task-v-strong { color: var(--primary-press); }
 .task[data-state="done"] .task-stat:last-child { background: var(--success-soft); }
 .task[data-state="done"] .task-stat:last-child .task-v-strong { color: var(--success-ink); }
-.task[data-state="failed"] .task-stat:last-child { background: var(--danger-soft); }
-.task[data-state="failed"] .task-stat:last-child .task-v-strong { color: var(--danger); }
 
 /* ---- 空态 ---- */
 .empty {
