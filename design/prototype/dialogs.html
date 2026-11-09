@@ -29,6 +29,7 @@
         <li><button class="nav-item" data-demo="actionsheet"><i class="nav-ico">4</i>底部 ActionSheet</button></li>
         <li><button class="nav-item" data-demo="testsend"><i class="nav-ico">5</i>测试发送对话框</button></li>
         <li><button class="nav-item" data-demo="testfail"><i class="nav-ico">6</i>发送失败对话框</button></li>
+        <li><button class="nav-item" data-demo="loading"><i class="nav-ico">7</i>Loading 加载对话框</button></li>
       </ul>
     </div>
 
@@ -54,7 +55,8 @@
         <li>输入框对话框沿用表单规范：<b>focus 高亮 + 内联错误提示</b>，错误时边框变红不再弹 toast。</li>
         <li>ActionSheet 沿用底部弹窗骨架：<b>抓手感 + 图标动作列表</b>，破坏性操作红底独立分区，底部固定取消。</li>
         <li>测试发送用<b>双按钮对话框</b>：左「取消」弱按钮、右「发送」主按钮；正文下方信息块列出<b>发给谁 / 发什么</b>，密钥脱敏。</li>
-        <li>发送过程按钮<b>转圈并禁用动作区</b>，遮罩与 Esc 不可打断；失败改用 danger 图标 +「重试」，<b>失败不保存配置</b>。</li>
+        <li>测试过程按钮<b>转圈并禁用动作区</b>，遮罩与 Esc 不可打断；失败改用 danger 图标 +「重试」，<b>失败不保存配置</b>。</li>
+        <li>Loading 对话框替代系统 <b>ProgressDialog</b>：不确定度加载，环形 spinner + 标题 / 消息，<b>无按钮、不可取消</b>，由业务方调 dismiss 关闭。</li>
       </ul>
     </div>
 
@@ -151,6 +153,15 @@
                 <span class="demo-trigger-main">
                   <span class="demo-trigger-title">发送失败对话框</span>
                   <span class="demo-trigger-desc">双按钮 · 取消 / 重试，失败不落库</span>
+                </span>
+                <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              </button>
+
+              <button class="demo-trigger" data-demo="loading">
+                <span class="demo-no">7</span>
+                <span class="demo-trigger-main">
+                  <span class="demo-trigger-title">Loading 加载对话框</span>
+                  <span class="demo-trigger-desc">不确定度加载 · spinner + 消息，不可取消</span>
                 </span>
                 <svg class="demo-trigger-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
               </button>
@@ -296,6 +307,16 @@
           </div>
         </div>
 
+        <!-- ================= 7. Loading 加载对话框 ================= -->
+        <!-- 替代系统 ProgressDialog：不确定度加载，spinner + 标题 / 消息，不可取消 -->
+        <div class="dialog-mask" id="dialogLoading" hidden>
+          <div class="dialog dialog-loading">
+            <div class="loading-ring" id="loadingRing"></div>
+            <h3 class="dialog-title" id="loadingTitle">正在更新节假日数据</h3>
+            <p class="dialog-msg" id="loadingMsg">正在同步 2026–2027 年法定节假日…</p>
+          </div>
+        </div>
+
         <div class="toast" id="toast" hidden></div>
 
       </div><!-- /viewport -->
@@ -318,10 +339,12 @@
     input: $('#dialogInput'),
     actionsheet: $('#sheetAction'),
     testsend: $('#dialogTestSend'),
-    testfail: $('#dialogTestFail')
+    testfail: $('#dialogTestFail'),
+    loading: $('#dialogLoading')
   };
 
   function closeAll() {
+    stopLoading();
     Object.keys(OVERLAYS).forEach(function (k) { OVERLAYS[k].hidden = true; });
   }
 
@@ -336,6 +359,7 @@
       $('#dlgInputError').classList.remove('is-show');
       setTimeout(function () { input.focus(); input.select(); }, 160);
     }
+    if (key === 'loading') playLoading();
   }
 
   /* ---- Toast ---- */
@@ -352,6 +376,19 @@
   function applyTheme(dark) {
     document.body.classList.toggle('dark', dark);
     try { localStorage.setItem('dt-theme', dark ? 'dark' : 'light'); } catch (e) { /* file:// */ }
+  }
+
+  /* ---- 7. Loading：不确定度加载，spinner + 标题 / 消息 ----
+     行为对齐 LoadingDialog.kt：setCancelable(false) + 点遮罩不关闭，
+     完成与否由业务调 dismiss()，演示中 4s 后自动关闭 */
+  let loadingTimer = null;
+  function stopLoading() { clearTimeout(loadingTimer); loadingTimer = null; }
+  function playLoading() {
+    stopLoading();
+    loadingTimer = setTimeout(function () {
+      closeAll();
+      toast('LoadingDialog.dismiss() 已调用');
+    }, 4000);
   }
 
   /* ---- 时钟 ---- */
@@ -420,9 +457,11 @@
     }
   });
 
-  /* 遮罩空白处点击关闭 */
+  /* 遮罩空白处点击关闭；Loading 不可点遮罩关闭（对齐 setCanceledOnTouchOutside(false)） */
   $$('.dialog-mask, .sheet-mask').forEach(function (m) {
-    m.addEventListener('click', function (e) { if (e.target === m) closeAll(); });
+    m.addEventListener('click', function (e) {
+      if (e.target === m && m.id !== 'dialogLoading') closeAll();
+    });
   });
 
   /* 输入时清除错误态 */
@@ -439,6 +478,7 @@
     if (e.key === '4') openDemo('actionsheet');
     if (e.key === '5') openDemo('testsend');
     if (e.key === '6') openDemo('testfail');
+    if (e.key === '7') openDemo('loading');
   });
 
   /* ---- 初始化 ---- */

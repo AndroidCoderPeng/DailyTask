@@ -78,3 +78,15 @@
 }
 
 /* 演示场景下弹层要盖住整个 viewport，已有 dialog-mask / sheet-mask 复用 */
+
+/* ==================== 5. Loading 加载对话框 ==================== */
+/* 替代系统 ProgressDialog：环形 spinner + 标题 + 消息，
+   无按钮、不可取消（对齐 LoadingDialog.setCancelable(false)），结束后自动关闭 */
+.loading-ring {
+  width: 40px; height: 40px; margin: 4px auto 14px;
+  border-radius: 50%;
+  border: 3.5px solid var(--primary-soft);
+  border-top-color: var(--primary);
+  animation: loadingSpin .8s linear infinite;
+}
+@keyframes loadingSpin { to { transform: rotate(360deg); } }
