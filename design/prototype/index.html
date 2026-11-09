@@ -181,7 +181,33 @@
 
           <div class="scroll">
             <section class="group">
-              <h2 class="group-title">打卡目标</h2>
+              <h2 class="group-title">服务与权限</h2>
+              <div class="group-body">
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">悬浮权限</span>
+                    <span class="row-desc">核心服务，用于打卡后自动跳回本软件</span>
+                  </span>
+                  <label class="switch switch-locked"><input type="checkbox" checked disabled><span class="slider"></span></label>
+                </div>
+
+                <div class="row row-block">
+                  <div class="row-head">
+                    <span class="row-main">
+                      <span class="row-title">结果来源</span>
+                      <span class="row-desc">用哪种方式判定「打卡成功」</span>
+                    </span>
+                  </div>
+                  <div class="segmented" id="sourceSegment">
+                    <button class="seg is-active" data-value="notice">通知监听</button>
+                    <button class="seg" data-value="capture">截屏服务</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="group">
+              <h2 class="group-title">任务目标</h2>
               <div class="group-body">
                 <button class="row row-tap" data-act="pickTargetApp">
                   <span class="row-ico" id="targetAppIco" style="--ico:#3399FF">
@@ -189,7 +215,6 @@
                   </span>
                   <span class="row-main">
                     <span class="row-title">目标应用</span>
-                    <span class="row-desc" id="targetAppDesc">钉钉 · 极速打卡</span>
                   </span>
                   <span class="row-value" id="targetAppName">钉钉</span>
                   <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -207,23 +232,10 @@
                   <svg class="row-arrow" viewBox="0 0 24 24" width="16" height="16"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                 </button>
 
-                <div class="row row-block">
-                  <div class="row-head">
-                    <span class="row-main">
-                      <span class="row-title">结果来源</span>
-                      <span class="row-desc">用哪种方式判定「打卡成功」</span>
-                    </span>
-                  </div>
-                  <div class="segmented" id="sourceSegment">
-                    <button class="seg is-active" data-value="notice">通知监听</button>
-                    <button class="seg" data-value="capture">截屏服务</button>
-                  </div>
-                </div>
-
                 <div class="row row-switch">
                   <span class="row-main">
                     <span class="row-title">返回截图</span>
-                    <span class="row-desc">【DT#打卡】倒计时结束截屏并回传</span>
+                    <span class="row-desc">开启后，【DT#打卡】倒计时结束会截屏并发送结果</span>
                   </span>
                   <label class="switch"><input type="checkbox" checked><span class="slider"></span></label>
                 </div>
@@ -231,45 +243,8 @@
             </section>
 
             <section class="group">
-              <h2 class="group-title">服务与权限</h2>
-              <div class="group-body">
-                <div class="row row-switch">
-                  <span class="row-main">
-                    <span class="row-title">悬浮权限</span>
-                    <span class="row-desc">核心服务，用于打卡后自动跳回本软件</span>
-                  </span>
-                  <label class="switch switch-locked"><input type="checkbox" checked disabled><span class="slider"></span></label>
-                </div>
-
-                <div class="row row-switch">
-                  <span class="row-main">
-                    <span class="row-title">通知监听</span>
-                    <span class="row-desc">监听打卡结果与远程指令</span>
-                  </span>
-                  <label class="switch switch-locked"><input type="checkbox" checked disabled><span class="slider"></span></label>
-                </div>
-
-                <div class="row row-switch">
-                  <span class="row-main">
-                    <span class="row-title">截屏服务</span>
-                    <span class="row-desc">MediaProjection 授权，用于兜底截取打卡结果</span>
-                  </span>
-                  <label class="switch"><input type="checkbox"><span class="slider"></span></label>
-                </div>
-                <p class="row-note danger" id="captureNote">截屏服务未开启，无法获取打卡结果</p>
-              </div>
-            </section>
-
-            <section class="group">
               <h2 class="group-title">行为偏好</h2>
               <div class="group-body">
-                <div class="row row-switch">
-                  <span class="row-main">
-                    <span class="row-title">伪息屏</span>
-                    <span class="row-desc">开启后伪装灭屏，仅保留时钟，与首页开关同步</span>
-                  </span>
-                  <label class="switch"><input type="checkbox" class="mask-switch"><span class="slider"></span></label>
-                </div>
                 <div class="row row-switch">
                   <span class="row-main">
                     <span class="row-title">手势辅助</span>
@@ -313,7 +288,7 @@
                   </span>
                   <span class="row-main">
                     <span class="row-title">更新节假日数据</span>
-                    <span class="row-desc">同步当年与次年法定节假日</span>
+                    <span class="row-desc">同步当年与次年的法定节假日</span>
                   </span>
                   <span class="row-value">2026-10-31</span>
                 </button>
@@ -337,7 +312,7 @@
                   </span>
                   <span class="row-main">
                     <span class="row-title">唤起测试</span>
-                    <span class="row-desc">验证 QQ / 微信 / 支付宝拉起目标应用</span>
+                    <span class="row-desc">验证拉起目标应用</span>
                   </span>
                 </button>
                 <button class="row row-tap" data-act="captureTest">

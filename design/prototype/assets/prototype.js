@@ -63,14 +63,12 @@
     }
   }
 
-  /* 可作为打卡目标的应用（与唤起测试支持的渠道一致） */
+  /* 可作为打卡目标的应用（与真机 SettingsActivity apps 列表一致） */
   const TARGET_APPS = [
     { value: 'dingtalk', label: '钉钉', desc: '钉钉 · 极速打卡', color: '#3399FF' },
     { value: 'wxwork', label: '企业微信', desc: '企业微信 · 打卡', color: '#22C55E' },
-    { value: 'qq', label: 'QQ', desc: 'QQ · 打卡', color: '#12B7F5' },
-    { value: 'wechat', label: '微信', desc: '微信 · 打卡', color: '#07C160' },
-    { value: 'tim', label: 'TIM', desc: 'TIM · 打卡', color: '#2B7FFF' },
-    { value: 'alipay', label: '支付宝', desc: '支付宝 · 打卡', color: '#1677FF' }
+    { value: 'feishu', label: '飞书', desc: '飞书 · 打卡', color: '#00D6B9' },
+    { value: 'm3', label: '移动办公M3', desc: '移动办公M3 · 打卡', color: '#2B7FFF' }
   ];
 
   function targetAppInfo() {
