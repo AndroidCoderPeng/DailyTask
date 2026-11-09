@@ -5,6 +5,7 @@ import android.util.Log
 import com.pengxh.daily.app.DailyTaskApplication
 import com.pengxh.daily.app.events.TipsEvent
 import com.pengxh.daily.app.extensions.formatTime
+import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.extensions.openApplication
 import com.pengxh.daily.app.extensions.resolveExecutionTime
 import com.pengxh.daily.app.service.CaptureImageService
@@ -314,6 +315,11 @@ object TaskScheduler {
         var skippedCount = 0
         var screenshotAuthInvalid = false
 
+        // 权限失效会让所有任务白等超时，提前告警暴露根因
+        if (!DailyTaskApplication.get().notificationEnable()) {
+            MessageDispatcher.sendNotificationDownAlert()
+        }
+
         for (task in schedule) {
             val now = System.currentTimeMillis()
 
@@ -332,8 +338,9 @@ object TaskScheduler {
             }
 
             // 非钉钉目标仅支持截屏来源，投影失效则剩余任务均无法获取打卡结果，跳过并说明根因
-            val resultSource = AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
-            if (Constant.getTargetApp() != Constant.DING_DING && resultSource != 1) {
+            val resultSource = ResultSourceGuard.reconcile()
+            val targetApp = Constant.getTargetApp()
+            if (targetApp != Constant.DING_DING && (resultSource != 1 || !ProjectionSession.isStateActive())) {
                 val remainingCount = schedule.size - task.displayIndex + 1
                 skippedCount += remainingCount
                 screenshotAuthInvalid = true
@@ -347,7 +354,11 @@ object TaskScheduler {
                 for (remaining in schedule) {
                     if (remaining.displayIndex < task.displayIndex) continue
                     _tipsEvent.tryEmit(
-                        TipsEvent.TaskSkipped(remaining.displayIndex, remaining.plannedTime, "截屏授权已失效")
+                        TipsEvent.TaskSkipped(
+                            remaining.displayIndex,
+                            remaining.plannedTime,
+                            "截屏授权已失效"
+                        )
                     )
                 }
                 break

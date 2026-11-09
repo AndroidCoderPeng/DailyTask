@@ -191,11 +191,19 @@
                   <label class="switch switch-locked"><input type="checkbox" checked disabled><span class="slider"></span></label>
                 </div>
 
+                <div class="row row-switch">
+                  <span class="row-main">
+                    <span class="row-title">通知监听</span>
+                    <span class="row-desc" id="noticeDesc">接收小号远程指令，并判定钉钉打卡结果</span>
+                  </span>
+                  <label class="switch"><input type="checkbox" id="noticeSwitch" checked><span class="slider"></span></label>
+                </div>
+
                 <div class="row row-block">
                   <div class="row-head">
                     <span class="row-main">
                       <span class="row-title">结果来源</span>
-                      <span class="row-desc">用哪种方式判定「打卡成功」</span>
+                      <span class="row-desc" id="sourceDesc">用哪种方式判定「打卡成功」</span>
                     </span>
                   </div>
                   <div class="segmented" id="sourceSegment">
@@ -203,6 +211,7 @@
                     <button class="seg" data-value="capture">截屏服务</button>
                   </div>
                 </div>
+                <p class="row-note danger" id="sourceNote" hidden></p>
               </div>
             </section>
 

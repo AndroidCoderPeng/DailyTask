@@ -103,6 +103,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         lifecycleScope.launch {
             NotificationMonitorService.listenerState.collect { connected ->
                 if (connected) {
+                    binding.notificationItem.switchView.isChecked = true
                     val sourceType =
                         AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
                     val targetApp =
@@ -199,6 +200,7 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
     private val notificationSettingLauncher = registerForActivityResult(notificationContract) {
         if (notificationEnable()) {
             turnOnNotificationMonitorService()
+            binding.notificationItem.switchView.isChecked = true
             // 目标应用为钉钉时，服务就绪后由 listenerState 流自动勾选通知监听
             if (AppConfig.loadInt(Constant.TARGET_APP_KEY, 0) == 0) {
                 AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
@@ -260,6 +262,17 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             overlayPermissionLauncher.launch(intent)
         }
 
+        binding.notificationItem.switchView.setOnClickListener {
+            if (notificationEnable()) {
+                binding.notificationItem.switchView.isChecked = true
+                "如需关闭，请在系统设置中撤销本应用的通知使用权".show(this)
+                return@setOnClickListener
+            }
+            notificationSettingLauncher.launch(
+                Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+            )
+        }
+
         binding.radioGroup.setOnCheckedChangeListener { _, checkedId ->
             if (syncingResultSourceState || checkedId == View.NO_ID) {
                 return@setOnCheckedChangeListener
@@ -268,17 +281,13 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
             when (checkedId) {
                 binding.noticeRadioButton.id -> {
                     if (AppConfig.loadInt(Constant.TARGET_APP_KEY, 0) != 0) {
-                        // 通知监听仅支持钉钉打卡，目标应用为其它应用时不允许切换
-                        "通知监听仅支持钉钉打卡".show(this)
+                        "非钉钉打卡结果由截屏服务判定，通知监听仅用于接收远程指令".show(this)
                         setResultSourceChecked(null)
                     } else if (notificationEnable()) {
                         AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
                     } else {
-                        "请先允许监听通知".show(this)
+                        "请先开启「通知监听」开关".show(this)
                         setResultSourceChecked(null)
-                        notificationSettingLauncher.launch(
-                            Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                        )
                     }
                 }
 
@@ -647,6 +656,16 @@ class SettingsActivity : KotlinBaseActivity<ActivitySettingsBinding>() {
         } else {
             clearResultSourceChecked(binding.captureRadioButton.id)
             clearResultSourceChecked(binding.noticeRadioButton.id)
+        }
+
+        // 通知监听开关只反映系统授权状态（授权入口在 initEvent 中）
+        binding.notificationItem.switchView.isChecked = notificationEnable()
+
+        // 角色说明随目标应用变化：钉钉兼任结果判定，非钉钉仅作远程指令通道
+        if (targetApp == 0) {
+            binding.notificationItem.descView.text = "接收小号远程指令，并判定钉钉打卡结果"
+        } else {
+            binding.notificationItem.descView.text = "接收小号远程指令（打卡结果由截屏判定）"
         }
 
         val type = AppConfig.loadInt(Constant.MSG_CHANNEL_KEY, Constant.DEFAULT_INDEX)

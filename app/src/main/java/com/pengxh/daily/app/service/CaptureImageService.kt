@@ -28,6 +28,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionSession
+import com.pengxh.daily.app.utils.ResultSourceGuard
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -173,7 +174,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
                     super.onStop()
                     Log.w(kTag, "MediaProjection stopped by system")
                     ProjectionSession.markStoppedNeedAuth()
-                    AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                    // 按实际能力重算来源：钉钉可降级通知，非钉钉置为未选择
+                    ResultSourceGuard.reconcile()
                     MessageDispatcher.sendMessage(
                         "截屏服务通知", "截屏授权已失效，需人工重新授权后恢复截屏打卡"
                     )
@@ -371,7 +373,7 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         cancel()
         releaseCaptureResources()
         ProjectionSession.clear()
-        AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+        ResultSourceGuard.reconcile()
         isCapturingInitialized = false
         stopForeground(STOP_FOREGROUND_REMOVE)
     }

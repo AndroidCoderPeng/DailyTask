@@ -2,6 +2,7 @@ package com.pengxh.daily.app
 
 import android.app.Application
 import androidx.room.Room.databaseBuilder
+import com.pengxh.daily.app.extensions.notificationEnable
 import com.pengxh.daily.app.sqlite.DailyTaskDataBase
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.ChinaHolidayManager
@@ -9,6 +10,7 @@ import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionSession
+import com.pengxh.daily.app.utils.ResultSourceGuard
 
 
 /**
@@ -55,5 +57,13 @@ class DailyTaskApplication : Application() {
         if (resultSource == 1 && !ProjectionSession.isStateActive()) {
             MessageDispatcher.sendCaptureDownAlert()
         }
+
+        // 通知监听失效（权限被撤销），无人值守兜底
+        if (!notificationEnable()) {
+            MessageDispatcher.sendNotificationDownAlert()
+        }
+
+        // 冷启动自愈来源配置：截屏授权已随进程销毁，避免留下非法组合
+        ResultSourceGuard.reconcile()
     }
 }

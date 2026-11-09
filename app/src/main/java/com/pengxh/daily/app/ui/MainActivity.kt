@@ -48,6 +48,7 @@ import com.pengxh.daily.app.utils.LogFileManager
 import com.pengxh.daily.app.utils.MaskViewController
 import com.pengxh.daily.app.utils.MessageDispatcher
 import com.pengxh.daily.app.utils.ProjectionSession
+import com.pengxh.daily.app.utils.ResultSourceGuard
 import com.pengxh.daily.app.utils.TaskListState
 import com.pengxh.daily.app.utils.TaskScheduler
 import com.pengxh.daily.app.utils.WatermarkDrawable
@@ -257,7 +258,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
             LogFileManager.writeLog("截屏服务异常：MediaProjection 已失效")
             if (AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX) == 1) {
                 "截屏服务已断开，请重新授权".show(this)
-                AppConfig.saveInt(Constant.RESULT_SOURCE_KEY, 0)
+                ResultSourceGuard.reconcile()
             }
         }
 

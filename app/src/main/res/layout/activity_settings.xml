@@ -57,6 +57,14 @@
                         app:itemRightType="toggle"
                         app:itemTitle="悬浮权限" />
 
+                    <com.pengxh.daily.app.widget.SettingItemView
+                        android:id="@+id/notificationItem"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:itemDesc="接收小号远程指令"
+                        app:itemRightType="toggle"
+                        app:itemTitle="通知监听" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

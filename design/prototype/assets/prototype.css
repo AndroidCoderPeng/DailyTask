@@ -659,6 +659,8 @@ body.dark #themeBtn .ico-sun { display: none; }
   font-size: 13px; font-weight: 600; cursor: pointer; transition: .18s var(--ease);
 }
 .segmented .seg.is-active { background: var(--surface); color: var(--primary-press); box-shadow: var(--shadow-1); }
+.segmented .seg.is-locked { opacity: .4; cursor: not-allowed; }
+.segmented .seg.is-locked:active { color: var(--text-2); }
 .segmented-lg { margin: 4px 0 16px; }
 .segmented-lg .seg { height: 40px; font-size: 14px; }
 

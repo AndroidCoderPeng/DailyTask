@@ -249,4 +249,20 @@ object MessageDispatcher {
             onFailure = { Log.e(kTag, "截屏失效告警推送失败：$it") }
         )
     }
+
+    /**
+     * 通知监听失效告警（无人值守兜底）
+     * 影响远程指令接收与钉钉打卡结果判定，30 分钟内只推送一次
+     */
+    fun sendNotificationDownAlert() {
+        val now = System.currentTimeMillis()
+        val last = AppConfig.loadLong(Constant.NOTIFICATION_FAIL_NOTIFY_TIME_KEY, 0L)
+        if (now - last < CAPTURE_ALERT_INTERVAL) return
+        AppConfig.saveLong(Constant.NOTIFICATION_FAIL_NOTIFY_TIME_KEY, now)
+        sendMessage(
+            "通知监听告警",
+            "通知使用权已失效，远程指令与钉钉打卡结果判定不可用，请到设备前重新授权",
+            onFailure = { Log.e(kTag, "通知监听失效告警推送失败：$it") }
+        )
+    }
 }
