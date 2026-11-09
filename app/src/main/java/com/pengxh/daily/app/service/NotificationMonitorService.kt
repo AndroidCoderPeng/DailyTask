@@ -1,6 +1,7 @@
 package com.pengxh.daily.app.service
 
 import android.app.Notification
+import android.content.ComponentName
 import android.os.SystemClock
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
@@ -414,7 +415,10 @@ class NotificationMonitorService : NotificationListenerService() {
     override fun onListenerDisconnected() {
         listenerConnected = false
         emitListenerState(false)
-        // 解绑 5 秒后复查：权限被撤销时 rebind 不会成功，此时才告警
+        runCatching {
+            requestRebind(ComponentName(this, NotificationMonitorService::class.java))
+        }
+        // rebind 无效（通常意味着使用权已被撤销）再告警
         serviceScope.launch {
             delay(5000)
             if (!notificationEnable()) {
