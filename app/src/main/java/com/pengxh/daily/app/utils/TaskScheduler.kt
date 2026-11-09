@@ -225,7 +225,7 @@ object TaskScheduler {
                         lastDecisionWasSkip = true
                         // 重评估后仍为跳过时不再重复推送消息，只刷新通知栏文案
                         if (!wasReevaluation) {
-                            _tipsEvent.tryEmit(TipsEvent.Skip(skipReason))
+                            _tipsEvent.tryEmit(TipsEvent.DaySkipped(skipReason))
                         }
                         completion = TaskCompletion("今日为${skipReason.label}，任务已跳过")
                         ForegroundRunningService.emitNotificationText(completion.message)

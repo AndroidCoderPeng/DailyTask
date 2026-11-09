@@ -518,7 +518,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * */
     private fun handleTipsEvent(event: TipsEvent) {
         when (event) {
-            is TipsEvent.Skip -> {
+            is TipsEvent.DaySkipped -> {
                 val reason = "今日为${event.dayFlag.label}"
                 binding.tipsView.text = "$reason，跳过任务"
                 MessageDispatcher.sendMessage(

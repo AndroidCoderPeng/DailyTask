@@ -20,8 +20,5 @@ sealed class MonitorEvent {
      * */
     data object HideMaskCommand : MonitorEvent()
 
-    /**
-     * 服务端远程操作完成后返回应用
-     * */
     data object ReturnToApp : MonitorEvent()
 }

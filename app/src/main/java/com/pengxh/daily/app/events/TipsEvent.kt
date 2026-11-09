@@ -6,7 +6,7 @@ sealed class TipsEvent {
     /**
      * 按当日类型跳过
      * */
-    data class Skip(val dayFlag: DayFlag) : TipsEvent()
+    data class DaySkipped(val dayFlag: DayFlag) : TipsEvent()
 
     /**
      * 正在执行某个任务

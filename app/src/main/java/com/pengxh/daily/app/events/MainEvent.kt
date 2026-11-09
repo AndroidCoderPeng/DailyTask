@@ -9,19 +9,28 @@ import com.pengxh.daily.app.vm.MainViewModel
  * 列表数据本身走 [MainViewModel.taskListState]，不在这里重复传。
  * */
 sealed class MainEvent {
-
-    /** 任务时间点已存在，无法重复新增 */
+    /**
+     * 任务时间点已存在，无法重复新增
+     * */
     data object TaskTimeExists : MainEvent()
 
-    /** 新增任务成功 */
+    /**
+     * 新增任务成功
+     * */
     data object TaskAdded : MainEvent()
 
-    /** 导入完成 */
+    /**
+     * 导入完成
+     * */
     data class ImportSuccess(val count: Int, val warnings: List<String>) : MainEvent()
 
-    /** 导入失败 */
+    /**
+     * 导入失败
+     * */
     data class ImportError(val message: String) : MainEvent()
 
-    /** 导出成功 */
+    /**
+     * 导出成功
+     * */
     data class ExportSuccess(val json: String) : MainEvent()
 }
