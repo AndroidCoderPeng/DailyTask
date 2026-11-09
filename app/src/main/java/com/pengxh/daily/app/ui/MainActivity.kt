@@ -527,6 +527,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
                 )
             }
 
+            is TipsEvent.TaskSkipped -> {
+                dailyTaskAdapter.markSkipped(event.index - 1)
+                LogFileManager.writeLog("第 ${event.index} 个任务跳过：${event.reason}（计划 ${event.plannedTime}）")
+            }
+
             is TipsEvent.Executing -> {
                 binding.tipsView.text = "准备执行第 ${event.index} 个任务"
                 dailyTaskAdapter.updateCurrentTaskState(event.index - 1, event.actualTime)

@@ -20,6 +20,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         private const val STATE_PENDING = 0
         private const val STATE_RUNNING = 1
         private const val STATE_DONE = 2
+        private const val STATE_SKIPPED = 3
     }
 
     /**
@@ -32,6 +33,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     private var index = -1
     private var lastRunPosition = -1   // 本轮执行推进到的位置，停止后保留
     private val actualTimes = mutableMapOf<Int, String>()
+    private val skippedPositions = mutableSetOf<Int>()
     private var onItemClickListener: OnItemClickListener? = null
 
     fun updateCurrentTaskState(position: Int) {
@@ -53,6 +55,12 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         notifyItemChanged(position)
     }
 
+    fun markSkipped(position: Int) {
+        if (position < 0 || position >= dataBeans.size) return
+        skippedPositions.add(position)
+        notifyItemChanged(position)
+    }
+
     override fun getItemCount(): Int = dataBeans.size
 
     override fun getItemId(position: Int): Long = position.toLong()
@@ -65,8 +73,13 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val state = stateOf(position)
+
         val taskBean = dataBeans[position]
-        val actual = actualTimes[position] ?: "--:--:--"
+        val actual = when (state) {
+            STATE_SKIPPED -> "未执行"
+            else -> actualTimes[position] ?: "--:--:--"
+        }
         holder.setText(R.id.taskTimeView, taskBean.time)
             .setText(R.id.randomTimeView, taskBean.resolveRandomTimeRange() ?: "--:--:--")
             .setText(R.id.actualTimeView, actual)
@@ -77,7 +90,6 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             )
         }
 
-        val state = stateOf(position)
         bindChain(holder, state)
         bindState(holder, state)
 
@@ -91,12 +103,11 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         }
     }
 
-    /**
-     * 链上状态推导：未运行全部待执行；index 之前已完成，等于执行中，之后待执行
-     * */
     private fun stateOf(position: Int): Int = when {
-        position < index -> STATE_DONE
         position == index -> STATE_RUNNING
+        position in skippedPositions && actualTimes[position] == null -> STATE_SKIPPED
+        actualTimes.containsKey(position) -> STATE_DONE
+        position < index -> STATE_DONE
         index < 0 && lastRunPosition >= 0 && position <= lastRunPosition -> STATE_DONE
         else -> STATE_PENDING
     }
@@ -110,6 +121,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         val colorRes = when (state) {
             STATE_RUNNING -> R.color.theme_color
             STATE_DONE -> R.color.success_color
+            STATE_SKIPPED -> R.color.warning_color
             else -> R.color.text_hint_color
         }
         dot.backgroundTintList = ColorStateList.valueOf(colorRes.convertColor(context))
@@ -146,7 +158,6 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
      * */
     private fun bindState(holder: ViewHolder, state: Int) {
         val context = holder.itemView.context
-        val taskTimeView = holder.itemView.findViewById<TextView>(R.id.taskTimeView)
         val stateCard = holder.itemView.findViewById<MaterialCardView>(R.id.stateCardView)
         val stateText = holder.itemView.findViewById<TextView>(R.id.stateTextView)
 
@@ -154,21 +165,24 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
             STATE_RUNNING -> {
                 stateText.text = "执行中"
                 stateText.setTextColor(R.color.theme_color.convertColor(context))
-                taskTimeView.setTextColor(R.color.theme_color.convertColor(context))
                 stateCard.setCardBackgroundColor(R.color.theme_soft_color.convertColor(context))
             }
 
             STATE_DONE -> {
                 stateText.text = "已完成"
                 stateText.setTextColor(R.color.success_color.convertColor(context))
-                taskTimeView.setTextColor(R.color.success_color.convertColor(context))
                 stateCard.setCardBackgroundColor(R.color.success_soft_color.convertColor(context))
+            }
+
+            STATE_SKIPPED -> {
+                stateText.text = "已跳过"
+                stateText.setTextColor(R.color.warning_color.convertColor(context))
+                stateCard.setCardBackgroundColor(R.color.warning_soft_color.convertColor(context))
             }
 
             else -> {
                 stateText.text = "-"
                 stateText.setTextColor(R.color.text_secondary_color.convertColor(context))
-                taskTimeView.setTextColor(R.color.text_secondary_color.convertColor(context))
                 stateCard.setCardBackgroundColor(R.color.back_ground_color.convertColor(context))
             }
         }
@@ -179,6 +193,7 @@ class DailyTaskAdapter : RecyclerView.Adapter<ViewHolder>() {
         dataBeans.clear()
         dataBeans.addAll(newRows)
         actualTimes.clear()
+        skippedPositions.clear()
         notifyDataSetChanged()
     }
 

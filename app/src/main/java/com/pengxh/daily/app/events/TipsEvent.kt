@@ -9,6 +9,15 @@ sealed class TipsEvent {
     data class DaySkipped(val dayFlag: DayFlag) : TipsEvent()
 
     /**
+     * 单个任务被跳过（时间已过/授权失效等运行期原因）
+     * */
+    data class TaskSkipped(
+        val index: Int,          // 1-based 展示序号，与 Executing.index 同口径
+        val plannedTime: String,
+        val reason: String
+    ) : TipsEvent()
+
+    /**
      * 正在执行某个任务
      * */
     data class Executing(

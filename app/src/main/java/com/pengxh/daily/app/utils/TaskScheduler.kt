@@ -46,7 +46,7 @@ object TaskScheduler {
     /**
      * UI 文本事件（tipsView / adapter 高亮），不参与按钮逻辑
      * */
-    private val _tipsEvent = MutableSharedFlow<TipsEvent>(extraBufferCapacity = 1)
+    private val _tipsEvent = MutableSharedFlow<TipsEvent>(extraBufferCapacity = 64)
     val tipsEvent = _tipsEvent.asSharedFlow()
 
     /**
@@ -323,15 +323,17 @@ object TaskScheduler {
                 LogFileManager.writeLog(
                     "第 ${task.displayIndex} 个任务已过期（计划=${task.plannedTime}，" + "实际=${task.actualTime}），跳过"
                 )
+                _tipsEvent.tryEmit(
+                    TipsEvent.TaskSkipped(
+                        task.displayIndex, task.plannedTime, "任务时间已过"
+                    )
+                )
                 continue
             }
 
             // 非钉钉目标仅支持截屏来源，投影失效则剩余任务均无法获取打卡结果，跳过并说明根因
-            if (Constant.getTargetApp() != Constant.DING_DING && AppConfig.loadInt(
-                    Constant.RESULT_SOURCE_KEY,
-                    Constant.DEFAULT_INDEX
-                ) != 1
-            ) {
+            val resultSource = AppConfig.loadInt(Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX)
+            if (Constant.getTargetApp() != Constant.DING_DING && resultSource != 1) {
                 val remainingCount = schedule.size - task.displayIndex + 1
                 skippedCount += remainingCount
                 screenshotAuthInvalid = true
@@ -342,6 +344,12 @@ object TaskScheduler {
                     "任务跳过通知",
                     "截屏授权已失效，剩余 $remainingCount 个任务已跳过，需人工重新授权后恢复"
                 )
+                for (remaining in schedule) {
+                    if (remaining.displayIndex < task.displayIndex) continue
+                    _tipsEvent.tryEmit(
+                        TipsEvent.TaskSkipped(remaining.displayIndex, remaining.plannedTime, "截屏授权已失效")
+                    )
+                }
                 break
             }
 
@@ -483,7 +491,6 @@ object TaskScheduler {
         val message = when {
             successCount + failureCount == 0 && skippedCount == 0 -> "无任务可供执行"
             successCount + failureCount == 0 && screenshotAuthInvalid -> "截屏授权已失效，剩余 $skippedCount 个任务已跳过，需人工重新授权后恢复截屏打卡"
-
             successCount + failureCount == 0 -> "今日所有任务均已过期，跳过（$skippedCount 个），无需执行"
 
             skippedCount > 0 -> "今日任务处理完毕（成功 $successCount 个，失败 $failureCount 个，跳过 $skippedCount 个）"
