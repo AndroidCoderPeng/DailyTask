@@ -77,7 +77,7 @@
 
 ## 最新版本
 
-**2.4.3.0** — *2026年10月26日*
+**2.5.0.0** — *2026年11月9日*
 
 > 完整变更请查看 [版本更新日志 (CHANGELOG)](CHANGELOG.md)
 
@@ -160,7 +160,7 @@ gradlew.bat :app:assembleRelease
 ```
 
 - 产物路径：`app/build/outputs/apk/release/`
-- 产物命名：`DT_<构建日期>_<版本号>.apk`，例如 `DT_20261026_2.4.3.0.apk`
+- 产物命名：`DT_<构建日期>_<版本号>.apk`，例如 `DT_20261109_2.5.0.0.apk`
 - 签名：使用 `app/DailyTask.jks`，签名配置在 [app/build.gradle](app/build.gradle) 的
   `signingConfigs.release`
 - 版本号：同样在 [app/build.gradle](app/build.gradle) 的 `versionCode` / `versionName` 维护
