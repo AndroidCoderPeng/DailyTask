@@ -164,6 +164,8 @@ object TaskScheduler {
             return false
         }
 
+        // 用户显式启动：清除"今日已停止"标记
+        AppConfig.saveLong(Constant.MANUAL_STOP_UNTIL_KEY, 0L)
         _isRunning.value = true
         AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, true)
 
@@ -612,12 +614,13 @@ object TaskScheduler {
     }
 
     fun stopTask() {
-        if (!_isRunning.value) {
-            LogFileManager.writeLog("任务未运行，无需停止")
-            return
+        val wasRunning = _isRunning.value
+        if (wasRunning) {
+            LogFileManager.writeLog("停止执行每日任务")
+        } else {
+            LogFileManager.writeLog("任务未运行，仅记录今日停止标记")
         }
 
-        LogFileManager.writeLog("停止执行每日任务")
         job?.cancel()
         job = null
         _isRunning.value = false
@@ -625,6 +628,13 @@ object TaskScheduler {
         // 否则停止 → 新增任务 → 再点启动时，主循环会走"今日已处理，等待下一次重置"的
         lastProcessedDate = null
         AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+        // 记录截止时刻：下一个重置点之前，兜底检查不再自动拉起任务
+        AppConfig.saveLong(
+            Constant.MANUAL_STOP_UNTIL_KEY,
+            nextResetTimeMillis(
+                AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
+            )
+        )
         ForegroundRunningService.emitNotificationText("为保证程序正常运行，请勿移除此通知")
     }
 
@@ -674,6 +684,13 @@ object TaskScheduler {
         // 与 stopTask() 同理：异常停止后"今日已处理"作废，手动重启时重新评估当天剩余任务
         lastProcessedDate = null
         AppConfig.saveBoolean(Constant.TASK_SCHEDULER_RUNNING_KEY, false)
+        // 错误停止同样记录截止时刻，避免兜底检查每分钟重启导致反复报错
+        AppConfig.saveLong(
+            Constant.MANUAL_STOP_UNTIL_KEY,
+            nextResetTimeMillis(
+                AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
+            )
+        )
         if (shouldNotify) {
             ForegroundRunningService.emitNotificationText(reason)
             MessageDispatcher.sendMessage("任务停止通知", reason)
@@ -826,4 +843,12 @@ object TaskScheduler {
         val actualTime: String,
         val actualTimeMillis: Long
     )
+
+    /**
+     * 是否处于"今日已手动停止"状态（本地停止 / 远程 DT#终止任务）
+     * 截止到下一个重置时刻，用于阻止兜底逻辑把任务重新拉起
+     */
+    fun isManuallyStopped(): Boolean {
+        return System.currentTimeMillis() < AppConfig.loadLong(Constant.MANUAL_STOP_UNTIL_KEY, 0L)
+    }
 }

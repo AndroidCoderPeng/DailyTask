@@ -39,6 +39,7 @@ object Constant {
     const val REMOTE_MASK_MODE_KEY = "REMOTE_MASK_MODE_KEY"
     const val CAPTURE_FAIL_NOTIFY_TIME_KEY = "CAPTURE_FAIL_NOTIFY_TIME_KEY" // 截屏失效告警上次推送时间(Long)
     const val NOTIFICATION_FAIL_NOTIFY_TIME_KEY = "NOTIFICATION_FAIL_NOTIFY_TIME_KEY" // 通知监听失效告警上次推送时间(Long)
+    const val MANUAL_STOP_UNTIL_KEY = "MANUAL_STOP_UNTIL_KEY" // 手动停止截止时间(下一个重置时刻, Long)
 
     // ============================================================
     // ConfigStore 键

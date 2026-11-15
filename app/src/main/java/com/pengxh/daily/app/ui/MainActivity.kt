@@ -652,7 +652,7 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
     private fun doStopTask() {
         if (!TaskScheduler.isRunning()) return
         TaskScheduler.stopTask()
-        MessageDispatcher.sendMessage("停止任务通知", "任务停止成功，请及时打开下次任务")
+        MessageDispatcher.sendMessage("停止任务通知", "任务已终止，今日不再自动执行，下次重置后恢复")
     }
 
     private fun backToMainActivity() {
@@ -674,6 +674,11 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
      * 兜底检查：覆盖 Alarm 未触发的场景
      * */
     private fun checkMissedReset() {
+        // 今日已手动停止（本地 / 远程），不再自动拉起
+        if (TaskScheduler.isManuallyStopped()) {
+            return
+        }
+
         val lastResetDate = AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "")
         val today = Key.todayDateKey()
 

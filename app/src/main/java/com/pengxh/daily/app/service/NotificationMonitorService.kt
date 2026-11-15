@@ -207,12 +207,14 @@ class NotificationMonitorService : NotificationListenerService() {
             }
 
             command.contains("终止任务") -> {
-                if (TaskScheduler.isRunning()) {
-                    TaskScheduler.stopTask()
-                    sendCommandReceipt("停止任务通知", "任务停止成功，请及时打开下次任务")
-                } else {
-                    sendCommandReceipt("停止任务通知", "当前没有正在运行的任务")
-                }
+                // 无论是否在运行都记录今日停止标记，避免兜底检查把任务重新拉起
+                val wasRunning = TaskScheduler.isRunning()
+                TaskScheduler.stopTask()
+                sendCommandReceipt(
+                    "停止任务通知",
+                    if (wasRunning) "任务已终止，今日不再自动执行，下次重置后恢复"
+                    else "已记录今日停止，任务不会再自动触发，下次重置后恢复"
+                )
             }
 
             command.contains("开启循环") -> {

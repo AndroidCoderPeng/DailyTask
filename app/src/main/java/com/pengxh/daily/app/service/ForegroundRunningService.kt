@@ -246,6 +246,11 @@ class ForegroundRunningService : Service() {
      * 作为协程 delay 的兜底，防止长时间运行后协程异常退出导致任务不重置
      */
     private fun checkAndTriggerReset() {
+        // 今日已手动停止（本地 / 远程），交给下一个重置周期
+        if (TaskScheduler.isManuallyStopped()) {
+            return
+        }
+
         val today = Key.todayDateKey()
         val lastResetDate = AppConfig.loadString(Constant.LAST_RESET_DATE_KEY, "")
 
