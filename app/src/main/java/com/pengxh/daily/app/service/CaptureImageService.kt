@@ -301,10 +301,8 @@ class CaptureImageService : Service(), CoroutineScope by MainScope() {
         val rowStride = planes[0].rowStride
         val rowPadding = rowStride - pixelStride * width
         val bitmap = createBitmap(width + rowPadding / pixelStride, height)
-        try {
+        image.use {
             bitmap.copyPixelsFromBuffer(buffer)
-        } finally {
-            image.close()
         }
 
         val imagePath = "${createImageFileDir()}/${dateTimeFormat.format(Date())}.png"
