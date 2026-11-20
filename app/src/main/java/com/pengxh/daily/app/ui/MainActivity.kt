@@ -156,7 +156,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         observeTaskListState()
         observeMainEvents()
         observeResetCountdown()
-        observeResetTaskTime()
         observeMonitorEvents()
         observeSchedulerState()
         observeReturnToApp()
@@ -425,17 +424,10 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
         }
     }
 
-    private fun observeResetTaskTime() {
-        lifecycleScope.launch {
-            ForegroundRunningService.resetTaskTime.collect {
-                updateResetTimeText()
-            }
-        }
-    }
-
     private fun updateResetTimeText() {
-        val resetHour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-        binding.resetTimeView.text = String.format(Locale.CHINA, "每天 %02d:00 重置", resetHour)
+        binding.resetTimeView.text = String.format(
+            Locale.CHINA, "每天 %02d:00 重置", Constant.DEFAULT_RESET_HOUR
+        )
     }
 
     private fun updateStatePill(running: Boolean) {
@@ -608,7 +600,6 @@ class MainActivity : KotlinBaseActivity<ActivityMainBinding>() {
 
     private fun handleImportSuccess(event: MainEvent.ImportSuccess) {
         if (event.count > 0) {
-            ForegroundRunningService.emitResetTaskTime()
             checkMissedReset()
         }
         if (event.warnings.isEmpty()) {

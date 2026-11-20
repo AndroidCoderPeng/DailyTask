@@ -18,7 +18,6 @@ import com.pengxh.daily.app.databinding.ActivityTaskConfigBinding
 import com.pengxh.daily.app.extensions.show
 import com.pengxh.daily.app.extensions.showActionSheet
 import com.pengxh.daily.app.extensions.showCustomDialog
-import com.pengxh.daily.app.service.ForegroundRunningService
 import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.CustomWorkdayManager
@@ -57,9 +56,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val hour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-        binding.resetTimeItem.rightTextView.text = "每天 $hour 点"
-
         val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         binding.timeoutItem.rightTextView.text = "$time 秒"
 
@@ -101,48 +97,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initEvent() {
-        binding.resetTimeItem.setOnClickListener {
-            showActionSheet(R.layout.sheet_set_reset_time) { view, dialog ->
-                val optionsLayout = view.findViewById<LinearLayout>(R.id.optionsLayout)
-                (0..6).forEach { hour ->
-                    val item = SettingItemView(this).apply {
-                        title = "每天 $hour 点"
-                        setOnClickListener {
-                            updateResetHour(hour)
-                            dialog.dismiss()
-                        }
-                    }
-                    optionsLayout.addView(item)
-                }
-
-                // 自定义入口：点开输入框
-                val customItem = SettingItemView(context).apply {
-                    title = "自定义（单位：时）"
-                    setOnClickListener {
-                        dialog.dismiss()
-                        showCustomDialog(R.layout.dialog_set_reset_time) { view, dialog ->
-                            val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
-                            view.findViewById<MaterialButton>(R.id.confirmButton)
-                                .setOnClickListener {
-                                if (inputView.text.isNullOrBlank()) {
-                                    inputView.shakeIfEmpty()
-                                    "请输入重置时间".show(context)
-                                    return@setOnClickListener
-                                }
-                                updateResetHour(inputView.text.toString().toInt())
-                                dialog.dismiss()
-                            }
-                            view.findViewById<MaterialButton>(R.id.cancelButton)
-                                .setOnClickListener {
-                                dialog.dismiss()
-                            }
-                        }
-                    }
-                }
-                optionsLayout.addView(customItem)
-            }
-        }
-
         binding.timeoutItem.setOnClickListener {
             showActionSheet(R.layout.sheet_set_over_time) { view, dialog ->
                 val optionsLayout = view.findViewById<LinearLayout>(R.id.optionsLayout)
@@ -278,21 +232,6 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
 
     private fun updateCustomWorkdaySummary(workdays: Set<DayOfWeek>) {
         binding.workdayItem.rightTextView.text = CustomWorkdayManager.formatWorkdays(workdays)
-    }
-
-    private fun setTaskResetTime(hour: Int) {
-        AppConfig.saveInt(Constant.RESET_TIME_KEY, hour)
-        // 通知 Service 更新倒计时显示
-        ForegroundRunningService.emitResetTaskTime()
-    }
-
-    private fun updateResetHour(hour: Int) {
-        if (hour !in 0..23) {
-            "重置时间必须在0到23点之间".show(this)
-            return
-        }
-        binding.resetTimeItem.rightTextView.text = "每天 $hour 点"
-        setTaskResetTime(hour)
     }
 
     private fun updateTimeout(time: Int) {

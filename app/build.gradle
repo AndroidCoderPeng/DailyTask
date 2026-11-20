@@ -31,8 +31,6 @@ android {
                 cppFlags "-std=c++14"
             }
         }
-
-        testInstrumentationRunner 'com.pengxh.daily.app.IsolatedTestRunner'
     }
 
     externalNativeBuild {
@@ -141,6 +139,4 @@ dependencies {
     implementation 'com.github.bumptech.glide:glide:4.16.0'
     // 单元测试
     testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test:runner:1.6.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 }

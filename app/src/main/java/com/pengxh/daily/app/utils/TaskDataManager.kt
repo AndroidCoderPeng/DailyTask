@@ -56,8 +56,6 @@ class TaskDataManager() {
         val exportData = ExportDataModel()
 
         // Int
-        exportData.resetTime =
-            AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
         exportData.overtime =
             AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
         exportData.timeRange =
@@ -118,7 +116,6 @@ class TaskDataManager() {
     private fun saveConfiguration(config: ExportDataModel): List<String> {
         val warnings = mutableListOf<String>()
         //
-        AppConfig.saveInt(Constant.RESET_TIME_KEY, config.resetTime.coerceIn(0, 23))
         AppConfig.saveInt(
             Constant.STAY_OVERTIME_KEY,
             config.overtime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME

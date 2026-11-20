@@ -19,19 +19,15 @@ object DailyResetAlarmScheduler {
             Intent(context, DailyResetAlarmReceiver::class.java).setAction(ACTION_DAILY_RESET),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val resetHour = AppConfig.loadInt(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        )
-
         alarmManager.cancel(pendingIntent)
         alarmManager.setAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, nextResetTimeMillis(resetHour), pendingIntent
+            AlarmManager.RTC_WAKEUP, nextResetTimeMillis(), pendingIntent
         )
     }
 
-    private fun nextResetTimeMillis(resetHour: Int): Long {
+    private fun nextResetTimeMillis(): Long {
         return Calendar.getInstance().run {
-            set(Calendar.HOUR_OF_DAY, resetHour)
+            set(Calendar.HOUR_OF_DAY, Constant.DEFAULT_RESET_HOUR)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)

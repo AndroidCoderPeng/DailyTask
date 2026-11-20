@@ -10,7 +10,6 @@ import kotlin.Triple;
  * 导出数据模型
  */
 public class ExportDataModel {
-    private int resetTime; // 重置时间
     private int overtime; // 超时时间
     private int timeRange; // 时间范围
     private Integer msgChannel; // 消息渠道，null 表示未配置
@@ -33,14 +32,6 @@ public class ExportDataModel {
 
     private Triple<String, String, String> emailConfig; // 邮箱配置<发件箱、授权码、收件箱>
     private List<DailyTaskBean> tasks; // 任务列表
-
-    public int getResetTime() {
-        return resetTime;
-    }
-
-    public void setResetTime(int resetTime) {
-        this.resetTime = resetTime;
-    }
 
     public int getOvertime() {
         return overtime;

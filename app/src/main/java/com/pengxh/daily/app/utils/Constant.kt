@@ -9,7 +9,6 @@ object Constant {
     // ============================================================
     // SharedPreferences 键
     // ============================================================
-    const val RESET_TIME_KEY = "RESET_TIME_KEY" // 任务重置时间点(Int)
     const val TASK_SCHEDULER_RUNNING_KEY = "TASK_SCHEDULER_RUNNING_KEY" // 任务调度器是否正在运行(Boolean)
     const val STAY_OVERTIME_KEY = "STAY_OVERTIME_KEY" // 打卡停留在目标APP的时间(Int)
     const val TIME_RANGE_KEY = "TIME_RANGE_KEY" // 随机时间范围[0,range](Int)

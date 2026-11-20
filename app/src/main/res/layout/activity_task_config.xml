@@ -52,20 +52,12 @@
                     android:showDividers="middle">
 
                     <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/resetTimeItem"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:itemDesc="每天几点重新开始计算当日任务"
-                        app:itemRightType="text"
-                        app:itemTitle="重置时间" />
-
-                    <com.pengxh.daily.app.widget.SettingItemView
                         android:id="@+id/timeoutItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="停留在目标应用的时间"
                         app:itemRightType="text"
-                        app:itemTitle="超时时间" />
+                        app:itemTitle="等待时间" />
 
                     <com.pengxh.daily.app.widget.SettingItemView
                         android:id="@+id/keyItem"

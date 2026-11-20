@@ -26,9 +26,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 
 /**
@@ -58,15 +56,6 @@ class ForegroundRunningService : Service() {
             _resetTickTime.tryEmit(text)
         }
 
-        private val _resetTaskTime = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-        val resetTaskTime = _resetTaskTime.asSharedFlow()
-
-        /**
-         * 更新任务重置时间点
-         * */
-        fun emitResetTaskTime() {
-            _resetTaskTime.tryEmit(Unit)
-        }
     }
 
     private val batteryManager: BatteryManager? by lazy { getSystemService(BatteryManager::class.java) }
@@ -133,14 +122,6 @@ class ForegroundRunningService : Service() {
             }
         }
 
-        serviceScope.launch {
-            resetTaskTime.collect {
-                updateResetTimeView()
-                DailyResetAlarmScheduler.schedule(this@ForegroundRunningService)
-                TaskScheduler.notifyResetWaiters()
-            }
-        }
-
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_TIME_TICK) // 每分钟广播
             addAction(Intent.ACTION_BATTERY_CHANGED) // 电池状态改变广播
@@ -181,8 +162,7 @@ class ForegroundRunningService : Service() {
     }
 
     private fun updateResetTimeView() {
-        val resetHour = AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-        val seconds = resetTaskSeconds(resetHour)
+        val seconds = resetTaskSeconds()
 
         val hours = seconds / 3600
         val minutes = (seconds % 3600) / 60
@@ -190,35 +170,17 @@ class ForegroundRunningService : Service() {
         emitResetTickTime(time)
     }
 
-    private fun resetTaskSeconds(hour: Int): Int {
+    private fun resetTaskSeconds(): Int {
         val calendar = Calendar.getInstance()
-        val currentHour = calendar.get(Calendar.HOUR_OF_DAY)
-        val currentMinute = calendar.get(Calendar.MINUTE)
-        val currentSecond = calendar.get(Calendar.SECOND)
-
-        // 设置今天的计划时间
-        val todayTargetMillis = calendar.clone() as Calendar
-        todayTargetMillis.set(Calendar.HOUR_OF_DAY, hour)
-        todayTargetMillis.set(Calendar.MINUTE, 0)
-        todayTargetMillis.set(Calendar.SECOND, 0)
-        todayTargetMillis.set(Calendar.MILLISECOND, 0)
-
-        // 根据当前时间决定计算哪一天的计划时间
-        val targetMillis = if (currentHour < hour) {
-            // 今天还没到计划时间
-            todayTargetMillis.timeInMillis
-        } else if (currentHour == hour && currentMinute == 0 && currentSecond == 0) {
-            // 刚好是整点，计算明天的
-            todayTargetMillis.add(Calendar.DATE, 1)
-            todayTargetMillis.timeInMillis
-        } else {
-            // 今天已经过了计划时间，计算明天的
-            todayTargetMillis.add(Calendar.DATE, 1)
-            todayTargetMillis.timeInMillis
+        val target = calendar.clone() as Calendar
+        target.set(Calendar.HOUR_OF_DAY, Constant.DEFAULT_RESET_HOUR)
+        target.set(Calendar.MINUTE, 0)
+        target.set(Calendar.SECOND, 0)
+        target.set(Calendar.MILLISECOND, 0)
+        if (target.timeInMillis <= calendar.timeInMillis) {
+            target.add(Calendar.DATE, 1)
         }
-
-        val delta = (targetMillis - System.currentTimeMillis()) / 1000
-        return delta.toInt()
+        return ((target.timeInMillis - calendar.timeInMillis) / 1000).toInt()
     }
 
     private fun checkLowBattery() {

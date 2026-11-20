@@ -522,8 +522,6 @@ object TaskScheduler {
     @Volatile
     var debugWaitSeconds: Long? = null
 
-    private const val RESET_CONFIG_CHECK_INTERVAL_MILLIS = 10 * 60 * 1000L
-
     /**
      * 等待到下一个每日重置时间
      */
@@ -535,12 +533,9 @@ object TaskScheduler {
             return
         }
 
-        val initialResetHour = AppConfig.loadInt(
-            Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-        )
-        val initialTargetMillis = nextResetTimeMillis(initialResetHour)
+        val targetMillis = nextResetTimeMillis()
         val initialWaitSeconds =
-            ((initialTargetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(1)
+            ((targetMillis - System.currentTimeMillis()) / 1000).coerceAtLeast(1)
         LogFileManager.writeLog("等待 ${initialWaitSeconds}s 后进入下一个任务周期")
 
         // 只发一次静态通知，不每秒刷新
@@ -553,22 +548,8 @@ object TaskScheduler {
             "${completion?.message ?: "今日任务已全部执行完毕"}，等待下次任务"
         )
 
-        var targetResetHour = initialResetHour
-        var targetMillis = initialTargetMillis
-        var alarmScheduledForHour: Int? = null
+        DailyResetAlarmScheduler.schedule(DailyTaskApplication.get())
         while (true) {
-            val resetHour = AppConfig.loadInt(
-                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-            )
-            if (resetHour != targetResetHour) {
-                targetResetHour = resetHour
-                targetMillis = nextResetTimeMillis(resetHour)
-            }
-            if (alarmScheduledForHour != resetHour) {
-                DailyResetAlarmScheduler.schedule(DailyTaskApplication.get())
-                alarmScheduledForHour = resetHour
-            }
-
             // 判定条件变化（数据/配置更新）：立即返回主循环重新分类今日，不等下一个重置点
             if (reevaluateRequested) {
                 reevaluateRequested = false
@@ -577,16 +558,10 @@ object TaskScheduler {
             }
 
             val remainingMillis = (targetMillis - System.currentTimeMillis()).coerceAtLeast(1)
-            withTimeoutOrNull(minOf(remainingMillis, RESET_CONFIG_CHECK_INTERVAL_MILLIS)) {
+            withTimeoutOrNull(remainingMillis) {
                 resetWaitWakeupChannel.receive()
             }
 
-            val currentResetHour = AppConfig.loadInt(
-                Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR
-            )
-            if (currentResetHour != resetHour) {
-                continue
-            }
             if (System.currentTimeMillis() >= targetMillis) {
                 return
             }
@@ -631,9 +606,7 @@ object TaskScheduler {
         // 记录截止时刻：下一个重置点之前，兜底检查不再自动拉起任务
         AppConfig.saveLong(
             Constant.MANUAL_STOP_UNTIL_KEY,
-            nextResetTimeMillis(
-                AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-            )
+            nextResetTimeMillis()
         )
         ForegroundRunningService.emitNotificationText("为保证程序正常运行，请勿移除此通知")
     }
@@ -687,9 +660,7 @@ object TaskScheduler {
         // 错误停止同样记录截止时刻，避免兜底检查每分钟重启导致反复报错
         AppConfig.saveLong(
             Constant.MANUAL_STOP_UNTIL_KEY,
-            nextResetTimeMillis(
-                AppConfig.loadInt(Constant.RESET_TIME_KEY, Constant.DEFAULT_RESET_HOUR)
-            )
+            nextResetTimeMillis()
         )
         if (shouldNotify) {
             ForegroundRunningService.emitNotificationText(reason)
@@ -821,10 +792,10 @@ object TaskScheduler {
         }
     }
 
-    private fun nextResetTimeMillis(resetHour: Int): Long {
+    private fun nextResetTimeMillis(): Long {
         val now = Calendar.getInstance()
         val target = now.clone() as Calendar
-        target.set(Calendar.HOUR_OF_DAY, resetHour)
+        target.set(Calendar.HOUR_OF_DAY, Constant.DEFAULT_RESET_HOUR)
         target.set(Calendar.MINUTE, 0)
         target.set(Calendar.SECOND, 0)
         target.set(Calendar.MILLISECOND, 0)
