@@ -389,8 +389,8 @@ object TaskScheduler {
             }
 
             // ====== 阶段 2：打开目标 App，等待打卡或超时 ======
-            val timeoutSeconds = AppConfig.loadInt(
-                Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+            val waitTimeSeconds = AppConfig.loadInt(
+                Constant.WAIT_TIME_KEY, Constant.DEFAULT_WAIT_TIME
             )
 
             // 竞态保护：select 只取先完成的分支，另一个自动取消
@@ -413,15 +413,15 @@ object TaskScheduler {
                         result = TaskOutcome.STOPPED
                     } else {
                         clockInWaitDeadlineMillis =
-                            System.currentTimeMillis() + timeoutSeconds * 1000L
+                            System.currentTimeMillis() + waitTimeSeconds * 1000L
 
                         val activeTimeoutJob = schedulerScope.launch {
-                            updateCountdownWithNotification(timeoutSeconds * 1000L) { remaining ->
+                            updateCountdownWithNotification(waitTimeSeconds * 1000L) { remaining ->
                                 val tick = (remaining / 1000).toInt()
                                 FloatingWindowController.updateTime(tick)
 
                                 // 最后 5 秒兜底截屏（只触发一次）
-                                if (timeoutSeconds > 5 && tick <= 5 && !hasCaptured) {
+                                if (waitTimeSeconds > 5 && tick <= 5 && !hasCaptured) {
                                     val resultSource = AppConfig.loadInt(
                                         Constant.RESULT_SOURCE_KEY, Constant.DEFAULT_INDEX
                                     )

@@ -1,5 +1,6 @@
 package com.pengxh.daily.app.model;
 
+import com.google.gson.annotations.SerializedName;
 import com.pengxh.daily.app.sqlite.bean.DailyTaskBean;
 
 import java.util.List;
@@ -10,7 +11,8 @@ import kotlin.Triple;
  * 导出数据模型
  */
 public class ExportDataModel {
-    private int overtime; // 超时时间
+    @SerializedName("overtime")
+    private int waitTime; // 等待时间（秒）
     private int timeRange; // 时间范围
     private Integer msgChannel; // 消息渠道，null 表示未配置
     private int targetApp; // 目标应用
@@ -33,12 +35,12 @@ public class ExportDataModel {
     private Triple<String, String, String> emailConfig; // 邮箱配置<发件箱、授权码、收件箱>
     private List<DailyTaskBean> tasks; // 任务列表
 
-    public int getOvertime() {
-        return overtime;
+    public int getWaitTime() {
+        return waitTime;
     }
 
-    public void setOvertime(int overtime) {
-        this.overtime = overtime;
+    public void setWaitTime(int waitTime) {
+        this.waitTime = waitTime;
     }
 
     public int getTimeRange() {

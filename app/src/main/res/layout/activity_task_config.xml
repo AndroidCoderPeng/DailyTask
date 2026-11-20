@@ -52,7 +52,7 @@
                     android:showDividers="middle">
 
                     <com.pengxh.daily.app.widget.SettingItemView
-                        android:id="@+id/timeoutItem"
+                        android:id="@+id/waitTimeItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:itemDesc="停留在目标应用的时间"

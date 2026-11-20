@@ -56,8 +56,8 @@ class TaskDataManager() {
         val exportData = ExportDataModel()
 
         // Int
-        exportData.overtime =
-            AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
+        exportData.waitTime =
+            AppConfig.loadInt(Constant.WAIT_TIME_KEY, Constant.DEFAULT_WAIT_TIME)
         exportData.timeRange =
             AppConfig.loadInt(Constant.TIME_RANGE_KEY, Constant.DEFAULT_TIME_RANGE)
         exportData.msgChannel = AppConfig.loadInt(
@@ -117,8 +117,8 @@ class TaskDataManager() {
         val warnings = mutableListOf<String>()
         //
         AppConfig.saveInt(
-            Constant.STAY_OVERTIME_KEY,
-            config.overtime.takeIf { it > 0 } ?: Constant.DEFAULT_OVER_TIME
+            Constant.WAIT_TIME_KEY,
+            config.waitTime.takeIf { it > 0 } ?: Constant.DEFAULT_WAIT_TIME
         )
         AppConfig.saveInt(
             Constant.TIME_RANGE_KEY,

@@ -300,8 +300,8 @@ class NotificationMonitorService : NotificationListenerService() {
     }
 
     private fun triggerRemoteClockIn() {
-        val timeoutSeconds = AppConfig.loadInt(
-            Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+        val waitTimeSeconds = AppConfig.loadInt(
+            Constant.WAIT_TIME_KEY, Constant.DEFAULT_WAIT_TIME
         )
         val returnScreenshot = AppConfig.loadBoolean(
             Constant.REMOTE_CLOCK_IN_CAPTURE_KEY, true
@@ -321,7 +321,7 @@ class NotificationMonitorService : NotificationListenerService() {
                         )
                         return@withDevice
                     }
-                    countdownTargetApp(timeoutSeconds)
+                    countdownTargetApp(waitTimeSeconds)
                     if (returnScreenshot) {
                         captureAndSendResult(
                             "打卡结果通知",

@@ -25,7 +25,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:paddingVertical="@dimen/padding"
-            android:text="超时时间"
+            android:text="等待时间"
             android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
             android:textStyle="bold" />
 
@@ -33,7 +33,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="@dimen/margin"
-            android:text="选择任务超时时间（停留在目标应用等待的时间）"
+            android:text="选择任务等待时间（停留在目标应用等待打卡的时间）"
             android:textAppearance="@style/TextAppearance.Material3.TitleSmall"
             android:textColor="@color/text_secondary_color" />
 

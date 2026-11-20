@@ -56,8 +56,8 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initOnCreate(savedInstanceState: Bundle?) {
-        val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
-        binding.timeoutItem.rightTextView.text = "$time 秒"
+        val waitTime = AppConfig.loadInt(Constant.WAIT_TIME_KEY, Constant.DEFAULT_WAIT_TIME)
+        binding.waitTimeItem.rightTextView.text = "$waitTime 秒"
 
         binding.keyItem.rightTextView.text =
             AppConfig.loadString(Constant.REMOTE_COMMAND_KEY, "打卡")
@@ -97,14 +97,14 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
     }
 
     override fun initEvent() {
-        binding.timeoutItem.setOnClickListener {
-            showActionSheet(R.layout.sheet_set_over_time) { view, dialog ->
+        binding.waitTimeItem.setOnClickListener {
+            showActionSheet(R.layout.sheet_set_wait_time) { view, dialog ->
                 val optionsLayout = view.findViewById<LinearLayout>(R.id.optionsLayout)
                 listOf(15, 30, 45, 60).forEach { seconds ->
                     val item = SettingItemView(this).apply {
                         title = "$seconds 秒"
                         setOnClickListener {
-                            updateTimeout(seconds)
+                            updateWaitTime(seconds)
                             dialog.dismiss()
                         }
                     }
@@ -116,16 +116,16 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
                     title = "自定义（单位：秒）"
                     setOnClickListener {
                         dialog.dismiss()
-                        showCustomDialog(R.layout.dialog_set_custom_time) { view, dialog ->
+                        showCustomDialog(R.layout.dialog_set_wait_time) { view, dialog ->
                             val inputView = view.findViewById<DeletableEditText>(R.id.inputView)
                             view.findViewById<MaterialButton>(R.id.confirmButton)
                                 .setOnClickListener {
                                 if (inputView.text.isNullOrBlank()) {
                                     inputView.shakeIfEmpty()
-                                    "请输入超时时间".show(context)
+                                    "请输入等待时间".show(context)
                                     return@setOnClickListener
                                 }
-                                updateTimeout(inputView.text.toString().toInt())
+                                    updateWaitTime(inputView.text.toString().toInt())
                                 dialog.dismiss()
                             }
                             view.findViewById<MaterialButton>(R.id.cancelButton)
@@ -234,14 +234,14 @@ class TaskConfigActivity : KotlinBaseActivity<ActivityTaskConfigBinding>() {
         binding.workdayItem.rightTextView.text = CustomWorkdayManager.formatWorkdays(workdays)
     }
 
-    private fun updateTimeout(time: Int) {
-        if (time <= 0) {
-            "超时时间必须大于0秒".show(this)
+    private fun updateWaitTime(waitTime: Int) {
+        if (waitTime <= 0) {
+            "等待时间必须大于0秒".show(this)
             return
         }
-        binding.timeoutItem.rightTextView.text = "$time 秒"
-        AppConfig.saveInt(Constant.STAY_OVERTIME_KEY, time)
-        FloatingWindowController.setOvertime(time)
+        binding.waitTimeItem.rightTextView.text = "$waitTime 秒"
+        AppConfig.saveInt(Constant.WAIT_TIME_KEY, waitTime)
+        FloatingWindowController.setWaitTime(waitTime)
     }
 
     private fun updateRandomMinuteRange(value: Int) {

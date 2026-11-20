@@ -245,7 +245,7 @@
                         android:id="@+id/taskConfigItem"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:itemDesc="超时、口令、工作日"
+                        app:itemDesc="等待时间、口令、工作日"
                         app:itemIcon="@drawable/ic_setting_task"
                         app:itemRightType="arrow"
                         app:itemTitle="任务配置" />

@@ -10,7 +10,7 @@ object Constant {
     // SharedPreferences 键
     // ============================================================
     const val TASK_SCHEDULER_RUNNING_KEY = "TASK_SCHEDULER_RUNNING_KEY" // 任务调度器是否正在运行(Boolean)
-    const val STAY_OVERTIME_KEY = "STAY_OVERTIME_KEY" // 打卡停留在目标APP的时间(Int)
+    const val WAIT_TIME_KEY = "STAY_OVERTIME_KEY" // 打卡等待时间(Int)
     const val TIME_RANGE_KEY = "TIME_RANGE_KEY" // 随机时间范围[0,range](Int)
     const val MSG_CHANNEL_KEY = "MSG_CHANNEL_KEY" // 消息渠道：0-企业微信，1-邮件(Int)
     const val TARGET_APP_KEY = "TARGET_APP_KEY" // 目标应用(Int)
@@ -73,7 +73,7 @@ object Constant {
     const val DEFAULT_INDEX = -1
     const val DEFAULT_RESET_HOUR = 0
     const val DEFAULT_TIME_RANGE = 5
-    const val DEFAULT_OVER_TIME = 30
+    const val DEFAULT_WAIT_TIME = 30
     const val CAPTURE_IMAGE_SERVICE_NOTIFICATION_ID = 1001
     const val FOREGROUND_RUNNING_SERVICE_NOTIFICATION_ID = 1002
     const val CHINA_ZONE_ID = "Asia/Shanghai" // 日历分类统一时区（与节假日数据源对齐）

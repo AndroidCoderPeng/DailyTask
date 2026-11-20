@@ -14,20 +14,19 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import com.pengxh.daily.app.databinding.WindowFloatingBinding
+import com.pengxh.daily.app.utils.AppConfig
 import com.pengxh.daily.app.utils.Constant
 import com.pengxh.daily.app.utils.FloatingWindowController
 import com.pengxh.daily.app.utils.MessageDispatcher
-import com.pengxh.daily.app.service.ForegroundRunningService
-import com.pengxh.daily.app.utils.AppConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispatchers.Main) {
 
@@ -94,8 +93,8 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             }
         }
         launch {
-            FloatingWindowController.overtime.collect { seconds ->
-                binding.timeView.text = "${seconds}s"
+            FloatingWindowController.waitTime.collect { waitTime ->
+                binding.timeView.text = "${waitTime}s"
             }
         }
         launch {
@@ -103,7 +102,7 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
                 if (visible) {
                     binding.root.alpha = 1.0f
                     val time = AppConfig.loadInt(
-                        Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME
+                        Constant.WAIT_TIME_KEY, Constant.DEFAULT_WAIT_TIME
                     )
                     binding.timeView.text = "${time}s"
                 } else {
@@ -113,9 +112,9 @@ class FloatingWindowService : Service(), CoroutineScope by CoroutineScope(Dispat
             }
         }
 
-        // 获取目标应用任务超时时间
-        val time = AppConfig.loadInt(Constant.STAY_OVERTIME_KEY, Constant.DEFAULT_OVER_TIME)
-        binding.timeView.text = "${time}s"
+        // 获取目标应用任务等待时间
+        val waitTime = AppConfig.loadInt(Constant.WAIT_TIME_KEY, Constant.DEFAULT_WAIT_TIME)
+        binding.timeView.text = "${waitTime}s"
 
         // 移动悬浮窗
         onDragMove()

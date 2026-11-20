@@ -11,8 +11,8 @@ object FloatingWindowController {
     private val _timeTick = MutableSharedFlow<Int>(extraBufferCapacity = 2)
     val timeTick = _timeTick.asSharedFlow()
 
-    private val _overtime = MutableSharedFlow<Int>(extraBufferCapacity = 1)
-    val overtime = _overtime.asSharedFlow()
+    private val _waitTime = MutableSharedFlow<Int>(extraBufferCapacity = 1)
+    val waitTime = _waitTime.asSharedFlow()
 
     private val _visibility = MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1)
     val visibility = _visibility.asSharedFlow()
@@ -21,8 +21,8 @@ object FloatingWindowController {
         _timeTick.tryEmit(tick)
     }
 
-    fun setOvertime(seconds: Int) {
-        _overtime.tryEmit(seconds)
+    fun setWaitTime(waitTime: Int) {
+        _waitTime.tryEmit(waitTime)
     }
 
     fun show() {
