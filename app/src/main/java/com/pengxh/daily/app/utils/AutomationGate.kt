@@ -54,20 +54,19 @@ object AutomationGate {
     }
 
     // 持有设备执行权执行一段逻辑
-    suspend fun <T> withDevice(owner: Owner, block: suspend () -> T): T =
-        mutex.withLock {
+    suspend fun <T> withDevice(owner: Owner, block: suspend () -> T): T = mutex.withLock {
+        if (owner == Owner.REMOTE) {
+            remoteDriveStartMillis = System.currentTimeMillis()
+            remoteDriveEndMillis = 0L
+        }
+        try {
+            block()
+        } finally {
             if (owner == Owner.REMOTE) {
-                remoteDriveStartMillis = System.currentTimeMillis()
-                remoteDriveEndMillis = 0L
-            }
-            try {
-                block()
-            } finally {
-                if (owner == Owner.REMOTE) {
-                    remoteDriveEndMillis = System.currentTimeMillis()
-                }
+                remoteDriveEndMillis = System.currentTimeMillis()
             }
         }
+    }
 
     // 该"打卡成功"通知是否属于远程指令（远程指令已代打卡，定时任务不应计入）
     fun belongsToRemoteDrive(postedAtMillis: Long): Boolean {
