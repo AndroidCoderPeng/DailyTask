@@ -2,7 +2,7 @@
 
 > 基于 Kotlin 开发的 Android 无人值守打卡工具，兼容 Android 8 ~ 16 及 HarmonyOS 4.0。
 > 其他 OS 需自行测试，理论上能安装就能用，但不保证兼容性，需注意！
-> Android 8 以下系统，需修改 [app/build.gradle](app/build.gradle) 中的 `minSdk`然后再自行编译。
+> Android 8 以下系统，需修改 [app/build.gradle](app/build.gradle) 中的 `minSdk` 后再自行编译。
 
 [![API](https://img.shields.io/badge/API-26~36-green.svg)](https://developer.android.com)
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-36-blue.svg)](https://developer.android.com)
@@ -77,9 +77,9 @@
 
 ## 最新版本
 
-**2.5.0.0** — *2026年11月9日*
+**2.5.1.0** — *2026年11月21日*
 
-> 完整变更请查看 [版本更新日志 (CHANGELOG)](CHANGELOG.md)
+> 本次更新：新增「通知监听」独立开关与失效告警、`ResultSourceGuard` 结果来源校正，移除自定义重置时间配置，修复手动停止任务后被兜底拉起、远程"关闭循环"不生效等问题。完整变更请查看 [版本更新日志 (CHANGELOG)](CHANGELOG.md)
 
 ---
 
@@ -108,10 +108,12 @@
 
 1. 打开 `DailyTask`，应用会自动检测悬浮窗权限，授权即可。
 2. 进入手机 **设置 → 通知中心**，找到 `DailyTask`，开启通知权限。
-3. 在 `DailyTask` 设置中选择**结果来源**：
-    - `通知监听`（仅适用于钉钉）
+3. 开启**通知监听**开关（需在系统设置中授予「通知使用权」）。该开关已与结果来源解耦，作为常驻服务运行：
+    - 无论打卡结果来源为何，都建议开启，否则无法接收 `DT#` 远程指令；
+    - 仅钉钉可将打卡结果来源选为「通知监听」，非钉钉应用的通知监听仅用于接收远程指令。
+4. 在 `DailyTask` 设置中选择**结果来源**：
+    - `通知监听`（仅钉钉可选，未开启通知监听开关会提示先授权）
     - `截屏服务`（理论上适用于任何打卡应用）
-4. 开启**通知监听**权限（若未开启，开关底部会显示红色提示文字）。
 5. 若钉钉无法监听到打卡结果，或使用飞书、企业微信等不产生打卡通知的应用，请**开启截屏服务**
    ，弹窗中选择「整个屏幕」即可。
 6. 需要通过 `DT#打卡` 指令回传截图时，开启设置页的**「返回截图」**开关（需先开启截屏服务）。
@@ -160,7 +162,6 @@ gradlew.bat :app:assembleRelease
 ```
 
 - 产物路径：`app/build/outputs/apk/release/`
-- 产物命名：`DT_<构建日期>_<版本号>.apk`，例如 `DT_20261109_2.5.0.0.apk`
 - 签名：使用 `app/DailyTask.jks`，签名配置在 [app/build.gradle](app/build.gradle) 的
   `signingConfigs.release`
 - 版本号：同样在 [app/build.gradle](app/build.gradle) 的 `versionCode` / `versionName` 维护
